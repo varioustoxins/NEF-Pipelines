@@ -44,7 +44,7 @@ def get_linking(target_index, target_sequence, no_start=False, no_end=False):
     return result
 
 
-def read_sequence(lines, chain_code='A'):
+def read_sequence(lines, chain_code='A', file_name='unknown'):
 
     start_residue = 1
     result = {}
@@ -54,7 +54,7 @@ def read_sequence(lines, chain_code='A'):
 
         msg = f'''nmview sequences have one residue name per line, 
                      except for the first line which can also contain a starting residue number,
-                     at line {i + 1} i got {line} in file {args.file_names[0]}'''
+                     at line {i + 1} i got {line} in file {file_name}'''
 
         if len(fields) > 1 and i != 0:
             exit_error(msg)
@@ -83,7 +83,8 @@ if __name__ == '__main__':
 
     chain = args.chain_code
 
-    with open (args.file_names[0],'r') as lines:
+    file_name = args.file_names[0]
+    with open (file_name,'r') as lines:
         sequence = read_sequence(lines=lines,chain_code=args.chain_code)
 
     entry_name = args.entry_name.replace(' ','_')
