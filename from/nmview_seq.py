@@ -75,19 +75,10 @@ def read_sequence(lines, chain_code='A', file_name='unknown'):
 
     return result
 
-
-if __name__ == '__main__':
-
-    parser = create_parser()
-    args = parser.parse_args()
-
+def sequence_to_nef(sequence, args):
     chain = args.chain_code
 
-    file_name = args.file_names[0]
-    with open (file_name,'r') as lines:
-        sequence = read_sequence(lines=lines,chain_code=args.chain_code)
-
-    entry_name = args.entry_name.replace(' ','_')
+    entry_name = args.entry_name.replace(' ', '_')
     entry = Entry.from_scratch(entry_name)
 
     category = "nef_molecular_system"
@@ -106,18 +97,30 @@ if __name__ == '__main__':
 
     loop.add_tag(tags)
 
-    #TODO need tool to set ionisation correctly
-    for index, ((chain_code,sequence_code),residue_name) in enumerate(sorted(sequence.items())):
-
-        linking = get_linking(index,sequence)
+    # TODO need tool to set ionisation correctly
+    for index, ((chain_code, sequence_code), residue_name) in enumerate(sorted(sequence.items())):
+        linking = get_linking(index, sequence)
 
         loop.add_data_by_tag('index', index + 1)
-        loop.add_data_by_tag('chain_code', args.chain_code)
+        loop.add_data_by_tag('chain_code', chain)
         loop.add_data_by_tag('sequence_code', sequence_code)
         loop.add_data_by_tag('residue_name', residue_name.upper())
         loop.add_data_by_tag('linking', linking)
         loop.add_data_by_tag('residue_variant', UNUSED)
         loop.add_data_by_tag('cis_peptide', UNUSED)
+
+    return entry
+
+if __name__ == '__main__':
+
+    parser = create_parser()
+    args = parser.parse_args()
+
+    file_name = args.file_names[0]
+    with open(file_name, 'r') as lines:
+        sequence = read_sequence(lines=lines, chain_code=args.chain_code)
+
+    entry = sequence_to_nef(sequence)
 
     print(entry)
 
