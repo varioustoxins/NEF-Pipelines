@@ -99,12 +99,11 @@ if __name__ == '__main__':
     frame.add_tag("sf_category", category)
     frame.add_tag("sf_framecode", frame_code)
 
-    loop = Loop.from_scratch()
+    loop = Loop.from_scratch('nef_sequence')
     frame.add_loop(loop)
 
     tags = ('index', 'chain_code', 'sequence_code', 'residue_name', 'linking', 'residue_variant', 'cis_peptide')
 
-    loop.set_category(category)
     loop.add_tag(tags)
 
     #TODO need tool to set ionisation correctly
