@@ -19,7 +19,7 @@ def create_parser():
                         help='chain code [default= %(default)s]', metavar='<CHAIN-CODE>')
     result.add_argument('--no-chain-end', type=bool, dest='no_chain_start', default=True,
                         help='don\'t include a start of chain link type for the first residue')
-    result.add_argument('--no-end', type=bool, dest='no_chain_end', default=True,
+    result.add_argument('--no-chain_start', type=bool, dest='no_chain_end', default=True,
                         help='don\'t include a start of chain link type for the last residue')
     result.add_argument('--entry_name', type=str, default='nmrview', dest='entry_name',
                         help='a name for the entry [default: %(default)s)]')
@@ -31,7 +31,7 @@ def create_parser():
     return result
 
 
-def get_linking(target_index, target_sequence, no_start=False, no_end=False):
+def _get_linking(target_index, target_sequence, no_start=False, no_end=False):
 
     result = 'middle'
     if target_index == 0 and not no_start:
@@ -78,18 +78,15 @@ def read_sequence(sequence_lines, chain_code='A', sequence_file_name='unknown'):
     return result
 
 
-def sequence_to_nef(input_sequence, input_args):
+def sequence_to_nef_frame(input_sequence, input_args):
     chain = input_args.chain_code
-
-    entry_name = input_args.entry_name.replace(' ', '_')
-    nef_entry = Entry.from_scratch(entry_name)
 
     category = "nef_molecular_system"
 
-    frame_code = f'{category}_{entry_name}'
+    frame_code = f'{category}_{input_args.entry_name}'
 
     nef_frame = Saveframe.from_scratch(frame_code, category)
-    nef_entry.add_saveframe(nef_frame)
+
     nef_frame.add_tag("sf_category", category)
     nef_frame.add_tag("sf_framecode", frame_code)
 
@@ -102,7 +99,7 @@ def sequence_to_nef(input_sequence, input_args):
 
     # TODO need tool to set ionisation correctly
     for index, ((chain_code, sequence_code), residue_name) in enumerate(sorted(input_sequence.items())):
-        linking = get_linking(index, sequence)
+        linking = _get_linking(index, input_sequence)
 
         nef_loop.add_data_by_tag('index', index + 1)
         nef_loop.add_data_by_tag('chain_code', chain)
@@ -112,7 +109,29 @@ def sequence_to_nef(input_sequence, input_args):
         nef_loop.add_data_by_tag('residue_variant', NEF_UNKNOWN)
         nef_loop.add_data_by_tag('cis_peptide', NEF_UNKNOWN)
 
-    return entry
+    return nef_frame
+
+
+def _process_sequence(input_lines, input_args):
+
+    sequence = read_sequence(input_lines, chain_code=input_args.chain_code)
+
+    frames = sequence_to_nef_frame(sequence, input_args)
+
+    return frames
+
+
+def _process_stream_and_add_frames(frames, input_args):
+
+    stream = get_pipe_file(input_args)
+    new_entry = Entry.from_file(stream) if stream else Entry.from_scratch(input_args.entry_name)
+
+    fixup_metadata(new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
+
+    for frame in frames:
+        new_entry.add_saveframe(frame)
+
+    return new_entry
 
 
 if __name__ == '__main__':
@@ -120,18 +139,11 @@ if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
 
-    file_name = args.file_names[0]
-    with open(file_name, 'r') as lines:
-        sequence = read_sequence(lines, chain_code=args.chain_code)
+    nmrview_frames = []
+    for file_name in args.file_names:
+        with open(file_name, 'r') as lines:
+            nmrview_frames.append(_process_sequence(lines, args))
 
-    entry = sequence_to_nef(sequence, args)
+    entry = _process_stream_and_add_frames(nmrview_frames, args)
 
-    stream = get_pipe_file(args)
-    pipe_entry = Entry.from_file(stream) if stream else Entry.from_scratch(args.entry_name)
-    fixup_metadata(pipe_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
-
-
-    for frame in entry.frame_list:
-        pipe_entry.add_saveframe(frame)
-
-    print(pipe_entry)
+    print(entry)
