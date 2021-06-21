@@ -1,34 +1,38 @@
+from typing import Iterable, List
+from lib.typer_utils import get_args
 
 from pathlib import Path
 
-from argparse import ArgumentParser
-
 from pynmrstar import Entry, Saveframe, Loop
 
+from lib.Structures import SequenceResidue
 from lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
 from lib.util import fixup_metadata, get_pipe_file, script_name, exit_error
 
 from lib.constants import NEF_UNKNOWN
 
+import typer
+
+app = typer.Typer()
 
 
-def create_parser():
+# noinspection PyUnusedLocal
+@app.command()
+def sequence(
+    chain_code: str = typer.Option('A', '--chain', help='chain code', metavar='<CHAIN-CODE>'),
+    no_chain_start: bool = typer.Option(False, '--no-chain-start/',
+                                        help="don't include a start of chain link type for the first residue"),
+    no_chain_end: bool = typer.Option(False, '--no-chain-end/',
+                                      help="don't include an end of chain link type for the last residue"),
+    entry_name: str = typer.Option('nmrview', help='a name for the entry'),
+    pipe: Path = typer.Option(None, metavar='|PIPE|',
+                              help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
+    file_names: List[Path] = typer.Argument(..., help='input files of type nmrview.seq', metavar='<SEQ-FILE>')
+):
+    """convert NMRVIEW.seq files to NEF"""
+    args = get_args()
 
-    result = ArgumentParser(description='convert NMRVIEW file to NEF')
-    result.add_argument('--chain', type=str, dest='chain_code', default='A',
-                        help='chain code [default= %(default)s]', metavar='<CHAIN-CODE>')
-    result.add_argument('--no-chain-end', type=bool, dest='no_chain_start', default=True,
-                        help='don\'t include a start of chain link type for the first residue')
-    result.add_argument('--no-chain_start', type=bool, dest='no_chain_end', default=True,
-                        help='don\'t include a start of chain link type for the last residue')
-    result.add_argument('--entry_name', type=str, default='nmrview', dest='entry_name',
-                        help='a name for the entry [default: %(default)s)]')
-    result.add_argument(action="store", type=str, nargs=1, dest='file_names',
-                        help="input file", metavar='<FILE>', )
-    result.add_argument('--pipe', type=Path, dest='pipe', metavar='|PIPE|',
-                        help='pipe to read NEF data from, for testing overrides stdin !use stdin!')
-
-    return result
+    process_sequences(args)
 
 
 def _get_linking(target_index, target_sequence, no_start=False, no_end=False):
@@ -41,10 +45,11 @@ def _get_linking(target_index, target_sequence, no_start=False, no_end=False):
     return result
 
 
-def read_sequence(sequence_lines, chain_code='A', sequence_file_name='unknown'):
+def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence_file_name: str = 'unknown') \
+                  -> List[SequenceResidue]:
 
     start_residue = 1
-    result = {}
+    result = []
     for i, line in enumerate(sequence_lines):
         line = line.strip()
         fields = line.split()
@@ -73,13 +78,12 @@ def read_sequence(sequence_lines, chain_code='A', sequence_file_name='unknown'):
                 exit_error(msg)
 
         if len(fields) > 0:
-            result[chain_code, start_residue + i] = fields[0]
+            result.append(SequenceResidue(chain_code, start_residue + i, fields[0]))
 
     return result
 
 
 def sequence_to_nef_frame(input_sequence, input_args):
-    chain = input_args.chain_code
 
     category = "nef_molecular_system"
 
@@ -98,13 +102,13 @@ def sequence_to_nef_frame(input_sequence, input_args):
     nef_loop.add_tag(tags)
 
     # TODO need tool to set ionisation correctly
-    for index, ((chain_code, sequence_code), residue_name) in enumerate(sorted(input_sequence.items())):
+    for index, sequence_residue in enumerate(input_sequence):
         linking = _get_linking(index, input_sequence)
 
         nef_loop.add_data_by_tag('index', index + 1)
-        nef_loop.add_data_by_tag('chain_code', chain)
-        nef_loop.add_data_by_tag('sequence_code', sequence_code)
-        nef_loop.add_data_by_tag('residue_name', residue_name.upper())
+        nef_loop.add_data_by_tag('chain_code', sequence_residue.chain)
+        nef_loop.add_data_by_tag('sequence_code', sequence_residue.residue_number)
+        nef_loop.add_data_by_tag('residue_name', sequence_residue.residue_name.upper())
         nef_loop.add_data_by_tag('linking', linking)
         nef_loop.add_data_by_tag('residue_variant', NEF_UNKNOWN)
         nef_loop.add_data_by_tag('cis_peptide', NEF_UNKNOWN)
@@ -114,9 +118,9 @@ def sequence_to_nef_frame(input_sequence, input_args):
 
 def _process_sequence(input_lines, input_args):
 
-    sequence = read_sequence(input_lines, chain_code=input_args.chain_code)
+    nmrview_sequence = read_sequence(input_lines, chain_code=input_args.chain_code)
 
-    frames = sequence_to_nef_frame(sequence, input_args)
+    frames = sequence_to_nef_frame(nmrview_sequence, input_args)
 
     return frames
 
@@ -134,11 +138,7 @@ def _process_stream_and_add_frames(frames, input_args):
     return new_entry
 
 
-if __name__ == '__main__':
-
-    parser = create_parser()
-    args = parser.parse_args()
-
+def process_sequences(args):
     nmrview_frames = []
     for file_name in args.file_names:
         with open(file_name, 'r') as lines:
@@ -147,3 +147,8 @@ if __name__ == '__main__':
     entry = _process_stream_and_add_frames(nmrview_frames, args)
 
     print(entry)
+
+
+if __name__ == '__main__':
+
+    typer.run(sequence)
