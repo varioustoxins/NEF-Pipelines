@@ -1,10 +1,26 @@
+
+import nef_app
 from random import randint
 
-from argparse import ArgumentParser
 from datetime import datetime
 from pynmrstar import Entry, Saveframe, Loop
 
 from lib.constants import NEF_PIPELINES_VERSION, NEF_VERSION, NEF_PIPELINES
+import typer
+
+from lib.typer_utils import get_args
+
+@nef_app.app.command()
+def header(
+        name: str = typer.Argument('nef', help='name for the entry', metavar='<ENTRY-NAME>')
+):
+    """-  add a header to the stream"""
+    pass
+    args = get_args()
+
+    entry = build_meta_data(args)
+
+    print(entry)
 
 
 def get_creation_time():
@@ -41,16 +57,7 @@ def create_header_frame(program_name, program_version, script_name):
     return frame
 
 
-def create_parser():
-
-    parser = ArgumentParser(description='create a nef file header')
-    parser.add_argument('--name', type=str, dest='name', default='new',
-                        help='name for the entry', metavar='<ENTRY-NAME>')
-
-    return parser
-
-
-def main(args):
+def build_meta_data(args):
     from lib.util import script_name
     result = Entry.from_scratch(args.name)
     header_frame = create_header_frame(NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
@@ -60,10 +67,5 @@ def main(args):
 
 
 if __name__ == '__main__':
+    typer.run(header)
 
-    command_parser = create_parser()
-    command_line_args = command_parser.parse_args()
-
-    entry = main(command_line_args)
-
-    print(entry)
