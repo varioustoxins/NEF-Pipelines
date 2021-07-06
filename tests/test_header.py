@@ -17,14 +17,17 @@ def header_app():
     if not nef_app.app:
         nef_app.app = typer.Typer()
 
-        # register the module under test
-        import tools.header
-
     return nef_app.app
+
+@pytest.fixture
+def using_header():
+    # register the module under test
+    import tools.header
 
 @pytest.fixture
 def seed_42():
     seed(42)
+
 
 EXPECTED_TEMPLATE = '''
     data_%(name)s
@@ -64,8 +67,9 @@ def check_lines_match(expected, result):
         assert expected_line == header_line
 
 
+# noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_default_header(header_app, seed_42):
+def test_nef_default_header(header_app, using_header, seed_42):
 
     result = runner.invoke(header_app)
     assert result.exit_code == 0
@@ -73,8 +77,9 @@ def test_nef_default_header(header_app, seed_42):
     check_lines_match(get_expected('nef'), result)
 
 
+# noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_named_header(header_app, seed_42):
+def test_nef_named_header(header_app, using_header, seed_42):
 
     result = runner.invoke(header_app, ['test'])
     assert result.exit_code == 0
