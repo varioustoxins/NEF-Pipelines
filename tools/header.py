@@ -1,21 +1,20 @@
-
-import nef_app
+from argparse import Namespace
 from random import randint
+import typer
+import nef_app
 
 from datetime import datetime
 from pynmrstar import Entry, Saveframe, Loop
 
 from lib.constants import NEF_PIPELINES_VERSION, NEF_VERSION, NEF_PIPELINES
-import typer
-
 from lib.typer_utils import get_args
 
+# noinspection PyUnusedLocal
 @nef_app.app.command()
 def header(
         name: str = typer.Argument('nef', help='name for the entry', metavar='<ENTRY-NAME>')
 ):
     """-  add a header to the stream"""
-    pass
     args = get_args()
 
     entry = build_meta_data(args)
