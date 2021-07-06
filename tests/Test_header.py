@@ -1,27 +1,33 @@
-from io import StringIO
+
 from itertools import zip_longest
 from textwrap import dedent
-import pytest
-
-from freezegun import freeze_time
-from argparse import Namespace
 from random import seed
 
+import pytest
+from freezegun import freeze_time
+from typer.testing import CliRunner
+
+runner = CliRunner()
+
 @pytest.fixture
-def app():
-    import nef_app
-
+def header_app():
     import typer
-    app = typer.Typer()
-    nef_app.app = app
 
+    import nef_app
+    if not nef_app.app:
+        nef_app.app = typer.Typer()
 
-@freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_header(app, capsys):
-    from tools import header
+        # register the module under test
+        import tools.header
 
-    expected = '''
-    data_test
+    return nef_app.app
+
+@pytest.fixture
+def seed_42():
+    seed(42)
+
+EXPECTED_TEMPLATE = '''
+    data_%(name)s
 
     save_nef_nmr_meta_data
        _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
@@ -45,16 +51,36 @@ def test_nef_header(app, capsys):
 
     save_'''
 
-    seed(42)
+
+def get_expected(name):
+    expected = EXPECTED_TEMPLATE % {'name': name}
     expected = dedent('\n'.join(expected.split('\n')[1:]))
-    header.header(name='test')
-    test_header_entry, _ = capsys.readouterr()
+    return expected
 
-    zip_lines = zip_longest(expected.split('\n'), test_header_entry.split('\n'), fillvalue='')
 
+def check_lines_match(expected, result):
+    zip_lines = zip_longest(expected.split('\n'), result.stdout.split('\n'), fillvalue='')
     for expected_line, header_line in zip_lines:
         assert expected_line == header_line
 
 
+@freeze_time("2012-01-14 12:00:01.123456")
+def test_nef_default_header(header_app, seed_42):
+
+    result = runner.invoke(header_app)
+    assert result.exit_code == 0
+
+    check_lines_match(get_expected('nef'), result)
+
+
+@freeze_time("2012-01-14 12:00:01.123456")
+def test_nef_named_header(header_app, seed_42):
+
+    result = runner.invoke(header_app, ['test'])
+    assert result.exit_code == 0
+
+    check_lines_match(get_expected('test'), result)
+
+
 if __name__ == '__main__':
-    pytest.main([__file__])
+    pytest.main([__file__, '-vv'])

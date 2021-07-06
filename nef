@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import nef_app
+import typer
+nef_app.app = typer.Typer()
+
 
 # import components which will self register, this could and will be automated
 import importers.nmrview.nmrview
