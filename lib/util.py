@@ -87,7 +87,7 @@ def get_pipe_file(args):
             result = open(args.pipe, 'r')
         except IOError as e:
             exit_error(f"couldn't open stream {args.pipe.name} because {e}")
-    elif sys.stdin.isatty():
+    elif not sys.stdin.isatty():
         result = sys.stdin
 
     return result
