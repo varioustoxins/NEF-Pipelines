@@ -1,3 +1,6 @@
 
 # the root of the type app hierarchy
-app = None
+
+import typer
+app = typer.Typer()
+app = app
