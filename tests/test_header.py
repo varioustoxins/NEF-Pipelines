@@ -5,6 +5,8 @@ import pytest
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
+from lib.test_lib import assert_lines_match
+
 runner = CliRunner()
 
 @pytest.fixture
@@ -45,12 +47,6 @@ def get_expected(name):
     return expected
 
 
-def check_lines_match(expected, result):
-    zip_lines = zip_longest(expected.split('\n'), result.stdout.split('\n'), fillvalue='')
-    for expected_line, header_line in zip_lines:
-        assert expected_line == header_line
-
-
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_nef_default_header(typer_app, using_header, fixed_seed):
@@ -58,7 +54,7 @@ def test_nef_default_header(typer_app, using_header, fixed_seed):
     result = runner.invoke(typer_app, ['header'])
     assert result.exit_code == 0
 
-    check_lines_match(get_expected('nef'), result)
+    assert_lines_match(get_expected('nef'), result.stdout)
 
 
 # noinspection PyUnusedLocal
@@ -68,7 +64,7 @@ def test_nef_named_header(typer_app, using_header, fixed_seed):
     result = runner.invoke(typer_app, ['header', 'test'])
     assert result.exit_code == 0
 
-    check_lines_match(get_expected('test'), result)
+    assert_lines_match(get_expected('test'), result.stdout)
 
 
 if __name__ == '__main__':
