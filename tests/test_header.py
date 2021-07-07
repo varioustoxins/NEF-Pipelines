@@ -17,6 +17,10 @@ def header_app():
     if not nef_app.app:
         nef_app.app = typer.Typer()
 
+        # if only one command is registered it is ignored on the command line...
+        dummy_app = typer.Typer()
+        nef_app.app.add_typer(dummy_app, name='dummy')
+
     return nef_app.app
 
 @pytest.fixture
@@ -71,7 +75,7 @@ def check_lines_match(expected, result):
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_nef_default_header(header_app, using_header, seed_42):
 
-    result = runner.invoke(header_app)
+    result = runner.invoke(header_app, ['header'])
     assert result.exit_code == 0
 
     check_lines_match(get_expected('nef'), result)
@@ -81,7 +85,7 @@ def test_nef_default_header(header_app, using_header, seed_42):
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_nef_named_header(header_app, using_header, seed_42):
 
-    result = runner.invoke(header_app, ['test'])
+    result = runner.invoke(header_app, ['header', 'test'])
     assert result.exit_code == 0
 
     check_lines_match(get_expected('test'), result)
