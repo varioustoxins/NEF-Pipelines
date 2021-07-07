@@ -29,7 +29,7 @@ def using_header():
     import tools.header
 
 @pytest.fixture
-def seed_42():
+def fixed_seed():
     seed(42)
 
 
@@ -73,7 +73,7 @@ def check_lines_match(expected, result):
 
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_default_header(header_app, using_header, seed_42):
+def test_nef_default_header(header_app, using_header, fixed_seed):
 
     result = runner.invoke(header_app, ['header'])
     assert result.exit_code == 0
@@ -83,7 +83,7 @@ def test_nef_default_header(header_app, using_header, seed_42):
 
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_named_header(header_app, using_header, seed_42):
+def test_nef_named_header(header_app, using_header, fixed_seed):
 
     result = runner.invoke(header_app, ['header', 'test'])
     assert result.exit_code == 0
