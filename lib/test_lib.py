@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from pathlib import Path
 from typing import Optional
 
 from pynmrstar import Entry
@@ -43,3 +44,35 @@ def isolate_frame(target: Entry, name: str) -> Optional[str]:
         pass
 
     return entry
+
+
+def path_in_parent_directory(root: str, target: str) -> str:
+    """
+    given a root and a relative path find the relative file path
+
+    Args:
+        root (str): root of the path
+        target (str): the relative path from the root
+
+    Returns:
+        str: the target paths as a string
+    """
+    parent_path = Path(root).parent
+    return str(Path(parent_path, target).absolute())
+
+
+def path_in_test_data(root: str, file_name: str) -> str:
+    """
+    given a root and a file name find the relative to the file
+    in the parents test_data directory
+
+    Args:
+        root (str): root of the path
+        file_name (str): the name of the file
+
+    Returns:
+        str: the target paths as a string
+    """
+
+    test_data = path_in_parent_directory(root, 'test_data')
+    return str(Path(test_data, file_name).absolute())

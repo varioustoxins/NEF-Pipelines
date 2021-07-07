@@ -4,11 +4,10 @@ import lib
 import pytest
 
 from typer.testing import CliRunner
-from lib.test_lib import assert_lines_match, isolate_frame
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
 MOLECULAR_SYSTEM_NMRVIEW = 'nef_molecular_system_nmrview'
 NMRVIEW_IMPORT_SEQUENCE = ['nmrview', 'import', 'sequence']
-TEST_DATA = 'test_data'
 
 runner = CliRunner()
 
@@ -68,7 +67,8 @@ save_'''
 def test_3aa(typer_app, using_nmrview, monkeypatch):
 
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
-    path = str(Path(TEST_DATA,'3aa.seq'))
+    path = path_in_test_data(__file__, '3aa.seq')
+    print('path', path)
     result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
     assert result.exit_code == 0
 
@@ -81,7 +81,7 @@ def test_3aa(typer_app, using_nmrview, monkeypatch):
 def test_3aa10(typer_app, using_nmrview, monkeypatch):
 
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
-    path = str(Path(TEST_DATA,'3aa10.seq'))
+    path = path_in_test_data(__file__, '3aa10.seq')
     result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
     assert result.exit_code == 0
 
