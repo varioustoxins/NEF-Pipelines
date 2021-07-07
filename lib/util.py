@@ -1,9 +1,11 @@
 import sys
+from argparse import Namespace
+
 from icecream import ic
 
 from pathlib import Path
 
-from typing import Dict
+from typing import Dict, TextIO, Optional, List
 
 from pynmrstar import Loop, Saveframe, Entry
 
@@ -12,7 +14,7 @@ from tools.header import get_creation_time, get_uuid, create_header_frame
 
 
 
-def get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
+def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
 
     result = None
     if f'_{category}' in frame.loop_dict.keys():
@@ -31,11 +33,22 @@ def loop_add_data_tag_dict(loop: Loop, data: Dict[str, object]) -> None:
             tagged_data.append(NEF_UNKNOWN)
 
     loop.add_data(tagged_data)
-    ic(tagged_data)
-    ic(loop)
 
 
+# TODO: there is no space for scrript arguments!
 def fixup_metadata(entry: Entry, name: str, version: str, script: str):
+    """
+    add a new entry to a nef metadata frame
+
+    Args:
+        entry (Entry): the target entry
+        name (str): the name of the program used
+        version (str): the vserion of the program used
+        script (str): the script used
+
+    Returns:
+        Entry: the modified entry
+    """
 
     if entry is not None and NEF_META_DATA in entry.category_list:
         meta_frame = entry[NEF_META_DATA]
@@ -53,7 +66,7 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
         meta_frame.add_tag('uuid', uuid, update=True)
 
 
-        run_history_loop = get_loop_by_category_or_none(meta_frame, 'nef_run_history')
+        run_history_loop = _get_loop_by_category_or_none(meta_frame, 'nef_run_history')
         if run_history_loop is not None:
             if run_history_loop.get_tag('run_number'):
                 run_number_tags = run_history_loop.get_tag('run_number')
@@ -79,7 +92,17 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
         entry.add_saveframe(header)
 
 
-def get_pipe_file(args):
+def get_pipe_file(args: Namespace) -> Optional[TextIO]:
+    """
+    get an input on stdin or from an argument called pipe
+
+    Args:
+        args (Namespace): command lien argumen ts
+
+    Returns:
+        TextIO: an input stream or None
+
+    """
 
     result = None
     if args.pipe:
@@ -93,18 +116,44 @@ def get_pipe_file(args):
     return result
 
 
-def script_name(file):
+def script_name(file: str) -> Path:
+    """
+    get the name of the script
+
+    Args:
+        file (str): the name of the file
+
+    Returns:
+        Path: path to the file
+    """
     return Path(file).name
 
 
 def exit_error(msg):
+    """
+    print an error message and exit error
+
+    Args:
+        msg: the message
+    """
 
     print(f'ERROR: {msg}', file=sys.stderr)
     print(' exiting...', file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
 
-def process_stream_and_add_frames(frames, input_args):
+def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace) -> Entry:
+    '''
+    take a set of save frames and either add them to a stream from stdin / a pipe-file or create
+    a new stream with a proper NEF metadata header
+
+    Args:
+        frames: a set of save frames
+        input_args: command line arguments for an entry_name and pipe file source
+
+    Returns:
+        a new entry containg the frames
+    '''
 
     stream = get_pipe_file(input_args)
 
