@@ -6,7 +6,7 @@ nef_app.app = typer.Typer()
 
 
 # import components which will self register, this could and will be automated
-import importers.nmrview.nmrview
+import transcoders.nmrview
 import tools.header
 
 if __name__ == "__main__":
