@@ -1,7 +1,5 @@
 
-from itertools import zip_longest
 from textwrap import dedent
-from random import seed
 
 import pytest
 from freezegun import freeze_time
@@ -10,27 +8,9 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 @pytest.fixture
-def header_app():
-    import typer
-
-    import nef_app
-    if not nef_app.app:
-        nef_app.app = typer.Typer()
-
-        # if only one command is registered it is ignored on the command line...
-        dummy_app = typer.Typer()
-        nef_app.app.add_typer(dummy_app, name='dummy')
-
-    return nef_app.app
-
-@pytest.fixture
 def using_header():
     # register the module under test
     import tools.header
-
-@pytest.fixture
-def fixed_seed():
-    seed(42)
 
 
 EXPECTED_TEMPLATE = '''
@@ -73,9 +53,9 @@ def check_lines_match(expected, result):
 
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_default_header(header_app, using_header, fixed_seed):
+def test_nef_default_header(typer_app, using_header, fixed_seed):
 
-    result = runner.invoke(header_app, ['header'])
+    result = runner.invoke(typer_app, ['header'])
     assert result.exit_code == 0
 
     check_lines_match(get_expected('nef'), result)
@@ -83,9 +63,9 @@ def test_nef_default_header(header_app, using_header, fixed_seed):
 
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
-def test_nef_named_header(header_app, using_header, fixed_seed):
+def test_nef_named_header(typer_app, using_header, fixed_seed):
 
-    result = runner.invoke(header_app, ['header', 'test'])
+    result = runner.invoke(typer_app, ['header', 'test'])
     assert result.exit_code == 0
 
     check_lines_match(get_expected('test'), result)
