@@ -143,7 +143,7 @@ def exit_error(msg):
 
 
 def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace) -> Entry:
-    '''
+    """
     take a set of save frames and either add them to a stream from stdin / a pipe-file or create
     a new stream with a proper NEF metadata header
 
@@ -152,8 +152,8 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
         input_args: command line arguments for an entry_name and pipe file source
 
     Returns:
-        a new entry containg the frames
-    '''
+        a new entry containing the frames
+    """
 
     stream = get_pipe_file(input_args)
 
