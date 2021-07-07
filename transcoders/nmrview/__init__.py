@@ -1,6 +1,5 @@
-
 import typer
-import  nef_app
+import nef_app
 app = typer.Typer()
 import_app = typer.Typer()
 export_app = typer.Typer()
@@ -11,9 +10,4 @@ app.add_typer(import_app, name='import', help='-  import nmrview [peaks, sequenc
 app.add_typer(export_app, name='export', help='-  export nmrview [peaks, sequences & shifts]')
 
 # import of specific importers must be after app creation to avoid circular imports
-import importers.nmrview.nmrview_peaks
-import importers.nmrview.nmrview_sequences
-
-
-if __name__ == "__main__":
-    app()
+import transcoders.nmrview.importers.sequence
