@@ -102,3 +102,17 @@ def exit_error(msg):
     print(f'ERROR: {msg}', file=sys.stderr)
     print(' exiting...', file=sys.stderr)
     sys.exit(EXIT_ERROR)
+
+
+def process_stream_and_add_frames(frames, input_args):
+
+    stream = get_pipe_file(input_args)
+
+    new_entry = Entry.from_file(stream) if stream else Entry.from_scratch(input_args.entry_name)
+
+    fixup_metadata(new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
+
+    for frame in frames:
+        new_entry.add_saveframe(frame)
+
+    return new_entry
