@@ -26,7 +26,7 @@ def assert_lines_match(expected: str, reported: str,  display:bool=False):
         assert expected_line.strip() == header_line.strip()
 
 
-def isolate_frame(target: Entry, name: str) -> Optional[str]:
+def isolate_frame(target: str, name: str) -> Optional[str]:
     """
     Extract one frame from a NEF file by name as a sting
     Args:
@@ -38,7 +38,7 @@ def isolate_frame(target: Entry, name: str) -> Optional[str]:
     """
     entry = None
     try:
-        entry = Entry.from_string(target.stdout)
+        entry = Entry.from_string(target)
         entry = str(entry.get_saveframe_by_name(name))
     except:
         pass

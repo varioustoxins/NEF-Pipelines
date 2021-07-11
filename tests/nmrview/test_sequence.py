@@ -66,13 +66,14 @@ save_'''
 # noinspection PyUnusedLocal
 def test_3aa(typer_app, using_nmrview, monkeypatch):
 
+    # reading stdin doesn't work in pytest so for a clean header
+    #TODO move to conftest.py
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
     path = path_in_test_data(__file__, '3aa.seq')
-    print('path', path)
     result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
     assert result.exit_code == 0
 
-    result = isolate_frame(result, MOLECULAR_SYSTEM_NMRVIEW)
+    result = isolate_frame(result.stdout, MOLECULAR_SYSTEM_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA, result)
 
@@ -85,7 +86,7 @@ def test_3aa10(typer_app, using_nmrview, monkeypatch):
     result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
     assert result.exit_code == 0
 
-    result = isolate_frame(result, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA10, result)
 
