@@ -247,14 +247,28 @@ def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tu
         result[residue.chain, residue.residue_number] = residue.residue_name
     return result
 
-def import_(args):
 
+def _get_isotope_code_or_exit(axis, axis_codes):
+    if axis >= len(axis_codes):
+        msg = f"can't find isotope code for axis {axis + 1} got axis codes {','.join(axis_codes)}"
+        exit_error(msg)
+    axis_code = axis_codes[axis]
+    return axis_code
+
+
+def get_sequecne_or_exit(args):
     seq_file = args.sequence
     if not seq_file:
-        seq_file = find_seq_file_or_exit(args.file_names[0])
+        raise ('read from stdin')
+    else:
+        with open(seq_file, 'r') as lines:
+            sequence = read_sequence(lines, chain_code=args.chain_code)
+    return sequence
 
-    with open (seq_file,'r') as lines:
-        sequence = read_sequence(lines, chain_code=args.chain_code)
+
+def import_(args):
+
+    sequence = get_sequecne_or_exit(args)
 
     sequence = _sequence_to_residue_type_lookup(sequence)
 
@@ -399,4 +413,5 @@ def import_(args):
                 loop.add_data_by_tag(tag, constants.NEF_UNKNOWN)
 
     print(entry)
+
 
