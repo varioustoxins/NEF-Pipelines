@@ -31,7 +31,7 @@ def sequence(
                               help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
     file_names: List[Path] = typer.Argument(..., help='input files of type nmrview.seq', metavar='<SEQ-FILE>')
 ):
-    """convert nmrview sequence file <NMRVIEW_SEQUENCE>.seq files to NEF"""
+    """convert nmrview sequence file <nmrview>.seq files to NEF"""
     args = get_args()
 
     process_sequence(args)
