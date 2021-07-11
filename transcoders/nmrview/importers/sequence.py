@@ -7,7 +7,7 @@ from lib.typer_utils import get_args
 
 from pathlib import Path
 
-from lib.Structures import SequenceResidue
+from lib.structures import SequenceResidue
 from lib.util import exit_error, process_stream_and_add_frames
 
 

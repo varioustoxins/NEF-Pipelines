@@ -6,7 +6,7 @@ from pynmrstar import Entry, Saveframe, Loop
 
 import lib.constants
 from lib import constants
-from lib.Structures import SequenceResidue
+from lib.structures import SequenceResidue
 from lib.sequence_lib import sequence_to_nef_frame, chain_code_iter
 from lib.typer_utils import get_args
 

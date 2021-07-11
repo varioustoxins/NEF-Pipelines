@@ -3,7 +3,7 @@ from typing import List, Iterable
 
 from pynmrstar import Saveframe, Loop
 
-from lib.Structures import SequenceResidue
+from lib.structures import SequenceResidue
 from lib.constants import NEF_UNKNOWN
 
 
