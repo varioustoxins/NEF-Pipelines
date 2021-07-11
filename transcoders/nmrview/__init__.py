@@ -11,3 +11,4 @@ app.add_typer(export_app, name='export', help='-  export nmrview [peaks, sequenc
 
 # import of specific importers must be after app creation to avoid circular imports
 import transcoders.nmrview.importers.sequence
+import transcoders.nmrview.importers.peaks

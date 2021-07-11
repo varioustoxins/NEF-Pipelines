@@ -1,55 +1,68 @@
-# TODO: xplor names -> iupac and deal with %% and ## properly
-# TODO: add common experiment types
-# TODO: guess axis codes
-# TODO: add a chemical shift list reference
-# TODO: _nef_nmr_spectrum: value_first_point, folding, absolute_peak_positions, is_acquisition
-# TODO: cleanup
-# TODO: add function
-# TODO: remove ics
-# TODO: multiple assignments per peak... howto in nef
-# TODO: add libs pipeline
-# TODO axis codes need to be guessed
-# from sys import stdin
-# from os import isatty
-#
-# is_pipe = not isatty(stdin.fileno())
-from typing import List
 
-import itertools
-from collections import OrderedDict
-from dataclasses import dataclass
+from argparse import Namespace
+from typing import Iterable, List, Dict, Tuple
 
-import pyparsing
-from icecream import ic
+from pynmrstar import Entry, Saveframe, Loop
+
+import lib.constants
+from lib import constants
+from lib.Structures import SequenceResidue
+from lib.sequence_lib import sequence_to_nef_frame, chain_code_iter
+from lib.typer_utils import get_args
+
 from pathlib import Path
 
-from textwrap import dedent
+from ..nmrview_lib import AtomLabel,PeakAxis, PeakValues, PeakListData, PeakList
+from .sequence import read_sequence
 
-import string
-import sys
-
-from argparse import ArgumentParser
-
-from pynmrstar import Entry, Saveframe, Loop, definitions
+from lib.util import exit_error, process_stream_and_add_frames
 
 
-from importers.nmrview.nmrview import import_app
-definitions.STR_CONVERSION_DICT[''] = None
-
-from importers.xplor_viol_to_nef import collapse_names
-
-EXIT_ERROR = 1
-UNUSED = '.'
-
+from transcoders.nmrview import import_app
 import typer
+
 app = typer.Typer()
 
+# noinspection PyUnusedLocal
+@import_app.command(no_args_is_help=True)
+def peaks(
+        entry_name: str = typer.Option('nmrview', help='a name for the entry'),
+        chain_code: str = typer.Option('A', '--chain', help='chain code', metavar='<chain-code>'),
+        sequence: str = typer.Option(None, metavar='<nmrview>.seq)', help="seq file for the chain <seq-file>.seq"),
+        axis_codes: str = typer.Option('1H.15N', metavar='<axis-codes>',  help='a list of axis codes joined by dots'),
+        file_names: List[Path] = typer.Argument(...,help="input peak files", metavar='<peak-file.xpk>')
+):
+    """convert nmrview peak file <nmrview>.xpk files to NEF"""
+    args = get_args()
 
-def exit_error(msg):
+    import_(args)
 
-        print(f'ERROR: {dedent(msg)}')
-        print(' exiting...')
-        sys.exit(EXIT_ERROR)
+
+
+# # from sys import stdin
+# # from os import isatty
+# #
+# # is_pipe = not isatty(stdin.fileno())
+# from ..lib import AtomLabel, PeakAxis, PeakValues, PeakListData, PeakList
+#
+#
+import itertools
+from collections import OrderedDict
+#
+#
+import pyparsing
+# from icecream import ic
+# from pathlib import Path
+#
+# from textwrap import dedent
+#
+# import sys
+#
+# from pynmrstar import Entry, Saveframe, Loop, definitions
+#
+# from lib.util import exit_error
+#
+# definitions.STR_CONVERSION_DICT[''] = None
 
 
 def find_seq_file_or_exit(shift_file):
@@ -66,7 +79,7 @@ def find_seq_file_or_exit(shift_file):
         exit_error(msg)
     elif num_possible_seq_files != 1:
         file_names = '\n'.join(['# %s' % path.name for path in possible_seq_files])
-        msg = f'''# Found more than one possible sequence file 
+        msg = f'''# Found more than one possible sequence file
                   # in {str(directory)}
                   # choices are:
                   {file_names}
@@ -75,6 +88,7 @@ def find_seq_file_or_exit(shift_file):
 
 
     return possible_seq_files[0] if possible_seq_files else None
+
 
 def _get_tcl_parser():
 
@@ -98,79 +112,22 @@ def parse_tcl(in_str):
     return _get_tcl_parser().parseString(in_str)
 
 
-@dataclass
-class AtomLabel:
-    chain_code: str
-    sequence_code: int
-    residue_name: str
-    atom_name: str
-
-
-@dataclass
-class PeakAxis:
-    atom_labels: List[AtomLabel]
-    ppm: float
-    # width: float
-    # bound: float
-    merit: str
-    # j: float
-    # U: str
-
-
-@dataclass
-class PeakValues:
-    index: int
-    volume: float
-    intensity: float
-    status: bool
-    comment: str
-    # flag0: str
-
-
-@dataclass
-class PeakListData:
-    num_axis: int
-    axis_labels: List[str]
-    data_set: str
-    sweep_widths: List[float]
-    spectrometer_frequencies: List[float]
-
-
-@dataclass
-class PeakList:
-    peak_list_data: PeakListData
-    peaks: dict
-
-# noinspection PyUnusedLocal
-@import_app.command(no_args_is_help=True)
-def peaks(
-        entry_name: str = typer.Option('nmrview', help='a name for the entry'),
-        chain_code: str = typer.Option('A', '--chain', help='chain code', metavar='<chain-code>'),
-        sequence_file: str = typer.Option(..., metavar='<fiel-name>.seq)', help="seq file for the chain <seq-file>.seq"),
-        axis_codes: str = typer.Option('1H.15N', metavar='<axis-codes>',  help='a list of axis codes joined by dots'),
-        file_names: List[Path] = typer.Argument(...,help="input peak files", metavar='<peak-file.xpk>')
-):
-    """convert nmrview peak file <nmrview>.xpk files to NEF"""
-    args = get_args()
-    nmrview_peaks.import_(args)
-
 def read_peaks(lines, chain_code, sequence):
-    # ic(sequence)
-    # result = {}
+
     line = next(lines)
     headers = line.strip().split()
 
     header_items = ['label', 'dataset', 'sw', 'sf']
     if len(header_items) != 4:
         msg = f'''this doesn't look like an nmrview xpk file,
-                  i expected a header containing 4 items on the first line: {','.join(header_items)} 
+                  i expected a header containing 4 items on the first line: {','.join(header_items)}
                   i got {line} at line 1'''
         exit_error(msg)
 
     for name in header_items:
         if not name in headers:
             msg  = f'''this doesn't look like an nmrview xpk file,
-                       i expected a header containing the values: {', '.join(header_items)} 
+                       i expected a header containing the values: {', '.join(header_items)}
                        i got '{line}' at line 1'''
             exit_error(msg)
 
@@ -211,6 +168,7 @@ def read_peaks(lines, chain_code, sequence):
             heading_indices[peak_item] = raw_headings.index(peak_item)+1
     # ic(heading_indices)
     peaks = []
+    field = None
     for line_no, raw_line in enumerate(lines):
         if not len(raw_line.strip()):
             continue
@@ -227,11 +185,11 @@ def read_peaks(lines, chain_code, sequence):
                     header = f'{axis}.{axis_field}'
                     field_index = heading_indices[header]
                     value = line[field_index]
-                    # ic(field_index, header, line[field_index])
+
                     if axis_field == 'L':
                         label = value[0] if value else '?'
                         if label =='?':
-                            label = []
+
                             residue_number = None
                             atom_name = ''
                         else:
@@ -240,7 +198,7 @@ def read_peaks(lines, chain_code, sequence):
 
 
                         if residue_number:
-                            residue_type = sequence.setdefault((chain_code,residue_number),None)
+                            residue_type = sequence.setdefault((chain_code, residue_number), None)
                         else:
                             residue_type = ''
 
@@ -263,6 +221,7 @@ def read_peaks(lines, chain_code, sequence):
                 peak[axis_index] = PeakAxis(*axis_values)
 
             peak_values = []
+
             for field in ['vol','int','stat','comment','flag0']:
                 field_index = heading_indices[field]
                 value = line[field_index]
@@ -282,9 +241,10 @@ def read_peaks(lines, chain_code, sequence):
                     pass
 
             peak['values'] = PeakValues(peak_index, *peak_values)
-            ic(peak)
+
             peaks.append(peak)
         except Exception as e:
+            field = str(field) if field else 'unknown'
             msg = f"failed to parse file a line {line_no} with input: '{raw_line.strip()}' field: {field}  axis: {axis_field} exception: {e}"
             print(msg)
             raise e
@@ -315,15 +275,23 @@ def parse_float_list(line, line_no):
     return result
 
 
+def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str,int], SequenceResidue]:
+    result: Dict[Tuple[str,int], SequenceResidue] = {}
+    for residue in sequence:
+        result[residue.chain, residue.residue_number] = residue.residue_name
+    return result
+
 def import_(args):
 
-
-    seq_file = args.sequence_file
+    seq_file = args.sequence
     if not seq_file:
-        seq_file = find_seq_file_or_exit(args.file_name[0])
+        seq_file = find_seq_file_or_exit(args.file_names[0])
 
     with open (seq_file,'r') as lines:
         sequence = read_sequence(lines, chain_code=args.chain_code)
+
+    sequence = _sequence_to_residue_type_lookup(sequence)
+
 
     with open(args.file_names[0], 'r') as lines:
         peaks_list = read_peaks(lines, args.chain_code, sequence)
@@ -342,7 +310,7 @@ def import_(args):
     frame.add_tag("sf_category", category)
     frame.add_tag("sf_framecode", frame_code)
     frame.add_tag("num_dimensions", peaks_list.peak_list_data.num_axis)
-    frame.add_tag("chemical_shift_list", UNUSED)
+    frame.add_tag("chemical_shift_list", constants.NEF_UNKNOWN)
 
     loop = Loop.from_scratch(f'nef_spectrum_dimension')
     frame.add_loop(loop)
@@ -385,7 +353,7 @@ def import_(args):
             elif tag == 'absolute_peak_positions':
                 loop.add_data_by_tag(tag, 'true')
             else:
-                loop.add_data_by_tag(tag,UNUSED)
+                loop.add_data_by_tag(tag,lib.constants.NEF_UNKNOWN)
 
     loop = Loop.from_scratch('nef_spectrum_dimension_transfer')
     frame.add_loop(loop)
@@ -397,10 +365,6 @@ def import_(args):
     )
 
     loop.add_tag(transfer_dim_tags)
-
-    # for i in range(list_data.num_axis-1):
-    #     for tag in transfer_dim_tags:
-    #         loop.add_data_by_tag(tag, UNUSED)
 
     loop = Loop.from_scratch('nef_peak')
     frame.add_loop(loop)
@@ -466,7 +430,7 @@ def import_(args):
                 atom_name = atom_name if atom_name else '.'
                 loop.add_data_by_tag(tag, atom_name)
             else:
-                loop.add_data_by_tag(tag, UNUSED)
+                loop.add_data_by_tag(tag, constants.NEF_UNKNOWN)
 
     print(entry)
 
