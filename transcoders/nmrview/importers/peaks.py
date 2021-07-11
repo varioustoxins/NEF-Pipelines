@@ -21,6 +21,8 @@ from lib.util import exit_error, process_stream_and_add_frames
 from transcoders.nmrview import import_app
 import typer
 
+from ..nmrview_lib import parse_tcl, parse_float_list
+
 app = typer.Typer()
 
 # noinspection PyUnusedLocal
@@ -88,28 +90,6 @@ def find_seq_file_or_exit(shift_file):
 
 
     return possible_seq_files[0] if possible_seq_files else None
-
-
-def _get_tcl_parser():
-
-    string = pyparsing.CharsNotIn("{} \t\r\n")
-
-    group = pyparsing.Forward()
-    group <<= (
-            pyparsing.Group(pyparsing.Literal("{").suppress() +
-                            pyparsing.ZeroOrMore(group) +
-                            pyparsing.Literal("}").suppress()) |
-            string
-
-    )
-
-    toplevel = pyparsing.OneOrMore(group)
-
-    return toplevel
-
-
-def parse_tcl(in_str):
-    return _get_tcl_parser().parseString(in_str)
 
 
 def read_peaks(lines, chain_code, sequence):
@@ -259,20 +239,6 @@ def check_num_fields(fields, number, field_type, line, line_no):
         exit_error(msg)
 
 
-def parse_float_list(line, line_no):
-
-    raw_fields = [field[0] for field in parse_tcl(line)]
-
-    result = []
-    for field_index, field in enumerate(raw_fields):
-        try:
-            field = float(field)
-        except ValueError as e:
-            msg = f"Couldn't convert sweep width {field_index} [{field}] to float for line {line} at line number {line_no}"
-            exit_error(msg)
-        result.append(field)
-
-    return result
 
 
 def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str,int], SequenceResidue]:
