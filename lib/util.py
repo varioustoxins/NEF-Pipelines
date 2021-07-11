@@ -138,7 +138,7 @@ def exit_error(msg):
     """
 
     print(f'ERROR: {msg}', file=sys.stderr)
-    print(' exiting...', file=sys.stderr)
+    print(f'exiting...', file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
 

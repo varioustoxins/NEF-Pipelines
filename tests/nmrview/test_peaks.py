@@ -100,6 +100,23 @@ def test_3peaks(typer_app, using_nmrview, monkeypatch):
 
     assert_lines_match(EXPECTED_4AA, result)
 
+def test_3peaks_bad_axis_codes(typer_app, using_nmrview, monkeypatch):
+
+    # reading stdin doesn't work in pytest so for a clean header
+    #TODO move to conftest.py
+    monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
+    peaks_path = path_in_test_data(__file__, '4peaks.xpk')
+    sequence_path = path_in_test_data(__file__, '4peaks.seq')
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis-codes', '1H.15N', peaks_path])
+    assert result.exit_code == 1
+
+
+    EXPECTED = '''\
+    ERROR: can't find isotope code for axis 3 got axis codes 1H,15N
+    exiting...'''
+
+
+    assert_lines_match(EXPECTED, result.stdout)
 
 if __name__ == '__main__':
     pytest.main([__file__, '-vv'])
