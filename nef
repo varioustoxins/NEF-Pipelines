@@ -8,6 +8,7 @@ nef_app.app = typer.Typer()
 # import components which will self register, this could and will be automated
 import transcoders.nmrview
 import tools.header
+import tools.test
 
 if __name__ == "__main__":
     nef_app.app()
