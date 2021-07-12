@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import NamedTuple, List
 
-
-class SequenceResidue(NamedTuple):
+@dataclass
+class SequenceResidue:
     chain: str
     residue_number: int
     residue_name: str
