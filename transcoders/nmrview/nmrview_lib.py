@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import List
-
 from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore
 
 
@@ -16,7 +13,7 @@ def _process_emptys_and_singles(value):
 
     return value
 
-
+# TODO this should memoise the parser
 def get_tcl_parser():
     # TODO this should be printables  excluding : " {  }
     simple_word = Word(alphanums + '.#*?+-./_:')

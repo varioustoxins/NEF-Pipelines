@@ -17,7 +17,7 @@ def assert_lines_match(expected: str, reported: str,  display:bool=False):
         None
     """
     zip_lines = zip_longest(expected.split('\n'), reported.split('\n'), fillvalue='')
-    for i,(expected_line, header_line) in enumerate(zip_lines):
+    for i, (expected_line, header_line) in enumerate(zip_lines):
         if display:
             print(f'exp|{i}|',expected_line.strip())
             print(f'rep|{i}',header_line.strip())
