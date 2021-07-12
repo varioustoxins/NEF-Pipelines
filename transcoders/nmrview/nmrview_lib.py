@@ -1,25 +1,51 @@
 from dataclasses import dataclass
 from typing import List
 
+from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore
 
-import pyparsing
 
-def _get_tcl_parser():
+# TODO is this a hack if so how to do this
+def _process_emptys_and_singles(value):
 
-    string = pyparsing.CharsNotIn("{} \t\r\n")
+    for i, item in enumerate(value):
+        if len(item) == 0:
+            value[i] = ""
 
-    group = pyparsing.Forward()
-    group <<= (
-            pyparsing.Group(pyparsing.Literal("{").suppress() +
-                            pyparsing.ZeroOrMore(group) +
-                            pyparsing.Literal("}").suppress()) |
-            string
+    if len(value) == 1:
+        value = value[0]
 
-    )
+    return value
 
-    toplevel = pyparsing.OneOrMore(group)
 
-    return toplevel
+def get_tcl_parser():
+    simple_word = Word(alphanums + '.#*')
+    simple_word.setName('simple_word')
+
+    expression = Forward()
+    expression.setName('expression')
+
+    DBL_QUOTE = Suppress('"')
+    LEFT_PAREN = Suppress("{")
+    RIGHT_PAREN = Suppress("}")
+
+    quoted_simple_word = DBL_QUOTE + simple_word + DBL_QUOTE
+    quoted_simple_word.setName('quoted_simple_word')
+
+    quoted_complex_word = Group(DBL_QUOTE + ZeroOrMore(expression) + DBL_QUOTE)
+    quoted_complex_word.setName('quoted complex word')
+
+    complex_list = Group(LEFT_PAREN + ZeroOrMore(expression) + RIGHT_PAREN)
+    complex_list.setName('complex list')
+
+    expression << (simple_word | quoted_simple_word | quoted_complex_word | complex_list)
+
+    top_level = ZeroOrMore(expression)
+    top_level.setParseAction(_process_emptys_and_singles)
+    top_level.setName('phrase')
+
+    top_level.create_diagram('tcl_diag.html')
+
+    return top_level
 
 
 def parse_tcl(in_str):

@@ -2,54 +2,14 @@ import pytest
 
 from pyparsing import Word, alphanums, Suppress, ZeroOrMore, Group, Forward, alphas, nums
 
+from transcoders.nmrview import nmrview_lib
+
 DOUBLE_QUOTE = Suppress('"')
-
-# TODO is this a hack if so how to do this
-def process_emptys_and_singles(value):
-
-    for i, item in enumerate(value):
-        if len(item) == 0:
-            value[i] = ""
-
-    if len(value) == 1:
-        value = value[0]
-
-    return value
-
 
 @pytest.fixture
 def parser():
 
-    simple_word = Word(alphanums + '.#*')
-    simple_word.setName('simple_word')
-
-    expression = Forward()
-    expression.setName('expression')
-
-
-    DBL_QUOTE = Suppress('"')
-    LEFT_PAREN = Suppress("{")
-    RIGHT_PAREN = Suppress("}")
-
-    quoted_simple_word = DBL_QUOTE + simple_word + DBL_QUOTE
-    quoted_simple_word.setName('quoted_simple_word')
-
-    quoted_complex_word = Group(DBL_QUOTE + ZeroOrMore(expression) + DBL_QUOTE)
-    quoted_complex_word.setName('quoted complex word')
-
-    complex_list = Group(LEFT_PAREN + ZeroOrMore(expression) + RIGHT_PAREN)
-    complex_list.setName('complex list')
-
-    expression << (simple_word | quoted_simple_word | quoted_complex_word | complex_list)
-
-    phrase = ZeroOrMore(expression)
-    phrase.setParseAction(process_emptys_and_singles)
-    phrase.setName('phrase')
-
-    phrase.create_diagram('tcl_diag.html')
-
-    return phrase
-
+    return nmrview_lib.get_tcl_parser()
 
 def test_basic_word(parser):
     values = [
