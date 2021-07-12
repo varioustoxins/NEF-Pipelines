@@ -25,6 +25,7 @@ from ..nmrview_lib import parse_tcl, parse_float_list
 
 app = typer.Typer()
 
+
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def peaks(
@@ -32,12 +33,12 @@ def peaks(
         chain_code: str = typer.Option('A', '--chain', help='chain code', metavar='<chain-code>'),
         sequence: str = typer.Option(None, metavar='<nmrview>.seq)', help="seq file for the chain <seq-file>.seq"),
         axis_codes: str = typer.Option('1H.15N', metavar='<axis-codes>',  help='a list of axis codes joined by dots'),
-        file_names: List[Path] = typer.Argument(...,help="input peak files", metavar='<peak-file.xpk>')
+        file_names: List[Path] = typer.Argument(..., help="input peak files", metavar='<peak-file.xpk>')
 ):
     """convert nmrview peak file <nmrview>.xpk files to NEF"""
     args = get_args()
 
-    raw_sequence = get_sequecne_or_exit(args)
+    raw_sequence = get_sequence_or_exit(args)
     sequence = _sequence_to_residue_type_lookup(raw_sequence)
 
     frame = read_xpk_file(args, sequence)
@@ -127,6 +128,7 @@ def read_raw_peaks(lines, chain_code, sequence):
 def read_peak_data(lines, header_data, column_indices, chain_code, sequence):
     raw_peaks = []
     field = None
+    axis_index = None
     for line_no, raw_line in enumerate(lines):
         if not len(raw_line.strip()):
             continue
@@ -173,6 +175,7 @@ def read_header_data(lines, headers):
     sweep_widths = []
     spectrometer_frequencies = []
     num_axis = None
+    axis_labels = None
     for header_no, header_type in enumerate(headers):
         line = next(lines)
         if header_type == 'label':
@@ -209,7 +212,7 @@ def get_header_or_exit(lines):
 
 
     for name in header_items:
-        if not name in headers:
+        if name not in headers:
             msg = f'''this doesn't look like an nmrview xpk file,
                        i expected a header containing the values: {', '.join(header_items)}
                        i got '{line}' at line 1'''
@@ -283,8 +286,8 @@ def check_num_fields(fields, number, field_type, line, line_no):
         exit_error(msg)
 
 
-def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str,int], SequenceResidue]:
-    result: Dict[Tuple[str,int], SequenceResidue] = {}
+def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str, int], str]:
+    result: Dict[Tuple[str, int], str] = {}
     for residue in sequence:
         result[residue.chain, residue.residue_number] = residue.residue_name
     return result
@@ -298,10 +301,10 @@ def _get_isotope_code_or_exit(axis, axis_codes):
     return axis_code
 
 
-def get_sequecne_or_exit(args):
+def get_sequence_or_exit(args):
     seq_file = args.sequence
     if not seq_file:
-        raise ('read from stdin')
+        raise Exception('read from stdin')
     else:
         with open(seq_file, 'r') as lines:
             sequence = read_sequence(lines, chain_code=args.chain_code)
@@ -402,7 +405,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
             elif tag.split('_')[:2] == ['chain', 'code']:
                 index = int(tag.split('_')[-1]) - 1
                 chain_code = peak[index].atom_labels.chain_code
-                chain_code = chain_code if chain_code != None else args.chain_code
+                chain_code = chain_code if chain_code is not None else args.chain_code
                 chain_code = chain_code if chain_code else '.'
                 loop.add_data_by_tag(tag, chain_code)
             elif tag.split('_')[:2] == ['sequence', 'code']:
@@ -432,5 +435,3 @@ def make_peak_list_entry_name(peaks_list):
     entry_name = entry_name.removesuffix('.nv')
     entry_name = entry_name.replace('.', '_')
     return entry_name
-
-

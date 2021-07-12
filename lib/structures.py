@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import NamedTuple, List
+from typing import List, Optional, Union
+
 
 @dataclass
 class SequenceResidue:
@@ -7,10 +8,11 @@ class SequenceResidue:
     residue_number: int
     residue_name: str
 
+
 @dataclass
 class AtomLabel:
     chain_code: str
-    sequence_code: int
+    sequence_code: Optional[int]
     residue_name: str
     atom_name: str
 
@@ -49,4 +51,4 @@ class PeakListData:
 @dataclass
 class PeakList:
     peak_list_data: PeakListData
-    peaks: dict
+    peaks: list[dict[Union[int, str], Union[PeakAxis, PeakValues]]]
