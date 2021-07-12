@@ -18,7 +18,8 @@ def _process_emptys_and_singles(value):
 
 
 def get_tcl_parser():
-    simple_word = Word(alphanums + '.#*')
+    # TODO this should be printables  excluding : " {  }
+    simple_word = Word(alphanums + '.#*?+-./_:')
     simple_word.setName('simple_word')
 
     expression = Forward()
@@ -49,7 +50,7 @@ def get_tcl_parser():
 
 
 def parse_tcl(in_str):
-    return _get_tcl_parser().parseString(in_str)
+    return get_tcl_parser().parseString(in_str)
 
 
 def parse_float_list(line, line_no):
