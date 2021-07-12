@@ -20,7 +20,7 @@ def process_emptys_and_singles(value):
 @pytest.fixture
 def parser():
 
-    simple_word = Word(alphanums + '.')
+    simple_word = Word(alphanums + '.#*')
     simple_word.setName('simple_word')
 
     expression = Forward()
@@ -55,7 +55,8 @@ def test_basic_word(parser):
     values = [
         "123",
         "abc",
-        "123.abc"
+        "123.abc",
+        "123.abc#"
     ]
 
     for value in values:
