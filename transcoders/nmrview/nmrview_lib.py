@@ -2,6 +2,9 @@ from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore
 
 
 # TODO is this a hack if so how to do this
+from lib.util import exit_error
+
+
 def _process_emptys_and_singles(value):
 
     for i, item in enumerate(value):
