@@ -11,6 +11,11 @@ def parser():
 
     return nmrview_lib.get_tcl_parser()
 
+@pytest.fixture
+def parse_tcl():
+
+    return nmrview_lib.parse_tcl
+
 def test_basic_word(parser):
     values = [
         "123",
@@ -81,6 +86,22 @@ def test_complex_list(parser):
         parsed = parser.parseString(test)
 
         assert list(parsed.asList()) == expected
+
+
+def test_rest_of_line(parse_tcl, capsys):
+    test = '12{3'
+
+    with pytest.raises(SystemExit) as excinfo:
+        parse_tcl(test, file_name='Wibble.txt', line_no=666)
+
+    stderr = capsys.readouterr().err
+    assert "Expected end of text, found '{'" in stderr
+    assert "line: 666" in stderr
+    assert "file: Wibble.txt" in stderr
+
+
+
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-vv'])
