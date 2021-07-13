@@ -1,9 +1,11 @@
-from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore
+from textwrap import dedent
 
+from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore, ParseBaseException, ParseException, \
+    restOfLine
 
 # TODO is this a hack if so how to do this
 from lib.util import exit_error
-
+TCL_PARSER = None
 
 def _process_emptys_and_singles(value):
 
@@ -49,8 +51,30 @@ def get_tcl_parser():
     return top_level
 
 
-def parse_tcl(in_str):
-    return get_tcl_parser().parseString(in_str)
+def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
+    global TCL_PARSER
+    if not TCL_PARSER:
+        TCL_PARSER = get_tcl_parser()
+
+    result = None
+    try:
+        result = TCL_PARSER.parseString(in_str, parseAll=True)
+    except ParseException as pe:
+        msg = f"""\
+                    Failed while parsing tcl at line: {line_no} in file: {file_name}
+                  
+                    Explanation:
+                """
+                  
+
+
+        msg = dedent(msg)
+
+        msg += pe.explain_exception(pe)
+
+        exit_error(msg)
+
+    return result
 
 
 def parse_float_list(line, line_no):
