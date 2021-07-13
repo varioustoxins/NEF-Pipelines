@@ -42,9 +42,12 @@ def get_tcl_parser():
 
     expression << (simple_word | quoted_simple_word | quoted_complex_word | complex_list)
 
+    remainder = restOfLine()
+    remainder.setName('remainder')
+
     top_level = ZeroOrMore(expression)
     top_level.setParseAction(_process_emptys_and_singles)
-    top_level.setName('phrase')
+    top_level.setName('phrase') + restOfLine()
 
     top_level.create_diagram('tcl_diag.html')
 
