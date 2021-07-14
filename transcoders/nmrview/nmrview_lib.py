@@ -1,3 +1,4 @@
+import functools
 from textwrap import dedent
 
 from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore, ParseBaseException, ParseException, \
@@ -5,7 +6,7 @@ from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore, Par
 
 # TODO is this a hack if so how to do this
 from lib.util import exit_error
-TCL_PARSER = None
+
 
 def _process_emptys_and_singles(value):
 
@@ -18,7 +19,8 @@ def _process_emptys_and_singles(value):
 
     return value
 
-# TODO this should memoise the parser
+
+@functools.cache
 def get_tcl_parser():
     # TODO this should be printables  excluding : " {  }
     simple_word = Word(alphanums + '.#*?+-./_:')
@@ -55,13 +57,12 @@ def get_tcl_parser():
 
 
 def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
-    global TCL_PARSER
-    if not TCL_PARSER:
-        TCL_PARSER = get_tcl_parser()
+
+    parser = get_tcl_parser()
 
     result = None
     try:
-        result = TCL_PARSER.parseString(in_str, parseAll=True)
+        result = parser.parseString(in_str, parseAll=True)
     except ParseException as pe:
         msg = f"""\
                     Failed while parsing tcl at line: {line_no} in file: {file_name}
