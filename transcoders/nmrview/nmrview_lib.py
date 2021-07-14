@@ -1,8 +1,7 @@
 import functools
 from textwrap import dedent
 
-from pyparsing import Word, Forward, Suppress, alphanums, Group, ZeroOrMore, ParseBaseException, ParseException, \
-    restOfLine
+from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables
 
 # TODO is this a hack if so how to do this
 from lib.util import exit_error
@@ -23,7 +22,7 @@ def _process_emptys_and_singles(value):
 @functools.cache
 def get_tcl_parser():
     # TODO this should be printables  excluding : " {  }
-    simple_word = Word(alphanums + '.#*?+-./_:')
+    simple_word = Word(initChars=printables, excludeChars='"{}')
     simple_word.setName('simple_word')
 
     expression = Forward()
