@@ -1,10 +1,8 @@
 import pytest
 
-from pyparsing import Word, alphanums, Suppress, ZeroOrMore, Group, Forward, alphas, nums
-
 from transcoders.nmrview import nmrview_lib
 
-DOUBLE_QUOTE = Suppress('"')
+
 
 @pytest.fixture
 def parser():
