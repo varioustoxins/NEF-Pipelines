@@ -19,8 +19,8 @@ def assert_lines_match(expected: str, reported: str,  display:bool=False):
     zip_lines = zip_longest(expected.split('\n'), reported.split('\n'), fillvalue='')
     for i, (expected_line, header_line) in enumerate(zip_lines):
         if display:
-            print(f'exp|{i}|',expected_line.strip())
-            print(f'rep|{i}',header_line.strip())
+            print(f'exp|{i}|', expected_line.strip())
+            print(f'rep|{i}|', header_line.strip())
             print()
 
         assert expected_line.strip() == header_line.strip()
@@ -61,7 +61,23 @@ def path_in_parent_directory(root: str, target: str) -> str:
     return str(Path(parent_path, target).absolute())
 
 
-def path_in_test_data(root: str, file_name: str) -> str:
+def root_path(initial_path: str):
+    """ given a path wotk up the directory structure till you find the d
+        directory containg the nef executable
+
+        initial_path (str): the path to start searching from
+    """
+
+    target = Path(initial_path)
+
+    while not (target / 'nef').is_file():
+        target = target.parent
+
+    return target
+
+
+
+def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
     """
     given a root and a file name find the relative to the file
     in the parents test_data directory
@@ -69,10 +85,16 @@ def path_in_test_data(root: str, file_name: str) -> str:
     Args:
         root (str): root of the path
         file_name (str): the name of the file
+        local (bool): whether to use the directory of the tool
+        or read from the global test data
 
     Returns:
         str: the target paths as a string
     """
 
-    test_data = path_in_parent_directory(root, 'test_data')
+    if not local:
+        test_data = root_path(root) / 'test_data'
+    else:
+        test_data = path_in_parent_directory(root, 'test_data')
+
     return str(Path(test_data, file_name).absolute())

@@ -1,7 +1,7 @@
 import sys
 from argparse import Namespace
 
-from icecream import ic
+from cacheable_iter import iter_cache
 
 from pathlib import Path
 
@@ -92,27 +92,110 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
         entry.add_saveframe(header)
 
 
+import io
+
+# https://stackoverflow.com/questions/12593576/adapt-an-iterator-to-behave-like-a-file-like-object-in-python
+# second answer with more votes!
+
+
+class StringIteratorIO(io.TextIOBase):
+
+    def __init__(self, iter):
+        self._iter = iter
+        self._left = ''
+
+    def readable(self):
+        return True
+
+    def _read1(self, n=None):
+        while not self._left:
+            try:
+                self._left = next(self._iter)
+            except StopIteration:
+                break
+        ret = self._left[:n]
+        self._left = self._left[len(ret):]
+        return ret
+
+    def read(self, n=None):
+        l = []
+        if n is None or n < 0:
+            while True:
+                m = self._read1()
+                if not m:
+                    break
+                l.append(m)
+        else:
+            while n > 0:
+                m = self._read1(n)
+                if not m:
+                    break
+                n -= len(m)
+                l.append(m)
+        return ''.join(l)
+
+    def readline(self):
+        l = []
+        while True:
+            i = self._left.find('\n')
+            if i == -1:
+                l.append(self._left)
+                try:
+                    self._left = next(self._iter)
+                except StopIteration:
+                    self._left = ''
+                    break
+            else:
+                l.append(self._left[:i+1])
+                self._left = self._left[i+1:]
+                break
+        return ''.join(l)
+
+#https://stackoverflow.com/questions/6657820/how-to-convert-an-iterable-to-a-stream/20260030#20260030
+def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    """
+    Lets you use an iterable (e.g. a generator) that yields bytestrings as a read-only
+    input stream.
+
+    The stream implements Python 3's newer I/O API (available in Python 2's io module).
+    For efficiency, the stream is buffered.
+    """
+
+    return StringIteratorIO(iterable)
+
+
 def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     """
     get an input on stdin or from an argument called pipe
 
     Args:
-        args (Namespace): command lien argumen ts
+        args (Namespace): command line arguments
 
     Returns:
         TextIO: an input stream or None
 
     """
 
-    result = None
+    result = []
     if args.pipe:
-        try:
-            result = open(args.pipe, 'r')
-        except IOError as e:
-            exit_error(f"couldn't open stream {args.pipe.name} because {e}")
+        result = cached_file_stream(args.pipe)
     elif not sys.stdin.isatty():
-        result = sys.stdin
+        result = cached_stdin()
 
+    return StringIteratorIO(result)
+
+
+@iter_cache
+def cached_stdin():
+    return sys.stdin
+
+
+@iter_cache
+def cached_file_stream(file_name):
+    try:
+        result = open(file_name, 'r')
+    except IOError as e:
+        exit_error(f"couldn't open stream {file_name} because {e}")
     return result
 
 
@@ -155,7 +238,10 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
         a new entry containing the frames
     """
 
-    stream = get_pipe_file(input_args)
+    try:
+        stream = get_pipe_file(input_args)
+    except Exception as e:
+        exit_error(f'failed to load pipe file because {e}')
 
     new_entry = Entry.from_file(stream) if stream else Entry.from_scratch(input_args.entry_name)
 

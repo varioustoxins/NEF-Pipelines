@@ -1,12 +1,14 @@
-from pathlib import Path
 
-import lib
+
+from freezegun import freeze_time
+
 import pytest
 
 from typer.testing import CliRunner
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
 MOLECULAR_SYSTEM_NMRVIEW = 'nef_molecular_system_nmrview'
+METADATA_NMRVIEW ='nef_nmr_meta_data'
 NMRVIEW_IMPORT_SEQUENCE = ['nmrview', 'import', 'sequence']
 
 runner = CliRunner()
@@ -66,30 +68,93 @@ save_'''
 # noinspection PyUnusedLocal
 def test_3aa(typer_app, using_nmrview, monkeypatch):
 
-    # reading stdin doesn't work in pytest so for a clean header
-    #TODO move to conftest.py
-    monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
     path = path_in_test_data(__file__, '3aa.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
+
     assert result.exit_code == 0
 
-    result = isolate_frame(result.stdout, MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
-    assert_lines_match(EXPECTED_3AA, result)
-
+    assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
 # noinspection PyUnusedLocal
 def test_3aa10(typer_app, using_nmrview, monkeypatch):
 
-    monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
     path = path_in_test_data(__file__, '3aa10.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path])
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
+
     assert result.exit_code == 0
 
-    result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
-    assert_lines_match(EXPECTED_3AA10, result)
+    assert_lines_match(EXPECTED_3AA10, mol_sys_result)
+
+HEADER = open('test_data/test_header_entry.txt').read()
+
+EXPECTED_HEADER = '''\
+save_nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+   _nef_nmr_meta_data.format_name      nmr_exchange_format
+   _nef_nmr_meta_data.format_version   1.1
+   _nef_nmr_meta_data.program_name     NEFPipelines
+   _nef_nmr_meta_data.script_name      util.py
+   _nef_nmr_meta_data.program_version  0.0.1
+   _nef_nmr_meta_data.creation_date    2012-01-14T12:00:01.123456
+   _nef_nmr_meta_data.uuid             NEFPipelines-2012-01-14T12:00:01.123456-1043321819
+   _nef_nmr_meta_data.creation_time    2012-01-14T12:00:01.123456
+
+   loop_
+      _nef_run_history.run_number
+      _nef_run_history.program_name
+      _nef_run_history.program_version
+      _nef_run_history.script_name
+
+     1   NEFPipelines   0.0.1   header.py    
+
+   stop_
+   
+save_
+'''
+
+
+# noinspection PyUnusedLocal
+@freeze_time("2012-01-14 12:00:01.123456")
+def test_pipe_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
+
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+
+    path = path_in_test_data(__file__, '3aa10.seq')
+    path_header = path_in_test_data(__file__,'test_header_entry.txt',local=False)
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, '--pipe', path_header, path])
+    assert result.exit_code == 0
+
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    meta_data_result = isolate_frame(result.stdout, '%s' % METADATA_NMRVIEW)
+
+    assert_lines_match(EXPECTED_3AA10, mol_sys_result)
+    assert_lines_match(EXPECTED_HEADER, meta_data_result, display=True)
+
+
+# noinspection PyUnusedLocal
+@freeze_time("2012-01-14 12:00:01.123456")
+def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
+
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
+    path = path_in_test_data(__file__, '3aa10.seq')
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
+
+    assert result.exit_code == 0
+
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+
+    assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
 
 if __name__ == '__main__':
-    pytest.main([__file__, '-vv'])
+    pytest.main([f'{__file__}', '-vv'])
