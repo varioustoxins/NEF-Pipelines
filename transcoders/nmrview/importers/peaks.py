@@ -38,7 +38,7 @@ def peaks(
     """convert nmrview peak file <nmrview>.xpk files to NEF"""
     args = get_args()
 
-    raw_sequence = get_sequence_or_exit(args)
+    raw_sequence = _get_sequence_or_exit(args)
     sequence = _sequence_to_residue_type_lookup(raw_sequence)
 
     frame = read_xpk_file(args, sequence)
@@ -301,7 +301,7 @@ def _get_isotope_code_or_exit(axis, axis_codes):
     return axis_code
 
 
-def get_sequence_or_exit(args):
+def _get_sequence_or_exit(args):
     seq_file = args.sequence
     if not seq_file:
         raise Exception('read from stdin')
