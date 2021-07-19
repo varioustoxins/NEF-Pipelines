@@ -32,9 +32,12 @@ def sequence(
     file_names: List[Path] = typer.Argument(..., help='input files of type nmrview.seq', metavar='<SEQ-FILE>')
 ):
     """convert nmrview sequence file <nmrview>.seq files to NEF"""
-    args = get_args()
+    try:
+        args = get_args()
 
-    process_sequence(args)
+        process_sequence(args)
+    except Exception as e:
+        exit_error(f"reading sequence failed because {e}")
 
 
 def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence_file_name: str = 'unknown') \
