@@ -15,7 +15,7 @@ from pathlib import Path
 from ..nmrview_lib import AtomLabel,PeakAxis, PeakValues, PeakListData, PeakList
 from .sequence import read_sequence
 
-from lib.util import exit_error, process_stream_and_add_frames
+from lib.util import exit_error, process_stream_and_add_frames, get_pipe_file
 
 
 from transcoders.nmrview import import_app
@@ -41,11 +41,9 @@ def peaks(
     raw_sequence = _get_sequence_or_exit(args)
     sequence = _sequence_to_residue_type_lookup(raw_sequence)
 
-    frame = read_xpk_file(args, sequence)
+    frames = [read_xpk_file(args, sequence),]
 
-    entry = Entry.from_scratch(entry_name)
-    entry.add_saveframe(frame)
-
+    entry = process_stream_and_add_frames(frames, args)
     print(entry)
 
 
@@ -301,10 +299,43 @@ def _get_isotope_code_or_exit(axis, axis_codes):
     return axis_code
 
 
+def sequence_from_frames(frames: Saveframe):
+
+    residues = OrderedSet()
+    for frame in frames:
+        for loop in frame:
+            chain_code_index = loop.tag_index('chain_code')
+            sequence_code_index = loop.tag_index('sequence_code')
+            residue_name_index = loop.tag_index('residue_name')
+
+            for line in loop:
+                chain_code = line[chain_code_index]
+                sequence_code = line[sequence_code_index]
+                residue_name = line[residue_name_index]
+                residue = SequenceResidue(chain_code, sequence_code, residue_name)
+                residues.append(residue)
+
+    return list(residues)
+
+
+
+
 def _get_sequence_or_exit(args):
-    seq_file = args.sequence
-    if not seq_file:
-        raise Exception('read from stdin')
+    sequence_file = None
+    if 'sequence' in args:
+        seq_file = args.sequence
+
+    if not sequence_file:
+        try:
+            stream = get_pipe_file(args)
+            entry = Entry.from_file(stream)
+            frames = entry.get_saveframes_by_category('nef_molecular_system')
+            sequence = sequence_from_frames(frames)
+
+        except Exception as e:
+            exit_error(f'failed to read sequence from input stream because {e}')
+
+
     else:
         with open(seq_file, 'r') as lines:
             sequence = read_sequence(lines, chain_code=args.chain_code)
