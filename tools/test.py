@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 
 from nef_app import app
-from pytest import main
 
 # noinspection PyUnusedLocal
 @app.command()
 def test():
     """-  run the test suite"""
+
+    from pytest import main
 
     dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent / 'tests'
 
