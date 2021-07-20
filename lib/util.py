@@ -177,7 +177,7 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     """
 
     result = []
-    if args.pipe:
+    if 'pipe' in args and args.pipe:
         result = cached_file_stream(args.pipe)
     elif not sys.stdin.isatty():
         result = cached_stdin()
