@@ -50,7 +50,6 @@ def get_tcl_parser():
     top_level.setParseAction(_process_emptys_and_singles)
     top_level.setName('phrase') + restOfLine()
 
-    top_level.create_diagram('tcl_diag.html')
 
     return top_level
 
