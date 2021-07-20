@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 
-@dataclass
+@dataclass(frozen=True)
 class SequenceResidue:
     chain: str
     residue_number: int
