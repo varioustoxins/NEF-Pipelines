@@ -322,7 +322,7 @@ def sequence_from_frames(frames: Saveframe):
 
 def _get_sequence_or_exit(args):
     sequence_file = None
-    if hasattr(args,'sequence'):
+    if 'sequence' in args:
         sequence_file = args.sequence
 
     if not sequence_file:
