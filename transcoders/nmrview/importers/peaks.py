@@ -322,8 +322,8 @@ def sequence_from_frames(frames: Saveframe):
 
 def _get_sequence_or_exit(args):
     sequence_file = None
-    if 'sequence' in args:
-        seq_file = args.sequence
+    if hasattr(args,'sequence'):
+        sequence_file = args.sequence
 
     if not sequence_file:
         try:
@@ -337,7 +337,7 @@ def _get_sequence_or_exit(args):
 
 
     else:
-        with open(seq_file, 'r') as lines:
+        with open(sequence_file, 'r') as lines:
             sequence = read_sequence(lines, chain_code=args.chain_code)
     return sequence
 
