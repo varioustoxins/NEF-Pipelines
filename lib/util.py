@@ -10,7 +10,7 @@ from typing import Dict, TextIO, Optional, List
 from pynmrstar import Loop, Saveframe, Entry
 
 from lib.constants import NEF_UNKNOWN, NEF_META_DATA, NEF_PIPELINES, NEF_PIPELINES_VERSION, EXIT_ERROR
-from tools.header import get_creation_time, get_uuid, create_header_frame
+from lib.header_lib import get_creation_time, get_uuid, create_header_frame
 
 
 
