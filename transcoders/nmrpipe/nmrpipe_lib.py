@@ -2,6 +2,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import List, Union, TextIO
 
+from icecream import ic
 from tabulate import tabulate
 
 
@@ -38,6 +39,8 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
                 continue
 
             record_type = raw_fields[0]
+            record_count[record_type] += 1
+
             if len(raw_fields) > 1:
                 fields = raw_fields[1:]
             else:
@@ -46,22 +49,25 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
             handled = False
 
             if record_type == 'VARS':
-                if record_count[record_type] != 0:
+
+                if record_count[record_type] != 1:
                     raise_multiple('VARS', file_name, line)
+
+
                 column_names = fields
-                records.append(DbRecord(0, record_type, column_names))
+                records.append(DbRecord(record_count[record_type], record_type, column_names))
                 handled = True
 
             if record_type == 'FORMAT':
                 column_formats = formats_to_constructors(fields)
 
-                if record_count[record_type] != 0:
+                if record_count[record_type] != 1:
                     raise_multiple('FORMAT', file_name, line)
 
                 check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
 
 
-                records.append(DbRecord(0, record_type, fields))
+                records.append(DbRecord(record_count[record_type], record_type, fields))
                 handled = True
 
             if record_type in ('REMARK', '#'):
@@ -70,13 +76,18 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
             if is_int(record_type):
                 if column_names and column_formats:
+                    record_count['__VALUES__'] += 1
+
+                    del record_count[record_type]
 
                     values = build_values_or_raise(column_formats, column_names, fields, line_info)
 
-                    record = DbRecord(record_count[record_type], '__VALUES__', values)
+                    record = DbRecord(record_count['__VALUES__'], '__VALUES__', values)
                     records.append(record)
 
                     handled = True
+
+
 
                 else:
                     msg = f"""
@@ -88,7 +99,7 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
             if not handled:
                 records.append(DbRecord(record_count[record_type], record_type, fields))
 
-            record_count[record_type] += 1
+
 
     return DbFile(file_name, records)
 
