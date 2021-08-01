@@ -96,7 +96,8 @@ def test_3aa10(typer_app, using_nmrview, monkeypatch):
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
-HEADER = open('test_data/test_header_entry.txt').read()
+
+HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
 EXPECTED_HEADER = '''\
 save_nef_nmr_meta_data
