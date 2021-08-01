@@ -1,10 +1,13 @@
-
+from textwrap import dedent
 
 from freezegun import freeze_time
 
 import pytest
+from icecream import ic
 
 from typer.testing import CliRunner
+
+from lib.sequence_lib import translate_1_to_3, BadResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
 MOLECULAR_SYSTEM_NMRVIEW = 'nef_molecular_system_nmrview'
@@ -114,10 +117,10 @@ save_nef_nmr_meta_data
       _nef_run_history.program_version
       _nef_run_history.script_name
 
-     1   NEFPipelines   0.0.1   header.py    
+     1   NEFPipelines   0.0.1   header.py
 
    stop_
-   
+
 save_
 '''
 
@@ -154,6 +157,56 @@ def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
+
+def test_1let_3let():
+    EXPECTED = [
+        'ALA',
+        'CYS',
+        'ASP',
+        'GLU',
+        'PHE',
+        'GLY',
+        'HIS',
+        'ILE',
+        'LYS',
+        'LEU',
+        'MET',
+        'ASN',
+        'PRO',
+        'GLN',
+        'ARG',
+        'SER',
+        'THR',
+        'VAL',
+        'TRP',
+        'TYR'
+    ]
+    GOOD_SEQUENCE = 'acdefghiklmnpqrstvwy'
+
+    assert len(GOOD_SEQUENCE) == 20
+
+    assert EXPECTED == translate_1_to_3(GOOD_SEQUENCE)
+
+
+
+def test_bad_1let_3let():
+    BAD_SEQUENCE = 'acdefghiklmonpqrstvwy'
+
+    msgs = '''\
+              unknown residue O
+              at residue 12
+              sequence: acdefghiklmonpqrstvwy
+              ^
+              '''
+
+    msgs = dedent(msgs)
+    msgs = msgs.split('\n')
+
+    with pytest.raises(BadResidue) as exc_info:
+        translate_1_to_3(BAD_SEQUENCE)
+
+    for msg in msgs:
+        assert msg in exc_info.value.args[0]
 
 
 if __name__ == '__main__':

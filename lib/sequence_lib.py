@@ -1,5 +1,6 @@
 import string
-from typing import List, Iterable
+from textwrap import dedent
+from typing import List, Iterable, Dict
 
 from pynmrstar import Saveframe, Loop
 
@@ -96,3 +97,36 @@ def sequence_to_nef_frame(input_sequence: List[SequenceResidue], entry_name: str
         nef_loop.add_data_by_tag('cis_peptide', NEF_UNKNOWN)
 
     return nef_frame
+
+TRANSLATIONS_3_1 = {
+    'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
+    'CYS': 'C', 'GLU': 'E', 'GLN': 'Q', 'GLY': 'G', 'HIS': 'H',
+    'ILE': 'I', 'LEU': 'L', 'LYS': 'K', 'MET': 'M',
+    'PHE': 'F', 'PRO': 'P', 'SER': 'S', 'THR': 'T',
+    'TRP': 'W', 'TYR': 'Y', 'VAL': 'V'
+}
+TRANSLATIONS_1_3 = {value: key for (key, value) in TRANSLATIONS_3_1.items()}
+
+
+class BadResidue(Exception):
+    pass
+
+
+def translate_1_to_3(sequence: str, translations: Dict[str,str] = TRANSLATIONS_1_3) -> List[str]:
+    result = []
+    for i, residue_name_1let in enumerate(sequence):
+        residue_name_1let = residue_name_1let.upper()
+        if residue_name_1let in translations:
+            result.append(translations[residue_name_1let])
+        else:
+            msg = f'''\
+                 unknown residue {residue_name_1let} at residue {i+1}
+                 sequence: {sequence}
+                           {(' ' * i) + '^'}      
+            '''
+            msg = dedent(msg)
+            raise BadResidue(msg)
+
+    return result
+
+
