@@ -143,3 +143,16 @@ def translate_1_to_3(sequence: str, translations: Dict[str, str] = TRANSLATIONS_
     return result
 
 
+def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str = 'A', offset: int = 0) -> List[SequenceResidue]:
+    """
+    Translate a list of 3 residue sequence codes to SequenceResidues
+    Args:
+        sequence_3let (List([str]): list of 3 letter residue names
+        chain_code (str): the chain code [defaults to A]
+        offset (int): the sequence offset [defaults to 0]
+
+    Returns List[SequenceResidue]:
+        the sequence as a list of SequenceResidues
+
+    """
+    return [SequenceResidue(chain_code, i + 1 + offset, residue) for (i, residue) in enumerate(sequence_3let)]

@@ -7,7 +7,7 @@ from icecream import ic
 
 from typer.testing import CliRunner
 
-from lib.sequence_lib import translate_1_to_3, BadResidue
+from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
 from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
@@ -82,6 +82,7 @@ def test_3aa(typer_app, using_nmrview, monkeypatch):
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
+
 
 # noinspection PyUnusedLocal
 def test_3aa10(typer_app, using_nmrview, monkeypatch):
@@ -159,62 +160,6 @@ def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
-
-
-ABC_SEQUENCE_1LET = 'acdefghiklmnpqrstvwy'
-ABC_SEQUENCE_3LET = (
-        'ALA',
-        'CYS',
-        'ASP',
-        'GLU',
-        'PHE',
-        'GLY',
-        'HIS',
-        'ILE',
-        'LYS',
-        'LEU',
-        'MET',
-        'ASN',
-        'PRO',
-        'GLN',
-        'ARG',
-        'SER',
-        'THR',
-        'VAL',
-        'TRP',
-        'TYR'
-)
-
-ABC_SEQUENCE_RESIDUES = [SequenceResidue('A', i+1, residue) for (i, residue) in enumerate(ABC_SEQUENCE_3LET)]
-
-
-def test_1let_3let():
-
-    assert len(ABC_SEQUENCE_1LET) == 20
-    assert len(ABC_SEQUENCE_3LET) == 20
-
-    assert list(ABC_SEQUENCE_3LET) == translate_1_to_3(ABC_SEQUENCE_1LET)
-
-
-
-def test_bad_1let_3let():
-    BAD_SEQUENCE = 'acdefghiklmonpqrstvwy'
-
-    msgs = '''\
-              unknown residue O
-              at residue 12
-              sequence: acdefghiklmonpqrstvwy
-              ^
-              '''
-
-    msgs = dedent(msgs)
-    msgs = msgs.split('\n')
-
-    with pytest.raises(BadResidue) as exc_info:
-        translate_1_to_3(BAD_SEQUENCE)
-
-    for msg in msgs:
-        assert msg in exc_info.value.args[0]
 
 
 if __name__ == '__main__':
