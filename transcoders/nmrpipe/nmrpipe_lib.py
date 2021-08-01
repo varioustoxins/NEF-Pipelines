@@ -1,9 +1,14 @@
+import functools
+import operator
 from collections import Counter
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import List, Union, TextIO
+from typing import List, Union, TextIO, Dict
 
 from tabulate import tabulate
+
+from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
+from lib.structures import SequenceResidue
 
 
 @dataclass
@@ -263,6 +268,16 @@ def formats_to_constructors(formats, line_info):
             '''
             raise BadFieldFormat(msg)
     return result
+
+
+def gdb_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[SequenceResidue]:
+    data_records = [record for record in gdb.records if record.type == 'DATA']
+    sequence_records = [record.values[1:] for record in data_records if record.values[0] == 'SEQUENCE']
+
+    flattened_records = functools.reduce(operator.iconcat, sequence_records, [])
+    sequence_string = ''.join(flattened_records)
+
+    return translate_1_to_3(sequence_string, translations)
 
 
 def constructor_to_name(constructor):

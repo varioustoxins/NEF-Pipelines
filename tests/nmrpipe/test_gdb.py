@@ -1,11 +1,14 @@
+
 import io
+
 from textwrap import dedent
 
 import pytest
 
-from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, DbFile, DbRecord, BadNmrPipeFile, NoVarsLine, \
-    NoFormatLine, MultipleVars, WrongColumnCount, MultipleFormat, DataBeforeFormat, BadFieldFormat, \
-    formats_to_constructors
+from tests.nmrview.test_sequence import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
+from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, DbFile, DbRecord, NoVarsLine, \
+     MultipleVars, WrongColumnCount, MultipleFormat, DataBeforeFormat, BadFieldFormat, \
+     gdb_3let_sequence
 
 
 def test_read_gdb_file():
@@ -298,6 +301,18 @@ def test_bad_format():
 
     for msg in msgs:
         assert msg in exc_info.value.args[0]
+
+
+def test_sequence():
+
+    SEQUENCE = dedent(ABC_SEQUENCE_1LET)
+
+    gdb_stream = io.StringIO(SEQUENCE)
+
+    records = read_db_file_records(gdb_stream)
+    sequence = gdb_3let_sequence(records)
+
+    sequence == ABC_SEQUENCE_3LET
 
 
 if __name__ == '__main__':
