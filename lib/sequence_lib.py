@@ -109,10 +109,23 @@ TRANSLATIONS_1_3 = {value: key for (key, value) in TRANSLATIONS_3_1.items()}
 
 
 class BadResidue(Exception):
+    """
+    Bad residue found in a sequence
+    """
     pass
 
 
-def translate_1_to_3(sequence: str, translations: Dict[str,str] = TRANSLATIONS_1_3) -> List[str]:
+def translate_1_to_3(sequence: str, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[str]:
+    """
+    Translate a 1 letter sequence to a 3 letter sequence
+    Args:
+        sequence (str): 1 letter sequence
+        translations (Dict[str, str]): a list of translations for single amino acid codes to 3 letter residue names
+
+    Returns List[str]:
+        a list of 3 residue codes
+
+    """
     result = []
     for i, residue_name_1let in enumerate(sequence):
         residue_name_1let = residue_name_1let.upper()

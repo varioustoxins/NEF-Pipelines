@@ -8,6 +8,7 @@ from icecream import ic
 from typer.testing import CliRunner
 
 from lib.sequence_lib import translate_1_to_3, BadResidue
+from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
 MOLECULAR_SYSTEM_NMRVIEW = 'nef_molecular_system_nmrview'
@@ -159,8 +160,9 @@ def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
-def test_1let_3let():
-    EXPECTED = [
+
+ABC_SEQUENCE_1LET = 'acdefghiklmnpqrstvwy'
+ABC_SEQUENCE_3LET = (
         'ALA',
         'CYS',
         'ASP',
@@ -181,12 +183,17 @@ def test_1let_3let():
         'VAL',
         'TRP',
         'TYR'
-    ]
-    GOOD_SEQUENCE = 'acdefghiklmnpqrstvwy'
+)
 
-    assert len(GOOD_SEQUENCE) == 20
+ABC_SEQUENCE_RESIDUES = [SequenceResidue('A', i+1, residue) for (i, residue) in enumerate(ABC_SEQUENCE_3LET)]
 
-    assert EXPECTED == translate_1_to_3(GOOD_SEQUENCE)
+
+def test_1let_3let():
+
+    assert len(ABC_SEQUENCE_1LET) == 20
+    assert len(ABC_SEQUENCE_3LET) == 20
+
+    assert list(ABC_SEQUENCE_3LET) == translate_1_to_3(ABC_SEQUENCE_1LET)
 
 
 
