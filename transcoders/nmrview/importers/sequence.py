@@ -20,8 +20,8 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command()
 def sequence(
-    chain_codes: str = typer.Option('A', '--chains', help='chain codes as a list of names spearated by dots',
-                                   metavar='<CHAIN-CODES>'),
+    chain_codes: str = typer.Option('A', '--chains', help='chain codes as a list of names separated by dots',
+                                    metavar='<CHAIN-CODES>'),
     no_chain_start: bool = typer.Option(False, '--no-chain-start/',
                                         help="don't include a start of chain link type for the first residue"),
     no_chain_end: bool = typer.Option(False, '--no-chain-end/',
