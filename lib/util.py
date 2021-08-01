@@ -251,3 +251,23 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
         new_entry.add_saveframe(frame)
 
     return new_entry
+
+
+def is_int(value: str) -> bool:
+    """
+    Check if a string is an integer
+    Args:
+        value (str): the putative integer
+
+    Returns bool:
+        true is if its an integer
+
+    """
+    result = False
+    try:
+        int(value)
+        result = True
+    except ValueError:
+        pass
+
+    return result

@@ -5,10 +5,10 @@ from textwrap import dedent
 
 import pytest
 
-from tests.nmrview.test_sequence import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
+from tests.test_sequence_lib import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
 from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, DbFile, DbRecord, NoVarsLine, \
      MultipleVars, WrongColumnCount, MultipleFormat, DataBeforeFormat, BadFieldFormat, \
-     gdb_3let_sequence
+     gdb_to_3let_sequence
 
 
 def test_read_gdb_file():
@@ -310,7 +310,7 @@ def test_sequence():
     gdb_stream = io.StringIO(SEQUENCE)
 
     records = read_db_file_records(gdb_stream)
-    sequence = gdb_3let_sequence(records)
+    sequence = gdb_to_3let_sequence(records)
 
     sequence == ABC_SEQUENCE_3LET
 

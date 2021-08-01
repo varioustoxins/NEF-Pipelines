@@ -52,3 +52,10 @@ class PeakListData:
 class PeakList:
     peak_list_data: PeakListData
     peaks: list[dict[Union[int, str], Union[PeakAxis, PeakValues]]]
+
+
+@dataclass
+class LineInfo:
+    file_name: str
+    line_no: int
+    line: str

@@ -8,7 +8,8 @@ from typing import List, Union, TextIO, Dict
 from tabulate import tabulate
 
 from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
-from lib.structures import SequenceResidue
+from lib.structures import SequenceResidue, LineInfo
+from lib.util import is_int
 
 
 @dataclass
@@ -24,7 +25,7 @@ class DbFile:
     records: List[DbRecord] = field(default_factory=list)
 
 
-def raise_data_before_format(line_info):
+def _raise_data_before_format(line_info):
     msg = f"""\
             bad nmrpipe db file, data seen before VAR and FORMAT 
             file: {line_info.file_name}' 
@@ -37,8 +38,16 @@ def raise_data_before_format(line_info):
 
 def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
-    """Read from NmrPipe (NIH) tab-file string; Return self
     """
+    Read from NmrPipe (NIH) tab/gdb-file
+    Args:
+        file_h (TextIO): a file like object
+        file_name (str): the name of the file being read (for debugging)
+
+    Returns DbFile:
+        a list of all the records in the fiule
+    """
+
 
     records: List[DbRecord] = []
     column_names = None
@@ -66,19 +75,19 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
         if record_type == 'VARS':
             if record_count[record_type] != 1:
-                raise_multiple('VARS', line_info)
+                _raise_multiple('VARS', line_info)
 
             column_names = fields
             records.append(DbRecord(record_count[record_type], record_type, column_names))
             handled = True
 
         if record_type == 'FORMAT':
-            column_formats = formats_to_constructors(fields, line_info)
+            column_formats = _formats_to_constructors(fields, line_info)
 
             if record_count[record_type] != 1:
-                raise_multiple('FORMAT', line_info)
+                _raise_multiple('FORMAT', line_info)
 
-            check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
+            _check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
 
             records.append(DbRecord(record_count[record_type], record_type, fields))
             handled = True
@@ -93,7 +102,7 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
                 del record_count[record_type]
 
-                values = build_values_or_raise(column_formats, column_names, fields, line_info)
+                values = _build_values_or_raise(column_formats, column_names, fields, line_info)
 
                 record = DbRecord(record_count['__VALUES__'], '__VALUES__', values)
                 records.append(record)
@@ -103,7 +112,7 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
 
             else:
-                raise_data_before_format(line_info)
+                _raise_data_before_format(line_info)
 
         if not handled:
             records.append(DbRecord(record_count[record_type], record_type, fields))
@@ -111,16 +120,17 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
     return DbFile(file_name, records)
 
-
-def find_nth(haystack, needle, n):
+def _find_nth(haystack, needle, n):
+    # https://stackoverflow.com/questions/1883980/find-the-nth-occurrence-of-substring-in-a-string/41626399#41626399
     start = haystack.find(needle)
     while start >= 0 and n > 1:
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
 
-def build_values_or_raise(column_formats, column_names, fields, line_info):
-    non_index_column_formats = check_column_count_raise_if_bad(column_formats, column_names, line_info)
+
+def _build_values_or_raise(column_formats, column_names, fields, line_info):
+    non_index_column_formats = _check_column_count_raise_if_bad(column_formats, column_names, line_info)
     result = []
     field_count = Counter()
     for column_no, (raw_field, constructor) in enumerate(zip(fields, non_index_column_formats)):
@@ -129,9 +139,9 @@ def build_values_or_raise(column_formats, column_names, fields, line_info):
             value = constructor(raw_field)
 
         except Exception:
-            absolute_column = find_nth(line_info.line, raw_field, field_count[raw_field])
+            absolute_column = _find_nth(line_info.line, raw_field, field_count[raw_field])
             msg = f"""
-                    Couldn't convert {raw_field} to type {constructor_to_name(constructor)}
+                    Couldn't convert {raw_field} to type {_constructor_to_name(constructor)}
                     file: {line_info.file_name}
                     line no: {line_info.line_no}
                     column: {column_no + 1}
@@ -144,7 +154,7 @@ def build_values_or_raise(column_formats, column_names, fields, line_info):
     return result
 
 
-def raise_multiple(format_str, line_info):
+def _raise_multiple(format_str, line_info):
     msg = f"""\
                 bad NMRPipe db file, multiple {format_str} statements found
                 file: {line_info.file_name}
@@ -160,7 +170,7 @@ def raise_multiple(format_str, line_info):
 
 
 
-def check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info):
+def _check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info):
     if column_names is None:
         msg = f'''\
                no column names defined by a VARS line when FORMAT line read
@@ -185,7 +195,7 @@ def check_var_and_format_count_raise_if_bad(column_names, column_formats, line_i
         raise WrongColumnCount(msg)
 
 
-def check_column_count_raise_if_bad(column_formats, column_names, line_info):
+def _check_column_count_raise_if_bad(column_formats, column_names, line_info):
     non_index_column_formats = column_formats[1:]
     raw_fields = line_info.line.split()
     num_fields = len(raw_fields)
@@ -195,7 +205,7 @@ def check_column_count_raise_if_bad(column_formats, column_names, line_info):
     raw_fields = [*raw_fields, *missing_fields]
 
     if num_fields != num_columns:
-        column_formats = constructor_names(column_formats)
+        column_formats = _constructor_names(column_formats)
         tab = [
             column_names,
             column_formats,
@@ -222,26 +232,7 @@ def check_column_count_raise_if_bad(column_formats, column_names, line_info):
     return non_index_column_formats
 
 
-
-@dataclass
-class LineInfo:
-    file_name: str
-    line_no: int
-    line: str
-
-
-def is_int(value: str):
-    result = False
-    try:
-        int(value)
-        result = True
-    except ValueError:
-        pass
-
-    return result
-
-
-def formats_to_constructors(formats, line_info):
+def _formats_to_constructors(formats, line_info):
     result = []
 
     field_counter = Counter()
@@ -257,7 +248,7 @@ def formats_to_constructors(formats, line_info):
         elif field_format == 's':
             result.append(str)
         else:
-            format_column = find_nth(line_info.line, field_format, field_counter[field_format])
+            format_column = _find_nth(line_info.line, field_format, field_counter[field_format])
             msg = f'''
                 unexpected format {field_format} at index {column_index+1}, expected formats are s, d, f (string, integer, float)
                 file: {line_info.file_name}
@@ -270,7 +261,7 @@ def formats_to_constructors(formats, line_info):
     return result
 
 
-def gdb_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[SequenceResidue]:
+def gdb_to_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[SequenceResidue]:
     data_records = [record for record in gdb.records if record.type == 'DATA']
     sequence_records = [record.values[1:] for record in data_records if record.values[0] == 'SEQUENCE']
 
@@ -280,7 +271,7 @@ def gdb_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1
     return translate_1_to_3(sequence_string, translations)
 
 
-def constructor_to_name(constructor):
+def _constructor_to_name(constructor):
     constructors_to_type_name = {
         int: 'int',
         float: 'float',
@@ -290,42 +281,66 @@ def constructor_to_name(constructor):
     return constructors_to_type_name[constructor]
 
 
-def constructor_names(constructors):
+def _constructor_names(constructors):
 
     result = []
     for constructor in constructors:
-        result.append(constructor_to_name(constructor))
+        result.append(_constructor_to_name(constructor))
 
     return result
 
 
 class BadNmrPipeFile(Exception):
+    """
+    Base exception for bad nmr pipe files, this is the one to catch!
+    """
     pass
 
 
 class BadFieldFormat(BadNmrPipeFile):
+    """
+    One of the fields int he file has a bad format
+    """
     pass
 
 
 class WrongColumnCount(BadNmrPipeFile):
+    """
+    The number of columns in the VARS FORMAT or data lines disagree in their count
+    """
     pass
 
 
 class NoVarsLine(BadNmrPipeFile):
+    """
+    Tried to read data without a VARS line
+    """
     pass
 
 
 class NoFormatLine(BadNmrPipeFile):
+    """
+    Tried to read data without a FORMAT line
+    """
     pass
 
 
 class MultipleVars(BadNmrPipeFile):
+    """
+    Multiple VARS lines detected
+    """
     pass
 
 
 class MultipleFormat(BadNmrPipeFile):
+    """
+    Multiple FORMAT lines detected
+    """
     pass
 
 
 class DataBeforeFormat(BadNmrPipeFile):
+    """
+    Data seen before VARS and FORMAT lines detected
+    """
     pass
