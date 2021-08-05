@@ -3,11 +3,11 @@ from random import randint
 
 from pynmrstar import Saveframe, Loop
 
-from lib.constants import NEF_PIPELINES
+from lib.constants import NEF_PIPELINES, NEF_VERSION
 
 
 def get_creation_time():
-    return datetime.now().isoformat()
+    return datetime.datetime.now().isoformat()
 
 
 def get_uuid(name, creation_time):
