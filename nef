@@ -1,14 +1,71 @@
 #!/usr/bin/env python3
+import sys
+import traceback
+from textwrap import dedent
 
-import nef_app
-import typer
-nef_app.app = typer.Typer()
+EXIT_ERROR = 1
+
+def do_exit_error(msg):
+    msg = dedent(msg)
+    traceback.print_exc()
+    print(msg, file=sys.stderr)
+    sys.exit(EXIT_ERROR)
 
 
-# import components which will self register, this could and will be automated
-import transcoders.nmrview
-import tools.header
-import tools.test
+try:
+    import friendly_traceback
+    import typer
 
-if __name__ == "__main__":
-    nef_app.app()
+except Exception as e:
+
+    msg = '''\
+             
+             Initializaion error: one of the core libraries [friendly_tracback/typer] if missing from you environment
+             please make sure they are installed an try again
+             exiting...'''
+    do_exit_error(msg)
+
+try:
+    import nef_app
+    nef_app.app = typer.Typer()
+    app = nef_app.app
+
+except Exception as e:
+    msg = '''\
+
+             Initializaion error: failed to start the typer app, message the developer
+             exiting...'''
+    do_exit_error(msg)
+
+try:
+    # import components which will self register, this could and will be automated
+    import transcoders.nmrview
+    import transcoders.nmrpipe
+    import tools.header
+    import tools.test
+
+except Exception as e:
+    msg = '''\
+
+         Initializaion error: failed to load a plugin, remove the plugin or contact the developer
+         exiting...'''
+
+    do_exit_error(msg)
+
+try:
+
+    nef_app.app
+
+    command = typer.main.get_command(nef_app.app)
+
+    command(standalone_mode=False)
+
+except:
+    friendly_traceback.explain_traceback()
+
+    msg = '''\
+
+         Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
+         exiting...'''
+
+    do_exit_error(msg)
