@@ -1,12 +1,11 @@
-from argparse import Namespace
-from random import randint
+
 import typer
 import nef_app
 
-from datetime import datetime
-from pynmrstar import Entry, Saveframe, Loop
+from pynmrstar import Entry
 
-from lib.constants import NEF_PIPELINES_VERSION, NEF_VERSION, NEF_PIPELINES
+from lib.constants import NEF_PIPELINES_VERSION, NEF_PIPELINES
+from lib.header_lib import create_header_frame
 from lib.typer_utils import get_args
 
 # noinspection PyUnusedLocal
