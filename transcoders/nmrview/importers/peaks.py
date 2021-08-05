@@ -5,6 +5,7 @@ from typing import Iterable, List, Dict, Tuple
 from pynmrstar import Entry, Saveframe, Loop
 
 import lib.constants
+from lib.constants import NEF_UNKNOWN
 from lib import constants
 from lib.structures import SequenceResidue
 from lib.sequence_lib import sequence_to_nef_frame, chain_code_iter
@@ -384,7 +385,10 @@ def create_spectrum_frame(args, entry_name, peaks_list):
             elif tag == 'spectrometer_frequency':
                 loop.add_data_by_tag(tag, list_data.spectrometer_frequencies[i])
             elif tag == 'spectral_width':
-                loop.add_data_by_tag(tag, list_data.sweep_widths[i])
+                if list_data.sweep_widths:
+                    loop.add_data_by_tag(tag, list_data.sweep_width[i])
+                else:
+                    loop.add_data_by_tag(tag, NEF_UNKNOWN)
             elif tag == 'folding':
                 loop.add_data_by_tag(tag, 'circular')
             elif tag == 'absolute_peak_positions':
@@ -415,11 +419,13 @@ def create_spectrum_frame(args, entry_name, peaks_list):
                       for i in range(list_data.num_axis)]
     atom_name_tags = itertools.chain(*atom_name_tags)
     tags = [*peak_tags, *position_tags, *atom_name_tags]
+
     loop.add_tag(tags)
     for i, peak in enumerate(peaks_list.peaks):
         peak_values = peak['values']
         if peak_values.status < 0:
             continue
+
         for tag in tags:
 
             if tag == 'index':
