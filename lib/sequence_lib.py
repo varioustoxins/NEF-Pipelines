@@ -8,7 +8,7 @@ from lib.structures import SequenceResidue
 from lib.constants import NEF_UNKNOWN
 
 
-def chain_code_iter(user_chain_codes: str) -> Iterable[str]:
+def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
     """
     split input string into chain codes separated by .s, and yield them.
     Then yield any remaining letters of the alphabet till they run out
@@ -19,7 +19,9 @@ def chain_code_iter(user_chain_codes: str) -> Iterable[str]:
     Returns:
         Iterable[str] single codes
     """
-    chain_codes = user_chain_codes.split('.') if user_chain_codes else string.ascii_uppercase.split()
+
+    ascii_uppercase = list(string.ascii_uppercase)
+    chain_codes = user_chain_codes.split('.') if user_chain_codes else ascii_uppercase
 
     seen_codes = set()
 
@@ -27,7 +29,7 @@ def chain_code_iter(user_chain_codes: str) -> Iterable[str]:
         seen_codes.add(chain_code)
         yield chain_code
 
-    for chain_code in string.ascii_uppercase.split():
+    for chain_code in ascii_uppercase:
         if chain_code not in seen_codes:
             yield chain_code
 
