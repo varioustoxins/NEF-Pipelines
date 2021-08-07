@@ -63,9 +63,10 @@ try:
 except:
     friendly_traceback.explain_traceback()
 
-    msg = '''\
+    msg = f'''\
 
-         Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
-         exiting...'''
+          Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
+          inputs: {' '.join(sys.argv[1:])}
+          exiting...'''
 
     do_exit_error(msg)
