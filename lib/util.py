@@ -96,8 +96,8 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
 
 class StringIteratorIO(io.TextIOBase):
 
-# https://stackoverflow.com/questions/12593576/adapt-an-iterator-to-behave-like-a-file-like-object-in-python
-# second answer with more votes!
+    # https://stackoverflow.com/questions/12593576/adapt-an-iterator-to-behave-like-a-file-like-object-in-python
+    # second answer with more votes!
 
     def __init__(self, iter):
         self._iter = iter
