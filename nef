@@ -33,7 +33,7 @@ try:
 except Exception as e:
     msg = '''\
 
-             Initializaion error: failed to start the typer app, message the developer
+             Initialisation error: failed to start the typer app, message the developer
              exiting...'''
     do_exit_error(msg)
 
@@ -47,7 +47,7 @@ try:
 except Exception as e:
     msg = '''\
 
-         Initializaion error: failed to load a plugin, remove the plugin or contact the developer
+         Initialisation error: failed to load a plugin, remove the plugin or contact the developer
          exiting...'''
 
     do_exit_error(msg)
