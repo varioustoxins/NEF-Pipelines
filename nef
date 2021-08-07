@@ -1,20 +1,30 @@
 #!/usr/bin/env python3
 import sys
-import traceback
+try:
+    import friendly_traceback
+except:
+    import traceback
 from textwrap import dedent
 
 EXIT_ERROR = 1
 
-def do_exit_error(msg):
+
+def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     msg = dedent(msg)
-    traceback.print_exc()
+    if trace_back:
+        if 'friendly_traceback' in sys.modules:
+            friendly_traceback.explain_traceback()
+        else:
+            traceback.print_exc()
     print(msg, file=sys.stderr)
-    sys.exit(EXIT_ERROR)
+    print('exiting...', file=sys.stderr)
+    sys.exit(exit_code)
 
 
 try:
     import friendly_traceback
     import typer
+    from click import ClickException
 
 except Exception as e:
 
@@ -48,7 +58,7 @@ except Exception as e:
     msg = '''\
 
          Initialisation error: failed to load a plugin, remove the plugin or contact the developer
-         exiting...'''
+         '''
 
     do_exit_error(msg)
 
@@ -60,6 +70,10 @@ try:
 
     command(standalone_mode=False)
 
+except ClickException as e:
+    e.show()
+    do_exit_error(f"inputs: {' '.join(sys.argv[1:])}", trace_back=False, exit_code=e.exit_code)
+
 except:
     friendly_traceback.explain_traceback()
 
@@ -67,6 +81,6 @@ except:
 
           Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
           inputs: {' '.join(sys.argv[1:])}
-          exiting...'''
+          '''
 
     do_exit_error(msg)
