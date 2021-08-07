@@ -3,7 +3,7 @@ import operator
 from collections import Counter
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import List, Union, TextIO, Dict
+from typing import List, Union, TextIO, Dict, Callable, Optional, Tuple
 
 from tabulate import tabulate
 
