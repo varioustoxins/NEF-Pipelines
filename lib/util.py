@@ -1,4 +1,6 @@
 import sys
+import io
+import traceback
 from argparse import Namespace
 
 from cacheable_iter import iter_cache
@@ -209,7 +211,7 @@ def script_name(file: str) -> Path:
     return Path(file).name
 
 
-def exit_error(msg):
+def exit_error(msg, exception=None):
     """
     print an error message and exit error
 
@@ -218,6 +220,9 @@ def exit_error(msg):
     """
 
     print(f'ERROR: {msg}', file=sys.stderr)
+    if exception:
+        exc_info = sys.exc_info()
+        traceback.print_exception(*exc_info)
     print(f'exiting...', file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
