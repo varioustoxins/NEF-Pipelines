@@ -11,6 +11,16 @@ from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
 from lib.structures import SequenceResidue, LineInfo
 from lib.util import is_int
 
+# known field types
+DATA = 'DATA'
+REMARK = 'REMARK'
+VALUES = '__VALUES__'
+SEQUENCE = 'SEQUENCE'
+FORMAT = 'FORMAT'
+VARS = 'VARS'
+COMMENT = '#'
+NULLSTRING = 'NULLSTRING'
+NULLVALUE = 'NULLVALUE'
 
 @dataclass
 class DbRecord:
