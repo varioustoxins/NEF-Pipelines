@@ -1,6 +1,6 @@
 import string
 from textwrap import dedent
-from typing import List, Iterable, Dict
+from typing import List, Iterable, Dict, Optional
 
 from pynmrstar import Saveframe, Loop
 
