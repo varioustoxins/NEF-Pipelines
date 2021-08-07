@@ -258,10 +258,12 @@ def _formats_to_constructors(formats, line_info):
             result.append(float)
         elif field_format == 's':
             result.append(str)
+        elif field_format == 'e':
+            result.append(float)
         else:
             format_column = _find_nth(line_info.line, field_format, field_counter[field_format])
             msg = f'''
-                unexpected format {field_format} at index {column_index+1}, expected formats are s, d, f (string, integer, float)
+                unexpected format {field_format} at index {column_index+1}, expected formats are s, d, e, f (string, integer, scientific(float), float)
                 file: {line_info.file_name}
                 line no: {line_info.line_no}
                 line: {line_info.line}

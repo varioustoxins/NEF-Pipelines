@@ -277,7 +277,7 @@ def test_bad_data_format():
 def test_bad_format():
     BAD_FIELD_FORMAT = """\
                         VARS   RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W
-                        FORMAT %5e     %6s       %6s        %5d     %6s       %6s    %9.3f   %9.3f %.2f
+                        FORMAT %5g     %6s       %6s        %5d     %6s       %6s    %9.3f   %9.3f %.2f
 
                             2    GLN      N      GLN     2      HN     -15.524     1.000  1.00
                         """
@@ -290,8 +290,13 @@ def test_bad_format():
         read_db_file_records(gdb_stream)
 
     msgs ='''\
-          unexpected format e at index 1
-          expected formats are s, d, f (string, integer, float)
+          unexpected format g at index 1
+          expected formats are 
+          s, d, e, f 
+          string
+          integer
+          scientific(float)
+          float
           file: unknown
           line no: 2
           ^
@@ -300,7 +305,7 @@ def test_bad_format():
     msgs = msgs.split('\n')
 
     for msg in msgs:
-        assert msg in exc_info.value.args[0]
+        assert msg.strip() in exc_info.value.args[0]
 
 
 def test_sequence():
