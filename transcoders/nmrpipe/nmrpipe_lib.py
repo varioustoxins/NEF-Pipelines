@@ -22,11 +22,12 @@ COMMENT = '#'
 NULLSTRING = 'NULLSTRING'
 NULLVALUE = 'NULLVALUE'
 
-@dataclass
+
+@dataclass(frozen = True)
 class DbRecord:
     index: int
     type: str
-    values: List[Union[int, str, float]]
+    values: Tuple[Union[int, str, float]]
 
 
 @dataclass
