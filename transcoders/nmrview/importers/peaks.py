@@ -386,7 +386,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
                 loop.add_data_by_tag(tag, list_data.spectrometer_frequencies[i])
             elif tag == 'spectral_width':
                 if list_data.sweep_widths:
-                    loop.add_data_by_tag(tag, list_data.sweep_width[i])
+                    loop.add_data_by_tag(tag, list_data.sweep_widths[i])
                 else:
                     loop.add_data_by_tag(tag, NEF_UNKNOWN)
             elif tag == 'folding':
