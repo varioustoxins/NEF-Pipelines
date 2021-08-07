@@ -296,11 +296,22 @@ def select_records(gdb: DbFile, record_type: str, predicate: OptionDbRecordPredi
 
 
 def gdb_to_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[SequenceResidue]:
-    data_records = [record for record in gdb.records if record.type == 'DATA']
-    sequence_records = [record.values[1:] for record in data_records if record.values[0] == 'SEQUENCE']
+    '''
+    read sequence records from a gdb file and convert them to a list of sequence residues
+    it is assumed that residues start from 1 and are in chain A
+    Args:
+        gdb (DbFile): the source db/tab file records
+        translations (Dict[str, str]): a translation table for 1 letter codes to 3 letter codes
 
-    flattened_records = functools.reduce(operator.iconcat, sequence_records, [])
-    sequence_string = ''.join(flattened_records)
+    Returns List[SequenceResidue]:
+        a list of sequence residues
+    '''
+    sequence_records = select_records(gdb, 'DATA', predicate=lambda rec: rec.values[0] == 'SEQUENCE')
+
+    sequence = [record.values[1:] for record in  sequence_records]
+
+    flattened_sequence = functools.reduce(operator.iconcat, sequence, [])
+    sequence_string = ''.join(flattened_sequence)
 
     return translate_1_to_3(sequence_string, translations)
 
