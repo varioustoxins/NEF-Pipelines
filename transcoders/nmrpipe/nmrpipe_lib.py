@@ -274,6 +274,27 @@ def _formats_to_constructors(formats, line_info):
     return result
 
 
+OptionDbRecordPredicate = Optional[Callable[[DbRecord], bool]]
+
+
+def select_records(gdb: DbFile, record_type: str, predicate: OptionDbRecordPredicate = None) -> List[DbRecord]:
+    """
+    Select records from a gdb file by type and predicate
+    Args:
+        gdb (DbFile): gdb/tab file
+        type (str): the type of the record #, REMARK, __VALUE__ etc
+        predicate (OptionDbRecordPredicate): an optional test to apply to the record
+
+    Returns List[DbRecord]:
+        the selected gdb/tab records
+    """
+    result = [record for record in gdb.records if record.type == record_type]
+    if predicate:
+        result = [record for record in result if predicate(record)]
+    return result
+
+
+
 def gdb_to_3let_sequence(gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3) -> List[SequenceResidue]:
     data_records = [record for record in gdb.records if record.type == 'DATA']
     sequence_records = [record.values[1:] for record in data_records if record.values[0] == 'SEQUENCE']
