@@ -52,6 +52,7 @@ def get_expected(name):
 def test_nef_default_header(typer_app, using_header, fixed_seed):
 
     result = runner.invoke(typer_app, ['header'])
+
     assert result.exit_code == 0
 
     assert_lines_match(get_expected('nef'), result.stdout)
