@@ -1,8 +1,92 @@
+import sys
 from itertools import zip_longest
 from pathlib import Path
 from typing import Optional
 
 from pynmrstar import Entry
+from io import StringIO
+from fnmatch import fnmatch
+
+def run_and_read_pytest(args):
+    from pytest import main
+    original_output = sys.stdout
+    original_error = sys.stdout
+    sys.stdout = StringIO()
+    sys.stderr = StringIO()
+
+    main(args)
+
+    output = sys.stdout.getvalue()
+    error_output = sys.stderr.getvalue()
+
+    sys.stdout.close()
+    sys.stderr.close()
+    sys.stdout = original_output
+    sys.stderr = original_error
+
+    return output, error_output
+
+
+def _split_test_spec(spec):
+    spec_parts = spec.split('::')
+    spec_parts[0] = Path(spec_parts[0])
+
+    return spec_parts
+
+
+def select_matching_tests(tests, selectors):
+    results = []
+
+    for selector in selectors:
+
+        selector_parts = _split_test_spec(selector)
+        num_selector_parts = len(selector_parts)
+
+        if num_selector_parts == 1:
+            selector = f'*::{selector_parts[0]}'
+            selector_parts = _split_test_spec(selector)
+            num_selector_parts = len(selector_parts)
+
+        if num_selector_parts == 2 and selector_parts[0] == Path(''):
+            selector = f'*::{selector_parts[1]}'
+            selector_parts = _split_test_spec(selector)
+            num_selector_parts = len(selector_parts)
+
+        if num_selector_parts ==  2 and selector_parts[1] == '':
+            selector = f'{selector_parts[0]}::*'
+            selector_parts = _split_test_spec(selector)
+            num_selector_parts = len(selector_parts)
+
+        selector_path_parts = selector_parts[0].parts
+        num_selector_path_parts = len(selector_path_parts)
+
+        for test in tests:
+
+            test_parts = _split_test_spec(test)
+            num_test_parts = len(test_parts)
+            test_path_parts = test_parts[0].parts
+            num_test_path_parts = len(test_path_parts)
+
+            paths_equal = False
+            if num_selector_path_parts <= num_test_path_parts:
+                selector_path = selector_path_parts[-num_selector_path_parts:]
+                test_path = test_path_parts[-num_selector_path_parts:]
+                paths_equal = selector_path == test_path
+
+
+            path = str(test_parts[0])
+            path_test = str(selector_parts[0])
+
+            if not paths_equal:
+                paths_equal = fnmatch(path, path_test)
+
+            test_names_equal = False
+            if (num_selector_parts == 2) and (num_test_parts == 2):
+                test_names_equal = fnmatch(test_parts[-1], selector_parts[-1])
+
+            if paths_equal and test_names_equal:
+                results.append(test)
+    return results
 
 
 def assert_lines_match(expected: str, reported: str,  display:bool=False):
