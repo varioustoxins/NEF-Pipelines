@@ -92,13 +92,10 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
         entry.add_saveframe(header)
 
 
-import io
+class StringIteratorIO(io.TextIOBase):
 
 # https://stackoverflow.com/questions/12593576/adapt-an-iterator-to-behave-like-a-file-like-object-in-python
 # second answer with more votes!
-
-
-class StringIteratorIO(io.TextIOBase):
 
     def __init__(self, iter):
         self._iter = iter
