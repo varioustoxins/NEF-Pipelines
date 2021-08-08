@@ -10,6 +10,35 @@ from lib.test_lib import select_matching_tests, run_and_read_pytest
 from lib.util import exit_error
 from nef_app import app
 
+TARGET_HELP = \
+    '''
+    targets are selected as path::name, globs can be used, 
+    missing paths and names are replaced by * eg path:: is equivalent to path::*
+    '''
+TARGET_HELP = dedent(TARGET_HELP)
+
+
+#TODO add versbosity control
+#TODO add flag to enable warnings
+
+
+@app.command()
+def test(
+        targets: List[str] = typer.Argument(None, help=TARGET_HELP)
+):
+    """-  run the test suite"""
+
+    from pytest import main
+
+    dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent / 'tests'
+
+    root_path = f'{str(dir_path.parent / "tests")}'
+
+    tests = _find_pytest_commands(root_path, targets)
+
+    if not targets or (targets and len(tests) != 0):
+        main(['--disable-warnings','-vvv', *tests])
+
 
 def _find_pytest_commands(root_path, targets):
     if not targets:
@@ -29,7 +58,7 @@ def _exit_if_stderr(stderr):
         msg = \
             '''
                couldn't collect tests because of an error
-               
+
                ----------------------- pytest errors -----------------------
                {stderr}
                ----------------------- pytest errors -----------------------
@@ -39,26 +68,3 @@ def _exit_if_stderr(stderr):
         exit_error(msg)
 
 
-TARGET_HELP = \
-    '''
-    targets are selected as path::name, globs can be used, 
-    missing paths and names are replaced by * eg path:: is equivalent to path::*
-    '''
-TARGET_HELP = dedent(TARGET_HELP)
-
-@app.command()
-def test(
-        targets: List[str] = typer.Argument(None, help=TARGET_HELP)
-):
-    """-  run the test suite"""
-
-    from pytest import main
-
-    dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent / 'tests'
-
-    root_path = f'{str(dir_path.parent / "tests")}'
-
-    tests = _find_pytest_commands(root_path, targets)
-
-    if not targets or (targets and len(tests) != 0):
-        main(['-vvv', *tests])
