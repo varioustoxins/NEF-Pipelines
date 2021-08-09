@@ -175,13 +175,13 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
 
     """
 
-    result = []
+    result = None
     if 'pipe' in args and args.pipe:
         result = cached_file_stream(args.pipe)
     elif not sys.stdin.isatty():
         result = cached_stdin()
 
-    return StringIteratorIO(result)
+    return StringIteratorIO(result) if result else None
 
 
 @iter_cache
