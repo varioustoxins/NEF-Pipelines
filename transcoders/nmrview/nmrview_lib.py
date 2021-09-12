@@ -5,7 +5,6 @@ from typing import Iterable, List
 from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables, ParseResults, \
     ParserElement
 
-# TODO is this a hack if so how to do this
 from lib.structures import SequenceResidue
 from lib.util import exit_error
 
