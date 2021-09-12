@@ -1,9 +1,11 @@
 import functools
 from textwrap import dedent
+from typing import Iterable, List
 
 from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables
 
 # TODO is this a hack if so how to do this
+from lib.structures import SequenceResidue
 from lib.util import exit_error
 
 
@@ -91,5 +93,42 @@ def parse_float_list(line, line_no):
             msg = f"Couldn't convert sweep width {field_index} [{field}] to float for line {line} at line number {line_no}"
             exit_error(msg)
         result.append(field)
+
+    return result
+
+def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence_file_name: str = 'unknown') \
+                  -> List[SequenceResidue]:
+
+    start_residue = 1
+    result = []
+    for i, line in enumerate(sequence_lines):
+        line = line.strip()
+        fields = line.split()
+
+        msg = f'''nmview sequences have one residue name per line, 
+                  except for the first line which can also contain a starting residue number,
+                  at line {i + 1} i got {line} in file {sequence_file_name}
+                  line was: {line}'''
+
+        if len(fields) > 1 and i != 0:
+            exit_error(msg)
+
+        if i == 0 and len(fields) > 2:
+            exit_error(f'''at the first line the should be one 3 letter code and an optional residue number
+                           in file {sequence_file_name} at line {i+1} got {len(fields)} fields 
+                           line was: {line}''')
+
+        if i == 0 and len(fields) == 2:
+            try:
+                start_residue = int(fields[1])
+            except ValueError:
+                msg = f'''couldn't convert second field {fields[0]} to an integer
+                          at line {i + 1} in file {sequence_file_name} 
+                          line was: {line}
+                        '''
+                exit_error(msg)
+
+        if len(fields) > 0:
+            result.append(SequenceResidue(chain_code, start_residue + i, fields[0]))
 
     return result
