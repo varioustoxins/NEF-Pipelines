@@ -2,14 +2,24 @@ import functools
 from textwrap import dedent
 from typing import Iterable, List
 
-from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables
+from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables, ParseResults, \
+    ParserElement
 
 # TODO is this a hack if so how to do this
 from lib.structures import SequenceResidue
 from lib.util import exit_error
 
 
-def _process_emptys_and_singles(value):
+
+def _process_emptys_and_singles(value: ParseResults) -> ParseResults:
+    """
+    a parse action for tcl_parser that ignores empty lists and promotes lists with a single item to a single item
+    Args:
+        value (ParseResults): parse resultsd to be modified
+
+    Returns:
+        ParseResults: corrected parse results
+    """
 
     for i, item in enumerate(value):
         if len(item) == 0:
@@ -22,7 +32,15 @@ def _process_emptys_and_singles(value):
 
 
 @functools.cache
-def get_tcl_parser():
+def get_tcl_parser() -> ParserElement:
+    """
+    build a simple tcl parser suitable for nmrview files and cach it
+
+    Returns:
+        pyparsing parser
+
+    """
+
     # TODO this should be printables  excluding : " {  }
     simple_word = Word(initChars=printables, excludeChars='"{}')
     simple_word.setName('simple_word')
@@ -56,7 +74,19 @@ def get_tcl_parser():
     return top_level
 
 
-def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
+def parse_tcl(in_str, file_name='unknown', line_no=0) -> ParseResults:
+    """
+    parse a tcl data file or fragment using pyparsing
+
+    Args:
+        in_str (str):  tcl source
+        file_name (str):  file name for error reporting
+        line_no (str):  base line number for error reporting, the line no reported by py parsing will be added to this
+
+    Returns:
+        ParseResults: pyparsing parse result
+    """
+
 
     parser = get_tcl_parser()
 
@@ -70,8 +100,6 @@ def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
                   
                     Explanation:
                 """
-                  
-
 
         msg = dedent(msg)
 
@@ -82,7 +110,17 @@ def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
     return result
 
 
-def parse_float_list(line, line_no):
+def parse_float_list(line: str, line_no: int) -> List[float]:
+    """
+     parse a tcl list into a list of floats using the tcl parser
+
+    Args:
+        line (str): the input string
+        line_no: line number for error reporting
+
+    Returns:
+       List[float]: a list of floats
+    """
 
     raw_fields = [field[0] for field in parse_tcl(line)]
 
@@ -97,8 +135,21 @@ def parse_float_list(line, line_no):
 
     return result
 
+
 def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence_file_name: str = 'unknown') \
                   -> List[SequenceResidue]:
+
+    """
+    read an nmrview sequence from a file
+
+    Args:
+        sequence_lines (Iterable[str]): the lines for the file
+        chain_code (str): a chaning code to use
+        sequence_file_name (str): the file being read from for reporting errors
+
+    Returns:
+        List[SequenceResidue]: The residues as structures
+    """
 
     start_residue = 1
     result = []
