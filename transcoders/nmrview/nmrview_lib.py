@@ -64,6 +64,7 @@ def parse_tcl(in_str, file_name='unknown', line_no='unknown'):
     try:
         result = parser.parseString(in_str, parseAll=True)
     except ParseException as pe:
+        line_no +=  pe.lineno
         msg = f"""\
                     Failed while parsing tcl at line: {line_no} in file: {file_name}
                   
