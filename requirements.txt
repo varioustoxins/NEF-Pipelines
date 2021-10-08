@@ -1,0 +1,7 @@
+pytest
+icecream
+pynmrstar
+typer
+tabulate
+freezegun
+cacheable_iter
