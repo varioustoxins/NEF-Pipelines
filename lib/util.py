@@ -264,7 +264,7 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
     except Exception as e:
         exit_error(f'failed to load pipe file because {e}')
 
-    new_entry = Entry.from_file(stream) if stream else Entry.from_scratch(input_args.entry_name)
+    new_entry = Entry.from_string(''.join(stream.readlines())) if stream else Entry.from_scratch(input_args.entry_name)
 
     fixup_metadata(new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
 
