@@ -273,3 +273,47 @@ def is_int(value: str) -> bool:
         pass
 
     return result
+
+
+
+def read_float_or_exit(string, line_info):
+    try:
+        result = float(string)
+    except:
+        msg = f'''
+            couldn't convert {string} to float
+            
+            at line {line_info.line_no+1} in f{line_info.file_name}
+            
+            line value was:
+            
+            {line_info.line}
+        '''
+
+        exit_error(msg)
+
+    return result
+
+
+
+def read_integer_or_exit(string, line_info, field='unknown'):
+    try:
+        result = int(string)
+    except:
+        msg = f'''
+            couldn't convert {line_info.line} to int
+
+            at {line_info.line_no + 1} in f{line_info.file_name}
+
+            line value was 
+
+            {line_info.line}
+            
+            field was 
+            
+            {field}
+        '''
+
+        exit_error(msg)
+
+    return result
