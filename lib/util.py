@@ -235,10 +235,13 @@ def exit_error(msg, exception=None):
         msg: the message
     """
 
-    print(f'ERROR: {msg}', file=sys.stderr)
-    if exception:
+
+    if exception is not None:
         exc_info = sys.exc_info()
-        traceback.print_exception(*exc_info)
+        traceback.print_exception(*exc_info, file=sys.stderr)
+        print(file=sys.stderr)
+
+    print(f'ERROR: {msg}', file=sys.stderr)
     print(f'exiting...', file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
