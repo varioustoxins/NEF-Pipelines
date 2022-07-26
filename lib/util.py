@@ -7,13 +7,13 @@ from cacheable_iter import iter_cache
 
 from pathlib import Path
 
-from typing import Dict, TextIO, Optional, List
+from typing import Dict, TextIO, Optional, List, Iterator, TypeVar
 
 from pynmrstar import Loop, Saveframe, Entry
 
 from lib.constants import NEF_UNKNOWN, NEF_META_DATA, NEF_PIPELINES, NEF_PIPELINES_VERSION, EXIT_ERROR
 from lib.header_lib import get_creation_time, get_uuid, create_header_frame
-
+from lib.structures import LineInfo
 
 
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
@@ -293,13 +293,34 @@ def is_int(value: str) -> bool:
 
     return result
 
+T = TypeVar('T')
+
 # https://stackoverflow.com/questions/312443/how-do-i-split-a-list-into-equally-sized-chunks
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
+def chunks(lst: List[T], n: int) -> Iterator[List[T]]:
+    """Yield successive n-sized chunks from lst.
+       lst: the list to chunk
+       n: the chunk size
+
+    Returns:
+        an iterator of chunks from lst of length T
+
+    """
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def read_float_or_exit(string, line_info):
+def read_float_or_exit(string: str, line_info: LineInfo, field='unknown') -> float:
+    """
+    read a string to an float or exit with error including line information
+
+    Args:
+        string: string to parse
+        line_info: the line the string came from
+        field: the name of the field defininbg the string
+
+    Returns:
+        a float
+    """
+
     try:
         result = float(string)
     except:
@@ -319,7 +340,18 @@ def read_float_or_exit(string, line_info):
 
 
 
-def read_integer_or_exit(string, line_info, field='unknown'):
+def read_integer_or_exit(string: str, line_info: LineInfo, field='unknown') -> int:
+    """
+    read a string to an int or exit with error including line information
+
+    Args:
+        string: string to parse
+        line_info: the line the string came from
+        field: the name of the field defininbg the string
+
+    Returns:
+        an integer
+    """
     try:
         result = int(string)
     except:
