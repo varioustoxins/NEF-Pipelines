@@ -6,6 +6,10 @@ except:
     import traceback
 from textwrap import dedent
 
+# for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
+import logging
+logging.getLogger().setLevel(logging.ERROR)
+
 EXIT_ERROR = 1
 
 
