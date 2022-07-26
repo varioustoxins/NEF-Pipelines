@@ -191,11 +191,24 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
 def cached_stdin():
     return sys.stdin
 
+class cached_file_stream:
+    def __init__(self, file_name):
+        self._file_name = file_name
+
+    def __enter__(self):
+        return _cached_file_stream(self._file_name)
+
+    def __exit__(self, *args):
+        pass
+
+    def __iter__(self):
+        return _cached_file_stream(self._file_name)
 
 @iter_cache
-def cached_file_stream(file_name):
+def _cached_file_stream(file_name):
     try:
-        result = open(file_name, 'r')
+        with open(file_name, 'r') as lines:
+            result = lines.readlines()
     except IOError as e:
         exit_error(f"couldn't open stream {file_name} because {e}")
     return result
