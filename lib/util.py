@@ -162,6 +162,8 @@ def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
 
     return StringIteratorIO(iterable)
 
+def running_in_pycharm():
+    return 'PYCHARM_HOSTED' in os.environ
 
 def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     """
@@ -178,7 +180,8 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     result = None
     if 'pipe' in args and args.pipe:
         result = cached_file_stream(args.pipe)
-    elif not sys.stdin.isatty():
+    # pycharm doesn't treat stdstreams correcly and hangs
+    elif not sys.stdin.isatty() and not running_in_pycharm():
         result = cached_stdin()
 
     return StringIteratorIO(result) if result else None
