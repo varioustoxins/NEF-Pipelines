@@ -1,3 +1,4 @@
+import os
 import sys
 import io
 import traceback
@@ -296,7 +297,7 @@ def is_int(value: str) -> bool:
 T = TypeVar('T')
 
 # https://stackoverflow.com/questions/312443/how-do-i-split-a-list-into-equally-sized-chunks
-def chunks(lst: List[T], n: int) -> Iterator[List[T]]:
+def chunks(input: Iterator[T], n: int) -> Iterator[List[T]]:
     """Yield successive n-sized chunks from lst.
        lst: the list to chunk
        n: the chunk size
@@ -305,6 +306,7 @@ def chunks(lst: List[T], n: int) -> Iterator[List[T]]:
         an iterator of chunks from lst of length T
 
     """
+    lst = list(input)
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
