@@ -57,6 +57,7 @@ try:
     import transcoders.nmrpipe
     import tools.header
     import tools.test
+    import tools.list
 
 except Exception as e:
     msg = '''\
