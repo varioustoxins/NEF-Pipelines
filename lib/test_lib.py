@@ -62,6 +62,13 @@ def select_matching_tests(tests, selectors):
 
         for test in tests:
 
+            # here we ensure we are looking for a .py file...
+            if not selector_path_parts[-1].endswith('py'):
+                selector_path_parts = list(selector_path_parts)
+                selector_path_parts[-1] = f'{selector_path_parts[-1]}.py'
+            selector_path_parts =  tuple(selector_path_parts)
+
+
             test_parts = _split_test_spec(test)
             num_test_parts = len(test_parts)
             test_path_parts = test_parts[0].parts

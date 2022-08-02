@@ -14,6 +14,7 @@ TARGET_HELP = \
     '''
     targets are selected as path::name, globs can be used, 
     missing paths and names are replaced by * eg path:: is equivalent to path::*
+    note: filenames do not require a trailing .py
     '''
 TARGET_HELP = dedent(TARGET_HELP)
 
