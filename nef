@@ -58,6 +58,7 @@ try:
     import tools.header
     import tools.test
     import tools.list
+    import tools.stream
 
 except Exception as e:
     msg = '''\
