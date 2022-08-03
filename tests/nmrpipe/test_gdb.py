@@ -8,7 +8,7 @@ import pytest
 from tests.test_sequence_lib import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
 from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, DbFile, DbRecord, NoVarsLine, \
      MultipleVars, WrongColumnCount, MultipleFormat, DataBeforeFormat, BadFieldFormat, \
-     gdb_to_3let_sequence
+     gdb_to_3let_sequence, get_gdb_columns, get_column_indices, select_records, VALUES
 from lib.structures import LineInfo
 
 def _lines_to_line_info(lines):
@@ -313,6 +313,79 @@ def test_bad_format():
     for msg in msgs:
         assert msg.strip() in exc_info.value.args[0]
 
+
+def test_columns():
+    TEST_DATA = """\
+                        DATA SEQUENCE MQIFVKTLTG KTITLEVEPS DTIENVKAKI QDKEGIPPDQ QRLIFAGKQL
+                        DATA SEQUENCE EDGRTLSDYN IQKESTLHLV LRLRGG
+
+                        VARS   RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W
+                        FORMAT %5d     %6s       %6s        %5d     %6s       %6s    %9.3f   %9.3f %.2f
+
+                            2    GLN      N      2    GLN     HN     -15.524     1.000 1.000
+                        """
+
+    TEST_DATA = dedent(TEST_DATA)
+
+    gdb_stream = io.StringIO(TEST_DATA)
+    gdb_records = read_db_file_records(gdb_stream)
+
+    columns = get_gdb_columns(gdb_records)
+
+    assert columns == 'RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W'.split()
+
+
+def test_column_indices():
+    TEST_DATA = """\
+                        DATA SEQUENCE MQIFVKTLTG KTITLEVEPS DTIENVKAKI QDKEGIPPDQ QRLIFAGKQL
+                        DATA SEQUENCE EDGRTLSDYN IQKESTLHLV LRLRGG
+
+                        VARS   RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W
+                        FORMAT %5d     %6s       %6s        %5d     %6s       %6s    %9.3f   %9.3f %.2f
+
+                            2    GLN      N      2    GLN     HN     -15.524     1.000 1.000
+                        """
+
+    TEST_DATA = dedent(TEST_DATA)
+
+    gdb_stream = io.StringIO(TEST_DATA)
+    gdb_records = read_db_file_records(gdb_stream)
+
+    columns = get_column_indices(gdb_records)
+
+    column_names = 'RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W'.split()
+    assert columns == { column_name: index  for index, column_name in  enumerate(column_names)}
+
+def test_column_data():
+    TEST_DATA = """\
+                        DATA SEQUENCE MQIFVKTLTG KTITLEVEPS DTIENVKAKI QDKEGIPPDQ QRLIFAGKQL
+                        DATA SEQUENCE EDGRTLSDYN IQKESTLHLV LRLRGG
+
+                        VARS   RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W
+                        FORMAT %5d     %6s       %6s        %5d     %6s       %6s    %9.3f   %9.3f %.2f
+
+                            2    GLN      N      2    GLN     HN     -15.524     1.000 1.000
+                        """
+
+    TEST_DATA = dedent(TEST_DATA)
+
+    gdb_stream = io.StringIO(TEST_DATA)
+    gdb_file = read_db_file_records(gdb_stream)
+
+    column_indices = get_column_indices(gdb_file)
+    print('!!', column_indices)
+
+    data = select_records(gdb_file, VALUES)
+    print('!! data', data[0])
+
+    column_names = 'RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J D      DD    W'.split()
+    print(len(column_names), len(data[0].values))
+
+    values = [data[0].values[column_indices[column_name]] for column_name in column_names]
+
+    assert values == [2,'GLN', 'N', 2, 'GLN', 'HN', -15.524, 1.000, 1.000]
+
+    # assert False
 
 def test_sequence():
 
