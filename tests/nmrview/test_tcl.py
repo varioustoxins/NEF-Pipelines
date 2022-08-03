@@ -93,8 +93,9 @@ def test_rest_of_line(parse_tcl, capsys):
         parse_tcl(test, file_name='Wibble.txt', line_no=666)
 
     stderr = capsys.readouterr().err
+    print(stderr)
     assert "Expected end of text, found '{'" in stderr
-    assert "line: 666" in stderr
+    assert "line: 667" in stderr
     assert "file: Wibble.txt" in stderr
 
 
