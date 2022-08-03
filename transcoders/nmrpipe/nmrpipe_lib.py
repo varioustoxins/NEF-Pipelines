@@ -37,6 +37,7 @@ class DbRecord:
     index: int
     type: str
     values: Tuple[Union[int, str, float]]
+    line_info: LineInfo = None
 
 
 @dataclass
@@ -98,7 +99,7 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
                 _raise_multiple('VARS', line_info)
 
             column_names = fields
-            records.append(DbRecord(record_count[record_type], record_type, column_names))
+            records.append(DbRecord(record_count[record_type], record_type, column_names, line_info))
             handled = True
 
         if record_type == 'FORMAT':
@@ -109,11 +110,11 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
             _check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
 
-            records.append(DbRecord(record_count[record_type], record_type, fields))
+            records.append(DbRecord(record_count[record_type], record_type, fields, line_info))
             handled = True
 
         if record_type in ('REMARK', '#'):
-            records.append(DbRecord(record_count[record_type], record_type, line))
+            records.append(DbRecord(record_count[record_type], record_type, line, line_info))
             handled = True
 
         if is_int(record_type):
@@ -124,7 +125,8 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
                 values = _build_values_or_raise(column_formats, column_names, fields, line_info)
 
-                record = DbRecord(record_count['__VALUES__'], '__VALUES__', values)
+
+                record = DbRecord(record_count['__VALUES__'], '__VALUES__', values, line_info)
                 records.append(record)
 
                 handled = True
@@ -135,7 +137,7 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
                 _raise_data_before_format(line_info)
 
         if not handled:
-            records.append(DbRecord(record_count[record_type], record_type, fields))
+            records.append(DbRecord(record_count[record_type], record_type, fields, line_info))
 
 
     return DbFile(file_name, records)
