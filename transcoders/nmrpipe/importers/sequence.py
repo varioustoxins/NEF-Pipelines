@@ -14,6 +14,7 @@ from lib.typer_utils import get_args
 from lib.util import exit_error, process_stream_and_add_frames
 from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, gdb_to_3let_sequence
 from transcoders.nmrpipe import import_app
+from lib.util import cached_file_stream
 
 app = typer.Typer()
 
@@ -45,7 +46,8 @@ def process_sequence(args: Namespace):
     nmrpipe_frames = []
 
     for file_name, chain_code in zip(args.file_names, chain_code_iter(args.chain_codes)):
-        with open(file_name, 'r') as lines:
+        # cached_file_stream
+        with cached_file_stream(file_name) as lines:
 
             nmrpipe_sequence = read_sequence(lines, chain_code=chain_code, start=args.start)
 
