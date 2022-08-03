@@ -59,3 +59,14 @@ class LineInfo:
     file_name: str
     line_no: int
     line: str
+
+
+@dataclass
+class ShiftData:
+    atom: AtomLabel
+    shift: float
+    error: Optional[float] = 0.0
+
+@dataclass
+class ShiftList:
+    shifts: List[ShiftData]

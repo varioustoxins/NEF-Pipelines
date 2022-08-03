@@ -6,11 +6,13 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from textwrap import dedent
 from typing import List, Union, TextIO, Dict, Callable, Optional, Tuple
+from argparse import Namespace
 
 from tabulate import tabulate
 
 from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
-from lib.structures import SequenceResidue, LineInfo, PeakList, PeakListData, PeakAxis, PeakValues, AtomLabel
+from lib.structures import SequenceResidue, LineInfo, PeakList, PeakListData, PeakAxis, PeakValues, AtomLabel, \
+    ShiftData, ShiftList
 from lib.util import is_int, cached_file_stream
 
 class PEAK_TYPES(IntEnum):
@@ -31,6 +33,7 @@ NULLSTRING = 'NULLSTRING'
 NULLVALUE = 'NULLVALUE'
 
 NMRPIPE_PEAK_EXPECTED_FIELDS = 'INDEX X_AXIS XW XW_HZ ASS CLUSTID MEMCNT'.split()
+NMRPIPE_SHIFTS_EXPECTED_FIELDS = 'RESID RESNAME ATOMNAME SHIFT'.split()
 
 @dataclass(frozen = True)
 class DbRecord:
@@ -426,6 +429,11 @@ def check_is_peak_file(gdb_file):
 
     return expected_fields.issubset(columns)
 
+def check_is_shifts_file(gdb_file):
+    columns = set(get_gdb_columns(gdb_file))
+    expected_fields = set(NMRPIPE_SHIFTS_EXPECTED_FIELDS)
+
+    return expected_fields.issubset(columns)
 
 def read_peak_file(gdb_file, args):
     data = select_records(gdb_file, VALUES)
@@ -493,6 +501,28 @@ def read_peak_file(gdb_file, args):
     peak_list = PeakList(header_data, raw_peaks)
 
     return peak_list
+
+def read_shift_file(gdb_file, args=Namespace(chain_code='A')):
+    data = select_records(gdb_file, VALUES)
+
+    column_indices = get_column_indices(gdb_file)
+
+    raw_shifts  = []
+    for index, line in enumerate(data, start=1):
+
+        atom_name = line.values[column_indices['ATOMNAME']]
+        residue_number = line.values[column_indices['RESID']]
+        residue_type = line.values[column_indices['RESNAME']]
+        shift = line.values[column_indices['SHIFT']]
+
+
+        atom = AtomLabel(args.chain_code, residue_number, residue_type, atom_name)
+
+        shift = ShiftData(atom, shift)
+
+        raw_shifts.append(shift)
+
+    return ShiftList(raw_shifts)
 
 def _propagate_assignments(assignments):
 
