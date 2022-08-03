@@ -19,7 +19,7 @@ TARGET_HELP = \
 TARGET_HELP = dedent(TARGET_HELP)
 
 
-#TODO add versbosity control
+#TODO add verbosity control
 #TODO add flag to enable warnings
 
 
@@ -38,7 +38,7 @@ def test(
     tests = _find_pytest_commands(root_path, targets)
 
     if not targets or (targets and len(tests) != 0):
-        main(['--disable-warnings','-vvv', *tests])
+        main(['--disable-warnings','-vvv', '--full-trace', *tests])
 
 
 def _find_pytest_commands(root_path, targets):
