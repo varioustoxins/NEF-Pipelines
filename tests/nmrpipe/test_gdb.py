@@ -22,7 +22,6 @@ def _lines_to_line_info(lines):
     return result
 
 
-
 def test_read_gdb_file():
     PALES_DATA = """\
     DATA SEQUENCE MQIFVKTLTG KTITLEVEPS DTIENVKAKI QDKEGIPPDQ QRLIFAGKQL
@@ -53,14 +52,14 @@ def test_read_gdb_file():
         (2, 'DATA',['SEQUENCE', 'EDGRTLSDYN','IQKESTLHLV', 'LRLRGG']),
         (1, 'VARS',['RESID_I', 'RESNAME_I', 'ATOMNAME_I', 'RESID_J', 'RESNAME_J', 'ATOMNAME_J', 'D', 'DD', 'W']),
         (1, 'FORMAT',['%5d', '%6s', '%6s', '%5d', '%6s', '%6s', '%9.3f', '%9.3f',  '%.2f']),
-        (1, '__VALUES__',['GLN', 'N', 2, 'GLN', 'HN', -15.524, 1.0, 1.0]),
-        (2, '__VALUES__',['ILE', 'N', 3, 'ILE', 'HN', 10.521, 1.0, 1.0]),
-        (3, '__VALUES__',['PHE', 'N', 4, 'PHE', 'HN', 9.648, 1.0, 1.0]),
-        (4, '__VALUES__',['VAL', 'N', 5, 'VAL', 'HN', 6.082, 1.0, 1.0]),
-        (5, '__VALUES__',['MET', 'C', 2, 'GLN', 'HN', 3.993, 0.333, 3.0]),
-        (6, '__VALUES__',['GLN', 'C', 3, 'ILE', 'HN', -5.646, 0.333, 3.0]),
-        (7, '__VALUES__',['ILE', 'C', 4, 'PHE', 'HN', 1.041, 0.333, 3.0]),
-        (8, '__VALUES__',['PHE', 'C', 5, 'VAL', 'HN', 0.835, 0.333, 3.0])
+        (1, '__VALUES__',[2, 'GLN', 'N', 2, 'GLN', 'HN', -15.524, 1.0, 1.0]),
+        (2, '__VALUES__',[3, 'ILE', 'N', 3, 'ILE', 'HN', 10.521, 1.0, 1.0]),
+        (3, '__VALUES__',[4, 'PHE', 'N', 4, 'PHE', 'HN', 9.648, 1.0, 1.0]),
+        (4, '__VALUES__',[5, 'VAL', 'N', 5, 'VAL', 'HN', 6.082, 1.0, 1.0]),
+        (5, '__VALUES__',[1, 'MET', 'C', 2, 'GLN', 'HN', 3.993, 0.333, 3.0]),
+        (6, '__VALUES__',[2, 'GLN', 'C', 3, 'ILE', 'HN', -5.646, 0.333, 3.0]),
+        (7, '__VALUES__',[3, 'ILE', 'C', 4, 'PHE', 'HN', 1.041, 0.333, 3.0]),
+        (8, '__VALUES__',[4, 'PHE', 'C', 5, 'VAL', 'HN', 0.835, 0.333, 3.0])
     ]
 
     records = []
@@ -267,7 +266,7 @@ def test_bad_data_format():
             Couldn't convert GLN to type int
             file: unknown
             line no: 4
-            column: 3
+            column: 4
             line:     2    GLN      N      GLN     2      HN     -15.524     1.000  1.00
                                            ^
             '''
@@ -317,7 +316,7 @@ def test_bad_format():
 
 def test_sequence():
 
-    SEQUENCE = dedent(ABC_SEQUENCE_1LET)
+    SEQUENCE = f'DATA {dedent(ABC_SEQUENCE_1LET)}'
 
     gdb_stream = io.StringIO(SEQUENCE)
 
