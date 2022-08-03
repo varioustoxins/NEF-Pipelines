@@ -9,6 +9,18 @@ from tests.test_sequence_lib import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
 from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records, DbFile, DbRecord, NoVarsLine, \
      MultipleVars, WrongColumnCount, MultipleFormat, DataBeforeFormat, BadFieldFormat, \
      gdb_to_3let_sequence
+from lib.structures import LineInfo
+
+def _lines_to_line_info(lines):
+
+    result = []
+
+    lines =  [line for line in lines.split('\n')]
+    for line_no, line in enumerate(lines, start=1):
+        if len(line.strip()) != 0:
+            result.append(LineInfo(file_name='unknown', line_no=line_no, line=f"{line}\n"))
+    return result
+
 
 
 def test_read_gdb_file():
@@ -33,32 +45,27 @@ def test_read_gdb_file():
     pales_stream = io.StringIO(PALES_DATA)
 
     result = read_db_file_records(pales_stream)
+    
+    line_info_items = _lines_to_line_info(PALES_DATA)
+    
+    base_records = [
+        (1, 'DATA', ['SEQUENCE', 'MQIFVKTLTG', 'KTITLEVEPS', 'DTIENVKAKI', 'QDKEGIPPDQ', 'QRLIFAGKQL']),
+        (2, 'DATA',['SEQUENCE', 'EDGRTLSDYN','IQKESTLHLV', 'LRLRGG']),
+        (1, 'VARS',['RESID_I', 'RESNAME_I', 'ATOMNAME_I', 'RESID_J', 'RESNAME_J', 'ATOMNAME_J', 'D', 'DD', 'W']),
+        (1, 'FORMAT',['%5d', '%6s', '%6s', '%5d', '%6s', '%6s', '%9.3f', '%9.3f',  '%.2f']),
+        (1, '__VALUES__',['GLN', 'N', 2, 'GLN', 'HN', -15.524, 1.0, 1.0]),
+        (2, '__VALUES__',['ILE', 'N', 3, 'ILE', 'HN', 10.521, 1.0, 1.0]),
+        (3, '__VALUES__',['PHE', 'N', 4, 'PHE', 'HN', 9.648, 1.0, 1.0]),
+        (4, '__VALUES__',['VAL', 'N', 5, 'VAL', 'HN', 6.082, 1.0, 1.0]),
+        (5, '__VALUES__',['MET', 'C', 2, 'GLN', 'HN', 3.993, 0.333, 3.0]),
+        (6, '__VALUES__',['GLN', 'C', 3, 'ILE', 'HN', -5.646, 0.333, 3.0]),
+        (7, '__VALUES__',['ILE', 'C', 4, 'PHE', 'HN', 1.041, 0.333, 3.0]),
+        (8, '__VALUES__',['PHE', 'C', 5, 'VAL', 'HN', 0.835, 0.333, 3.0])
+    ]
 
-    records = [ DbRecord(index=1, type='DATA',
-                         values=['SEQUENCE', 'MQIFVKTLTG', 'KTITLEVEPS', 'DTIENVKAKI', 'QDKEGIPPDQ', 'QRLIFAGKQL']),
-                DbRecord(index=2, type='DATA',
-                         values=['SEQUENCE', 'EDGRTLSDYN','IQKESTLHLV', 'LRLRGG']),
-                DbRecord(index=1, type='VARS',
-                         values=['RESID_I', 'RESNAME_I', 'ATOMNAME_I', 'RESID_J', 'RESNAME_J', 'ATOMNAME_J', 'D', 'DD', 'W']),
-                DbRecord(index=1, type='FORMAT',
-                         values=['%5d', '%6s', '%6s', '%5d', '%6s', '%6s', '%9.3f', '%9.3f',  '%.2f']),
-                DbRecord(index=1, type='__VALUES__',
-                         values=['GLN', 'N', 2, 'GLN', 'HN', -15.524, 1.0, 1.0]),
-                DbRecord(index=2, type='__VALUES__',
-                         values=['ILE', 'N', 3, 'ILE', 'HN', 10.521, 1.0, 1.0]),
-                DbRecord(index=3, type='__VALUES__',
-                         values=['PHE', 'N', 4, 'PHE', 'HN', 9.648, 1.0, 1.0]),
-                DbRecord(index=4, type='__VALUES__',
-                         values=['VAL', 'N', 5, 'VAL', 'HN', 6.082, 1.0, 1.0]),
-                DbRecord(index=5, type='__VALUES__',
-                         values=['MET', 'C', 2, 'GLN', 'HN', 3.993, 0.333, 3.0]),
-                DbRecord(index=6, type='__VALUES__',
-                         values=['GLN', 'C', 3, 'ILE', 'HN', -5.646, 0.333, 3.0]),
-                DbRecord(index=7, type='__VALUES__',
-                         values=['ILE', 'C', 4, 'PHE', 'HN', 1.041, 0.333, 3.0]),
-                DbRecord(index=8, type='__VALUES__',
-                         values=['PHE', 'C', 5, 'VAL', 'HN', 0.835, 0.333, 3.0])]
-
+    records = []
+    for (index, type, values),  line_info in zip(base_records, line_info_items):
+        records.append(DbRecord(index=index, type=type, values=values, line_info=line_info))
 
     expected = DbFile(name='unknown', records= records)
     assert result == expected
