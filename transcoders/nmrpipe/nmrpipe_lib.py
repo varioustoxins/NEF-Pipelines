@@ -307,7 +307,7 @@ def select_records(gdb: DbFile, record_type: str, predicate: OptionDbRecordPredi
         predicate (OptionDbRecordPredicate): an optional test to apply to the record
 
     Returns List[DbRecord]:
-        the selected gdb/tab records
+        in the selected gdb/tab records
     """
     result = [record for record in gdb.records if record.type == record_type]
     if predicate:
