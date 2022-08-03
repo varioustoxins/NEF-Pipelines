@@ -13,7 +13,7 @@ from lib.typer_utils import get_args
 
 from pathlib import Path
 
-from ..nmrview_lib import AtomLabel,PeakAxis, PeakValues, PeakListData, PeakList
+from lib.structures import AtomLabel, PeakAxis, PeakValues, PeakListData, PeakList
 from .sequence import read_sequence
 
 from lib.util import exit_error, process_stream_and_add_frames, get_pipe_file
