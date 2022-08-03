@@ -127,12 +127,10 @@ def isolate_frame(target: str, name: str) -> Optional[str]:
     Returns:
         Optional[str]: the entry or a None if not found
     """
-    entry = None
-    try:
-        entry = Entry.from_string(target)
-        entry = str(entry.get_saveframe_by_name(name))
-    except:
-        pass
+
+    entry = Entry.from_string(target)
+    entry = str(entry.get_saveframe_by_name(name))
+
 
     return entry
 

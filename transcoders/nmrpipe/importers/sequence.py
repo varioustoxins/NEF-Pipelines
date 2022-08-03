@@ -49,7 +49,7 @@ def process_sequence(args: Namespace):
         # cached_file_stream
         with cached_file_stream(file_name) as lines:
 
-            nmrpipe_sequence = read_sequence(lines, chain_code=chain_code, start=args.start)
+            nmrpipe_sequence = read_sequence(lines, chain_code=chain_code, sequence_file_name=file_name, start=args.start)
 
             frame = sequence_to_nef_frame(nmrpipe_sequence, args.entry_name)
 
