@@ -30,7 +30,7 @@ COMMENT = '#'
 NULLSTRING = 'NULLSTRING'
 NULLVALUE = 'NULLVALUE'
 
-NMRPIPE_PEAK_EXPECTED_FIELDS = 'X_AXIS XW XW_HZ ASS CLUSTID MEMCNT'.split()
+NMRPIPE_PEAK_EXPECTED_FIELDS = 'INDEX X_AXIS XW XW_HZ ASS CLUSTID MEMCNT'.split()
 
 @dataclass(frozen = True)
 class DbRecord:
@@ -74,8 +74,10 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
     column_names = None
     column_formats = None
     record_count = Counter()
+    in_header = True
 
     for line_index, line in enumerate(file_h):
+
         line_info = LineInfo(file_name, line_index+1, line)
         line = line.strip()
 
@@ -87,37 +89,47 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
         record_type = raw_fields[0]
         record_count[record_type] += 1
 
-        if len(raw_fields) > 1:
-            fields = raw_fields[1:]
-        else:
-            fields = raw_fields
+        fields = raw_fields
 
         handled = False
 
-        if record_type == 'VARS':
-            if record_count[record_type] != 1:
-                _raise_multiple('VARS', line_info)
+        if in_header:
+            if record_type == 'VARS':
 
-            column_names = fields
-            records.append(DbRecord(record_count[record_type], record_type, column_names, line_info))
-            handled = True
 
-        if record_type == 'FORMAT':
-            column_formats = _formats_to_constructors(fields, line_info)
+                column_names = fields[1:]
+                records.append(DbRecord(record_count[record_type], record_type, column_names, line_info))
+                handled = True
 
-            if record_count[record_type] != 1:
-                _raise_multiple('FORMAT', line_info)
+                if record_count[record_type] != 1:
+                    _raise_multiple(record_type, line_info)
 
-            _check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
+            if record_type == 'FORMAT':
+                column_formats = _formats_to_constructors(fields, line_info)
 
-            records.append(DbRecord(record_count[record_type], record_type, fields, line_info))
-            handled = True
+                _check_var_and_format_count_raise_if_bad(column_names, column_formats, line_info)
 
-        if record_type in ('REMARK', '#'):
-            records.append(DbRecord(record_count[record_type], record_type, line, line_info))
-            handled = True
+                records.append(DbRecord(record_count[record_type], record_type, fields[1:], line_info))
+                in_header = False
+                continue
 
-        if is_int(record_type):
+            if record_type in ('REMARK', '#'):
+                records.append(DbRecord(record_count[record_type], record_type, line, line_info))
+                handled = True
+
+            if record_type == DATA:
+                records.append(DbRecord(record_count[record_type], record_type, fields[1:], line_info))
+                handled = True
+
+            if not handled:
+                _raise_data_before_format(line_info)
+
+        if not in_header:
+
+
+            if record_type in (VARS, FORMAT):
+                _raise_multiple(record_type, line_info)
+
             if column_names and column_formats:
                 record_count['__VALUES__'] += 1
 
@@ -131,13 +143,8 @@ def read_db_file_records(file_h: TextIO, file_name: str = 'unknown') -> DbFile:
 
                 handled = True
 
-
-
-            else:
-                _raise_data_before_format(line_info)
-
         if not handled:
-            records.append(DbRecord(record_count[record_type], record_type, fields, line_info))
+            records.append(DbRecord(record_count[record_type], record_type, fields[1:], line_info))
 
 
     return DbFile(file_name, records)
@@ -152,10 +159,10 @@ def _find_nth(haystack, needle, n):
 
 
 def _build_values_or_raise(column_formats, column_names, fields, line_info):
-    non_index_column_formats = _check_column_count_raise_if_bad(column_formats, column_names, line_info)
+    columns_formats = _check_column_count_raise_if_bad(column_formats, column_names, line_info)
     result = []
     field_count = Counter()
-    for column_no, (raw_field, constructor) in enumerate(zip(fields, non_index_column_formats)):
+    for column_no, (raw_field, constructor) in enumerate(zip(fields, columns_formats)):
         try:
             field_count[raw_field] += 1
             value = constructor(raw_field)
@@ -221,7 +228,7 @@ def _check_column_count_raise_if_bad(column_formats, column_names, line_info):
     non_index_column_formats = column_formats[1:]
     raw_fields = line_info.line.split()
     num_fields = len(raw_fields)
-    num_columns = len(non_index_column_formats) + 1
+    num_columns = len(column_formats)
 
     missing_fields = ['*'] * abs(num_fields - num_columns)
     raw_fields = [*raw_fields, *missing_fields]
@@ -251,14 +258,14 @@ def _check_column_count_raise_if_bad(column_formats, column_names, line_info):
         msg = dedent(msg)
         msg = msg % tabulated
         raise WrongColumnCount(msg)
-    return non_index_column_formats
+    return column_formats
 
 
 def _formats_to_constructors(formats, line_info):
     result = []
 
     field_counter = Counter()
-    for column_index, field_format in enumerate(formats):
+    for column_index, field_format in enumerate(formats[1:]):
         field_counter[field_format] += 1
         field_format = field_format.strip()
         field_format = field_format[-1]
@@ -388,7 +395,7 @@ def _assignments_to_atom_labels(assignments, dimensions, chain_code = 'A'):
 
 
 def get_column_indices(gdb_file):
-    return {column: index-1 for index, column in enumerate(get_gdb_columns(gdb_file)) if column != 'INDEX'}
+    return {column: index for index, column in enumerate(get_gdb_columns(gdb_file))}
 
 def _mean(values):
     return sum(values) / len(values)
