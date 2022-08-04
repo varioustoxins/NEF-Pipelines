@@ -9,6 +9,7 @@ class SequenceResidue:
     residue_name: str
 
 
+# should contain a residue and have constructors?
 @dataclass
 class AtomLabel:
     chain_code: str
