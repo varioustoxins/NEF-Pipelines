@@ -6,8 +6,8 @@ def test_lib_parse_shifts():
 
     EXPECTED = ShiftList(
         shifts=[
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=1, residue_name='ALA', atom_name='N'), shift=125.74, error=0.0),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='GLY', atom_name='HN'), shift=8.31, error=0.0)
+            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=1, residue_name='ALA', atom_name='N'), shift=125.74, error=None),
+            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='GLY', atom_name='HN'), shift=8.31, error=None)
         ]
     )
 

@@ -66,7 +66,7 @@ class LineInfo:
 class ShiftData:
     atom: AtomLabel
     shift: float
-    error: Optional[float] = 0.0
+    error: Optional[float] = None
 
 @dataclass
 class ShiftList:
