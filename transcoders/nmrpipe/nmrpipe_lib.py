@@ -502,7 +502,7 @@ def read_peak_file(gdb_file, args):
 
     return peak_list
 
-def read_shift_file(gdb_file, args=Namespace(chain_code='A')):
+def read_shift_file(gdb_file, chain_code='A'):
     data = select_records(gdb_file, VALUES)
 
     column_indices = get_column_indices(gdb_file)
@@ -516,7 +516,7 @@ def read_shift_file(gdb_file, args=Namespace(chain_code='A')):
         shift = line.values[column_indices['SHIFT']]
 
 
-        atom = AtomLabel(args.chain_code, residue_number, residue_type, atom_name)
+        atom = AtomLabel(chain_code, residue_number, residue_type, atom_name)
 
         shift = ShiftData(atom, shift)
 
