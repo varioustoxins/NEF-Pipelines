@@ -87,4 +87,4 @@ def test_ns3_S135A_BMRB1_short(typer_app, using_nmrpipe, monkeypatch):
     assert result.exit_code == 0
     mol_sys_result = isolate_frame(result.stdout, '%s' % SHIFTS_NMRPIPE)
 
-    assert_lines_match(EXPECTED_3AA, mol_sys_result)
+    assert_lines_match(EXPECTED_NS3_S135A_BMRB1_SHORT, mol_sys_result)
