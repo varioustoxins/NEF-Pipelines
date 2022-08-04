@@ -1,13 +1,15 @@
 import functools
 from textwrap import dedent
-from typing import Iterable, List
+from typing import Iterable, List, Dict, Tuple
 
 from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException, restOfLine, printables, ParseResults, \
     ParserElement
 
-from lib.structures import SequenceResidue
+from lib.structures import SequenceResidue, AtomLabel, ShiftData, ShiftList
 from lib.util import exit_error
 
+
+UNUSED = '.'
 
 
 def _process_emptys_and_singles(value: ParseResults) -> ParseResults:
@@ -181,5 +183,75 @@ def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence
 
         if len(fields) > 0:
             result.append(SequenceResidue(chain_code, start_residue + i, fields[0]))
+
+    return result
+
+
+def parse_shifts(lines: Iterable[str],  chain_seqid_to_type: Dict[Tuple[str, int], str], chain_code: str = 'A') -> ShiftList:
+
+    shifts = []
+    for i, line in enumerate(lines):
+
+
+        line = line.strip()
+
+        if len(line) == 0:
+            continue
+
+        fields = line.split()
+        num_fields = len(fields)
+        if num_fields != 3:
+            msg = f'''An nmrview ppm.out file should have 3 fields per line
+                    i got {num_fields} at line {i + 1}
+                    with data: {line}'''
+            exit_error(msg)
+
+        shift, stereo_specificty_code = fields[1:]
+
+        atom_fields = fields[0].split('.')
+        num_atom_fields = len(atom_fields)
+        if num_atom_fields != 2:
+            msg = f'''An nmrview ppm.out file should have atom specfiers of the form '1.CA'
+                                        i got{num_atom_fields} at line {i + 1}
+                                        with data: {line}'''
+            exit_error(msg)
+        residue_number, atom = atom_fields
+
+        try:
+            residue_number = int(residue_number)
+        except ValueError:
+            msg = f'''An nmrview residue number should be an integer
+                      i got {residue_number} at line {i + 1}'''
+            exit_error(msg)
+
+        try:
+            shift = float(shift)
+        except ValueError:
+            msg = f'''A chemical shift should be a float
+                      i got {shift} at line {i + 1}'''
+            exit_error(msg)
+
+        try:
+            stereo_specificty_code = int(stereo_specificty_code)
+        except ValueError:
+            msg = f'''An nmrview stereo specificty code should be an integer
+                      i got {stereo_specificty_code} at line {i + 1}'''
+            exit_error(msg)
+
+        if not stereo_specificty_code in [1, 2, 3]:
+            msg = f'''An nmrview stereo specificty code should be an integer between 1 and 3,
+                      i got {stereo_specificty_code} at line {i + 1}'''
+            exit_error(msg)
+
+        seq_key = chain_code, residue_number
+
+        residue_name = chain_seqid_to_type.setdefault(seq_key, UNUSED).upper()
+
+        atom = AtomLabel(chain_code, residue_number, residue_name, atom)
+        shift = ShiftData(atom,shift)
+        shifts.append(shift)
+
+
+    result = ShiftList(shifts)
 
     return result
