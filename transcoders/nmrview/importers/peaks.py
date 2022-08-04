@@ -1,7 +1,9 @@
 
-from argparse import Namespace
-from typing import Iterable, List, Dict, Tuple
+from collections import OrderedDict
+from typing import List, Dict, Tuple
 
+
+from ordered_set import OrderedSet
 from pynmrstar import Entry, Saveframe, Loop
 
 import lib.constants
@@ -18,6 +20,7 @@ from .sequence import read_sequence
 
 from lib.util import exit_error, process_stream_and_add_frames, get_pipe_file
 
+import itertools
 
 from transcoders.nmrview import import_app
 import typer
