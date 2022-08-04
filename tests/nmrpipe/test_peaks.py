@@ -7,7 +7,7 @@ from icecream import ic
 from typer.testing import CliRunner
 
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
-from tests.nmrview.test_sequence import HEADER
+HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
 PEAKS_NMRPIPE = 'nef_nmr_spectrum_nmrpipe'
 METADATA_NMRPIPE = 'nef_nmr_meta_data'
