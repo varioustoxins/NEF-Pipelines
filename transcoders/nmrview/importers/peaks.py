@@ -64,57 +64,6 @@ def peaks(
     print(entry)
 
 
-
-# # from sys import stdin
-# # from os import isatty
-# #
-# # is_pipe = not isatty(stdin.fileno())
-# from ..lib import AtomLabel, PeakAxis, PeakValues, PeakListData, PeakList
-#
-#
-import itertools
-from collections import OrderedDict
-#
-#
-import pyparsing
-# from icecream import ic
-# from pathlib import Path
-#
-# from textwrap import dedent
-#
-# import sys
-#
-# from pynmrstar import Entry, Saveframe, Loop, definitions
-#
-# from lib.util import exit_error
-#
-# definitions.STR_CONVERSION_DICT[''] = None
-
-
-def find_seq_file_or_exit(shift_file):
-
-    directory = Path(shift_file).parent
-    possible_seq_files = []
-    for possible_seq_file in directory.iterdir():
-        if possible_seq_file.is_file() and possible_seq_file.suffix == '.seq':
-            possible_seq_files.append(possible_seq_file)
-
-    num_possible_seq_files = len(possible_seq_files)
-    if num_possible_seq_files == 0:
-        msg =  f'''# Couldn't find an nmrview sequence [<FILE_NAME>.seq] file in {str(directory)}'''
-        exit_error(msg)
-    elif num_possible_seq_files != 1:
-        file_names = '\n'.join(['# %s' % path.name for path in possible_seq_files])
-        msg = f'''# Found more than one possible sequence file
-                  # in {str(directory)}
-                  # choices are:
-                  {file_names}
-               '''
-        exit_error(msg)
-
-
-    return possible_seq_files[0] if possible_seq_files else None
-
 def read_xpk_file(args, sequence, entry_name=None):
 
     with open(args.file_names[0], 'r') as lines:
