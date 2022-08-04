@@ -334,7 +334,7 @@ def _get_sequence_or_exit(args):
             sequence = sequence_from_frames(frames)
 
         except Exception as e:
-            exit_error(f'failed to read sequence from input stream because {e}')
+            exit_error(f'failed to read sequence from input stream because {e}', e)
 
 
     else:
