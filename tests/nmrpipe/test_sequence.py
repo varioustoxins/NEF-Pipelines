@@ -10,7 +10,8 @@ from typer.testing import CliRunner
 from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
 from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
-from tests.nmrview.test_sequence import HEADER
+
+HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
 MOLECULAR_SYSTEM_NMRPIPE = 'nef_molecular_system_nmrpipe'
 METADATA_NMRPIPE ='nef_nmr_meta_data'
