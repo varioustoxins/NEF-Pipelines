@@ -11,3 +11,4 @@ if nef_app.app:
     # import of specific importers must be after app creation to avoid circular imports
     import transcoders.nmrpipe.importers.sequence
     import transcoders.nmrpipe.importers.peaks
+    import transcoders.nmrpipe.importers.shifts
