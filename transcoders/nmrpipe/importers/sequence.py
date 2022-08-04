@@ -1,4 +1,4 @@
-
+#TODO add support for DATA FIRST_RESID
 
 # noinspection PyUnusedLocal
 from argparse import Namespace
