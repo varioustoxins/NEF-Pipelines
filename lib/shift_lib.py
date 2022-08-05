@@ -1,5 +1,6 @@
-from lib.structures import ShiftList
+from lib.structures import ShiftList, SequenceResidue, ShiftData
 from pynmrstar import Saveframe, Loop
+from typing import Dict, List
 
 UNUSED ='.'
 
@@ -38,3 +39,92 @@ def shifts_to_nef_frame(shift_list: ShiftList, entry_name: str):
         loop.add_data_by_tag('isotope_number', UNUSED)
 
     return frame
+
+def collapse_common_shifts(shift_list: ShiftList) -> ShiftList:
+    """
+    replace entries in the shift list which are in the same residue and are related by symmetry
+    and have the same shift by the reduced form e.g. HA1 1.000 HA2 1.000 -> HA* 1.000
+    :param shift_list:  shift list to collapse
+    :return:  collapsed chemcial shifts
+    """
+
+    result = []
+    by_residue = _cluster_shifts_by_residue(shift_list)
+    for residue_shifts in by_residue.values():
+        result.extend(_cluster_by_shift(residue_shifts))
+
+    return ShiftList(result)
+
+
+def _cluster_shifts_by_residue(shift_list: ShiftList) -> Dict[SequenceResidue,List[ShiftData]]:
+    """
+    put all the shifts from the same residue in an entry in a dictionary keyed by residue
+
+    :param shift_list: the ShiftList to cluster
+    :return: the dictionary of shifts with the same residue
+    """
+    by_residue = {}
+    for shift in shift_list.shifts:
+        atom =  shift.atom
+        residue = SequenceResidue(shift.atom.chain_code, atom.sequence_code, atom.residue_name)
+        by_residue.setdefault(residue,[]).append(shift)
+
+    return by_residue
+
+
+def _cluster_by_shift(shifts: List[ShiftData]) -> List[List[ShiftData]]:
+    """
+    build a list lists where each child list contains ShiftData entries
+    which all have the same chemicl shifts
+    :param shifts: a list of shifts to cluster
+    :return: ShiftData clustered by shifts
+    """
+    shift_map = {}
+
+    for shift in shifts:
+        shift_map.setdefault(shift.shift, []).append(shift)
+
+    result = []
+    for entry in shift_map.values():
+
+        if len(entry) > 1:
+            result.extend(_collapse_cluster(entry))
+        else:
+            result.append(entry[0])
+
+    return result
+
+
+def _collapse_cluster(shifts: List[ShiftData]) -> List[ShiftData]:
+    """
+    collapse a cluster of atoms with the same shift which are symmetry related (currently in the nef style)
+    HA1 / HA2 -> HA*, HG11, HG12, HG13, HG21, HG22, HG23 -> HG* [not HG**] Note all symmetry related shifts
+    should have the same shift else information will be lost
+
+    :param shifts: a list of shifts to cluster
+    :return: the clusted shifts as a new list
+    """
+
+    by_stem = {}
+    for shift in shifts:
+        last_character = shift.atom.atom_name[-1]
+        if last_character.isnumeric() or last_character == '*':
+            by_stem.setdefault(shift.atom.atom_name[:-1], []).append(shift)
+
+    result = []
+    for stem, shifts in by_stem.items():
+        if len(shifts) > 1:
+            first_shift = shifts[0]
+            first_atom = first_shift.atom
+
+            new_atom = AtomLabel(first_atom.chain_code, first_atom.sequence_code, first_atom.residue_name, f'{stem}*')
+            new_shift = ShiftData(new_atom, first_shift.shift, first_shift.error)
+
+            result.append(new_shift)
+        else:
+            result.append(shifts[0])
+
+    if len(result) != len(shifts):
+        result = _collapse_cluster(collapse_cluster(result))
+
+    return result
