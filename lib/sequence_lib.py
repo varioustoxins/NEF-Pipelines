@@ -6,6 +6,11 @@ from pynmrstar import Saveframe, Loop
 
 from lib.structures import SequenceResidue
 from lib.constants import NEF_UNKNOWN
+from lib.nef_lib import loop_to_dataframe
+
+import pandas as pd
+
+NEF_CHAIN_CODE = 'chain_code'
 
 
 def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
@@ -162,3 +167,44 @@ def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str
 
     """
     return [SequenceResidue(chain_code, i + 1 + offset, residue) for (i, residue) in enumerate(sequence_3let)]
+
+def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
+    """
+    given a list of nef molecular systems list the chains found
+
+    :param sequence_frames: list of nef molecular system save frames
+    :return: a list of chain_codes
+    """
+
+    chains = set()
+    for loop in sequence_frame.loop_dict.values():
+        data_frame = loop_to_dataframe(loop)
+        chains.update(data_frame[NEF_CHAIN_CODE] .unique())
+
+    if NEF_UNKNOWN in chains:
+        chains.remove(NEF_UNKNOWN)
+
+    chains = sorted(chains)
+
+    return chains
+
+def count_residues(sequence_frame: Saveframe, chain_code: str=None) -> Dict[str, int]:
+    """
+    given a nef molecular system list and a chain list the number of residues
+
+    :param sequence_frames: list of nef molecular system save frames
+    :return: a list of chain_codes
+    """
+
+    result = {}
+    sequence_dataframe = loop_to_dataframe(list(sequence_frame.loop_dict.values())[0])
+
+    rows_with_chain = sequence_dataframe[sequence_dataframe.chain_code  == chain_code]
+    residues = rows_with_chain.residue_name.unique()
+
+    for residue in sorted(residues):
+        residue_selector = rows_with_chain.residue_name == residue
+        count = rows_with_chain.residue_name[residue_selector].count()
+        result[residue] = count
+
+    return result
