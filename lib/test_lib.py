@@ -14,7 +14,7 @@ def run_and_read_pytest(args):
     sys.stdout = StringIO()
     sys.stderr = StringIO()
 
-    main(args)
+    retcode = main(args)
 
     output = sys.stdout.getvalue()
     error_output = sys.stderr.getvalue()
@@ -24,7 +24,7 @@ def run_and_read_pytest(args):
     sys.stdout = original_output
     sys.stderr = original_error
 
-    return output, error_output
+    return retcode, output, error_output
 
 
 def _split_test_spec(spec):

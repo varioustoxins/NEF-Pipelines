@@ -45,9 +45,19 @@ def _find_pytest_commands(root_path, targets):
     if not targets:
         targets = '*'
 
-    stdout, stderr = run_and_read_pytest(['--collect-only', '-q', root_path])
+    ret_code, stdout, stderr = run_and_read_pytest(['--collect-only', '-q', root_path])
 
-    _exit_if_stderr(stderr)
+    if ret_code != 0:
+        output  = f"""
+        return code: {ret_code}
+        __________________________________________________________________stdout_______________________________________________________________
+        {stdout}
+        _______________________________________________________________________________________________________________________________________
+        __________________________________________________________________stderr_______________________________________________________________
+        {stderr}
+        _______________________________________________________________________________________________________________________________________
+        """
+        _exit_if_stderr(stdout)
 
     tests = stdout.split('\n')[:-3]
 
@@ -56,16 +66,20 @@ def _find_pytest_commands(root_path, targets):
 
 def _exit_if_stderr(stderr):
     if stderr.strip():
-        msg = \
-            '''
+        _exit_pytest_error(stderr)
+
+
+def _exit_pytest_error(output):
+    msg = \
+        f'''
                couldn't collect tests because of an error
 
                ----------------------- pytest errors -----------------------
-               {stderr}
+               {output}
                ----------------------- pytest errors -----------------------
             '''
-        msg = dedent(msg)
-        msg = f'{msg}'
-        exit_error(msg)
+    msg = dedent(msg)
+    msg = f'{msg}'
+    exit_error(msg)
 
 
