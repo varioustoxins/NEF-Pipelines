@@ -25,6 +25,7 @@ TARGET_HELP = dedent(TARGET_HELP)
 
 @app.command()
 def test(
+        warnings: bool = typer.Option(False, '-w', '--warnings', help="include all warnings"),
         targets: List[str] = typer.Argument(None, help=TARGET_HELP)
 ):
     """-  run the test suite"""
@@ -38,7 +39,10 @@ def test(
     tests = _find_pytest_commands(root_path, targets)
 
     if not targets or (targets and len(tests) != 0):
-        main(['--disable-warnings','-vvv', '--full-trace', *tests])
+        command = ['-vvv', '--full-trace', *tests]
+        if not warnings:
+            command =  ['--disable-warnings', *command]
+        main(command)
 
 
 def _find_pytest_commands(root_path, targets):
