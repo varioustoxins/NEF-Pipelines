@@ -1,6 +1,7 @@
 from typer import Option
 
 from lib.util import get_pipe_file
+from lib.sequence_lib import frame_to_chains
 from tools.list import list_app
 import typer
 
@@ -22,12 +23,7 @@ def chains(
     entry = Entry.from_string(lines)
     sequence_frames = entry.get_saveframes_by_category('nef_molecular_system')
 
-    chains = set()
-    for sequence_frame in sequence_frames:
-        for loop in sequence_frame.loop_dict.values():
-            chains.update(loop.get_tag('chain_code'))
-
-    chains = sorted(chains)
+    chains = frame_to_chains(sequence_frames)
 
     result = ' '.join(chains)
     chains = 'chain' if len(chains) == 1 else 'chains'
