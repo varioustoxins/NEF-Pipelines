@@ -188,7 +188,7 @@ def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
 
     return chains
 
-def count_residues(sequence_frame: Saveframe, chain_code: str=None) -> Dict[str, int]:
+def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]:
     """
     given a nef molecular system list and a chain list the number of residues
 
@@ -199,7 +199,7 @@ def count_residues(sequence_frame: Saveframe, chain_code: str=None) -> Dict[str,
     result = {}
     sequence_dataframe = loop_to_dataframe(list(sequence_frame.loop_dict.values())[0])
 
-    rows_with_chain = sequence_dataframe[sequence_dataframe.chain_code  == chain_code]
+    rows_with_chain = sequence_dataframe[sequence_dataframe.chain_code == chain_code]
     residues = rows_with_chain.residue_name.unique()
 
     for residue in sorted(residues):

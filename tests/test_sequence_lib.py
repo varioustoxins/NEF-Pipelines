@@ -2,8 +2,9 @@ from textwrap import dedent
 
 import pytest
 
-from lib.sequence_lib import translate_1_to_3, sequence_3let_to_sequence_residues, BadResidue
+from lib.sequence_lib import translate_1_to_3, sequence_3let_to_sequence_residues, BadResidue, frame_to_chains, count_residues
 from lib.structures import SequenceResidue
+from pynmrstar import Saveframe
 
 ABC_SEQUENCE_1LET = 'acdefghiklmnpqrstvwy'
 ABC_SEQUENCE_3LET = (
@@ -82,6 +83,86 @@ def test_3let_sequence_residue_offset():
 
     assert sequence_residues == expected
 
+
+TEST_DATA_MULTI_CHAIN = """
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+          _nef_sequence.ccpn_comment
+          _nef_sequence.ccpn_chain_role
+          _nef_sequence.ccpn_compound_name
+          _nef_sequence.ccpn_chain_comment
+
+         1    A   3    HIS   .   .   .   .   .   Sec5   .    
+         2    A   4    MET   .   .   .   .   .   Sec5   .    
+         3    B   5    ARG   .   .   .   .   .   Sec5   .    
+         4    B   6    GLN   .   .   .   .   .   Sec5   .    
+         5    C   7    PRO   .   .   .   .   .   Sec5   .       
+
+       stop_
+
+    save_
+
+    """
+
+def test_list_chains():
+
+    test_frame = Saveframe.from_string(TEST_DATA_MULTI_CHAIN)
+    chains = frame_to_chains(test_frame)
+
+    assert chains == list(['A', 'B', 'C'])
+
+
+def test_list_chains_no_chains():
+    TEST_DATA = """
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+          _nef_sequence.ccpn_comment
+          _nef_sequence.ccpn_chain_role
+          _nef_sequence.ccpn_compound_name
+          _nef_sequence.ccpn_chain_comment
+
+         1    .   3    HIS   .   .   .   .   .   Sec5   .    
+
+       stop_
+
+    save_
+
+    """
+    test_frame = Saveframe.from_string(TEST_DATA)
+    chains = frame_to_chains(test_frame)
+
+    assert chains == list([])
+
+
+def test_count_chains():
+    test_frame = Saveframe.from_string(TEST_DATA_MULTI_CHAIN)
+
+    result = {}
+    for chain in 'ABC':
+        result[chain] = count_residues(test_frame, chain)
+
+    EXPECTED = {'A': {'HIS': 1, 'MET': 1}, 'B': {'ARG': 1, 'GLN': 1}, 'C': {'PRO': 1}}
+    assert result == EXPECTED
 
 if __name__ == '__main__':
     pytest.main([f'{__file__}', '-vv'])
