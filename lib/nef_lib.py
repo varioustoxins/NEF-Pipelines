@@ -13,4 +13,14 @@ def loop_to_dataframe(loop: Loop) -> DataFrame:
 
     return data
 
+def dataframe_to_loop(frame: DataFrame, category: str =  None) -> Loop:
+    loop = Loop.from_scratch(category=category)
+    loop_data = {}
+    for column in frame.columns:
+        loop.add_tag(column)
+        loop_data[column] = list(frame[column])
+
+    loop.add_data(loop_data)
+
+    return loop
 
