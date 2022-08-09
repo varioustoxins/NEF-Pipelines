@@ -151,7 +151,7 @@ def path_in_parent_directory(root: str, target: str) -> str:
 
 
 def root_path(initial_path: str):
-    """ given a path wotk up the directory structure till you find the d
+    """ given a path wotk up the directory structure till you find the
         directory containg the nef executable
 
         initial_path (str): the path to start searching from
