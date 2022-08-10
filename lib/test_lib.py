@@ -130,7 +130,7 @@ def assert_lines_match(expected: str, reported: str, squash_spaces:bool =True):
 
 def isolate_frame(target: str, name: str) -> Optional[str]:
     """
-    Extract one frame from a NEF file by name as a sting
+    Extract one frame from a NEF file by name as a string
     Args:
         target (Entry): target NEF entry
         name (str): name of the save frame
