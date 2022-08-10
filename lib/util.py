@@ -310,67 +310,77 @@ def chunks(input: Iterator[T], n: int) -> Iterator[List[T]]:
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def read_float_or_exit(string: str, line_info: LineInfo, field='unknown') -> float:
+
+def _build_int_float_error_message(message, line_info, field, format):
+    messages = []
+    if message:
+        messages.append(message)
+    if line_info:
+        message = f'''
+                    couldn't convert {line_info.line} to format
+
+                    at {line_info.line_no + 1} in f{line_info.file_name}
+
+                    line value was 
+
+                    {line_info.line}
+
+                    field was 
+
+                    {field}
+                '''
+        messages.append(message)
+    message = '\n\n'.join(messages)
+    return message
+
+
+def read_float_or_exit(string: str, line_info: LineInfo, field='unknown', message=None) -> float:
     """
-    read a string to an float or exit with error including line information
+    convert a string to an float or exit with error including line information
 
     Args:
         string: string to parse
         line_info: the line the string came from
-        field: the name of the field defininbg the string
+        field: the name of the field defininbg the string (ignored if there is no line info)
+        message: any other messages to show
 
     Returns:
         a float
     """
 
+    format = 'float'
     try:
         result = float(string)
     except:
-        msg = f'''
-            couldn't convert {string} to float
-            
-            at line {line_info.line_no+1} in f{line_info.file_name}
-            
-            line value was:
-            
-            {line_info.line}
-        '''
+        message = _build_int_float_error_message(message, line_info, field, format)
 
-        exit_error(msg)
+        exit_error(message)
 
     return result
 
 
 
-def read_integer_or_exit(string: str, line_info: LineInfo, field='unknown') -> int:
+def read_integer_or_exit(string: str, line_info: LineInfo=None, field='unknown', message=None) -> int:
     """
-    read a string to an int or exit with error including line information
+    convert a string to an int or exit with error including line information
 
     Args:
         string: string to parse
         line_info: the line the string came from
-        field: the name of the field defininbg the string
+        field: the name of the field defining the string (ignored if there is no line info)
+        message: any other messages to show
 
     Returns:
         an integer
     """
+
+    format='integer'
     try:
         result = int(string)
     except:
-        msg = f'''
-            couldn't convert {line_info.line} to int
 
-            at {line_info.line_no + 1} in f{line_info.file_name}
+        message = _build_int_float_error_message(message, line_info, field, format)
 
-            line value was 
-
-            {line_info.line}
-            
-            field was 
-            
-            {field}
-        '''
-
-        exit_error(msg)
+        exit_error(message)
 
     return result
