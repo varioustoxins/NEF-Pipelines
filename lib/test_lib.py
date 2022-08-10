@@ -96,25 +96,36 @@ def select_matching_tests(tests, selectors):
     return results
 
 
-def assert_lines_match(expected: str, reported: str,  display:bool=False):
+def assert_lines_match(expected: str, reported: str, squash_spaces:bool =True):
     """
     compare two multi line strings line by line with stripping
 
     Args:
         expected (str): the expected string
         reported (str): the input string
+        squash_spaces (bool): remove duplicate spaces before comparison
 
     Returns:
         None
     """
     zip_lines = zip_longest(expected.split('\n'), reported.split('\n'), fillvalue='')
-    for i, (expected_line, header_line) in enumerate(zip_lines):
-        if display:
-            print(f'exp|{i}|', expected_line.strip())
-            print(f'rep|{i}|', header_line.strip())
-            print()
+    for i, (expected_line, reported_line) in enumerate(zip_lines):
 
-        assert expected_line.strip() == header_line.strip()
+        expected_line_stripped= expected_line.strip()
+        reported_line_stripped = reported_line.strip()
+
+        if squash_spaces:
+            expected_line_stripped = " ".join(expected_line_stripped.split())
+            reported_line_stripped = " ".join(reported_line_stripped.split())
+
+
+        if reported_line_stripped != expected_line_stripped:
+
+            print(f'exp|{i}|  |{expected_line_stripped}|')
+            print(f'rep|{i}|  |{reported_line_stripped}|')
+
+        assert reported_line_stripped == expected_line_stripped
+
 
 
 def isolate_frame(target: str, name: str) -> Optional[str]:
