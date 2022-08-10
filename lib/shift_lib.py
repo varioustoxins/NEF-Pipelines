@@ -1,8 +1,9 @@
 from lib.structures import ShiftList, SequenceResidue, ShiftData
 from pynmrstar import Saveframe, Loop
 from typing import Dict, List
+from lib.nef_lib import UNUSED
 
-UNUSED ='.'
+
 
 def shifts_to_nef_frame(shift_list: ShiftList, entry_name: str):
 

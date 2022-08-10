@@ -5,6 +5,7 @@ from pynmrstar import Loop
 
 NEF_CATEGORY_ATTR = '__NEF_CATEGORY__'
 
+UNUSED = '.'
 
 def loop_to_dataframe(loop: Loop) -> DataFrame:
     """

@@ -7,9 +7,7 @@ from pyparsing import Word, Forward, Suppress, Group, ZeroOrMore, ParseException
 
 from lib.structures import SequenceResidue, AtomLabel, ShiftData, ShiftList
 from lib.util import exit_error
-
-
-UNUSED = '.'
+from lib.nef_lib import UNUSED
 
 
 def _process_emptys_and_singles(value: ParseResults) -> ParseResults:
