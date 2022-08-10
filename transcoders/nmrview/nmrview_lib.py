@@ -185,7 +185,8 @@ def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence
     return result
 
 
-def parse_shifts(lines: Iterable[str],  chain_seqid_to_type: Dict[Tuple[str, int], str], chain_code: str = 'A') -> ShiftList:
+def parse_shifts(lines: Iterable[str],  chain_seqid_to_type: Dict[Tuple[str, int], str], chain_code: str = 'A',
+                 file_name='unknown') -> ShiftList:
 
     shifts = []
     for i, line in enumerate(lines):
