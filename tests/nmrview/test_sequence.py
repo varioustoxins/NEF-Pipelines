@@ -143,7 +143,7 @@ def test_pipe_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
     meta_data_result = isolate_frame(result.stdout, '%s' % METADATA_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
-    assert_lines_match(EXPECTED_HEADER, meta_data_result, display=True)
+    assert_lines_match(EXPECTED_HEADER, meta_data_result)
 
 
 # noinspection PyUnusedLocal
