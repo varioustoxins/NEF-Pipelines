@@ -12,7 +12,8 @@ EXIT_ERROR = 1
 
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     msg = dedent(msg)
-    traceback.print_exc()
+    if trace_back:
+        traceback.print_exc()
     print(msg, file=sys.stderr)
     print('exiting...', file=sys.stderr)
     sys.exit(exit_code)
