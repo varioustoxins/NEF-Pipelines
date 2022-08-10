@@ -73,12 +73,13 @@ except ClickException as e:
     e.show()
     do_exit_error(f"inputs: {' '.join(sys.argv[1:])}", trace_back=False, exit_code=e.exit_code)
 
-except:
+except Exception as e:
 
     msg = f'''\
 
           Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
           inputs: {' '.join(sys.argv[1:])}
+          message: {e}
           '''
 
     do_exit_error(msg)
