@@ -3,6 +3,7 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Optional
 
+import pytest
 from pynmrstar import Entry
 from io import StringIO
 from fnmatch import fnmatch
@@ -198,3 +199,21 @@ def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
         test_data = path_in_parent_directory(root, 'test_data')
 
     return str(Path(test_data, file_name).absolute())
+
+
+@pytest.fixture
+def clear_cache():
+    '''
+    clear the lru cache used by lib.util cached_stdin
+    see https://stackoverflow.com/questions/40273767/clear-all-lru-cache-in-python
+    '''
+    import functools
+    import gc
+
+    gc.collect()
+    wrappers = [
+        a for a in gc.get_objects()
+        if isinstance(a, functools._lru_cache_wrapper)]
+
+    for wrapper in wrappers:
+        wrapper.cache_clear()

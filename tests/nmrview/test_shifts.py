@@ -2,7 +2,7 @@ from lib.structures import  ShiftList, ShiftData, AtomLabel
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -11,7 +11,6 @@ SHIFTS_NMRPIPE = 'nef_chemical_shift_list_nmrview'
 METADATA_NMRVIEW ='nef_nmr_meta_data'
 NMRVIEW_IMPORT_SHIFTS = ['nmrview', 'import', 'shifts']
 
-HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
 
 @pytest.fixture
@@ -71,12 +70,12 @@ save_nef_chemical_shift_list_nmrview
       _nef_chemical_shift_list.element
       _nef_chemical_shift_list.isotope_number
 
-     A   1   .   CA     52.0      .   .   .    
-     A   1   .   HA     4.22      .   .   .    
-     A   2   .   CG2    19.3      .   .   .    
-     A   2   .   HG21   0.814     .   .   .    
-     A   2   .   HG22   0.814     .   .   .    
-     A   3   .   N      125.058   .   .   .    
+     A   1   ASP   CA     52.0      .   .   .    
+     A   1   ASP   HA     4.22      .   .   .    
+     A   2   VAL   CG2    19.3      .   .   .    
+     A   2   VAL   HG21   0.814     .   .   .    
+     A   2   VAL   HG22   0.814     .   .   .    
+     A   3   GLN   N      125.058   .   .   .     
 
    stop_
 
@@ -84,17 +83,39 @@ save_
 '''
 
 # # noinspection PyUnusedLocal
-def test_ppm_out_short(typer_app, using_nmrview, monkeypatch):
+def test_ppm_out_short_no_sequence(typer_app, using_nmrview, monkeypatch):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, 'ppm_short.out')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path], input=HEADER)
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path])
 
     if result.exit_code != 0:
         print('INFO: stdout from failed read:\n',result.stdout)
 
+    assert result.exit_code == 1
+
+    assert 'ERROR' in result.stdout
+    assert '1.CA      52.000 1' in result.stdout
+
+
+# noinspection PyUnusedLocal
+def test_ppm_out_short(typer_app, using_nmrview, monkeypatch, clear_cache):
+
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
+    STREAM =  open(path_in_test_data(__file__,'ppm_short_seq.nef', local=True)).read()
+
+
+
+    path = path_in_test_data(__file__, 'ppm_short.out')
+    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path], input=STREAM)
+
+    if result.exit_code != 0:
+        print('INFO: stdout from failed read:\n', result.stdout)
+
     assert result.exit_code == 0
-    mol_sys_result = isolate_frame(result.stdout, '%s' % SHIFTS_NMRPIPE)
+
+    mol_sys_result = isolate_frame(result.stdout, SHIFTS_NMRPIPE)
 
     assert_lines_match(EXPECTED_PPM_OUT_SHORT, mol_sys_result)
