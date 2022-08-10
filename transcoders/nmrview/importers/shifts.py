@@ -3,7 +3,7 @@ from lib.typer_utils import get_args
 from lib.util import exit_error, process_stream_and_add_frames
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 from transcoders.nmrview import import_app
-from lib.util import cached_file_stream, get_pipe_file
+from lib.util import cached_file_stream, get_pipe_file_or_exit
 from lib.shift_lib import shifts_to_nef_frame
 from pynmrstar import Entry, Saveframe, Loop
 import typer
@@ -48,7 +48,7 @@ def process_shifts(args: Namespace):
 
             chain_seqid_to_type = _sequence_to_residue_type_lookup(sequence)
 
-            nmrview_shifts = parse_shifts(lines, chain_seqid_to_type, chain_code=chain_code)
+            nmrview_shifts = parse_shifts(lines, chain_seqid_to_type, chain_code=chain_code, file_name=file_name)
 
             frame = shifts_to_nef_frame(nmrview_shifts, args.entry_name)
 
