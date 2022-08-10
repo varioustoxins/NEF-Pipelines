@@ -19,7 +19,7 @@ parser = None
 import typer
 
 # noinspection PyUnusedLocal
-@frames_app.command(no_args_is_help=True)
+@frames_app.command()
 def list(
     pipe: Path = typer.Option(None, metavar='|PIPE|',
                               help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
