@@ -246,6 +246,16 @@ def parse_shifts(lines: Iterable[str],  chain_seqid_to_type: Dict[Tuple[str, int
 
         residue_name = chain_seqid_to_type.setdefault(seq_key, UNUSED).upper()
 
+        if (residue_number != UNUSED and chain_code != UNUSED)  and residue_name == UNUSED:
+            msg = f'''\
+            [nmrview shifts] residue not defined for chain {chain_code} residue {residue_number} 
+            line number {i+1}
+            line was |{line}| 
+            in file {file_name}
+            did you read a sequence?'''
+            msg=dedent(msg)
+            exit_error(msg)
+
         atom = AtomLabel(chain_code, residue_number, residue_name, atom)
         shift = ShiftData(atom,shift)
         shifts.append(shift)
