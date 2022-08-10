@@ -49,7 +49,8 @@ try:
     import transcoders.nmrpipe
     import tools.header
     import tools.test
-    import tools.list
+    import tools.frames
+    import tools.chains
     import tools.stream
 
 except Exception as e:

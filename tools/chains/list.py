@@ -1,8 +1,10 @@
-from typer import Option
+from argparse import Namespace
+from pathlib import Path
 
+from typer import Option
+from tools.chains import chains_app
 from lib.util import get_pipe_file
 from lib.sequence_lib import frame_to_chains
-from tools.list import list_app
 import typer
 
 from pynmrstar import Entry
@@ -12,18 +14,22 @@ app = typer.Typer()
 #TODO: it would be nice to put the chains with the first molecular system frame
 
 # noinspection PyUnusedLocal
-@list_app.command()
-def chains(
+@chains_app.command()
+def list(
+    pipe: Path = typer.Option(None, metavar='|PIPE|',
+                              help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
     comment: bool = Option(False, '-c', '--comment', help='prepend comment to chains'),
     verbose: bool = Option(False, '-v', '--verbose', help='print verbose info'),
     stream: bool = Option(False, '-s', '--stream', help='stream file after comment')
 ):
     """- list the chains in the molecular systems"""
-    lines = ''.join(get_pipe_file([]).readlines())
+    lines = ''.join(get_pipe_file(Namespace(pipe=pipe)).readlines())
     entry = Entry.from_string(lines)
     sequence_frames = entry.get_saveframes_by_category('nef_molecular_system')
 
-    chains = frame_to_chains(sequence_frames)
+    chains = []
+    if len(sequence_frames) > 0:
+        chains = frame_to_chains(sequence_frames[0])
 
     result = ' '.join(chains)
     chains = 'chain' if len(chains) == 1 else 'chains'

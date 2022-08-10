@@ -7,33 +7,30 @@ from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 from typer.testing import CliRunner
 runner = CliRunner()
 
-SHIFTS_NMRPIPE = 'nef_chemical_shift_list_nmrview'
+
 METADATA_NMRVIEW ='nef_nmr_meta_data'
-LIST_FRAMES = ['list', 'frames']
+LIST_CHAINS = ['chains', 'list']
 
 
 @pytest.fixture
-def using_list():
+def using_chains():
     # register the module under test
-    import tools.list
+    import tools.chains
 
 # noinspection PyUnusedLocal
-def test_frame_basic(typer_app, using_list, monkeypatch):
+def test_frame_basic(typer_app, using_chains, monkeypatch):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
-    path = path_in_test_data(__file__, 'frames.nef')
-    result = runner.invoke(typer_app, [*LIST_FRAMES, '--pipe', path])
+    path = path_in_test_data(__file__, 'multi_chain.nef')
+
+    result = runner.invoke(typer_app, [*LIST_CHAINS, '--pipe', path])
 
     if result.exit_code != 0:
         print('INFO: stdout from failed read:\n', result.stdout)
 
     assert result.exit_code == 0
 
-    EXPECTED =  '''\
-        entry test
-
-        nef_nmr_meta_data  nef_molecular_system
-    '''
+    EXPECTED =  'A B C'
 
     assert_lines_match (EXPECTED, result.stdout)

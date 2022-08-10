@@ -2,7 +2,7 @@ import fnmatch
 import os
 import sys
 
-from tools.list import list_app
+from tools.frames import frames_app
 from lib.util import get_pipe_file, chunks
 from lib.sequence_lib import frame_to_chains, count_residues
 from math import floor
@@ -19,8 +19,8 @@ parser = None
 import typer
 
 # noinspection PyUnusedLocal
-@list_app.command(no_args_is_help=True)
-def frames(
+@frames_app.command(no_args_is_help=True)
+def list(
     pipe: Path = typer.Option(None, metavar='|PIPE|',
                               help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
     number: bool = typer.Option(False, '-n', '--number', help='number entries'),
