@@ -87,7 +87,8 @@ def _get_sequence_or_exit(args):
 
     if not sequence_file:
         try:
-            stream = get_pipe_file(args)
+            stream = get_pipe_file_or_exit(args)
+
             entry = Entry.from_file(stream)
             frames = entry.get_saveframes_by_category('nef_molecular_system')
             sequence = sequence_from_frames(frames)
