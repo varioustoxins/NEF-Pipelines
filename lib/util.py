@@ -187,6 +187,17 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
 
     return StringIteratorIO(result) if result else None
 
+def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
+
+    try:
+        result = get_pipe_file(args)
+    except Exception as e:
+        exit_error("couldn't read from stdin or -pipe file", e)
+
+    if result is None:
+        exit_error("couldn't read from stdin and no -pipe in args")
+
+    return result
 
 @iter_cache
 def cached_stdin():
