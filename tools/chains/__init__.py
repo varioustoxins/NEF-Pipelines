@@ -9,3 +9,4 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import tools.chains.list
+    import tools.chains.rename

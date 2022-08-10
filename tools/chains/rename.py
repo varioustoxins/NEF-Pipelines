@@ -5,7 +5,7 @@ from ordered_set import OrderedSet
 from typer import Option, Argument
 
 from lib.util import get_pipe_file, chunks
-from tools.rename import rename_app
+from tools.chains import chains_app
 import typer
 
 from pynmrstar import Entry
@@ -15,13 +15,13 @@ app = typer.Typer()
 #TODO: it would be nice to put the chains with the first molecular system frame
 
 # noinspection PyUnusedLocal
-@rename_app.command()
-def chain(
+@chains_app.command()
+def rename(
     old: str = Argument(...,  help='old chain code'),
     new: str = Argument(..., help='new chain code'),
     comment: bool = Option(False, '-c', '--comment', help='prepend comment to chains'),
     verbose: bool = Option(False, '-v', '--verbose', help='print verbose info'),
-    frames: List[str] = Option([], '-f', '--frame', help='limit changes toa a particular frame'),
+    frames: List[str] = Option([], '-f', '--frame', help='limit changes to a a particular frame'),
 
 ):
     """- change the name of a chain"""
@@ -61,25 +61,4 @@ def chain(
 
     print(entry)
 
-
-    # sequence_frames = entry.get_saveframes_by_category('nef_molecular_system')
-    #
-    # chains = set()
-    # for sequence_frame in sequence_frames:
-    #     for loop in sequence_frame.loop_dict.values():
-    #         chains.update(loop.get_tag('chain_code'))
-    #
-    # chains = sorted(chains)
-    #
-    # result = ' '.join(chains)
-    # chains = 'chain' if len(chains) == 1 else 'chains'
-    #
-    # verbose = f'{len(result)} {chains}: ' if verbose else ''
-    #
-    # comment = '# ' if comment else ''
-    #
-    # print(f'{comment}{verbose}{result}')
-    #
-    # if stream:
-    #     print(lines)
 
