@@ -196,6 +196,19 @@ def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str
     """
     return [SequenceResidue(chain_code, i + 1 + offset, residue) for (i, residue) in enumerate(sequence_3let)]
 
+def sequence_residues_to_sequence_3let(sequence: List[SequenceResidue], chain_code: str = 'A') -> List[str]:
+    """
+    Translate a list of SequenceResidues to 3 letter sequence codes t
+    Args:
+        sequence (List([SequenceResidues]): list of residues
+        chain_code (str): the chain code [defaults to A] only residues fromthis chain will be converted
+
+    Returns List[str]:
+        the sequence as a list of 3 letter residues
+
+    """
+    return [residue.residue_name for residue in sequence if residue.chain == chain_code]
+
 def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
     """
     given a list of nef molecular systems list the chains found
