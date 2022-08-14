@@ -153,6 +153,34 @@ def translate_1_to_3(sequence: str, translations: Dict[str, str] = TRANSLATIONS_
 
     return result
 
+def translate_3_to_1(sequence: List[str], translations: Dict[str, str] = TRANSLATIONS_3_1) -> List[str]:
+    '''
+
+    Translate a 3 letter sequence to a 1 letter sequence
+    Args:
+        sequence (str): 3 letter sequence
+        translations (Dict[str, str]): a list of translations for single amino acid codes to 3 letter residue names
+
+    Returns List[str]:
+        a list of 1 residue codes
+
+    :param sequence:
+    :return:
+    '''
+    result = []
+    for i, resn in enumerate(sequence, start=1):
+        resn = resn.upper()
+        if resn in translations:
+            result.append(translations[resn])
+        else:
+            msg  = f"""
+            unknown residue {resn} 
+            in sequence {chunks(' '.join(sequence), 10)}
+            at residue number {i}
+            """
+            exit_error(f'unknown residue {resn} in sequence')
+
+    return result
 
 def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str = 'A', offset: int = 0) -> List[SequenceResidue]:
     """
