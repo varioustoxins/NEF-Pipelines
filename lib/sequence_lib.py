@@ -2,13 +2,19 @@ import string
 from textwrap import dedent
 from typing import List, Iterable, Dict, Optional
 
-from pynmrstar import Saveframe, Loop
+from ordered_set import OrderedSet
+from pynmrstar import Saveframe, Loop, Entry
 
 from lib.structures import SequenceResidue
 from lib.constants import NEF_UNKNOWN
 from lib.nef_lib import loop_to_dataframe
 
 import pandas as pd
+
+
+from lib.util import get_pipe_file, cached_stdin, exit_error
+
+from lib.util import chunks
 
 NEF_CHAIN_CODE = 'chain_code'
 
@@ -249,3 +255,78 @@ def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]
         result[residue] = count
 
     return result
+
+def get_sequence_or_exit() -> Optional[List[SequenceResidue]]:
+    """
+    read a sequence from a nef molecular system on stdin or exit
+
+    :return: a list of parsed residues and chains, in the order they were read
+    """
+    try:
+        result = get_sequence()
+    except Exception as e:
+        msg = "couldn't read sequence from nef input stream, either no stream or no nef molecular system frame"
+        exit_error(msg, e)
+
+    if len(result) == 0 :
+        msg = "no sequence read from nef molecular system in nef input stream"
+        exit_error(msg)
+
+    return result
+
+def get_sequence() -> List[SequenceResidue]:
+    """
+    read a sequence from a nef molecular system on stdin and return a list of residues
+
+    can raise Exceptions
+
+    :return:a list of parsed residues and chains, in the order they were read
+    """
+
+    result = []
+
+    stream = cached_stdin()
+
+    if stream:
+        text = ''.join(stream)
+
+        entry = Entry.from_string(text)
+
+        if entry != None:
+            frames = entry.get_saveframes_by_category('nef_molecular_system')
+
+            if frames:
+                result = sequence_from_frame(frames[0])
+
+
+    return result
+
+
+def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
+
+    """
+    read sequences from a nef molecular system save frame
+    can raise Exceptions
+
+    :param frame: the save frame to read residues from, must have category nef molecular system
+    :return: a list of parsed residues and chains, in the order they were read
+    """
+    residues = OrderedSet()
+
+    if frame.category != 'nef_molecular_system':
+        raise Exception(f'sequences can only be read from nef molecular system frames, the category of the provided frame was {frame.category}')
+
+    loop = frame.loops[0]
+
+    chain_code_index = loop.tag_index('chain_code')
+    sequence_code_index = loop.tag_index('sequence_code')
+    residue_name_index = loop.tag_index('residue_name')
+
+    for line in loop:
+        chain_code = line[chain_code_index]
+        sequence_code = line[sequence_code_index]
+        residue_name = line[residue_name_index]
+        residue = SequenceResidue(chain_code, sequence_code, residue_name)
+        residues.append(residue)
+
+    return list(residues)
