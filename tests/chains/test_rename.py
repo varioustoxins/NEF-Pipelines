@@ -2,7 +2,7 @@ from lib.structures import  ShiftList, ShiftData, AtomLabel
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -19,7 +19,7 @@ def using_chains():
     import tools.chains
 
 # noinspection PyUnusedLocal
-def test_frame_basic(typer_app, using_chains, monkeypatch):
+def test_rename_basic(typer_app, using_chains, monkeypatch, clear_cache):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
@@ -69,7 +69,7 @@ def test_frame_basic(typer_app, using_chains, monkeypatch):
 
 
 # noinspection PyUnusedLocal
-def test_frame_basic(typer_app, using_chains, monkeypatch):
+def test_rename_multi_frame(typer_app, using_chains, monkeypatch, clear_cache):
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, 'multi_chain_shifts.nef')

@@ -2,7 +2,7 @@ from lib.structures import  ShiftList, ShiftData, AtomLabel
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -49,7 +49,7 @@ EXPECTED_DELETE_CATEGORY = '''\
     '''
 
 # noinspection PyUnusedLocal
-def test_delete_type(typer_app, using_frames, monkeypatch):
+def test_delete_type(typer_app, using_frames, monkeypatch, clear_cache):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
@@ -94,7 +94,7 @@ EXPECTED_DELETE_NAME ="""\
 
 """
 # noinspection PyUnusedLocal
-def test_delete_name(typer_app, using_frames, monkeypatch):
+def test_delete_name(typer_app, using_frames, monkeypatch, clear_cache):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
