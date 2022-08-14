@@ -97,10 +97,10 @@ def select_matching_tests(tests, selectors):
     return results
 
 
-def assert_lines_match(expected: str, reported: str, squash_spaces:bool =True):
+def assert_lines_match(expected: str, reported: str, squash_spaces:bool =True, ignore_empty=True):
     """
-    compare two multi line strings line by line with stripping
-
+    compare two multi line strings line by line with stripping and raise an assertion if they don't match
+    note: empty lines are ignoresd by default, and multiple spaces are squashed
     Args:
         expected (str): the expected string
         reported (str): the input string
@@ -109,7 +109,14 @@ def assert_lines_match(expected: str, reported: str, squash_spaces:bool =True):
     Returns:
         None
     """
-    zip_lines = zip_longest(expected.split('\n'), reported.split('\n'), fillvalue='')
+    lines_expected = expected.split('\n')
+    lines_reported = reported.split('\n')
+
+    if ignore_empty:
+        lines_expected = [line for line in lines_expected if len(line.strip()) !=0]
+        lines_reported = [line for line in lines_reported if len(line.strip()) != 0]
+
+    zip_lines = zip_longest(lines_expected, lines_reported , fillvalue='')
     for i, (expected_line, reported_line) in enumerate(zip_lines):
 
         expected_line_stripped= expected_line.strip()
