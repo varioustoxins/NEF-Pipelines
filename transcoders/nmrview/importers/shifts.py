@@ -17,7 +17,7 @@ from lib.structures import SequenceResidue
 app = typer.Typer()
 
 # noinspection PyUnusedLocal
-@import_app.command()
+@import_app.command(no_args_is_help=True)
 def shifts(
     chain_codes: str = typer.Option('A', '--chains', help='chain codes as a list of names spearated by dots',
                                    metavar='<CHAIN-CODES>'),
