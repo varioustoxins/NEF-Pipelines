@@ -10,7 +10,7 @@ class SequenceResidue:
 
 
 # should contain a residue and have constructors?
-@dataclass
+@dataclass(frozen=True)
 class AtomLabel:
     chain_code: str
     sequence_code: Optional[int]
