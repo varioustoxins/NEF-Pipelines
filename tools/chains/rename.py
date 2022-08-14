@@ -1,4 +1,5 @@
 import sys
+from fnmatch import fnmatch
 from typing import List
 
 from ordered_set import OrderedSet
@@ -32,8 +33,10 @@ def rename(
     changes = 0
     changed_frames = OrderedSet()
     for save_frame in entry:
-        if len(frames) >= 1 and save_frame.name not in frames:
-            continue
+        if len(frames) >= 1:
+            for frame_selector in frames:
+                if not fnmatch(save_frame.name, f'*{frame_selector}*'):
+                    continue
         for loop in save_frame.loop_iterator():
             for tag in loop.get_tag_names():
                 tag_parts = tag.split('.')
