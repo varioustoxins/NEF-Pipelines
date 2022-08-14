@@ -345,7 +345,7 @@ def _build_int_float_error_message(message, line_info, field, format):
     return message
 
 
-def read_float_or_exit(string: str, line_info: LineInfo, field='unknown', message=None) -> float:
+def read_float_or_exit(string: str, line_info: LineInfo=None, field='unknown', message=None) -> float:
     """
     convert a string to an float or exit with error including line information
 
