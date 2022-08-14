@@ -128,7 +128,7 @@ def translate_1_to_3(sequence: str, translations: Dict[str, str] = TRANSLATIONS_
     Args:
         sequence (str): 1 letter sequence
         translations (Dict[str, str]): a list of translations for single amino acid codes to 3 letter residue names
-        unknown (Optional[str]): optional name for residues if they are unknown, if set no error is raise if a
+        unknown (Optional[str]): optional name for residues if they are unknown, if set no error is raised if a
                                  1 letter residue name is not recognised
     Returns List[str]:
         a list of 3 residue codes
