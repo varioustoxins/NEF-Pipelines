@@ -2,7 +2,8 @@ from lib.structures import  ShiftList, ShiftData, AtomLabel
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
+
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -16,7 +17,7 @@ def using_chains():
     import tools.chains
 
 # noinspection PyUnusedLocal
-def test_frame_basic(typer_app, using_chains, monkeypatch):
+def test_frame_basic(typer_app, using_chains, monkeypatch, clear_cache):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
@@ -31,20 +32,23 @@ def test_frame_basic(typer_app, using_chains, monkeypatch):
 
     EXPECTED =  '''\
       ind   chain       seq   resn     link
-         1  A            182  GLU      start
-         2  A            216  TYR      middle
-         3  A           2236  ALA      middle
-         4  A            349  GLN      middle
-         5  A            545  SER      middle
-         6  A            328  ARG      middle
-         7  A           2515  LEU      middle
-         8  A           2368  ARG      middle
-         9  A            129  LEU      middle
-        10  A            523  GLY      middle
-        11  A             19  PHE      middle
-        12  A            657  GLU      middle
-        13  A           1277  ASP      end
+         1  A             10  GLU      start
+         2  A             11  TYR      middle
+         3  A             12  ALA      middle
+         4  A             13  GLN      middle
+         5  A             14  PRO      middle
+         6  A             15  ARG      middle
+         7  A             16  LEU      middle
+         8  A             17  ARG      middle
+         9  A             18  LEU      middle
+        10  A             19  GLY      middle
+        11  A             20  PHE      middle
+        12  A             21  GLU      middle
+        13  A             22  ASP      end
 
     '''
+
+    for line in zip(EXPECTED.split('\n'), result.stdout.split('\n')):
+        print(line)
 
     assert_lines_match (EXPECTED, result.stdout)
