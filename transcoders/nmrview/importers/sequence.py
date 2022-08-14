@@ -20,7 +20,7 @@ app = typer.Typer()
 
 
 # noinspection PyUnusedLocal
-@import_app.command()
+@import_app.command(no_args_is_help=True)
 def sequence(
     chain_codes: str = typer.Option('A', '--chains', help='chain codes as a list of names separated by dots',
                                     metavar='<CHAIN-CODES>'),
