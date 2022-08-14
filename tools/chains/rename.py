@@ -25,7 +25,7 @@ def rename(
     frames: List[str] = Option([], '-f', '--frame', help='limit changes to a a particular frame'),
 
 ):
-    """- change the name of a chain"""
+    """- change the name of chains across one or multuiple frames"""
 
     lines = ''.join(get_pipe_file([]).readlines())
     entry = Entry.from_string(lines)
