@@ -1,4 +1,5 @@
 import string
+import sys
 from textwrap import dedent
 from typing import List, Iterable, Dict, Optional
 
@@ -12,9 +13,7 @@ from lib.nef_lib import loop_to_dataframe
 import pandas as pd
 
 
-from lib.util import get_pipe_file, cached_stdin, exit_error
-
-from lib.util import chunks
+from lib.util import get_pipe_file, cached_stdin, exit_error, chunks, running_in_pycharm
 
 NEF_CHAIN_CODE = 'chain_code'
 
@@ -284,6 +283,12 @@ def get_sequence() -> List[SequenceResidue]:
     """
 
     result = []
+
+    if sys.stdin.isatty():
+        exit_error('trying to read sequence from stdin but stdin is not a stream [did you forget to add a nef file to your pipeline?]')
+
+    if running_in_pycharm():
+        exit_error("reading from stdin doesn't work in pycharm debug environment as there is no shell...")
 
     stream = cached_stdin()
 
