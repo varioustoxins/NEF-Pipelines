@@ -53,6 +53,7 @@ try:
     import tools.frames
     import tools.chains
     import tools.stream
+    import transcoders.pales
 
 except Exception as e:
     msg = '''\

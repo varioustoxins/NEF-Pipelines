@@ -71,3 +71,12 @@ class ShiftData:
 @dataclass
 class ShiftList:
     shifts: List[ShiftData]
+
+
+@dataclass
+class RdcRestraint:
+    atom_1: AtomLabel
+    atom_2: AtomLabel
+    rdc: float
+    rdc_error: float
+    weight: Optional[float] = None
