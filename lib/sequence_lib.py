@@ -5,7 +5,7 @@ from typing import List, Iterable, Dict, Optional
 from ordered_set import OrderedSet
 from pynmrstar import Saveframe, Loop, Entry
 
-from lib.structures import SequenceResidue
+from lib.structures import SequenceResidue, Linking
 from lib.constants import NEF_UNKNOWN
 from lib.nef_lib import loop_to_dataframe
 
@@ -321,12 +321,14 @@ def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
     chain_code_index = loop.tag_index('chain_code')
     sequence_code_index = loop.tag_index('sequence_code')
     residue_name_index = loop.tag_index('residue_name')
+    linking_index = loop.tag_index('linking')
 
     for line in loop:
         chain_code = line[chain_code_index]
         sequence_code = line[sequence_code_index]
         residue_name = line[residue_name_index]
-        residue = SequenceResidue(chain_code, sequence_code, residue_name)
+        linking = Linking[line[linking_index].upper()] if line[linking_index] != NEF_UNKNOWN else None
+        residue = SequenceResidue(chain_code, sequence_code, residue_name, linking)
         residues.append(residue)
 
     return list(residues)

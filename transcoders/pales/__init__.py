@@ -13,4 +13,5 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import transcoders.pales.exporters.template
+    import transcoders.pales.exporters.rdcs
 

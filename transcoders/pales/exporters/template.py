@@ -9,7 +9,8 @@ from lib.sequence_lib import get_sequence_or_exit
 from lib.sequence_lib import sequence_residues_to_sequence_3let, translate_3_to_1
 from lib.util import chunks, exit_error, read_float_or_exit
 
-from lib.structures import SequenceResidue, RdcRestraint, AtomLabel
+from lib.structures import SequenceResidue, RdcRestraint, AtomLabel, Linking
+
 
 
 app = typer.Typer()
@@ -37,7 +38,7 @@ def template(
     print()
     _print_pipe_sequence(sequence_1_let)
 
-    restaints = _build_dummy_restraints(sequence, template_atoms) if template else _read_rdcs_from_nef()
+    restaints = _build_dummy_restraints(sequence, template_atoms)
 
     print()
     _print_restraints(restaints, weights=weights)
@@ -82,6 +83,10 @@ def _build_dummy_restraints(sequence: SequenceResidue, atom_names: Tuple[str, st
         # special case prolines, but really we should check chem comap for atoms...
         if residue.residue_name == 'PRO' and 'HN' in atom_names:
             continue
+
+        if residue.linking == Linking.START and 'HN' in atom_names:
+            continue
+
         atom_1 =  AtomLabel(residue.chain, residue.sequence_code, residue.residue_name, atom_names[0])
         atom_2 = AtomLabel(residue.chain, residue.sequence_code, residue.residue_name, atom_names[1])
         restraint = RdcRestraint(atom_1, atom_2, 0.0, 0.0)

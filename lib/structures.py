@@ -1,5 +1,14 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import List, Optional, Union
+
+from strenum import StrEnum
+
+
+class Linking(StrEnum):
+    START= auto(),
+    MIDDLE=auto()
+    END=auto()
 
 
 @dataclass(frozen=True)
@@ -7,6 +16,7 @@ class SequenceResidue:
     chain: str
     sequence_code: int
     residue_name: str
+    linking: Optional[Linking] = None
 
 
 # should contain a residue and have constructors?

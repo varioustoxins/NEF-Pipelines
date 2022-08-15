@@ -35,7 +35,6 @@ def test_template(typer_app, using_pales, monkeypatch, clear_cache):
     
         VARS    RESID_I  RESNAME_I  ATOMNAME_I  RESID_J  RESNAME_J  ATOMNAME_J  D      DD     W
         FORMAT  %5d      %6s        %6s         %5d      %6s        %6s         %9.3f  %9.3f  %.2f
-                10       GLU        HN          10       GLU        N           0.0    0.0    1.0
                 11       TYR        HN          11       TYR        N           0.0    0.0    1.0
                 12       ALA        HN          12       ALA        N           0.0    0.0    1.0
                 13       GLN        HN          13       GLN        N           0.0    0.0    1.0
