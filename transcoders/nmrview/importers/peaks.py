@@ -46,10 +46,10 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def peaks(
-        entry_name: str = typer.Option('nmrview', help='a name for the entry'),
+        entry_name: str = typer.Option('nmrview', '-n', '--name',  help='a name for a shift frame, additional calls add more names'),
         chain_code: str = typer.Option('A', '--chain', help='chain code', metavar='<chain-code>'),
-        sequence: str = typer.Option(None, metavar='<nmrview>.seq)', help="seq file for the chain <seq-file>.seq"),
-        axis_codes: str = typer.Option('1H.15N', metavar='<axis-codes>',  help='a list of axis codes joined by dots'),
+        sequence: str = typer.Option(None, '-s',  '--sequence', metavar='<nmrview>.seq)', help="seq file for the chain <seq-file>.seq"),
+        axis_codes: str = typer.Option('1H.15N', '-a', '--axis', metavar='<axis-codes>',  help='a list of axis codes joined by dots'),
         file_names: List[Path] = typer.Argument(..., help="input peak files", metavar='<peak-file.xpk>')
 ):
     """convert nmrview peak file <nmrview>.xpk files to NEF"""
@@ -253,7 +253,7 @@ def check_num_fields(fields, number, field_type, line, line_no):
 def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str, int], str]:
     result: Dict[Tuple[str, int], str] = {}
     for residue in sequence:
-        result[residue.chain, residue.residue_number] = residue.residue_name
+        result[residue.chain, residue.sequence_code] = residue.residue_name
     return result
 
 
