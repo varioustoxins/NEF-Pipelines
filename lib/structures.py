@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 @dataclass(frozen=True)
 class SequenceResidue:
     chain: str
-    residue_number: int
+    sequence_code: int
     residue_name: str
 
 

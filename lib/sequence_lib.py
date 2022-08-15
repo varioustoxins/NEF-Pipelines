@@ -103,7 +103,7 @@ def sequence_to_nef_frame(input_sequence: List[SequenceResidue], entry_name: str
 
         nef_loop.add_data_by_tag('index', index + 1)
         nef_loop.add_data_by_tag('chain_code', sequence_residue.chain)
-        nef_loop.add_data_by_tag('sequence_code', sequence_residue.residue_number)
+        nef_loop.add_data_by_tag('sequence_code', sequence_residue.sequence_code)
         nef_loop.add_data_by_tag('residue_name', sequence_residue.residue_name.upper())
         nef_loop.add_data_by_tag('linking', linking)
         nef_loop.add_data_by_tag('residue_variant', NEF_UNKNOWN)
