@@ -11,3 +11,4 @@ if nef_app.app:
     import tools.frames.list
     import tools.frames.tabulate
     import tools.frames.delete
+    import tools.frames.insert
