@@ -395,3 +395,13 @@ def read_integer_or_exit(string: str, line_info: LineInfo=None, field='unknown',
         exit_error(message)
 
     return result
+
+
+def parse_comma_separated_options(chain_codes):
+
+    result = []
+    for chain_code in chain_codes:
+        chain_code = chain_code.strip(',')
+        result.extend(chain_code.split(','))
+
+    return result
