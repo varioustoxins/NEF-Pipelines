@@ -62,7 +62,7 @@ class PeakListData:
 @dataclass
 class PeakList:
     peak_list_data: PeakListData
-    peaks: list[dict[Union[int, str], Union[PeakAxis, PeakValues]]]
+    peaks: List[dict[Union[int, str], Union[PeakAxis, PeakValues]]]
 
 
 @dataclass
