@@ -155,6 +155,14 @@ def read_header_data(lines, headers):
             line_no = header_no + 2
             spectrometer_frequencies = parse_float_list(line, line_no)
             check_num_fields(spectrometer_frequencies, num_axis, "spectrometer frequencies", line, line_no)
+
+    # sweep widths are in ppm for nef!
+    sweep_widths = [float(sweep_width) for sweep_width in sweep_widths]
+    spectrometer_frequencies = [float(spectrometer_frequency) for spectrometer_frequency in spectrometer_frequencies]
+
+    for i, (sweep_width, spectrometer_frequency) in enumerate(zip(sweep_widths, spectrometer_frequencies)):
+        sweep_widths[i] = sweep_width / spectrometer_frequency
+
     peak_list_data = PeakListData(num_axis, axis_labels, data_set, sweep_widths, spectrometer_frequencies)
     return peak_list_data
 
