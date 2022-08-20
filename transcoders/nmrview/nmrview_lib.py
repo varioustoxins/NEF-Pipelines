@@ -109,6 +109,7 @@ def parse_tcl(in_str, file_name='unknown', line_no=0) -> ParseResults:
     return result
 
 
+#TODO: add line info for better error handling
 def parse_float_list(line: str, line_no: int) -> List[float]:
     """
      parse a tcl list into a list of floats using the tcl parser
