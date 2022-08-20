@@ -79,7 +79,7 @@ def test_3let_sequence_residue_diff_chain():
 def test_3let_sequence_residue_offset():
     sequence_residues = sequence_3let_to_sequence_residues(ABC_SEQUENCE_3LET, offset=-10)
 
-    expected = [SequenceResidue(residue.chain, residue.sequence_code - 10, residue.residue_name) for residue in ABC_SEQUENCE_RESIDUES]
+    expected = [SequenceResidue(residue.chain_code, residue.sequence_code - 10, residue.residue_name) for residue in ABC_SEQUENCE_RESIDUES]
 
     assert sequence_residues == expected
 

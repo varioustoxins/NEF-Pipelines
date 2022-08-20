@@ -13,7 +13,7 @@ from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
 HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
-MOLECULAR_SYSTEM_NMRPIPE = 'nef_molecular_system_nmrpipe'
+MOLECULAR_SYSTEM_NMRPIPE = 'nef_molecular_system'
 METADATA_NMRPIPE ='nef_nmr_meta_data'
 NMRPIPE_IMPORT_SEQUENCE = ['nmrpipe', 'import', 'sequence']
 
@@ -27,9 +27,9 @@ def using_nmrpipe():
 
 
 EXPECTED_3AA = '''\
-save_nef_molecular_system_nmrpipe
+save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system_nmrpipe
+   _nef_molecular_system.sf_framecode  nef_molecular_system
 
    loop_
       _nef_sequence.index
@@ -49,9 +49,9 @@ save_nef_molecular_system_nmrpipe
 save_'''
 
 EXPECTED_3AA10 = '''\
-save_nef_molecular_system_nmrpipe
+save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system_nmrpipe
+   _nef_molecular_system.sf_framecode  nef_molecular_system
 
    loop_
       _nef_sequence.index
@@ -70,8 +70,6 @@ save_nef_molecular_system_nmrpipe
 
 save_'''
 
-'nef_molecular_system_nmrview'
-METADATA_NMRVIEW ='nef_nmr_meta_data'
 NMRVIEW_IMPORT_SEQUENCE = ['nmrview', 'import', 'sequence']
 
 

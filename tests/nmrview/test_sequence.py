@@ -11,7 +11,7 @@ from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequ
 from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
-MOLECULAR_SYSTEM_NMRVIEW = 'nef_molecular_system_nmrview'
+MOLECULAR_SYSTEM = 'nef_molecular_system'
 METADATA_NMRVIEW ='nef_nmr_meta_data'
 NMRVIEW_IMPORT_SEQUENCE = ['nmrview', 'import', 'sequence']
 
@@ -25,9 +25,9 @@ def using_nmrview():
 
 
 EXPECTED_3AA = '''\
-save_nef_molecular_system_nmrview
+save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system_nmrview
+   _nef_molecular_system.sf_framecode  nef_molecular_system
 
    loop_
       _nef_sequence.index
@@ -47,9 +47,9 @@ save_nef_molecular_system_nmrview
 save_'''
 
 EXPECTED_3AA10 = '''\
-save_nef_molecular_system_nmrview
+save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system_nmrview
+   _nef_molecular_system.sf_framecode  nef_molecular_system
 
    loop_
       _nef_sequence.index
@@ -79,7 +79,7 @@ def test_3aa(typer_app, using_nmrview, monkeypatch):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -94,7 +94,7 @@ def test_3aa10(typer_app, using_nmrview, monkeypatch):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
@@ -139,7 +139,7 @@ def test_pipe_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
     result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, '--pipe', path_header, path])
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
     meta_data_result = isolate_frame(result.stdout, '%s' % METADATA_NMRVIEW)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
@@ -157,7 +157,7 @@ def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
