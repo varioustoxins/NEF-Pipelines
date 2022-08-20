@@ -161,7 +161,10 @@ def read_header_data(lines, headers):
     spectrometer_frequencies = [float(spectrometer_frequency) for spectrometer_frequency in spectrometer_frequencies]
 
     for i, (sweep_width, spectrometer_frequency) in enumerate(zip(sweep_widths, spectrometer_frequencies)):
-        sweep_widths[i] = sweep_width / spectrometer_frequency
+        sweep_widths[i] = f'{sweep_width / spectrometer_frequency:.4f}'
+
+    #TODO: peaks shifts, spectrometer frequencies how many decimal points
+    spectrometer_frequencies = [f'{spectrometer_frequency:4}' for spectrometer_frequency in spectrometer_frequencies]
 
     peak_list_data = PeakListData(num_axis, axis_labels, data_set, sweep_widths, spectrometer_frequencies)
     return peak_list_data
