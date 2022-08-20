@@ -124,12 +124,12 @@ def parse_float_list(line: str, line_no: int) -> List[float]:
     raw_fields = []
     parsed_tcl = parse_tcl(line)
     for field in parsed_tcl:
-        if isinstance(field, list):
-            raw_fields.append(field)
+        if isinstance(field, ParseResults):
+            raw_fields.extend(field)
         elif isinstance(field, str):
             raw_fields.append(field)
         else:
-            exit_error(f"Error: unexpected internal error tcl failed to parse: '{line}' was not parsed properly got: {parsed_tcl}")
+            exit_error(f"Error: unexpected internal error tcl failed to parse: '{line}' was not parsed properly got: {parsed_tcl} field type was: {field.__class__}")
 
     result = []
     for field_index, field in enumerate(raw_fields):
