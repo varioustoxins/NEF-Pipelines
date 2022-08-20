@@ -212,7 +212,7 @@ def sequence_residues_to_sequence_3let(sequence: List[SequenceResidue], chain_co
         the sequence as a list of 3 letter residues
 
     """
-    return [residue.residue_name for residue in sequence if residue.chain == chain_code]
+    return [residue.residue_name for residue in sequence if residue.chain_code == chain_code]
 
 def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
     """

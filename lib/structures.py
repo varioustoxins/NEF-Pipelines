@@ -13,7 +13,7 @@ class Linking(StrEnum):
 
 @dataclass(frozen=True)
 class SequenceResidue:
-    chain: str
+    chain_code: str
     sequence_code: int
     residue_name: str
     linking: Optional[Linking] = None

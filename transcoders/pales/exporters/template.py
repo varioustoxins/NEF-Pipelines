@@ -87,8 +87,8 @@ def _build_dummy_restraints(sequence: SequenceResidue, atom_names: Tuple[str, st
         if residue.linking == Linking.START and 'HN' in atom_names:
             continue
 
-        atom_1 =  AtomLabel(residue.chain, residue.sequence_code, residue.residue_name, atom_names[0])
-        atom_2 = AtomLabel(residue.chain, residue.sequence_code, residue.residue_name, atom_names[1])
+        atom_1 =  AtomLabel(residue.chain_code, residue.sequence_code, residue.residue_name, atom_names[0])
+        atom_2 = AtomLabel(residue.chain_code, residue.sequence_code, residue.residue_name, atom_names[1])
         restraint = RdcRestraint(atom_1, atom_2, 0.0, 0.0)
         restraints.append(restraint)
 

@@ -54,7 +54,7 @@ def offset_chemical_shifts(entry, args):
                 value = line[value_index]
                 atom_name = line[atom_name_index]
 
-                if chain == args.chain:
+                if chain == args.chain_code:
                     if args.target == isotope or fnmatch(atom_name, args.target):
                         value = float(value) + args.offset
                         line[value_index] = value

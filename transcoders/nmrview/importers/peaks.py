@@ -261,7 +261,7 @@ def check_num_fields(fields, number, field_type, line, line_no):
 def _sequence_to_residue_type_lookup(sequence: List[SequenceResidue]) -> Dict[Tuple[str, int], str]:
     result: Dict[Tuple[str, int], str] = {}
     for residue in sequence:
-        result[residue.chain, residue.sequence_code] = residue.residue_name
+        result[residue.chain_code, residue.sequence_code] = residue.residue_name
     return result
 
 
