@@ -280,6 +280,7 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
 
     fixup_metadata(new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
 
+    #TODO: check if frame exists
     for frame in frames:
         new_entry.add_saveframe(frame)
 
