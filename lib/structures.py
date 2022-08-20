@@ -11,7 +11,7 @@ class Linking(StrEnum):
     END=auto()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class SequenceResidue:
     chain_code: str
     sequence_code: int
