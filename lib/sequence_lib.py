@@ -46,7 +46,7 @@ def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
     raise ValueError('run out of chain names!')
 
 
-def get_linking(target_index, target_sequence: List[SequenceResidue], no_start=False, no_end=False) -> str:
+def get_linking(target_sequence: List[SequenceResidue], no_chain_start, no_chain_end) -> str:
 
     """
         get the correct linking for residue in a standard sequenced chain
@@ -61,28 +61,39 @@ def get_linking(target_index, target_sequence: List[SequenceResidue], no_start=F
             str: a linkage
     """
 
-    result = 'middle'
-    if target_index == 0 and not no_start:
-        result = 'start'
-    if target_index + 1 == len(target_sequence) and not no_end:
-        result = 'end'
+    by_chain = {}
+    for residue in target_sequence:
+        by_chain.setdefault(residue.chain_code, []).append((residue,'middle'))
+
+    result = []
+    for chain, residues_and_linkages in by_chain.items():
+
+        if chain not in no_chain_start:
+            residues_and_linkages[0] = (residues_and_linkages[0][0], 'start')
+
+        if chain not in no_chain_end:
+            residues_and_linkages[-1] = (residues_and_linkages[-1][0], 'end')
+
+        result.extend(residues_and_linkages)
+
     return result
 
 
-def sequence_to_nef_frame(input_sequence: List[SequenceResidue], entry_name: str) -> Saveframe:
+def sequence_to_nef_frame(sequences: List[SequenceResidue], cap_start=(), cap_end=()) -> Saveframe:
     """
 
     Args:
-        input_sequence (List[SequenceResidue]): the sequence
-        entry_name (str): the name of the entry
+        sequences (List[SequenceResidue]): the sequence
 
     Returns:
         Saveframe: a NEF saveframe
     """
 
+    sequences = sorted(sequences)
+
     category = "nef_molecular_system"
 
-    frame_code = f'{category}_{entry_name}'
+    frame_code = f'{category}'
 
     nef_frame = Saveframe.from_scratch(frame_code, category)
 
@@ -97,11 +108,12 @@ def sequence_to_nef_frame(input_sequence: List[SequenceResidue], entry_name: str
     nef_loop.add_tag(tags)
 
     # TODO need tool to set ionisation correctly
-    for index, sequence_residue in enumerate(input_sequence):
-        linking = get_linking(index, input_sequence)
+    residue_and_linkages = get_linking(sequences, cap_start, cap_end)
+
+    for index, (sequence_residue, linking) in enumerate(residue_and_linkages):
 
         nef_loop.add_data_by_tag('index', index + 1)
-        nef_loop.add_data_by_tag('chain_code', sequence_residue.chain)
+        nef_loop.add_data_by_tag('chain_code', sequence_residue.chain_code)
         nef_loop.add_data_by_tag('sequence_code', sequence_residue.sequence_code)
         nef_loop.add_data_by_tag('residue_name', sequence_residue.residue_name.upper())
         nef_loop.add_data_by_tag('linking', linking)
