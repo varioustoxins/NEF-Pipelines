@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 import sys
+import future
+
+MINIMUM_VERSION = (3, 7)
+if not sys.version_info >= MINIMUM_VERSION:
+    print("Error; minimum version required id %i.%i [and python 2 is not supported]" %MINIMUM_VERSION, file=sys.stderr)
+    print("exiting...", file=sys.stderr)
+
 import traceback
 from textwrap import dedent
 
