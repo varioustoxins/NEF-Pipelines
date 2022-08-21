@@ -60,6 +60,9 @@ def process_sequence(args: Namespace):
 
     pdb_sequences = read_sequences(args.file_name, args.chain_codes, use_segids=args.use_segids)
 
+    if len(pdb_sequences) == 0:
+        exit_error(f'no chains read from {args.file_name}')
+
     pdb_frame = sequence_to_nef_frame(pdb_sequences, set(args.no_chain_starts), set(args.no_chain_ends))
 
     #TODO: need a a warning if the sequence already exists in a molecular system and ability to merge
@@ -105,6 +108,8 @@ def read_sequences(path, target_chain_codes, use_segids=False):
                 if len(hetero_atom_flag.strip()) != 0:
                     continue
 
+                if chain_code == '':
+                    exit_error(f"residue with no chain code found for file {path} sequence_code is {sequence_code} residue_name is {residue.get_resname()}")
                 residue = SequenceResidue(chain_code=chain_code, sequence_code=sequence_code,
                                           residue_name=residue.get_resname())
                 sequences.append(residue)

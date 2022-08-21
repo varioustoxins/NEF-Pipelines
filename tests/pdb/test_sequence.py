@@ -20,9 +20,9 @@ runner = CliRunner()
 
 
 @pytest.fixture
-def using_nmrpipe():
+def using_pdb():
     # register the module under test
-    import transcoders.nmrpipe
+    import transcoders.pdb
 
 
 EXPECTED_3AA = '''\
@@ -48,7 +48,7 @@ save_nef_molecular_system
 save_'''
 
 # noinspection PyUnusedLocal
-def test_3aa(typer_app, using_nmrpipe, monkeypatch):
+def test_3aa(typer_app, using_pdb, monkeypatch):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
@@ -94,7 +94,7 @@ PDB_IMPORT_SEQUENCE = ['pdb', 'import', 'sequence']
 
 
 # noinspection PyUnusedLocal
-def test_3a_ab(typer_app, using_nmrpipe, monkeypatch):
+def test_3a_ab(typer_app, using_pdb, monkeypatch):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
@@ -132,18 +132,46 @@ save_nef_molecular_system
    stop_
 
 save_'''
+
 # noinspection PyUnusedLocal
-def test_3a_segid_cccc_dddd(typer_app, using_nmrpipe, monkeypatch):
+def test_3a_segid_cccc_dddd(typer_app, using_pdb, monkeypatch):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, '3a_ab.pdb')
     result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, '--segid', path], input=HEADER)
 
-    print(result.stdout)
     assert result.exit_code == 0
 
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
 
+
+# noinspection PyUnusedLocal
+def test_3a_force_segid_cccc_dddd(typer_app, using_pdb, monkeypatch):
+
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
+    path = path_in_test_data(__file__, '3a_cccc_dddd.pdb')
+    result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
+
+    print(result.stdout)
+
+    assert result.exit_code == 0
+
+    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+
+    assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
+
+# noinspection PyUnusedLocal
+def test_3a_test_no_chain_segid(typer_app, using_pdb, monkeypatch):
+
+    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+
+    path = path_in_test_data(__file__, '3a_no_chain_no_segid.pdb')
+    result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
+
+    assert result.exit_code == 1
+
+    assert 'ERROR: residue with no chain code' in result.stdout
