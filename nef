@@ -61,6 +61,7 @@ try:
     import tools.chains
     import tools.stream
     import transcoders.pales
+    import transcoders.pdb
 
 except Exception as e:
     msg = '''\
