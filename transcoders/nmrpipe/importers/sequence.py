@@ -8,7 +8,7 @@ from typing import List, Iterable
 import typer
 from icecream import ic
 
-from lib.sequence_lib import chain_code_iter, sequence_3let_to_sequence_residues, sequence_to_nef_frame
+from lib.sequence_lib import chain_code_iter, sequence_3let_to_sequence_residues, sequence_to_nef_frame, offset_chain_residues
 from lib.structures import SequenceResidue
 from lib.typer_utils import get_args
 from lib.util import exit_error, process_stream_and_add_frames
@@ -67,7 +67,11 @@ def read_sequence(sequence_lines: Iterable[str], chain_code: str = 'A', sequence
 
     sequence_3let = gdb_to_3let_sequence(gdb_file)
 
-    return sequence_3let_to_sequence_residues(sequence_3let, chain_code=chain_code, offset=start-1)
+    sequence_residues =  sequence_3let_to_sequence_residues(sequence_3let, chain_code=chain_code)
+
+    sequence_residues = offset_chain_residues(sequence_residues, {chain_code: start-1})
+
+    return sequence_residues
 
 
 if __name__ == '__main__':
