@@ -8,13 +8,14 @@ from cacheable_iter import iter_cache
 
 from pathlib import Path
 
-from typing import Dict, TextIO, Optional, List, Iterator, TypeVar
+from typing import Dict, TextIO, Optional, List, Iterator, TypeVar, Union
 
 from pynmrstar import Loop, Saveframe, Entry
 
 from lib.constants import NEF_UNKNOWN, NEF_META_DATA, NEF_PIPELINES, NEF_PIPELINES_VERSION, EXIT_ERROR
 from lib.header_lib import get_creation_time, get_uuid, create_header_frame
 from lib.structures import LineInfo
+from shiboken6 import Object
 
 
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
@@ -276,7 +277,15 @@ def process_stream_and_add_frames(frames: List[Saveframe], input_args: Namespace
     except Exception as e:
         exit_error(f'failed to load pipe file because {e}')
 
-    new_entry = Entry.from_string(''.join(stream.readlines())) if stream else Entry.from_scratch(input_args.entry_name)
+    if stream is not  None:
+        lines = ''.join(stream.readlines())
+    else:
+        lines = ''
+
+    if len(lines.strip()) == 0:
+        stream = None
+
+    new_entry = Entry.from_string(lines) if stream else Entry.from_scratch(input_args.entry_name)
 
     fixup_metadata(new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
 
@@ -398,11 +407,28 @@ def read_integer_or_exit(string: str, line_info: LineInfo=None, field='unknown',
     return result
 
 
-def parse_comma_separated_options(chain_codes):
+def parse_comma_separated_options(lists: List[Union[list[str],str]])->List[Union[Object,str]]:
+    """
+    Take a mixed list of strings or strings that can be parsed as a comma separated list of strings
+    and make a list of all the items
 
+    e.g.
+
+    test = [['1','2','3'], 'a,b,c', ['4','5']]
+
+    gives
+
+    ['1','2','3','a','b','c','4','5']
+
+    :param lists: a mixture of  lists of string or comma separated as a at sting
+    :return: list of items
+    """
     result = []
-    for chain_code in chain_codes:
-        chain_code = chain_code.strip(',')
-        result.extend(chain_code.split(','))
+    for item in lists:
+        if isinstance(item, str):
+            item = item.strip(',')
+            result.extend(item.split(','))
+        else:
+            result.append(item)
 
     return result
