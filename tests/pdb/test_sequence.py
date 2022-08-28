@@ -14,7 +14,7 @@ from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
 MOLECULAR_SYSTEM = 'nef_molecular_system'
-NMRPIPE_IMPORT_SEQUENCE = ['pdb', 'import', 'sequence']
+PDB_IMPORT_SEQUENCE = ['pdb', 'import', 'sequence']
 
 runner = CliRunner()
 
@@ -88,7 +88,7 @@ save_nef_molecular_system
 
 save_'''
 
-PDB_IMPORT_SEQUENCE = ['pdb', 'import', 'sequence']
+
 
 
 
