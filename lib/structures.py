@@ -23,7 +23,7 @@ class SequenceResidue:
 @dataclass(frozen=True)
 class AtomLabel:
     chain_code: str
-    sequence_code: Optional[int]
+    sequence_code: Optional[Union[int,str]]
     residue_name: str
     atom_name: str
 
