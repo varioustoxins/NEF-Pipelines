@@ -83,8 +83,8 @@ class ShiftList:
     shifts: List[ShiftData]
 
 
-@dataclass
-class RdcRestraint:
+@dataclass(order=True)
+class RdcRestraint():
     atom_1: AtomLabel
     atom_2: AtomLabel
     rdc: float

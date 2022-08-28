@@ -112,8 +112,8 @@ def _rdc_restraints_from_frames(frames: List[Saveframe], chains: List[str], weig
     for frame in frames:
         for row in _loop_row_dict_iter(frame.loops[0]):
 
-            atom_1 = AtomLabel(row['chain_code_1'], row['sequence_code_1'], row['residue_name_1'], row['atom_name_1'])
-            atom_2 = AtomLabel(row['chain_code_2'], row['sequence_code_2'], row['residue_name_2'], row['atom_name_2'])
+            atom_1 = AtomLabel(row['chain_code_1'], int(row['sequence_code_1']), row['residue_name_1'], row['atom_name_1'])
+            atom_2 = AtomLabel(row['chain_code_2'], int(row['sequence_code_2']), row['residue_name_2'], row['atom_name_2'])
 
             weight_key = _build_weights_key(row['atom_name_1'], row['atom_name_2'])
             # this should be
@@ -122,7 +122,7 @@ def _rdc_restraints_from_frames(frames: List[Saveframe], chains: List[str], weig
 
             result.append(rdc)
 
-    return result
+    return sorted(result)
 
 
 
