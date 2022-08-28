@@ -2,7 +2,8 @@ from textwrap import dedent
 
 import pytest
 
-from lib.sequence_lib import translate_1_to_3, sequence_3let_to_sequence_residues, BadResidue, frame_to_chains, count_residues
+from lib.sequence_lib import translate_1_to_3, sequence_3let_to_sequence_residues, BadResidue, frame_to_chains, \
+    count_residues, get_chain_starts, offset_chain_residues
 from lib.structures import SequenceResidue
 from pynmrstar import Saveframe
 
@@ -30,7 +31,7 @@ ABC_SEQUENCE_3LET = (
         'TYR'
 )
 
-ABC_SEQUENCE_RESIDUES = [SequenceResidue('A', i+1, residue) for (i, residue) in enumerate(ABC_SEQUENCE_3LET)]
+ABC_SEQUENCE_RESIDUES = [SequenceResidue('A', i, residue) for (i, residue) in enumerate(ABC_SEQUENCE_3LET, start=1)]
 
 
 def test_1let_3let():
@@ -72,14 +73,6 @@ def test_3let_sequence_residue_diff_chain():
     sequence_residues = sequence_3let_to_sequence_residues(ABC_SEQUENCE_3LET, chain_code='B')
 
     expected = [SequenceResidue('B', residue.sequence_code, residue.residue_name) for residue in ABC_SEQUENCE_RESIDUES]
-
-    assert sequence_residues == expected
-
-
-def test_3let_sequence_residue_offset():
-    sequence_residues = sequence_3let_to_sequence_residues(ABC_SEQUENCE_3LET, offset=-10)
-
-    expected = [SequenceResidue(residue.chain_code, residue.sequence_code - 10, residue.residue_name) for residue in ABC_SEQUENCE_RESIDUES]
 
     assert sequence_residues == expected
 
@@ -153,6 +146,17 @@ def test_list_chains_no_chains():
 
     assert chains == list([])
 
+CHAIN_STARTS_TEST_DATA = [
+        SequenceResidue(chain_code='A', sequence_code=-1, residue_name='ALA'),
+        SequenceResidue(chain_code='A', sequence_code=2, residue_name='ALA'),
+        SequenceResidue(chain_code='A', sequence_code='z', residue_name='ALA'),
+
+        SequenceResidue(chain_code='B', sequence_code=2, residue_name='ALA'),
+        SequenceResidue(chain_code='B', sequence_code=2, residue_name='ALA'),
+        SequenceResidue(chain_code='B', sequence_code=3, residue_name='ALA'),
+
+        SequenceResidue(chain_code='c', sequence_code='y', residue_name='ALA')
+    ]
 
 def test_count_chains():
     test_frame = Saveframe.from_string(TEST_DATA_MULTI_CHAIN)
@@ -163,6 +167,44 @@ def test_count_chains():
 
     EXPECTED = {'A': {'HIS': 1, 'MET': 1}, 'B': {'ARG': 1, 'GLN': 1}, 'C': {'PRO': 1}}
     assert result == EXPECTED
+
+def test_get_chain_starts():
+
+    EXPECTED = {
+        'A': -1,
+        'B': 2,
+    }
+
+    assert EXPECTED == get_chain_starts(CHAIN_STARTS_TEST_DATA)
+
+
+def test_offset_chains():
+
+    EXPECTED = [
+        SequenceResidue(chain_code='A', sequence_code=1, residue_name='ALA'),
+        SequenceResidue(chain_code='A', sequence_code=4, residue_name='ALA'),
+        SequenceResidue(chain_code='A', sequence_code='z', residue_name='ALA'),
+
+        SequenceResidue(chain_code='B', sequence_code=0, residue_name='ALA'),
+        SequenceResidue(chain_code='B', sequence_code=0, residue_name='ALA'),
+        SequenceResidue(chain_code='B', sequence_code=1, residue_name='ALA'),
+
+        SequenceResidue(chain_code='c', sequence_code='y', residue_name='ALA')
+    ]
+
+    offsets = {
+        'A': 2,
+        'B': -2,
+        'C': 1,
+        'D': 3
+    }
+
+    result = offset_chain_residues(CHAIN_STARTS_TEST_DATA, offsets)
+
+    for pair in zip(EXPECTED,result):
+        print(pair)
+
+    assert EXPECTED == result
 
 if __name__ == '__main__':
     pytest.main([f'{__file__}', '-vv'])

@@ -387,3 +387,24 @@ def get_chain_starts(residues: List[SequenceResidue]) -> Dict[str,int]:
             chain_residue_numbers.setdefault(residue.chain_code,[]).append(residue_number)
 
     return {chain_code: min(residue_numbers) for chain_code, residue_numbers in chain_residue_numbers.items()}
+
+def offset_chain_residues(residues: List[SequenceResidue], chain_residue_offsets: Dict[str, int]) -> List[SequenceResidue]:
+    """
+    take a list of residues and offset residue sequence_codes by any offsets in chains if the
+    sequence_code can be converted to an integer and the chain_code matches
+
+    :param residues:  a list of residues from one ore more chains
+    :return: a list of residues
+    """
+
+    result = []
+    for residue in residues:
+        if residue.chain_code in chain_residue_offsets and is_int(residue.sequence_code):
+            offset = chain_residue_offsets[residue.chain_code]
+            result.append(replace(residue, sequence_code=residue.sequence_code + offset))
+        else:
+            result.append(residue)
+
+    return result
+
+
