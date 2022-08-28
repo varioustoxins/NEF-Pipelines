@@ -79,11 +79,13 @@ def get_linking(target_sequence: List[SequenceResidue], no_chain_start=List[str]
     return result
 
 
-def sequence_to_nef_frame(sequences: List[SequenceResidue], cap_start=(), cap_end=()) -> Saveframe:
+def sequence_to_nef_frame(sequences: List[SequenceResidue], no_chain_start: Union[List[str],Tuple[str]]=(), no_chain_end: Union[List[str],Tuple[str]]=()) -> Saveframe:
     """
 
     Args:
-        sequences (List[SequenceResidue]): the sequence
+        sequences (List[SequenceResidue]): the sequence as a list of sequence residues [will be sorted]
+        no_chain_start (List[str]): if the chain isn't in the list cap it at the start
+        no_chain_end (List[str]): if the chain isn't in the list cap it at the end
 
     Returns:
         Saveframe: a NEF saveframe
@@ -108,7 +110,7 @@ def sequence_to_nef_frame(sequences: List[SequenceResidue], cap_start=(), cap_en
     nef_loop.add_tag(tags)
 
     # TODO need tool to set ionisation correctly
-    residue_and_linkages = get_linking(sequences, cap_start, cap_end)
+    residue_and_linkages = get_linking(sequences, no_chain_start, no_chain_end)
 
     for index, (sequence_residue, linking) in enumerate(residue_and_linkages):
 
