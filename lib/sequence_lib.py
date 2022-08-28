@@ -1,7 +1,8 @@
 import string
 import sys
+from dataclasses import replace
 from textwrap import dedent
-from typing import List, Iterable, Dict, Optional
+from typing import List, Iterable, Dict, Optional, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Saveframe, Loop, Entry
@@ -13,7 +14,7 @@ from lib.nef_lib import loop_to_dataframe
 import pandas as pd
 
 
-from lib.util import get_pipe_file, cached_stdin, exit_error, chunks, running_in_pycharm
+from lib.util import get_pipe_file, cached_stdin, exit_error, chunks, running_in_pycharm, is_int
 
 NEF_CHAIN_CODE = 'chain_code'
 
@@ -201,7 +202,7 @@ def translate_3_to_1(sequence: List[str], translations: Dict[str, str] = TRANSLA
 
     return result
 
-def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str = 'A', offset: int = 0) -> List[SequenceResidue]:
+def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str = 'A') -> List[SequenceResidue]:
     """
     Translate a list of 3 residue sequence codes to SequenceResidues
     Args:
@@ -213,7 +214,9 @@ def sequence_3let_to_sequence_residues(sequence_3let: List[str], chain_code: str
         the sequence as a list of SequenceResidues
 
     """
-    return [SequenceResidue(chain_code, i + 1 + offset, residue) for (i, residue) in enumerate(sequence_3let)]
+
+
+    return [SequenceResidue(chain_code, i, residue) for (i, residue) in enumerate(sequence_3let, start=1)]
 
 def sequence_residues_to_sequence_3let(sequence: List[SequenceResidue], chain_code: str = 'A') -> List[str]:
     """
@@ -351,3 +354,19 @@ def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
         residues.append(residue)
 
     return list(residues)
+
+def sequence_3let_to_res(sequence_3_let: List[str], chain_code: str, start:int =1) -> List[SequenceResidue]:
+    """
+    convert a list of 3 letter residue names to a list of sequence residues
+    :param sequence_3_let: 3 letter names
+    :param chain_code: chain code to use
+    :param start:  start of the chain [default is 1]
+    :return: a list of sequeence residues
+    """
+    result = set()
+    for res_number, residue_name in enumerate(sequence_3_let, start=start):
+        result.add(SequenceResidue(chain_code, res_number, residue_name))
+
+    return list(result)
+
+
