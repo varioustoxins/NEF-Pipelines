@@ -20,7 +20,7 @@ class SequenceResidue:
 
 
 # should contain a residue and have constructors?
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class AtomLabel:
     chain_code: str
     sequence_code: Optional[Union[int,str]]
