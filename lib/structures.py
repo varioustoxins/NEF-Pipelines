@@ -14,7 +14,7 @@ class Linking(StrEnum):
 @dataclass(frozen=True, order=True)
 class SequenceResidue:
     chain_code: str
-    sequence_code: int
+    sequence_code: Union[int,str]
     residue_name: str
     linking: Optional[Linking] = None
 
