@@ -46,7 +46,7 @@ def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
     raise ValueError('run out of chain names!')
 
 
-def get_linking(target_sequence: List[SequenceResidue], no_chain_start, no_chain_end) -> str:
+def get_linking(target_sequence: List[SequenceResidue], no_chain_start=List[str], no_chain_end=List[str]) -> List[SequenceResidue]:
 
     """
         get the correct linking for residue in a standard sequenced chain
@@ -54,11 +54,11 @@ def get_linking(target_sequence: List[SequenceResidue], no_chain_start, no_chain
         Args:
             target_index (int):  index in the sequence
             target_sequence (List[SequenceResidue]) : the sequence
-            no_start (bool): if true don't cap the chain start
-            no_end (bool): if true don't cap the chain end
+            no_chain_start (List[str]): if the chain isn't in the list cap it at the start
+            no_end (List[str]): if the chain isn't in the list cap it at the end
 
         Returns:
-            str: a linkage
+             List[SequenceResidue]: correctly linked residues
     """
 
     by_chain = {}
