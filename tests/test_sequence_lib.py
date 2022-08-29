@@ -1,9 +1,10 @@
+from itertools import islice
 from textwrap import dedent
 
 import pytest
 
 from lib.sequence_lib import translate_1_to_3, sequence_3let_to_sequence_residues, BadResidue, frame_to_chains, \
-    count_residues, get_chain_starts, offset_chain_residues
+    count_residues, get_chain_starts, offset_chain_residues, chain_code_iter
 from lib.structures import SequenceResidue
 from pynmrstar import Saveframe
 
@@ -205,6 +206,30 @@ def test_offset_chains():
         print(pair)
 
     assert EXPECTED == result
+
+
+def test_chain_code_iter_basic():
+    result = [chain_code for chain_code in islice(chain_code_iter(),3)]
+
+    EXPECTED = list('ABC')
+
+    assert EXPECTED == result
+
+
+def test_chain_code_iter_with_user():
+    result = [chain_code for chain_code in islice(chain_code_iter('D.E'),3)]
+
+    EXPECTED = list('DEA')
+
+    assert EXPECTED == result
+
+def test_chain_code_iter_with_exclude():
+    result = [chain_code for chain_code in islice(chain_code_iter(exclude='B.C'),3)]
+
+    EXPECTED = list('ADE')
+
+    assert EXPECTED == result
+
 
 if __name__ == '__main__':
     pytest.main([f'{__file__}', '-vv'])

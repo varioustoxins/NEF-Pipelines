@@ -19,10 +19,10 @@ from lib.util import get_pipe_file, cached_stdin, exit_error, chunks, running_in
 NEF_CHAIN_CODE = 'chain_code'
 
 
-def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
+def chain_code_iter(user_chain_codes: Union[str,List[str]] = '', exclude: Union[str,List[str]]=()) -> Iterable[str]:
     """
     split input string into chain codes separated by .s, and yield them.
-    Then yield any remaining letters of the alphabet till they run out
+    Then yield any remaining letters of the upper case alphabet till they run out
 
     Args:
         user_chain_codes (str):  string of dot separated chain codes
@@ -32,17 +32,27 @@ def chain_code_iter(user_chain_codes: str = '') -> Iterable[str]:
     """
 
     ascii_uppercase = list(string.ascii_uppercase)
-    chain_codes = user_chain_codes.split('.') if user_chain_codes else ascii_uppercase
+
+    if isinstance(user_chain_codes, str):
+        if '.' in user_chain_codes:
+            user_chain_codes = user_chain_codes.split('.')
+
+    if isinstance(exclude, str):
+        if '.' in exclude:
+            exclude = exclude.split('.')
+
+    chain_codes = user_chain_codes if user_chain_codes else ascii_uppercase
 
     seen_codes = set()
 
     for chain_code in chain_codes:
         seen_codes.add(chain_code)
-        yield chain_code
+        if chain_code not in exclude:
+            yield chain_code
 
     for chain_code in ascii_uppercase:
-        if chain_code not in seen_codes:
-            yield chain_code
+        if chain_code not in seen_codes and chain_code not in exclude:
+                yield chain_code
 
     raise ValueError('run out of chain names!')
 
