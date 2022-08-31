@@ -14,7 +14,7 @@ from lib.util import chunks, exit_error, read_float_or_exit
 
 from lib.structures import SequenceResidue, RdcRestraint, AtomLabel
 
-from lib.nef_lib import loop_to_dataframe
+from lib.nef_lib import loop_to_dataframe, select_frames_by_name
 
 from lib.util import cached_stdin
 
@@ -50,7 +50,7 @@ def rdcs(
 
     if frame_selectors is None:
         frame_selectors = ['']
-    frames = _select_frames_by_name(rdc_frames, frame_selectors)
+    frames = select_frames_by_name(rdc_frames, frame_selectors)
 
     restaints = _rdc_restraints_from_frames(frames, chains, weights)
 

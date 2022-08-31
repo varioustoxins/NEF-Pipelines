@@ -1,7 +1,7 @@
 from pandas import DataFrame
-from pynmrstar import Loop
+from pynmrstar import Loop, Entry
 
-from lib.nef_lib import loop_to_dataframe, dataframe_to_loop, NEF_CATEGORY_ATTR
+from lib.nef_lib import loop_to_dataframe, dataframe_to_loop, NEF_CATEGORY_ATTR, select_frames_by_name
 
 
 def test_nef_to_pandas():
@@ -70,4 +70,75 @@ def test_nef_category():
     assert new_loop_2.category == '_wibble'
 
 
+def test_select_frames():
+    TEST_DATA = """\
+    data_test
+        save_test_frame_1
+            _test.sf_category test
+            loop_
+                _test.col_1
+                .
+            stop_
+        save_ 
+    
+    
+        save_test_frame_2
+            _test.sf_category test
+            loop_
+                _test.col_1
+                .
+            stop_
+        save_ 
+        
+        save_test_frame_13
+            _test.sf_category test
+            loop_
+                _test.col_1
+                .
+            stop_
+        save_ 
+        
+    """
 
+    test = Entry.from_string(TEST_DATA)
+
+    frames = select_frames_by_name(test, 'test_frame_1')
+
+    assert len(frames) == 1
+    assert frames[0].name == 'test_frame_1'
+
+
+    frames = select_frames_by_name(test, ['test_frame_13'])
+
+    assert len(frames) == 1
+    assert frames[0].name == 'test_frame_13'
+
+
+    frames = select_frames_by_name(test, 'frame_')
+    assert len(frames) == 3
+    names = sorted([frame.name for frame in frames])
+    assert names == ['test_frame_1', 'test_frame_13', 'test_frame_2']
+
+
+    frames = select_frames_by_name(test, ['frame_1'], greedy=True)
+
+    assert len(frames) == 2
+    names = sorted([frame.name for frame in frames])
+    assert names == ['test_frame_1', 'test_frame_13']
+
+    frames = select_frames_by_name(test, ['*frame_1*'])
+
+    assert len(frames) == 2
+    names = sorted([frame.name for frame in frames])
+    assert names == ['test_frame_1', 'test_frame_13']
+
+    frames = select_frames_by_name(test, ['frame_[1]'])
+
+    assert len(frames) == 2
+    names = sorted([frame.name for frame in frames])
+    assert names == ['test_frame_1', 'test_frame_13']
+
+    frames = select_frames_by_name(test, ['frame_[2]'])
+
+    assert len(frames) == 1
+    assert frames[0].name == 'test_frame_2'
