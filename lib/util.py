@@ -315,6 +315,26 @@ def is_int(value: str) -> bool:
 
     return result
 
+def is_float(value: str) -> bool:
+    """
+    Check if a string is an float
+    Args:
+        value (str): the putative float
+
+    Returns bool:
+        true is if its an integer
+
+    """
+    result = False
+    try:
+        float(value)
+        result = True
+    except ValueError:
+        pass
+
+    return result
+
+
 T = TypeVar('T')
 
 # https://stackoverflow.com/questions/312443/how-do-i-split-a-list-into-equally-sized-chunks
