@@ -96,7 +96,28 @@ def select_frames_by_name(frames: Union[List[Saveframe], Entry], name_selectors:
 
     return list(result.values())
 
+def create_entry_from_stdin_or_exit() -> Entry:
 
+    """
+    read a star file entry from stdin or exit withan error message
+    :return: a star file entry
+    """
+
+    try:
+        stdin = cached_stdin()
+        if cached_stdin == None:
+            lines = ''
+        else:
+            lines = ''.join(cached_stdin())
+
+        if len(lines.strip()) == 0:
+            raise Exception('stdin is empty')
+        else:
+            entry = Entry.from_string(lines)
+    except Exception as e:
+        exit_error(f"failed to read nef entry from stdin because {e}", e)
+
+    return entry
 
 
 

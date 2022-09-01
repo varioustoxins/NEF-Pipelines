@@ -1,7 +1,15 @@
+import pytest
+import sys
 from pandas import DataFrame
 from pynmrstar import Loop, Entry
+from io import StringIO
+from contextlib import contextmanager
+from argparse import Namespace
 
-from lib.nef_lib import loop_to_dataframe, dataframe_to_loop, NEF_CATEGORY_ATTR, select_frames_by_name
+from lib.nef_lib import loop_to_dataframe, dataframe_to_loop, NEF_CATEGORY_ATTR, select_frames_by_name, \
+    create_entry_from_stdin_or_exit, loop_row_dict_iter, loop_row_namespace_iter
+
+from lib.test_lib import path_in_test_data, assert_lines_match, clear_cache
 
 
 def test_nef_to_pandas():
@@ -142,3 +150,61 @@ def test_select_frames():
 
     assert len(frames) == 1
     assert frames[0].name == 'test_frame_2'
+
+
+@contextmanager
+def replace_stdin(target: str):
+    """ The provided input should be the text the user inputs. It support multiple lines for multiple inputs """
+    orig = sys.stdin
+    sys.stdin = StringIO(target)
+    yield
+    sys.stdin = orig
+
+
+def test_read_entry_stdin_or_exit_empty_stdin(clear_cache):
+    with replace_stdin(''):
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            create_entry_from_stdin_or_exit()
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+
+
+def test_read_entry_stdin_or_exit(clear_cache):
+
+    EXPECTED = """\
+    data_new
+
+    save_nef_nmr_meta_data
+       _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+       _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+       _nef_nmr_meta_data.format_name      nmr_exchange_format
+       _nef_nmr_meta_data.format_version   1.1
+       _nef_nmr_meta_data.program_name     NEFPipelines
+       _nef_nmr_meta_data.program_version  0.0.1
+       _nef_nmr_meta_data.script_name      header.py
+       _nef_nmr_meta_data.creation_date    2021-06-19T21:13:32.548158
+       _nef_nmr_meta_data.uuid             NEFPipelines-2021-06-19T21:13:32.548158-0485797022
+    
+       loop_
+          _nef_run_history.run_number
+          _nef_run_history.program_name
+          _nef_run_history.program_version
+          _nef_run_history.script_name
+          _nef_run_history.uuid
+    
+          1 NEFPipelines 1.1 header.py NEFPipelines-2021-06-19T21:13:32.548158-0485797022
+    
+       stop_
+    
+    save_
+
+    """
+    path = path_in_test_data(__file__, 'header.nef', local=False)
+    lines = open(path).read()
+    with replace_stdin(lines):
+        entry = create_entry_from_stdin_or_exit()
+
+    assert_lines_match (str(entry),  EXPECTED)
+
+
