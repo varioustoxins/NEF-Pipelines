@@ -18,6 +18,10 @@ from lib.nef_lib import loop_to_dataframe, select_frames_by_name
 
 from lib.util import cached_stdin
 
+from lib.nef_lib import create_entry_from_stdin_or_exit, loop_row_dict_iter
+
+from transcoders.nmrpipe.nmrpipe_lib import print_pipe_sequence
+
 app = typer.Typer()
 
 #TODO: name translations
@@ -45,7 +49,7 @@ def rdcs(
 
     NEF_RDC_CATEGORY = 'nef_rdc_restraint_list'
 
-    entry = _create_entry_from_stdin_or_exit()
+    entry = create_entry_from_stdin_or_exit()
     rdc_frames = entry.get_saveframes_by_category(NEF_RDC_CATEGORY)
 
     if frame_selectors is None:
@@ -59,19 +63,9 @@ def rdcs(
     print(f'REMARK NEF CHAIN {", ".join(chains)}')
     print(f'REMARK NEF START RESIDUE {sequence[0].sequence_code}')
     print()
-    _print_pipe_sequence(sequence_1_let)
+    print_pipe_sequence(sequence_1_let)
     print()
     _print_restraints(restaints, weights)
-
-
-def _create_entry_from_stdin_or_exit():
-
-    try:
-        entry = Entry.from_string(''.join(cached_stdin()))
-    except Exception as e:
-        exit_error(f"failed to read nef entry from stdin because {e}", e)
-
-    return entry
 
 
 def _translate_atom_names(restraints: list[RdcRestraint], naming_scheme='iupac')-> List[RdcRestraint]:
@@ -91,26 +85,10 @@ def _translate_atom_names(restraints: list[RdcRestraint], naming_scheme='iupac')
     return result
 
 
-def _select_frames_by_name(frames: List[Saveframe], name_selectors: List[str]) -> List[str]:
-    result = {}
-
-    for frame in frames:
-        for selector in name_selectors:
-            matcher = f'*{selector}*'
-            if fnmatch(frame.name, f'*{selector}*'):
-                result[frame.name] = frame
-    return list(result.values())
-
-
-def _loop_row_dict_iter(loop: Loop):
-    for row in loop:
-        yield {tag: value for tag, value in zip(loop.tags,row)}
-
-
 def _rdc_restraints_from_frames(frames: List[Saveframe], chains: List[str], weights: Dict[Tuple[str, str], float]):
     result = []
     for frame in frames:
-        for row in _loop_row_dict_iter(frame.loops[0]):
+        for row in loop_row_dict_iter(frame.loops[0]):
 
             atom_1 = AtomLabel(row['chain_code_1'], int(row['sequence_code_1']), row['residue_name_1'], row['atom_name_1'])
             atom_2 = AtomLabel(row['chain_code_2'], int(row['sequence_code_2']), row['residue_name_2'], row['atom_name_2'])
@@ -173,13 +151,6 @@ def _print_restraints(restraints: List[RdcRestraint], weights: Dict[Tuple[str, s
     print(tabulate.tabulate(table, tablefmt='plain'))
 
 
-def _print_pipe_sequence(sequence_1_let: List[str]):
 
-    rows = chunks(sequence_1_let, 100)
-
-    for row in rows:
-        row_chunks = list(chunks(row, 10))
-        row_strings = [''.join(chunk) for chunk in row_chunks]
-        print(f'DATA SEQUENCE {" ".join(row_strings)}')
 
 
