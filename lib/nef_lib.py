@@ -152,3 +152,14 @@ def do_reasonable_type_conversions(value: str) -> Union[str, float,int]:
         value = float(value)
     return value
 
+
+def loop_row_namespace_iter(loop: Loop, convert:bool = True) -> Iterator[Namespace]:
+    """
+    create an iterator that loops over the rows in a star file Loop as Namespaces, by default sensible
+    conversions from strings to ints and floats are made
+    :param loop: thr Loop
+    :param convert: try to convert values to ints or floats if possible [default is True]
+    :return: iterator of rows as dictionaries
+    """
+    for row in loop_row_dict_iter(loop, convert=convert):
+        yield Namespace(**row)

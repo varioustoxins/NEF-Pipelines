@@ -258,3 +258,54 @@ def test_loop_row_dict_iter_no_convert():
     result = [row for row in loop_row_dict_iter(loop, convert=False)]
 
     assert result == EXPECTED
+
+def test_loop_row_namespace_iter():
+    TEST_DATA = """\
+        loop_
+            _test.col_1
+            _test.col_2
+            _test.col_3
+
+            a 2 4.5
+            b 3 5.6
+
+        stop_
+
+    """
+
+    loop = Loop.from_string(TEST_DATA)
+
+    EXPECTED = [
+        Namespace(col_1='a', col_2=2, col_3=4.5),
+        Namespace(col_1='b', col_2=3, col_3= 5.6)
+    ]
+
+    result = [row for row in loop_row_namespace_iter(loop)]
+
+    assert result == EXPECTED
+
+
+def test_loop_row_namespace_iter_no_convert():
+    TEST_DATA = """\
+        loop_
+            _test.col_1
+            _test.col_2
+            _test.col_3
+
+            a 2 4.5
+            b 3 5.6
+
+        stop_
+
+    """
+
+    loop = Loop.from_string(TEST_DATA)
+
+    EXPECTED = [
+        Namespace(col_1='a', col_2='2', col_3='4.5'),
+        Namespace(col_1='b', col_2='3', col_3='5.6')
+    ]
+
+    result = [row for row in loop_row_namespace_iter(loop, convert=False)]
+
+    assert result == EXPECTED
