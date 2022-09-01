@@ -63,6 +63,7 @@ try:
     import transcoders.pales
     import transcoders.pdb
     import transcoders.fasta
+    import transcoders.mars
 
 except Exception as e:
     msg = '''\

@@ -1,15 +1,41 @@
+import dataclasses
+
 from lib.structures import ShiftList, SequenceResidue, ShiftData
 from pynmrstar import Saveframe, Loop
 from typing import Dict, List
-from lib.nef_lib import UNUSED
+from lib.nef_lib import UNUSED, loop_row_namespace_iter
 
+from lib.structures import AtomLabel
 
+def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
+    """
 
-def shifts_to_nef_frame(shift_list: ShiftList, entry_name: str):
+    :param frames:
+    :return:
+    """
+    shifts = []
 
+    field_names = [field.name for field in dataclasses.fields(AtomLabel)]
+    for frame in frames:
+        for loop in frame:
+            for row in loop_row_namespace_iter(loop):
+
+                fields = {name: value for name, value in vars(row).items() if name in field_names}
+                label = AtomLabel(**fields)
+                shifts.append(ShiftData(label, row.value, row.value_uncertainty))
+
+    return shifts
+
+def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
+    """
+
+    :param shift_list:
+    :param frame_name:
+    :return:
+    """
     category = "nef_chemical_shift_list"
 
-    frame_code = f'{category}_{entry_name}'
+    frame_code = f'{category}_{frame_name}'
 
     frame = Saveframe.from_scratch(frame_code, category)
 
