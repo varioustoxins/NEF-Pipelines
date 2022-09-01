@@ -1,10 +1,12 @@
+from argparse import Namespace
+from fnmatch import fnmatch
 from types import MappingProxyType
-from typing import List, Union
+from typing import List, Union, Dict, Iterator
 
 from pandas import DataFrame
 from pynmrstar import Loop, Saveframe, Entry
 
-from lib.util import cached_stdin, exit_error
+from lib.util import cached_stdin, exit_error, is_float, is_int
 
 NEF_CATEGORY_ATTR = '__NEF_CATEGORY__'
 
@@ -119,5 +121,34 @@ def create_entry_from_stdin_or_exit() -> Entry:
 
     return entry
 
+#TODO we should examine columns for types not individual rows entries
+def loop_row_dict_iter(loop: Loop, convert: bool = True) -> Iterator[Dict[str, Union[str,int,float]]]:
+    """
+    create an iterator that loops over the rows in a star file Loop as dictionaries, by default sensible
+    conversions from strings to ints and floats are made
+    :param loop: the Loop
+    :param convert: try to convert values to ints or floats if possible [default is True]
+    :return: iterator of rows as dictionaries
+    """
+    for row in loop:
+        row = {tag: value for tag, value in zip(loop.tags, row)}
 
+        if convert:
+            for key in row:
+                row[key] = do_reasonable_type_conversions(row[key])
+
+        yield row
+
+
+def do_reasonable_type_conversions(value: str) -> Union[str, float,int]:
+    """
+    do reasonable type conversion from str to int or float
+    :param value: the string to convert
+    :return: value converted from str to int or float if possible
+    """
+    if is_int(value):
+        value = int(value)
+    elif is_float(value):
+        value = float(value)
+    return value
 
