@@ -120,7 +120,7 @@ def test_select_frames():
     assert names == ['test_frame_1', 'test_frame_13', 'test_frame_2']
 
 
-    frames = select_frames_by_name(test, ['frame_1'], greedy=True)
+    frames = select_frames_by_name(test, ['frame_1'], exact=False)
 
     assert len(frames) == 2
     names = sorted([frame.name for frame in frames])
