@@ -13,7 +13,8 @@ from tabulate import tabulate
 from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
 from lib.structures import SequenceResidue, LineInfo, PeakList, PeakListData, PeakAxis, PeakValues, AtomLabel, \
     ShiftData, ShiftList
-from lib.util import is_int, cached_file_stream
+from lib.util import is_int, cached_file_stream, chunks
+
 
 class PEAK_TYPES(IntEnum):
    PEAK = 1
@@ -612,3 +613,18 @@ class DataBeforeFormat(BadNmrPipeFile):
     Data seen before VARS and FORMAT lines detected
     """
     pass
+
+def print_pipe_sequence(sequence_1_let: List[str]) -> str:
+
+    """
+    conver a set of 1 letter amino acoid codes to an nmr pipe DATA SEQUENCE record
+    :param sequence_1_let:  1 letter aino acid codes as a list of  strings
+    :return: nmrpipe data sequence string nicely formatted
+    """
+
+    rows = chunks(sequence_1_let, 100)
+
+    for row in rows:
+        row_chunks = list(chunks(row, 10))
+        row_strings = [''.join(chunk) for chunk in row_chunks]
+        print(f'DATA SEQUENCE {" ".join(row_strings)}')
