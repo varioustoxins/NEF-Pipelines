@@ -1,16 +1,30 @@
 from argparse import Namespace
+from enum import auto
 from fnmatch import fnmatch
-from types import MappingProxyType
 from typing import List, Union, Dict, Iterator
 
 from pandas import DataFrame
 from pynmrstar import Loop, Saveframe, Entry
 
 from lib.util import cached_stdin, exit_error, is_float, is_int
+from strenum import LowercaseStrEnum
+
+from pynmrstar import Saveframe
 
 NEF_CATEGORY_ATTR = '__NEF_CATEGORY__'
 
 UNUSED = '.'
+
+# what the selection type is for Star SaveFrames
+class SelectionType(LowercaseStrEnum):
+    NAME =  auto()
+    CATEGORY =  auto()
+    ANY = auto()
+
+    #see https://github.com/irgeek/StrEnum/issues/9
+    def _cmp_values(self, other):
+        return self.value, str(other).upper()
+
 
 def loop_to_dataframe(loop: Loop) -> DataFrame:
     """
@@ -163,3 +177,34 @@ def loop_row_namespace_iter(loop: Loop, convert:bool = True) -> Iterator[Namespa
     """
     for row in loop_row_dict_iter(loop, convert=convert):
         yield Namespace(**row)
+
+#TODO this partially overlaps with select_frames_by_name in this file, combine and simplify!
+def select_frames(entry: Entry, selector_type: SelectionType, filters: List[str])-> List[Saveframe]:
+    """
+    select a list of frames by name of either category or name
+
+    :param entry: the entry in which frames are looked for
+    :param selector_type: the matching type frame.name or frame.category or both [default, search order frame.name frame.category]
+    :param filters: a list of strings to use as filters as defined by fnmatch
+    :return: a list of selected saveframes
+    """
+
+    star_filters = [f'*{filter}*' for filter in filters]
+    filters = list(filters)
+    filters.extend(star_filters)
+
+    result = []
+    for frame in entry.frame_dict.values():
+
+        accept_frame_category = any([fnmatch(frame.category, filter) for filter in filters])
+        accept_frame_name = any([fnmatch(frame.name, filter) for filter in filters])
+
+        if selector_type in (SelectionType.NAME, SelectionType.ANY) and not accept_frame_name:
+            continue
+
+        if selector_type in (SelectionType.CATEGORY,  SelectionType.ANY) and not accept_frame_category:
+            continue
+
+        result.append(frame)
+
+    return result

@@ -1,16 +1,20 @@
 import fnmatch
 import os
-import sys
+from enum import auto
+from textwrap import dedent
+from typing import Optional, List
 
+from strenum import LowercaseStrEnum
 from tools.frames import frames_app
-from lib.util import get_pipe_file, chunks
+from lib.util import get_pipe_file, chunks, exit_error
 from lib.sequence_lib import frame_to_chains, count_residues
 from math import floor
 from pathlib import Path
 from pynmrstar import Entry
-import argparse
 from tabulate import tabulate
 from lib.typer_utils import get_args
+
+from lib.nef_lib import SelectionType, select_frames
 
 UNDERSCORE = "_"
 
@@ -18,59 +22,102 @@ parser = None
 
 import typer
 
+
+
+def _if_is_nef_file_load_as_entry(file_path):
+    entry = None
+    try:
+        entry = Entry.from_file(file_path)
+    except:
+        pass
+
+    return entry
+
 # noinspection PyUnusedLocal
 @frames_app.command()
 def list(
-    pipe: Path = typer.Option(None, metavar='|PIPE|',
-                              help='pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]'),
+    pipe: Path = typer.Option(None, '-i', '--in', metavar='NEF-FILE', help='read NEF data from a file instead of stdin'),
+    selector_type: SelectionType = typer.Option(SelectionType.ANY, '-t', '--selector-type', help=f"force how to select frames can be one of {', '.join(SelectionType.__members__)}"),
     number: bool = typer.Option(False, '-n', '--number', help='number entries'),
-    filter: str = typer.Option(None, '-f', '--filter', help='filter string for entries and categories to show'),
-    verbose: int = typer.Option(False, '-v', '--verbose', count=True, help='print verbose information more verbose options give more information')
+    verbose: int = typer.Option(False, '-v', '--verbose', count=True, help='print verbose information more verbose options give more information'),
+    filters: Optional[List[str]] = typer.Argument(None, help='filters string for entry names and categories to list'),
 ):
     """- list the frames in the current input"""
 
+    entry = None
+    if len(filters) > 0:
+        entry = _if_is_nef_file_load_as_entry(filters[0])
+        if entry is not None:
+            if pipe:
+                msg = f"""\
+                   two nef file paths supplied...
+                       path 1: {pipe} [from --in]
+                       path 2: {filters[0]} [from args]"""
+                msg=dedent(msg)
+                exit_error(msg)
+            else:
+                pipe = filters[0]
+                filters = filters[1:]
+    if not filters:
+        filters = ['*',]
+
     args = get_args()
 
-    pipe_file = get_pipe_file(args)
-
-    if pipe_file:
+    if entry is None:
+        pipe_file = get_pipe_file(args)
         raw_lines = pipe_file.readlines()
         lines = ''.join(raw_lines)
 
-        entry = Entry.from_string(lines)
+        try:
+            entry = Entry.from_string(lines)
+        except Exception as e:
+            exit_error(f'failed to read nef file {args.pipe} because', e)
 
-        print(f'entry {entry.entry_id}')
-        if verbose:
-            import hashlib
-            md5=hashlib.md5(lines.encode('ascii')).hexdigest()
-            print(f'    lines: {len(raw_lines)} frames: {len(entry)} checksum: {md5} [md5]')
-        print()
-
-        frame_names  = [frame_data.name for frame_data in entry.frame_dict.values()]
-
-        if verbose == 0:
-            if number:
-                frame_names = [f'{i}. {frame_name}' for i, frame_name in enumerate(frame_names, start=1)]
-
-            frame_list = string_list_to_tabulation(frame_names)
-            print(tabulate(frame_list, tablefmt='plain'))
-
+    if entry is None:
+        if args.pipe != None:
+            exit_error(f"couldn't read a nef stream from the file: {args.pipe}")
+        elif len(filters) > 0:
+            exit_error(f"couldn't read a nef stream from either {filters[0]} or stdin")
         else:
-            for i, frame_name in enumerate(frame_names, start=1):
-                frame_info = entry.frame_dict[frame_name]
-                category = frame_info.category
+            exit_error(f"couldn't read a nef stream from stdin")
 
-                extended_filter = f'*{filter}*'
-                if filter:
-                    if not (fnmatch.fnmatch(frame_name, extended_filter) or  fnmatch.fnmatch(category, extended_filter)):
-                        continue
+    print(f'entry {entry.entry_id}')
+    if verbose:
 
-                print(f'    category: {category}')
-                if len(frame_name) != len(category):
-                    print(f'    name: {frame_name[len(category):].lstrip(UNDERSCORE)}')
+        import hashlib
+        md5 = hashlib.md5(lines.encode('ascii')).hexdigest()
+        print(f'    lines: {len(raw_lines)} frames: {len(entry)} checksum: {md5} [md5]')
+    print()
+
+    frames = select_frames(entry, selector_type, filters)
+
+    if verbose == 0:
+        frame_names = [frame.name for frame in frames]
+        if number:
+            frame_names = [f'{i}. {frame_name}' for i, frame_name in enumerate(frame_names, start=1)]
+
+        frame_list = _string_list_to_tabulation(frame_names)
+        print(tabulate(frame_list, tablefmt='plain'))
+
+    else:
+
+        for frame in enumerate(frames, start=1):
+
+
+            filters = [f'*{filter}*' for filter in filters]
+
+            if verbose == 0:
+                frame_names = [f'{i}. {frame.name}' for i, frame_name in enumerate(frames, start=1)]
+
+                frame_list = _string_list_to_tabulation(frame_names)
+                print(tabulate(frame_list, tablefmt='plain'))
+
+                print(f'    category: {frame.category}')
+                if len(frame.name) != len(frame.category):
+                    print(f'    name: {frame.name[len(frame.category):].lstrip(UNDERSCORE)}')
 
                 loop_lengths = []
-                for loop in frame_info.loop_dict:
+                for loop in frame.loop_dict:
                     loop_lengths.append(str(len(loop)))
 
                 loops = ''
@@ -79,21 +126,21 @@ def list(
                 else:
                     loops = f' [lengths: {", ".join(loop_lengths)}]'
 
-                print(f'    loops: {len(frame_info.loop_dict)}{loops}')
+                print(f'    loops: {len(frame.loop_dict)}{loops}')
 
-                frame_standard = frame_name[:len("nef")]
+                frame_standard = frame.name[:len("nef")]
                 is_standard_frame = frame_standard == "nef"
                 print(f'    is nef frame: {is_standard_frame}')
 
                 #ccpn_compound_name
-                if verbose == 2 and category == 'nef_molecular_system':
-                    chains = frame_to_chains(frame_info)
+                if verbose == 2 and frame.category == 'nef_molecular_system':
+                    chains = frame_to_chains(frame)
 
                     print(f'    chains: {len(chains)} [{", ".join(chains)}]')
 
                     residue_counts  = {}
                     for chain in chains:
-                        residue_counts[chain] = count_residues(frame_info, chain)
+                        residue_counts[chain] = count_residues(frame, chain)
 
                     residue_count_per_chain = {}
                     for chain in chains:
@@ -112,14 +159,14 @@ def list(
                         pre_string = f"              {chain}. "
                         pre_string_width = len(pre_string)
 
-                        tabulation = string_list_to_tabulation(counts_and_percentages, pre_string_width)
+                        tabulation = _string_list_to_tabulation(counts_and_percentages, pre_string_width)
                         table = tabulate(tabulation, tablefmt='plain')
 
-                        print(indent_with_prestring(table, pre_string))
+                        print(_indent_with_prestring(table, pre_string))
 
-                print()
+    print()
 
-def indent_with_prestring(text_block, pre_string):
+def _indent_with_prestring(text_block, pre_string):
     raw_result = []
     empty_prestring = " "* len(pre_string)
     for i, string in enumerate(text_block.split('\n')):
@@ -131,7 +178,7 @@ def indent_with_prestring(text_block, pre_string):
     return "\n".join(raw_result)
 
 
-def string_list_to_tabulation(string_list, used_columns = 0):
+def _string_list_to_tabulation(frame_names, used_columns = 0):
     try:
         width, _ = os.get_terminal_size()
     except:
@@ -143,15 +190,18 @@ def string_list_to_tabulation(string_list, used_columns = 0):
     if width < 20:
         width = 20
 
-    frame_name_widths = [len(frame_name) for frame_name in string_list]
-    max_frame_name_width = max(frame_name_widths)
+    if len(frame_names) > 0:
+        frame_name_widths = [len(frame_name) for frame_name in frame_names]
+        max_frame_name_width = max(frame_name_widths)
 
-    columns = int(floor(width / (max_frame_name_width + 1)))
-    column_width = int(floor(width / columns))
+        columns = int(floor(width / (max_frame_name_width + 1)))
+        column_width = int(floor(width / columns))
 
-    columns = 1 if columns == 0 else columns
+        columns = 1 if columns == 0 else columns
 
-    string_list = [frame_name.rjust(column_width) for frame_name in string_list]
-    frame_list = chunks(string_list, columns)
+        frame_names = [frame_name.rjust(column_width) for frame_name in frame_names]
+        frame_name_list = chunks(frame_names, columns)
+    else:
+        frame_name_list = [[]]
 
-    return frame_list
+    return frame_name_list
