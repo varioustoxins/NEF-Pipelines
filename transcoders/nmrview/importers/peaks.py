@@ -108,7 +108,7 @@ def read_peak_data(lines, header_data, column_indices, chain_code, sequence):
                 peak[axis_index] = PeakAxis(*axis_values)
 
             raw_values = read_values_for_peak(line, column_indices)
-            peak['values'] = PeakValues(peak_index, *raw_values)
+            peak['values'] = PeakValues(peak_index, **raw_values)
 
             raw_peaks.append(peak)
 
@@ -235,20 +235,20 @@ def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence):
 
 
 def read_values_for_peak(line, heading_indices):
-    peak_values = []
+    peak_values = {}
     for value_field in ['vol', 'int', 'stat', 'comment', 'flag0']:
         field_index = heading_indices[value_field]
         value = line[field_index]
 
         if value_field == 'vol':
-            peak_values.append(float(value))
+            peak_values['volume'] = float(value)
         elif value_field == 'int':
-            peak_values.append(float(value))
+            peak_values['height'] = float(value)
         elif value_field == 'stat':
-            peak_values.append(int(value))
+           peak_values['deleted'] = (int(value)< 0)
         elif value_field == 'comment':
             comment = value[0].strip("'") if value else ''
-            peak_values.append(comment)
+            peak_values['comment'] = comment
         elif value_field == 'flag0':
             pass
 
@@ -399,7 +399,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
     loop.add_tag(tags)
     for i, peak in enumerate(peaks_list.peaks):
         peak_values = peak['values']
-        if peak_values.status < 0:
+        if peak_values.deleted:
             continue
 
         for tag in tags:
@@ -407,11 +407,11 @@ def create_spectrum_frame(args, entry_name, peaks_list):
             if tag == 'index':
                 loop.add_data_by_tag(tag, i + 1)
             elif tag == 'peak_id':
-                loop.add_data_by_tag(tag, peak_values.index)
+                loop.add_data_by_tag(tag, peak_values.serial)
             elif tag == 'volume':
                 loop.add_data_by_tag(tag, peak_values.volume)
             elif tag == 'height':
-                loop.add_data_by_tag(tag, peak_values.intensity)
+                loop.add_data_by_tag(tag, peak_values.height)
             elif tag.split('_')[0] == 'position' and len(tag.split('_')) == 2:
                 index = int(tag.split('_')[-1]) - 1
                 loop.add_data_by_tag(tag, peak[index].ppm)

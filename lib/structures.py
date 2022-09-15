@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple, Dict
 
 from strenum import StrEnum
 
@@ -32,21 +32,53 @@ class AtomLabel:
 class PeakAxis:
     atom_labels: List[AtomLabel]
     ppm: float
-    # width: float
-    # bound: float
     merit: str
-    # j: float
-    # U: str
-
+    # comment: str
 
 @dataclass
 class PeakValues:
-    index: int
-    volume: float
-    intensity: float
-    status: bool
-    comment: str
+    serial: int
+
+    height: Optional[float] = None
+    height_uncertainty: Optional[float] = None
+
+    volume: Optional[float] = None
+    volume_uncertainty: Optional[float] =  None
+
+    deleted: Optional[bool] = False
+    comment: Optional[str] = ''
+
+    width: Optional[float] = None # HWHH ppm
+    # bound: float
+
+    # merit: Optional[str] = None
+
     # flag0: str
+
+
+#assignment has a tuple of dimensions
+
+@dataclass
+class Assignments:
+    assignments: Dict[str, List[AtomLabel]]
+
+@dataclass
+class Peak:
+    id: int
+    values: PeakValues
+
+    # move these to axis_values?
+    positions: Dict[str, float]
+    position_uncertainties: Optional[Dict[str, float]]
+
+    # assignment has a list of one or more assignments
+    # each Assignment will have one value for each axis this maybe be either
+    # 0. a list with no AtomLabels - unassigned
+    # 1. a list with a single AtomLabel -  this axis is definitively assigned
+    # 2. a list with multiple AtomLabels - this axis has multiple putative assignments
+    # Note if there are multiple unique assignments each of these is should be a top level
+    # assignment of the peak
+    assignments: List[Assignments]
 
 
 @dataclass
