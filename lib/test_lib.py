@@ -1,12 +1,17 @@
 import sys
+import traceback
 from itertools import zip_longest
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, IO, AnyStr
 
 import pytest
+from click.testing import Result
 from pynmrstar import Entry
 from io import StringIO
 from fnmatch import fnmatch
+
+from typer import Typer
+from typer.testing import CliRunner
 
 def run_and_read_pytest(args):
     from pytest import main
@@ -224,3 +229,38 @@ def clear_cache():
 
     for wrapper in wrappers:
         wrapper.cache_clear()
+
+
+def run_and_report(typer_app: Typer, args: List[str], input: IO[AnyStr]=None, expected_exit_code: int=0) -> Result:
+    """
+    run a typer app in the typer test harness and report exceptions and stdout to screen if there is an error
+    :param typer_app: the typer app hosting the application
+    :param args: command line arguments for the app
+    :param input: an input stream if required
+    :param expected_exit_code: what exit code to expect if the app is expected to end with an error
+    :return: results object
+    """
+
+    runner = CliRunner()
+    result = runner.invoke(typer_app, args, input=input)
+
+    if result.exit_code!= expected_exit_code:
+        print('\n', '-' * 40, '-stdout-', '-' * 40)
+        print(result.stdout)
+        if result.exception:
+            print('-'* 40, 'exception', '-'*40)
+            formatted = list(traceback.TracebackException(*result.exc_info).format())
+
+            #this is a hack, i would lobe to have a better solution!
+            if 'SystemExit' in formatted[-1]:
+                for i, line in enumerate(reversed(formatted)):
+                    if 'During handling of the above exception, another exception occurred' in line:
+                        break
+                formatted = formatted[:-i-2]
+            print(''.join(formatted))
+
+        print('-' * 40, '-'*9, '-' * 40)
+
+
+    assert result.exit_code == expected_exit_code
+    return result

@@ -1,16 +1,12 @@
-import traceback
-from pathlib import Path
 
 import lib
 import pytest
 
-from typer.testing import CliRunner
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache, run_and_report
 
 MOLECULAR_SYSTEM_NMRVIEW = 'nef_spectrum_nmrview'
 NMRVIEW_IMPORT_PEAKS= ['nmrview', 'import', 'peaks']
 
-runner = CliRunner()
 
 
 @pytest.fixture
@@ -93,10 +89,11 @@ def test_3peaks(typer_app, using_nmrview, clear_cache, monkeypatch):
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
     peaks_path = path_in_test_data(__file__, '4peaks.xpk', local=True)
     sequence_path = path_in_test_data(__file__, '4peaks.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H.1H.15N', peaks_path])
-    assert result.exit_code == 0
 
-    print(result.stdout)
+
+    args = [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path, '--axis', '1H.1H.15N', peaks_path]
+    result = run_and_report(typer_app, args)
+
     result = isolate_frame(result.stdout, 'nef_nmr_spectrum_simnoe')
 
     assert_lines_match(EXPECTED_4AA, result)
@@ -108,7 +105,8 @@ def test_3peaks_bad_axis_codes(typer_app, using_nmrview, clear_cache, monkeypatc
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
     peaks_path = path_in_test_data(__file__, '4peaks.xpk')
     sequence_path = path_in_test_data(__file__, '4peaks.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H,15N', peaks_path])
+    args =  [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H,15N', peaks_path]
+    result = run_and_report(typer_app, args, expected_exit_code=1)
 
     assert result.exit_code == 1
 
@@ -189,7 +187,9 @@ def test_joe_bad_sweep_widths(typer_app, using_nmrview, monkeypatch):
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
     peaks_path = path_in_test_data(__file__, 'joe_clic.xpk')
     sequence_path = path_in_test_data(__file__, '4peaks.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H.1H.15N', peaks_path])
+
+    command = [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H.1H.15N', peaks_path]
+    result = run_and_report(typer_app, command)
 
     assert result.exit_code == 0
 

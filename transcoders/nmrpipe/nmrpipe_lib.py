@@ -469,7 +469,7 @@ def read_peak_file(gdb_file, args):
         volume_error = volume * height_percentage_error
 
 
-        peak_values = PeakValues(index=index, volume=volume, intensity=height, status=True, comment = '')
+        peak_values = PeakValues(serial=index, volume=volume, height=height, deleted=False, comment = '')
         peak['values'] = peak_values
 
 
