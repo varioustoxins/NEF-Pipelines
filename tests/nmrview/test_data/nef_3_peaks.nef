@@ -1,0 +1,85 @@
+data_nmrview
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+
+         1   A   1   ALA   start    .   .
+         2   A   2   ALA   middle   .   .
+         3   A   3   ALA   end      .   .
+
+       stop_
+
+    save_
+    save_nef_nmr_spectrum_simnoe
+       _nef_nmr_spectrum.sf_category          nef_nmr_spectrum
+       _nef_nmr_spectrum.sf_framecode         nef_nmr_spectrum_simnoe
+       _nef_nmr_spectrum.num_dimensions       3
+       _nef_nmr_spectrum.chemical_shift_list  .
+
+       loop_
+          _nef_spectrum_dimension.dimension_id
+          _nef_spectrum_dimension.axis_unit
+          _nef_spectrum_dimension.axis_code
+          _nef_spectrum_dimension.spectrometer_frequency
+          _nef_spectrum_dimension.spectral_width
+          _nef_spectrum_dimension.value_first_point
+          _nef_spectrum_dimension.folding
+          _nef_spectrum_dimension.absolute_peak_positions
+          _nef_spectrum_dimension.is_acquisition
+
+         1   ppm   1H    800.133   11.0113   .   circular   true   .
+         2   ppm   1H    800.133   11.0600   .   circular   true   .
+         3   ppm   15N   81.076    81.8927   .   circular   true   .
+
+       stop_
+
+       loop_
+          _nef_spectrum_dimension_transfer.dimension_1
+          _nef_spectrum_dimension_transfer.dimension_2
+          _nef_spectrum_dimension_transfer.transfer_type
+
+
+       stop_
+
+       loop_
+          _nef_peak.index
+          _nef_peak.peak_id
+          _nef_peak.volume
+          _nef_peak.volume_uncertainty
+          _nef_peak.height
+          _nef_peak.height_uncertainty
+          _nef_peak.position_1
+          _nef_peak.position_uncertainty_1
+          _nef_peak.position_2
+          _nef_peak.position_uncertainty_2
+          _nef_peak.position_3
+          _nef_peak.position_uncertainty_3
+          _nef_peak.chain_code_1
+          _nef_peak.sequence_code_1
+          _nef_peak.residue_name_1
+          _nef_peak.atom_name_1
+          _nef_peak.chain_code_2
+          _nef_peak.sequence_code_2
+          _nef_peak.residue_name_2
+          _nef_peak.atom_name_2
+          _nef_peak.chain_code_3
+          _nef_peak.sequence_code_3
+          _nef_peak.residue_name_3
+          _nef_peak.atom_name_3
+
+         1   0   0.38    .   0.38    .   10.405   .   8.796   .   132.49   .   A   1   ala   HE1   A   3   ala   HN   A   1   ala   N
+         2   1   1.298   .   1.298   .   10.408   .   7.139   .   132.49   .   .   .   .     .     .   .   .     .    .   .   .     .
+         3   3   0.319   .   0.319   .   10.408   .   5.542   .   132.49   .   A   2   ala   HE1   A   3   ala   HA   .   .   .     .
+
+       stop_
+
+    save_

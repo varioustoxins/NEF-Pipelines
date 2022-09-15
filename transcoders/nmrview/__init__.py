@@ -15,3 +15,5 @@ if nef_app.app:
     import transcoders.nmrview.importers.sequence
     import transcoders.nmrview.importers.peaks
     import transcoders.nmrview.importers.shifts
+
+    import transcoders.nmrview.exporters.peaks

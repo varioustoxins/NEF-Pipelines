@@ -69,7 +69,7 @@ class Peak:
 
     # move these to axis_values?
     positions: Dict[str, float]
-    position_uncertainties: Optional[Dict[str, float]]
+
 
     # assignment has a list of one or more assignments
     # each Assignment will have one value for each axis this maybe be either
@@ -79,6 +79,8 @@ class Peak:
     # Note if there are multiple unique assignments each of these is should be a top level
     # assignment of the peak
     assignments: List[Assignments]
+
+    position_uncertainties: Optional[Dict[str, float]] = None
 
 
 @dataclass
