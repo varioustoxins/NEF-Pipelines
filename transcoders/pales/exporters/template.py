@@ -60,7 +60,7 @@ def _parse_weights(raw_weights):
         key = _build_weights_key(atom_1, atom_2)
         result[key] = rdc_weight
 
-    # it not possibe to add default weights?
+    # is it not possible to add default weights?
     HN_N_key = _build_weights_key('HN', 'N')
     if not HN_N_key in result:
         result[HN_N_key] = 1.0
