@@ -38,8 +38,11 @@ def test(
 
     tests = _find_pytest_commands(root_path, targets)
 
+    os.chdir(Path(root_path) / '..')
+
     if not targets or (targets and len(tests) != 0):
         command = ['-vvv', '--full-trace', *tests]
+
         if not warnings:
             command =  ['--disable-warnings', *command]
         main(command)
