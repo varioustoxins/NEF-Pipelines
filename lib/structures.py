@@ -94,11 +94,11 @@ class PeakListData:
     sweep_widths: List[float]
     spectrometer_frequencies: List[float]
 
-
+#TODO: are axes indexed by names or by integer...
 @dataclass
 class PeakList:
     peak_list_data: PeakListData
-    peaks: List[dict[Union[int, str], Union[PeakAxis, PeakValues]]]
+    peaks: List[dict[Union[int, str], Peak]]
 
 
 @dataclass
