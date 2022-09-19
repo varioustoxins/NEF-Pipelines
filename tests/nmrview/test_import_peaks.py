@@ -105,10 +105,8 @@ def test_3peaks_bad_axis_codes(typer_app, using_nmrview, clear_cache, monkeypatc
     monkeypatch.setattr(lib.util, 'get_pipe_file', lambda x: None)
     peaks_path = path_in_test_data(__file__, '4peaks.xpk')
     sequence_path = path_in_test_data(__file__, '4peaks.seq')
-    args =  [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H,15N', peaks_path]
+    args = [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H,15N', peaks_path]
     result = run_and_report(typer_app, args, expected_exit_code=1)
-
-    assert result.exit_code == 1
 
 
     EXPECTED = '''\
@@ -190,8 +188,6 @@ def test_joe_bad_sweep_widths(typer_app, using_nmrview, monkeypatch):
 
     command = [*NMRVIEW_IMPORT_PEAKS, '--sequence', sequence_path,  '--axis', '1H.1H.15N', peaks_path]
     result = run_and_report(typer_app, command)
-
-    assert result.exit_code == 0
 
     result = isolate_frame(result.stdout, 'nef_nmr_spectrum_trosyrdcjoe')
 

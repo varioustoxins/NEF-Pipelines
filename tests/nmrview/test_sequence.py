@@ -9,7 +9,7 @@ from typer.testing import CliRunner
 
 from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
 from lib.structures import SequenceResidue
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, run_and_report
 
 MOLECULAR_SYSTEM = 'nef_molecular_system'
 METADATA_NMRVIEW ='nef_nmr_meta_data'
@@ -75,9 +75,7 @@ def test_3aa(typer_app, using_nmrview, monkeypatch):
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, '3aa.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
-
-    assert result.exit_code == 0
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
 
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
@@ -90,9 +88,7 @@ def test_3aa10(typer_app, using_nmrview, monkeypatch):
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, '3aa10.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
-
-    assert result.exit_code == 0
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
 
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 
@@ -136,8 +132,8 @@ def test_pipe_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
 
     path = path_in_test_data(__file__, '3aa10.seq')
     path_header = path_in_test_data(__file__,'test_header_entry.txt',local=False)
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, '--pipe', path_header, path])
-    assert result.exit_code == 0
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, '--pipe', path_header, path])
+
 
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
     meta_data_result = isolate_frame(result.stdout, '%s' % METADATA_NMRVIEW)
@@ -153,9 +149,7 @@ def test_header(typer_app, using_nmrview, monkeypatch, fixed_seed):
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, '3aa10.seq')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
-
-    assert result.exit_code == 0
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SEQUENCE, path], input=HEADER)
 
     mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
 

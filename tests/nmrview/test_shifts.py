@@ -2,7 +2,7 @@ from lib.structures import ShiftList, ShiftData, AtomLabel, SequenceResidue
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache, run_and_report
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -88,12 +88,7 @@ def test_ppm_out_short_no_sequence(typer_app, using_nmrview, monkeypatch):
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
     path = path_in_test_data(__file__, 'ppm_short.out')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path])
-
-    if result.exit_code != 0:
-        print('INFO: stdout from failed read:\n',result.stdout)
-
-    assert result.exit_code == 1
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path],expected_exit_code=1)
 
     assert 'ERROR' in result.stdout
     assert '1.CA      52.000 1' in result.stdout
@@ -109,12 +104,7 @@ def test_ppm_out_short(typer_app, using_nmrview, monkeypatch, clear_cache):
 
 
     path = path_in_test_data(__file__, 'ppm_short.out')
-    result = runner.invoke(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path], input=STREAM)
-
-    if result.exit_code != 0:
-        print('INFO: stdout from failed read:\n', result.stdout)
-
-    assert result.exit_code == 0
+    result = run_and_report(typer_app, [*NMRVIEW_IMPORT_SHIFTS, path], input=STREAM)
 
     mol_sys_result = isolate_frame(result.stdout, SHIFTS_NMRPIPE)
 

@@ -263,4 +263,5 @@ def run_and_report(typer_app: Typer, args: List[str], input: IO[AnyStr]=None, ex
 
 
     assert result.exit_code == expected_exit_code
+
     return result

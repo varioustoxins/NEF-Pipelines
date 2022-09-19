@@ -1,5 +1,5 @@
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache, run_and_report
 
 from typer.testing import CliRunner
 runner = CliRunner()
@@ -20,7 +20,7 @@ def test_template(typer_app, using_pales, monkeypatch, clear_cache):
 
     monkeypatch.setattr('sys.stdin.isatty', lambda: False)
 
-    result = runner.invoke(typer_app, [*PALES_TEMPLATE], input=SEQUENCE_STREAM)
+    result = run_and_report(typer_app, PALES_TEMPLATE, input=SEQUENCE_STREAM)
 
     if result.exit_code != 0:
         print('INFO: stdout from failed read:\n', result.stdout)
