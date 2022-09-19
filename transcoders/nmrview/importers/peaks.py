@@ -218,9 +218,9 @@ def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence):
                 residue_type = ''
 
             if residue_number:
-                atom = AtomLabel(chain_code, residue_number, residue_type, atom_name.upper())
+                atom = AtomLabel(SequenceResidue(chain_code, residue_number, residue_type), atom_name.upper())
             else:
-                atom = AtomLabel('', None, '', atom_name.upper())
+                atom = AtomLabel(SequenceResidue('', None, ''), atom_name.upper())
             axis_values.append(atom)
 
         elif axis_field == 'P':
@@ -417,19 +417,20 @@ def create_spectrum_frame(args, entry_name, peaks_list):
                 loop.add_data_by_tag(tag, peak[index].ppm)
             elif tag.split('_')[:2] == ['chain', 'code']:
                 index = int(tag.split('_')[-1]) - 1
-                chain_code = peak[index].atom_labels.chain_code
+                chain_code = peak[index].atom_labels.residue.chain_code
                 chain_code = chain_code if chain_code is not None else args.chain_code
                 chain_code = chain_code if chain_code else '.'
                 loop.add_data_by_tag(tag, chain_code)
             elif tag.split('_')[:2] == ['sequence', 'code']:
                 index = int(tag.split('_')[-1]) - 1
-                sequence_code = peak[index].atom_labels.sequence_code
+                sequence_code = peak[index].atom_labels.residue.sequence_code
                 sequence_code = sequence_code if sequence_code else '.'
                 loop.add_data_by_tag(tag, sequence_code)
             elif tag.split('_')[:2] == ['residue', 'name']:
                 index = int(tag.split('_')[-1]) - 1
 
-                residue_name = peak[index].atom_labels.residue_name
+                #TODO: there could be more than 1 atom label here and this should be a list...
+                residue_name = peak[index].atom_labels.residue.residue_name
                 residue_name = residue_name if residue_name else '.'
                 loop.add_data_by_tag(tag, residue_name)
             elif tag.split('_')[:2] == ['atom', 'name']:

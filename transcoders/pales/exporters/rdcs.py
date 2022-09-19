@@ -90,8 +90,8 @@ def _rdc_restraints_from_frames(frames: List[Saveframe], chains: List[str], weig
     for frame in frames:
         for row in loop_row_dict_iter(frame.loops[0]):
 
-            atom_1 = AtomLabel(row['chain_code_1'], int(row['sequence_code_1']), row['residue_name_1'], row['atom_name_1'])
-            atom_2 = AtomLabel(row['chain_code_2'], int(row['sequence_code_2']), row['residue_name_2'], row['atom_name_2'])
+            atom_1 = AtomLabel(SequenceResidue(row['chain_code_1'], int(row['sequence_code_1']), row['residue_name_1']), row['atom_name_1'])
+            atom_2 = AtomLabel(SequenceResidue(row['chain_code_2'], int(row['sequence_code_2']), row['residue_name_2']), row['atom_name_2'])
 
             weight_key = _build_weights_key(row['atom_name_1'], row['atom_name_2'])
             # this should be
@@ -144,8 +144,9 @@ def _print_restraints(restraints: List[RdcRestraint], weights: Dict[Tuple[str, s
 
         weights_key = _build_weights_key(atom_1.atom_name, atom_2.atom_name)
         weight = weights[weights_key]
-        row = ['', atom_1.sequence_code, atom_1.residue_name, atom_1.atom_name,
-               atom_2.sequence_code, atom_2.residue_name, atom_2.atom_name, restraint.rdc, restraint.rdc_error, weight]
+        row = ['', atom_1.residue.sequence_code, atom_1.residue.residue_name, atom_1.atom_name,
+               atom_2.residue.sequence_code, atom_2.residue.residue_name, atom_2.atom_name,
+               restraint.rdc, restraint.rdc_error, weight]
         table.append(row)
 
     print(tabulate.tabulate(table, tablefmt='plain'))

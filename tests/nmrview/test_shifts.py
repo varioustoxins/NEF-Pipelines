@@ -1,4 +1,4 @@
-from lib.structures import  ShiftList, ShiftData, AtomLabel
+from lib.structures import ShiftList, ShiftData, AtomLabel, SequenceResidue
 from textwrap import dedent
 from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
@@ -24,12 +24,12 @@ def test_lib_parse_shifts():
 
     EXPECTED = ShiftList(
         shifts=[
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=1, residue_name='ASP', atom_name='CA'), shift=52.00, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=1, residue_name='ASP', atom_name='HA'), shift=4.220, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='VAL', atom_name='CG2'), shift=19.300, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='VAL', atom_name='HG21'), shift=0.814, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='VAL', atom_name='HG22'), shift=0.814, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=3, residue_name='GLN', atom_name='N'), shift=125.058, error=None)
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=1, residue_name='ASP'), atom_name='CA'), shift=52.00, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=1, residue_name='ASP'), atom_name='HA'), shift=4.220, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=2, residue_name='VAL'), atom_name='CG2'), shift=19.300, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=2, residue_name='VAL'), atom_name='HG21'), shift=0.814, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=2, residue_name='VAL'), atom_name='HG22'), shift=0.814, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=3, residue_name='GLN'), atom_name='N'), shift=125.058, error=None)
         ]
     )
 

@@ -265,7 +265,7 @@ def parse_shifts(lines: Iterable[str],  chain_seqid_to_type: Dict[Tuple[str, int
             msg=dedent(msg)
             exit_error(msg)
 
-        atom = AtomLabel(chain_code, residue_number, residue_name, atom)
+        atom = AtomLabel(SequenceResidue(chain_code, residue_number, residue_name), atom)
         shift = ShiftData(atom,shift)
         shifts.append(shift)
 

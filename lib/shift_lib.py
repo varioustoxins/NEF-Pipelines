@@ -15,13 +15,16 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
     """
     shifts = []
 
-    field_names = [field.name for field in dataclasses.fields(AtomLabel)]
+    residue_field_names = [field.name for field in dataclasses.fields(SequenceResidue)]
+    atom_field_names = [field.name for field in dataclasses.fields(AtomLabel) if field.name != 'residue']
     for frame in frames:
         for loop in frame:
             for row in loop_row_namespace_iter(loop):
 
-                fields = {name: value for name, value in vars(row).items() if name in field_names}
-                label = AtomLabel(**fields)
+                residue_fields = {name: value for name, value in vars(row).items() if name in residue_field_names}
+                atom_fields = {name: value for name, value in vars(row).items() if name in atom_field_names}
+                residue = SequenceResidue(residue_fields)
+                label = AtomLabel(residue, **atom_fields)
                 shifts.append(ShiftData(label, row.value, row.value_uncertainty))
 
     return shifts
@@ -53,9 +56,9 @@ def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
 
     for shift in shift_list.shifts:
 
-        loop.add_data_by_tag('chain_code', shift.atom.chain_code)
-        loop.add_data_by_tag('sequence_code', shift.atom.sequence_code)
-        loop.add_data_by_tag('residue_name', shift.atom.residue_name)
+        loop.add_data_by_tag('chain_code', shift.atom.residue.chain_code)
+        loop.add_data_by_tag('sequence_code', shift.atom.residue.sequence_code)
+        loop.add_data_by_tag('residue_name', shift.atom.residue.residue_name)
         loop.add_data_by_tag('atom_name', shift.atom.atom_name)
         loop.add_data_by_tag('value', shift.shift)
         if shift.error != None:
@@ -144,7 +147,8 @@ def _collapse_cluster(shifts: List[ShiftData]) -> List[ShiftData]:
             first_shift = shifts[0]
             first_atom = first_shift.atom
 
-            new_atom = AtomLabel(first_atom.chain_code, first_atom.sequence_code, first_atom.residue_name, f'{stem}*')
+            residue = SequenceResidue(first_atom.chain_code, first_atom.sequence_code, first_atom.residue_name)
+            new_atom = AtomLabel(residue, f'{stem}*')
             new_shift = ShiftData(new_atom, first_shift.shift, first_shift.error)
 
             result.append(new_shift)

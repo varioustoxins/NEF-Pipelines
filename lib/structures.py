@@ -16,15 +16,17 @@ class SequenceResidue:
     chain_code: str
     sequence_code: Union[int,str]
     residue_name: str
+    is_cis: bool = False
     linking: Optional[Linking] = None
+    variant: Optional[str] = None
+
+
 
 
 # should contain a residue and have constructors?
 @dataclass(frozen=True, order=True)
 class AtomLabel:
-    chain_code: str
-    sequence_code: Optional[Union[int,str]]
-    residue_name: str
+    residue: SequenceResidue
     atom_name: str
 
 

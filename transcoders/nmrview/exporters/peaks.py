@@ -1,4 +1,3 @@
-import sys
 from argparse import Namespace
 from collections import Counter
 from enum import auto
@@ -18,7 +17,7 @@ from lib.util import parse_comma_separated_options,  exit_error, is_float, is_in
 
 from lib.constants import NEF_UNKNOWN
 
-from lib.structures import AtomLabel, Peak, PeakValues
+from lib.structures import AtomLabel, Peak, PeakValues, SequenceResidue
 
 app = typer.Typer()
 
@@ -56,14 +55,14 @@ def _peak_to_atom_labels(row: Namespace) -> List[AtomLabel]:
             residue_name = getattr(row, dim_residue_name)
             atom_name = getattr(row, dim_atom_name)
 
-            result.append(AtomLabel(chain_code, sequence_code, residue_name, atom_name))
+            result.append(AtomLabel(SequenceResidue(chain_code, sequence_code, residue_name), atom_name))
 
 
     return result
 
 
 def _atom_label_to_nmrview(label: AtomLabel) -> str:
-    return f'{{{label.sequence_code}.{label.atom_name}}}'
+    return f'{{{label.residue.sequence_code}.{label.atom_name}}}'
 
 def _convert_to_floats_or_exit(putative_floats: List[str], thing_types: str) -> List[float]:
     are_floats = [is_float(spectrometer_frequency) for spectrometer_frequency in putative_floats]
@@ -110,7 +109,7 @@ def _row_to_peak(axis_names: Tuple[str], row: Dict[str, Union[int,str, float]]) 
         atom_name = row[assignment_atom_name_tag]
 
         is_assigned = chain_code != NEF_UNKNOWN and sequence_code != NEF_UNKNOWN and atom_name != NEF_UNKNOWN
-        atom_labels = [AtomLabel(chain_code,sequence_code, residue_name, atom_name),] if is_assigned else []
+        atom_labels = [AtomLabel(SequenceResidue(chain_code,sequence_code, residue_name), atom_name),] if is_assigned else []
 
         assignments[axis_name] = atom_labels
 
@@ -124,11 +123,11 @@ def _row_to_peak(axis_names: Tuple[str], row: Dict[str, Union[int,str, float]]) 
 def _peak_to_nmrview_label(atom_label: AtomLabel, default_chain=None):
     result = []
 
-    nmrview_chain = atom_label.chain_code if atom_label.chain_code != NEF_UNKNOWN else default_chain
+    nmrview_chain = atom_label.residue.chain_code if atom_label.residue.chain_code != NEF_UNKNOWN else default_chain
     if nmrview_chain != None:
         result.append(nmrview_chain)
 
-    nmrview_residue = atom_label.sequence_code if atom_label.sequence_code != NEF_UNKNOWN else '{?}'
+    nmrview_residue = atom_label.residue.sequence_code if atom_label.residue.sequence_code != NEF_UNKNOWN else '{?}'
 
     result.append(str(nmrview_residue))
 

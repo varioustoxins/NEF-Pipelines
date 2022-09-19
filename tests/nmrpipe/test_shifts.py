@@ -1,4 +1,4 @@
-from lib.structures import  ShiftList, ShiftData, AtomLabel
+from lib.structures import ShiftList, ShiftData, AtomLabel, SequenceResidue
 from textwrap import dedent
 from transcoders.nmrpipe.nmrpipe_lib import read_db_file_records , read_shift_file
 import pytest
@@ -25,8 +25,8 @@ def test_lib_parse_shifts():
 
     EXPECTED = ShiftList(
         shifts=[
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=1, residue_name='ALA', atom_name='N'), shift=125.74, error=None),
-            ShiftData(atom=AtomLabel(chain_code='A', sequence_code=2, residue_name='GLY', atom_name='HN'), shift=8.31, error=None)
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=1, residue_name='ALA'), atom_name='N'), shift=125.74, error=None),
+            ShiftData(atom=AtomLabel(SequenceResidue(chain_code='A', sequence_code=2, residue_name='GLY'), atom_name='HN'), shift=8.31, error=None)
         ]
     )
 

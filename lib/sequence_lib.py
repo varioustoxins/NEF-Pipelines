@@ -360,7 +360,8 @@ def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
         sequence_code = line[sequence_code_index]
         residue_name = line[residue_name_index]
         linking = Linking[line[linking_index].upper()] if line[linking_index] != NEF_UNKNOWN else None
-        residue = SequenceResidue(chain_code, sequence_code, residue_name, linking)
+        residue = SequenceResidue(chain_code=chain_code, sequence_code=sequence_code, residue_name=residue_name,
+                                  linking=linking)
         residues.append(residue)
 
     return list(residues)

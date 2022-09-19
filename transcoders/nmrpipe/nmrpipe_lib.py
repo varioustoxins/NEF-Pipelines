@@ -358,12 +358,12 @@ def _assignments_to_atom_labels(assignments, dimensions, chain_code = 'A'):
         if len_assignment > 2:
             atom_name = assignment[2]
 
-        result.append(AtomLabel(chain_code, sequence_code, residue_name, atom_name))
+        result.append(AtomLabel(SequenceResidue(chain_code, sequence_code, residue_name), atom_name))
 
     len_result = len(result)
     if len_result < dimensions:
         for i in (len_result-dimensions):
-            result.append(AtomLabel(None, None, None, None))
+            result.append(AtomLabel(SequenceResidue(None, None, None), None))
     return result
 
 
@@ -517,7 +517,7 @@ def read_shift_file(gdb_file, chain_code='A'):
         shift = line.values[column_indices['SHIFT']]
 
 
-        atom = AtomLabel(chain_code, residue_number, residue_type, atom_name)
+        atom = AtomLabel(SequenceResidue(chain_code, residue_number, residue_type), atom_name)
 
         shift = ShiftData(atom, shift)
 

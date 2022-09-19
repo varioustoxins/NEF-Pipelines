@@ -87,8 +87,8 @@ def _build_dummy_restraints(sequence: SequenceResidue, atom_names: Tuple[str, st
         if residue.linking == Linking.START and 'HN' in atom_names:
             continue
 
-        atom_1 =  AtomLabel(residue.chain_code, residue.sequence_code, residue.residue_name, atom_names[0])
-        atom_2 = AtomLabel(residue.chain_code, residue.sequence_code, residue.residue_name, atom_names[1])
+        atom_1 =  AtomLabel(SequenceResidue(residue.chain_code, residue.sequence_code, residue.residue_name), atom_names[0])
+        atom_2 = AtomLabel(SequenceResidue(residue.chain_code, residue.sequence_code, residue.residue_name), atom_names[1])
         restraint = RdcRestraint(atom_1, atom_2, 0.0, 0.0)
         restraints.append(restraint)
 
@@ -106,8 +106,8 @@ def _print_restraints(restraints: List[RdcRestraint], weights: Dict[Tuple[str, s
 
         weights_key = _build_weights_key(atom_1.atom_name, atom_2.atom_name)
         weight = weights[weights_key]
-        row = ['', atom_1.sequence_code, atom_1.residue_name, atom_1.atom_name,
-               atom_2.sequence_code, atom_2.residue_name, atom_2.atom_name, 0.000, 0.000, weight]
+        row = ['', atom_1.residue.sequence_code, atom_1.residue.residue_name, atom_1.atom_name,
+               atom_2.residue.sequence_code, atom_2.residue.residue_name, atom_2.atom_name, 0.000, 0.000, weight]
         table.append(row)
 
     print(tabulate.tabulate(table, tablefmt='plain'))

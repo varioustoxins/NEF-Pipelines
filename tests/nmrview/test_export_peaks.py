@@ -6,7 +6,7 @@ from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, c
 
 from transcoders.nmrview.exporters.peaks import _make_names_unique, _row_to_peak
 
-from lib.structures import Peak, PeakValues, AtomLabel
+from lib.structures import Peak, PeakValues, AtomLabel, SequenceResidue
 
 NMRVIEW_EXPORT_PEAKS= ['nmrview', 'export', 'peaks']
 
@@ -124,9 +124,9 @@ def test_row_to_peak():
     result = _row_to_peak(EXPECTED_AXES, TEST_ROW)
 
     assignments = {
-        '15N': [AtomLabel(chain_code='A', sequence_code=1, residue_name='ala', atom_name='N')],
-        '1H_1': [AtomLabel(chain_code='A', sequence_code=1, residue_name='ala', atom_name='HE1')],
-        '1H_2': [AtomLabel(chain_code='A', sequence_code=3, residue_name='ala', atom_name='HN')]
+        '15N': [AtomLabel(SequenceResidue(chain_code='A', sequence_code=1, residue_name='ala'), atom_name='N')],
+        '1H_1': [AtomLabel(SequenceResidue(chain_code='A', sequence_code=1, residue_name='ala'), atom_name='HE1')],
+        '1H_2': [AtomLabel(SequenceResidue(chain_code='A', sequence_code=3, residue_name='ala'), atom_name='HN')]
     }
     positions = {
         '1H_1' : 10.405,
