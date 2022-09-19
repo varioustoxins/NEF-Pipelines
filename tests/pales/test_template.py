@@ -27,6 +27,7 @@ def test_template(typer_app, using_pales, monkeypatch, clear_cache):
 
     assert result.exit_code == 0
 
+    # note: sequence starts at residue 10 so residue 10 has an amine not an amide and isn't in the tremplate...
     EXPECTED = """\
         REMARK NEF CHAIN A
         REMARK NEF START RESIDUE 10
