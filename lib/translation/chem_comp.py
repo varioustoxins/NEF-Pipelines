@@ -1,5 +1,7 @@
 # todo sort out appdatalists
 # todo derived methods
+# todo remove parent links on json dump
+# todo unify tree iteerators!
 
 import typing
 from enum import auto
