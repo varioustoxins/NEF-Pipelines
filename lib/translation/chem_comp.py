@@ -8,7 +8,7 @@ from typing import List, Union, Optional, Literal, TypeVar, Callable, Annotated,
 from cachetools import LRUCache
 from pydantic import BaseModel, Field
 from strenum import StrEnum
-from lib.chem_comp.object_iter import ObjectIter, object_children, item_only, return_entity
+from lib.translation.object_iter import ObjectIter, object_children, item_only, return_entity
 
 
 

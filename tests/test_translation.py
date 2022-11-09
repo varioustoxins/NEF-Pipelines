@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.chem_comp.chem_comp import ChemComp
+from lib.translation.chem_comp import ChemComp
 
 @pytest.fixture
 def test_data_file():
