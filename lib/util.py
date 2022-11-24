@@ -425,8 +425,8 @@ def read_integer_or_exit(string: str, line_info: LineInfo=None, field='unknown',
 
     return result
 
-
-def parse_comma_separated_options(lists: List[Union[list[str],str]])->List[Union[object,str]]:
+# TODO test this!
+def parse_comma_separated_options(lists: Union[List[List[str]],List[str],str])->List[str]:
     """
     Take a mixed list of strings or strings that can be parsed as a comma separated list of strings
     and make a list of all the items
