@@ -419,3 +419,22 @@ def offset_chain_residues(residues: List[SequenceResidue], chain_residue_offsets
     return result
 
 
+def make_chunked_sequence_1let(sequence_1_let: List[str], sub_chunk: int=10, line_length: int=100) -> List[str]:
+    """
+    convert a list of strings into a chunked list of strings with (by de]fault) every 100 sting being
+    separated by a new line [line_length] and sequences of strings being separated by a space
+    :param sequence_1_let: a list of strings typically 1 single letter
+    :param sub_chunk: how often to separate strings by a space
+    :param line_length: how many strings need to be seen before a new line is added
+    :return: a list of formatted strings one per line
+    """
+
+    rows = chunks(sequence_1_let, 100)
+
+    row_strings = []
+    for row in rows:
+        row_chunks = list(chunks(row, 10))
+        row_string = [''.join(chunk) for chunk in row_chunks]
+        row_strings.append(" ".join(row_string))
+
+    return row_strings

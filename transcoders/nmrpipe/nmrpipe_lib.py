@@ -10,7 +10,7 @@ from argparse import Namespace
 
 from tabulate import tabulate
 
-from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3
+from lib.sequence_lib import translate_1_to_3, TRANSLATIONS_1_3, make_chunked_sequence_1let
 from lib.structures import SequenceResidue, LineInfo, PeakList, PeakListData, PeakAxis, PeakValues, AtomLabel, \
     ShiftData, ShiftList
 from lib.util import is_int, cached_file_stream, chunks
@@ -617,14 +617,13 @@ class DataBeforeFormat(BadNmrPipeFile):
 def print_pipe_sequence(sequence_1_let: List[str]) -> str:
 
     """
-    conver a set of 1 letter amino acoid codes to an nmr pipe DATA SEQUENCE record
+    convert a set of 1 letter amino acid codes to an nmr pipe DATA SEQUENCE record
     :param sequence_1_let:  1 letter aino acid codes as a list of  strings
     :return: nmrpipe data sequence string nicely formatted
     """
 
-    rows = chunks(sequence_1_let, 100)
 
-    for row in rows:
-        row_chunks = list(chunks(row, 10))
-        row_strings = [''.join(chunk) for chunk in row_chunks]
-        print(f'DATA SEQUENCE {" ".join(row_strings)}')
+    row_strings = make_chunked_sequence_1let(sequence_1_let)
+
+    for row_string in row_strings:
+        print(f'DATA SEQUENCE {row_string}')
