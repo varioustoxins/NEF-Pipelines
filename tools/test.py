@@ -64,6 +64,7 @@ def _find_pytest_commands(root_path, targets):
         {stderr}
         _______________________________________________________________________________________________________________________________________
         """
+        print(output, file=sys.stderr)
         _exit_if_stderr(stdout)
 
     tests = stdout.split('\n')[:-3]
