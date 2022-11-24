@@ -1,3 +1,4 @@
+import sys
 from argparse import Namespace
 from enum import auto
 from fnmatch import fnmatch
@@ -6,7 +7,7 @@ from typing import List, Union, Dict, Iterator
 from pandas import DataFrame
 from pynmrstar import Loop, Saveframe, Entry
 
-from lib.util import cached_stdin, exit_error, is_float, is_int
+from lib.util import cached_stdin, exit_error, is_float, is_int, running_in_pycharm
 from strenum import LowercaseStrEnum
 
 from pynmrstar import Saveframe
@@ -112,6 +113,7 @@ def select_frames_by_name(frames: Union[List[Saveframe], Entry], name_selectors:
 
     return list(result.values())
 
+#refactor to two function one of which gets a TextIO
 def create_entry_from_stdin_or_exit() -> Entry:
 
     """
@@ -120,18 +122,21 @@ def create_entry_from_stdin_or_exit() -> Entry:
     """
 
     try:
-        stdin = cached_stdin()
-        if cached_stdin == None:
-            lines = ''
-        else:
-            lines = ''.join(cached_stdin())
+        if not sys.stdin.isatty() or  running_in_pycharm():
+            stdin = cached_stdin()
+            if cached_stdin == None:
+                lines = ''
+            else:
+                lines = ''.join(stdin)
 
-        if len(lines.strip()) == 0:
-            raise Exception('stdin is empty')
+            if len(lines.strip()) == 0:
+                raise Exception('stdin is empty')
+            else:
+                entry = Entry.from_string(lines)
         else:
-            entry = Entry.from_string(lines)
+            exit_error("you appear to be reading from an empty stdin")
     except Exception as e:
-        exit_error(f"failed to read nef entry from stdin because {e}", e)
+        exit_error(f"failed to read nef entry from stdin because the NEF parser replied: {e}", e)
 
     return entry
 
