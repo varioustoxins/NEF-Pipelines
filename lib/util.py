@@ -21,7 +21,7 @@ def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
 
     result = None
     if f'_{category}' in frame.loop_dict.keys():
-        result = frame.get_loop_by_category(category)
+        result = frame.get_loop(category)
 
     return result
 
