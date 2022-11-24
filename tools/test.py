@@ -69,7 +69,7 @@ def _find_pytest_commands(root_path, targets):
 
     tests = stdout.split('\n')[:-3]
 
-    return select_matching_tests(tests, targets)
+    return [Path.cwd() / test_path for test_path in select_matching_tests(tests, targets)]
 
 
 def _exit_if_stderr(stderr):
