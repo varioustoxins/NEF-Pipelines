@@ -113,7 +113,7 @@ def select_frames_by_name(frames: Union[List[Saveframe], Entry], name_selectors:
 
     return list(result.values())
 
-#refactor to two function one of which gets a TextIO
+#refactor to two functions one of which gets a TextIO
 def create_entry_from_stdin_or_exit() -> Entry:
 
     """
