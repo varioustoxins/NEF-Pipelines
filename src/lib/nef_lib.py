@@ -129,7 +129,7 @@ def create_entry_from_stdin_or_exit() -> Entry:
     try:
         if not sys.stdin.isatty() or running_in_pycharm():
             stdin = cached_stdin()
-            if cached_stdin is not None:
+            if cached_stdin is None:
                 lines = ""
             else:
                 lines = "".join(stdin)
