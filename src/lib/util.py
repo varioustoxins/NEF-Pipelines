@@ -212,7 +212,7 @@ def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
             result = io.StringIO(result)
 
     if result is None:
-        exit_error("couldn't read from stdin and no -pipe in args")
+        exit_error("couldn't read from stdin and no -pipe in command line arguments")
 
     return result
 
