@@ -203,7 +203,7 @@ def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
     """
 
     if not local:
-        test_data = root_path(root) / "test_data"
+        test_data = root_path(root) / "tests" / "test_data"
     else:
         test_data = path_in_parent_directory(root, "test_data")
 
