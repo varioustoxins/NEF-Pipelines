@@ -1,0 +1,170 @@
+data_test
+
+save_ccpn_residue_assignments
+   _ccpn_residue_assignments.ccpn_assignment_program          mars
+   _ccpn_residue_assignments.ccpn_assignment_program_version  .
+   _ccpn_residue_assignments.ccpn_assignment_source           .
+   _ccpn_residue_assignments.sf_category                      ccpn_residue_assignments
+   _ccpn_residue_assignments.sf_ftame_code                    ccpn_residue_assignments_default
+
+   loop_
+      _ccpn_residue_assignment_default.serial
+      _ccpn_residue_assignment_default.chain_code
+      _ccpn_residue_assignment_default.residue_number
+      _ccpn_residue_assignment_default.residue_type
+      _ccpn_residue_assignment_default.assignment_serial
+      _ccpn_residue_assignment_default.assignment
+      _ccpn_residue_assignment_default.merit
+      _ccpn_residue_assignment_default.fixed
+
+     0    A   1    HIS   .    .     .      .
+     1    A   2    MET   0    30    0.2    False
+     1    A   2    MET   1    48    0.18   False
+     1    A   2    MET   2    50    0.13   False
+     1    A   2    MET   3    51    0.15   False
+     1    A   2    MET   4    56    0.15   False
+     1    A   2    MET   5    75    0.16   False
+     1    A   2    MET   6    76    0.2    False
+     1    A   2    MET   7    78    0.13   False
+     1    A   2    MET   8    79    0.16   False
+     1    A   2    MET   9    80    0.15   False
+     1    A   2    MET   10   81    0.18   False
+     1    A   2    MET   11   83    0.15   False
+     1    A   2    MET   12   84    0.13   False
+     1    A   2    MET   13   86    0.15   False
+     1    A   2    MET   14   87    0.21   False
+     1    A   2    MET   15   88    0.15   False
+     1    A   2    MET   16   91    0.15   False
+     1    A   2    MET   17   92    0.18   False
+     1    A   2    MET   18   93    0.13   False
+     1    A   2    MET   19   94    0.15   False
+     1    A   2    MET   20   108   0.18   False
+     1    A   2    MET   21   109   0.18   False
+     1    A   2    MET   22   110   0.21   False
+     1    A   2    MET   23   142   0.2    False
+     1    A   2    MET   24   155   0.11   False
+     2    A   3    ARG   0    7     0.11   False
+     2    A   3    ARG   1    30    0.8    False
+     2    A   3    ARG   2    35    0.25   False
+     3    A   4    GLN   0    35    0.75   False
+     3    A   4    GLN   1    79    0.11   False
+     3    A   4    GLN   2    84    0.11   False
+     3    A   4    GLN   3    87    0.15   False
+     3    A   4    GLN   4    92    0.13   False
+     3    A   4    GLN   5    94    0.11   False
+     4    A   5    PRO   .    .     .      .
+     5    A   6    PRO   .    .     .      .
+     6    A   7    LEU   0    14    1.0    False
+     7    A   8    VAL   0    9     1.0    False
+     8    A   9    THR   0    57    1.0    False
+     9    A   10   GLY   0    96    1.0    False
+     10   A   11   ILE   0    39    1.0    False
+     11   A   12   SER   0    43    1.0    False
+     12   A   13   PRO   .    .     .      .
+     13   A   14   ASN   0    75    0.18   False
+     13   A   14   ASN   1    78    0.18   False
+     13   A   14   ASN   2    80    0.18   False
+     13   A   14   ASN   3    82    1.0    False
+     13   A   14   ASN   4    83    0.18   False
+     13   A   14   ASN   5    86    0.2    False
+     13   A   14   ASN   6    88    0.23   False
+     13   A   14   ASN   7    91    0.18   False
+     13   A   14   ASN   8    93    0.23   False
+     13   A   14   ASN   9    94    0.11   False
+     14   A   15   GLU   0    2     0.13   False
+     14   A   15   GLU   1    7     0.18   False
+     14   A   15   GLU   2    71    0.23   False
+     14   A   15   GLU   3    109   0.11   False
+     15   A   16   GLY   0    67    1.0    False
+     16   A   17   ILE   0    74    1.0    False
+     17   A   18   PRO   .    .     .      .
+     18   A   19   TRP   0    46    1.0    False
+     19   A   20   THR   0    47    1.0    False
+     20   A   21   LYS   0    5     1.0    False
+     21   A   22   VAL   0    37    1.0    False
+     22   A   23   THR   0    62    1.0    False
+     23   A   24   ILE   0    3     1.0    False
+     24   A   25   ARG   0    24    1.0    False
+     25   A   26   GLY   0    101   1.0    False
+     26   A   27   GLU   0    40    1.0    False
+     27   A   28   ASN   0    58    1.0    False
+     28   A   29   LEU   0    53    1.0    False
+     29   A   30   GLY   0    107   1.0    False
+     30   A   31   THR   0    85    1.0    False
+     31   A   32   GLY   0    99    1.0    False
+     32   A   33   PRO   .    .     .      .
+     33   A   34   THR   0    105   1.0    False
+     34   A   35   ASP   0    44    1.0    False
+     35   A   36   LEU   0    49    1.0    False
+     36   A   37   ILE   0    52    1.0    False
+     37   A   38   GLY   0    90    1.0    False
+     38   A   39   LEU   0    18    1.0    False
+     39   A   40   THR   0    42    1.0    False
+     40   A   41   ILE   0    34    1.0    False
+     41   A   42   CYS   0    22    1.0    False
+     42   A   43   GLY   0    106   1.0    False
+     43   A   44   HIS   0    29    1.0    False
+     44   A   45   ASN   0    20    1.0    False
+     45   A   46   CYS   0    15    1.0    False
+     46   A   47   LEU   0    31    1.0    False
+     47   A   48   LEU   0    64    1.0    False
+     48   A   49   THR   0    103   1.0    False
+     49   A   50   ALA   0    25    1.0    False
+     50   A   51   GLU   0    23    1.0    False
+     51   A   52   TRP   0    6     1.0    False
+     52   A   53   MET   0    19    1.0    False
+     53   A   54   SER   0    72    1.0    False
+     54   A   55   ALA   0    55    1.0    False
+     55   A   56   SER   0    100   1.0    False
+     56   A   57   LYS   0    12    1.0    False
+     57   A   58   ILE   0    17    1.0    False
+     58   A   59   VAL   0    21    1.0    False
+     59   A   60   CYS   0    41    1.0    False
+     60   A   61   ARG   0    70    1.0    False
+     61   A   62   VAL   0    63    1.0    False
+     62   A   63   GLY   0    89    1.0    False
+     63   A   64   GLN   0    59    1.0    False
+     64   A   65   ALA   0    26    1.0    False
+     65   A   66   LYS   0    38    1.0    False
+     66   A   67   ASN   0    61    1.0    False
+     67   A   68   ASP   0    54    1.0    False
+     68   A   69   LYS   0    45    1.0    False
+     69   A   70   GLY   0    97    1.0    False
+     70   A   71   ASP   0    65    1.0    False
+     71   A   72   ILE   0    28    1.0    False
+     72   A   73   ILE   0    13    1.0    False
+     73   A   74   VAL   0    1     1.0    False
+     74   A   75   THR   0    27    1.0    False
+     75   A   76   THR   0    60    1.0    False
+     76   A   77   LYS   0    10    1.0    False
+     77   A   78   SER   0    68    1.0    False
+     78   A   79   GLY   0    98    1.0    False
+     79   A   80   GLY   0    95    1.0    False
+     80   A   81   LYS   0    71    0.76   False
+     81   A   82   GLY   0    102   1.0    False
+     82   A   83   THR   0    104   1.0    False
+     83   A   84   SER   0    69    1.0    False
+     84   A   85   THR   0    73    1.0    False
+     85   A   86   VAL   0    77    1.0    False
+     86   A   87   SER   0    66    1.0    False
+     87   A   88   PHE   0    32    1.0    False
+     88   A   89   LYS   0    8     1.0    False
+     89   A   90   LEU   0    4     1.0    False
+     90   A   91   LEU   0    11    1.0    False
+     91   A   92   LYS   0    36    0.5    False
+     91   A   92   LYS   1    48    0.18   False
+     91   A   92   LYS   2    50    0.16   False
+     91   A   92   LYS   3    51    0.15   False
+     91   A   92   LYS   4    56    0.16   False
+     91   A   92   LYS   5    76    0.11   False
+     91   A   92   LYS   6    81    0.11   False
+     91   A   92   LYS   7    108   0.11   False
+     91   A   92   LYS   8    142   0.13   False
+     91   A   92   LYS   9    155   0.13   False
+     92   A   93   PRO   .    .     .      .
+     93   A   94   GLU   0    33    1.0    False
+     94   A   95   LYS   0    16    1.0    False
+
+   stop_
+
+save_
