@@ -1,3 +1,5 @@
+from random import seed
+
 import pytest
 
 
@@ -15,3 +17,8 @@ def typer_app():
         nef_app.app.add_typer(dummy_app, name="dummy")
 
     return nef_app.app
+
+
+@pytest.fixture
+def fixed_seed():
+    seed(42)
