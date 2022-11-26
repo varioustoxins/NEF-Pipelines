@@ -1,21 +1,14 @@
-from textwrap import dedent
-
-from freezegun import freeze_time
-
 import pytest
-from icecream import ic
-
+from freezegun import freeze_time
 from typer.testing import CliRunner
 
-from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
-from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
-HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
+HEADER = open(path_in_test_data(__file__, "test_header_entry.txt", local=False)).read()
 
-MOLECULAR_SYSTEM_NMRPIPE = 'nef_molecular_system'
-METADATA_NMRPIPE ='nef_nmr_meta_data'
-NMRPIPE_IMPORT_SEQUENCE = ['nmrpipe', 'import', 'sequence']
+MOLECULAR_SYSTEM_NMRPIPE = "nef_molecular_system"
+METADATA_NMRPIPE = "nef_nmr_meta_data"
+NMRPIPE_IMPORT_SEQUENCE = ["nmrpipe", "import", "sequence"]
 
 runner = CliRunner()
 
@@ -23,10 +16,10 @@ runner = CliRunner()
 @pytest.fixture
 def using_nmrpipe():
     # register the module under test
-    import transcoders.nmrpipe
+    import transcoders.nmrpipe  # noqa: F401
 
 
-EXPECTED_3AA = '''\
+EXPECTED_3AA = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -46,9 +39,9 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
 
-EXPECTED_3AA10 = '''\
+EXPECTED_3AA10 = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -68,22 +61,21 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
 
-NMRVIEW_IMPORT_SEQUENCE = ['nmrview', 'import', 'sequence']
+NMRVIEW_IMPORT_SEQUENCE = ["nmrview", "import", "sequence"]
 
 
 # noinspection PyUnusedLocal
 def test_3aa(typer_app, using_nmrpipe, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa.tab')
+    path = path_in_test_data(__file__, "3aa.tab")
     result = runner.invoke(typer_app, [*NMRPIPE_IMPORT_SEQUENCE, path], input=HEADER)
 
-
     assert result.exit_code == 0
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -91,21 +83,24 @@ def test_3aa(typer_app, using_nmrpipe, monkeypatch):
 # noinspection PyUnusedLocal
 def test_3aa10(typer_app, using_nmrpipe, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa.tab')
-    result = runner.invoke(typer_app, [*NMRPIPE_IMPORT_SEQUENCE, '--start', '10', path], input=HEADER)
+    path = path_in_test_data(__file__, "3aa.tab")
+    result = runner.invoke(
+        typer_app, [*NMRPIPE_IMPORT_SEQUENCE, "--start", "10", path], input=HEADER
+    )
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
+
 
 #
 # HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
 
-EXPECTED_HEADER = '''\
+EXPECTED_HEADER = """\
 save_nef_nmr_meta_data
    _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
    _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
@@ -129,23 +124,25 @@ save_nef_nmr_meta_data
    stop_
 
 save_
-'''
+"""
 
 
 # noinspection PyUnusedLocal
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_pipe_header(typer_app, using_nmrpipe, monkeypatch, fixed_seed):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
-    path = path_in_test_data(__file__, '3aa.tab')
-    path_header = path_in_test_data(__file__,'test_header_entry.txt',local=False)
-    result = runner.invoke(typer_app, [*NMRPIPE_IMPORT_SEQUENCE, '--pipe', path_header, path])
+    path = path_in_test_data(__file__, "3aa.tab")
+    path_header = path_in_test_data(__file__, "test_header_entry.txt", local=False)
+    result = runner.invoke(
+        typer_app, [*NMRPIPE_IMPORT_SEQUENCE, "--pipe", path_header, path]
+    )
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRPIPE)
-    meta_data_result = isolate_frame(result.stdout, '%s' % METADATA_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
+    meta_data_result = isolate_frame(result.stdout, "%s" % METADATA_NMRPIPE)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
     assert_lines_match(EXPECTED_HEADER, meta_data_result)
@@ -155,17 +152,17 @@ def test_pipe_header(typer_app, using_nmrpipe, monkeypatch, fixed_seed):
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_header(typer_app, using_nmrpipe, monkeypatch, fixed_seed):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa.tab')
+    path = path_in_test_data(__file__, "3aa.tab")
     result = runner.invoke(typer_app, [*NMRPIPE_IMPORT_SEQUENCE, path], input=HEADER)
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
 
-if __name__ == '__main__':
-    pytest.main([f'{__file__}', '-vv'])
+if __name__ == "__main__":
+    pytest.main([f"{__file__}", "-vv"])

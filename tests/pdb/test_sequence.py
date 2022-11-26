@@ -1,20 +1,12 @@
-from textwrap import dedent
-
-from freezegun import freeze_time
-
 import pytest
-from icecream import ic
-
 from typer.testing import CliRunner
 
-from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
-from lib.structures import SequenceResidue
 from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
-HEADER = open(path_in_test_data(__file__,'test_header_entry.txt', local=False)).read()
+HEADER = open(path_in_test_data(__file__, "test_header_entry.txt", local=False)).read()
 
-MOLECULAR_SYSTEM = 'nef_molecular_system'
-PDB_IMPORT_SEQUENCE = ['pdb', 'import', 'sequence']
+MOLECULAR_SYSTEM = "nef_molecular_system"
+PDB_IMPORT_SEQUENCE = ["pdb", "import", "sequence"]
 
 runner = CliRunner()
 
@@ -22,10 +14,10 @@ runner = CliRunner()
 @pytest.fixture
 def using_pdb():
     # register the module under test
-    import transcoders.pdb
+    import transcoders.pdb  # noqa: F401
 
 
-EXPECTED_3AA = '''\
+EXPECTED_3AA = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -45,25 +37,26 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
+
 
 # noinspection PyUnusedLocal
 def test_3aa(typer_app, using_pdb, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa.pdb', local=True)
+    path = path_in_test_data(__file__, "3aa.pdb", local=True)
     result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
 
     print(result.stdout)
 
     assert result.exit_code == 0
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
 
-EXPECTED_3A_AB = '''\
+EXPECTED_3A_AB = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -86,29 +79,25 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
-
-
-
-
+save_"""
 
 
 # noinspection PyUnusedLocal
 def test_3a_ab(typer_app, using_pdb, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3a_ab.pdb')
+    path = path_in_test_data(__file__, "3a_ab.pdb")
     result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
-
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
 
-EXPECTED_3A_CCCC_DDDD = '''\
+
+EXPECTED_3A_CCCC_DDDD = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -131,19 +120,22 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
+
 
 # noinspection PyUnusedLocal
 def test_3a_segid_cccc_dddd(typer_app, using_pdb, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3a_ab.pdb')
-    result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, '--segid', path], input=HEADER)
+    path = path_in_test_data(__file__, "3a_ab.pdb")
+    result = runner.invoke(
+        typer_app, [*PDB_IMPORT_SEQUENCE, "--segid", path], input=HEADER
+    )
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
 
@@ -151,27 +143,28 @@ def test_3a_segid_cccc_dddd(typer_app, using_pdb, monkeypatch):
 # noinspection PyUnusedLocal
 def test_3a_force_segid_cccc_dddd(typer_app, using_pdb, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3a_cccc_dddd.pdb')
+    path = path_in_test_data(__file__, "3a_cccc_dddd.pdb")
     result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
 
     print(result.stdout)
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
+
 
 # noinspection PyUnusedLocal
 def test_3a_test_no_chain_segid(typer_app, using_pdb, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3a_no_chain_no_segid.pdb')
+    path = path_in_test_data(__file__, "3a_no_chain_no_segid.pdb")
     result = runner.invoke(typer_app, [*PDB_IMPORT_SEQUENCE, path], input=HEADER)
 
     assert result.exit_code == 1
 
-    assert 'ERROR: residue with no chain code' in result.stdout
+    assert "ERROR: residue with no chain code" in result.stdout
