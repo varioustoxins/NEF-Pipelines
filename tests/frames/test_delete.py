@@ -48,12 +48,11 @@ EXPECTED_DELETE_CATEGORY = """\
 
 
 # noinspection PyUnusedLocal
-@pytest.mark.skip(reason="hangs")
 def test_delete_type(typer_app, using_frames, monkeypatch, clear_cache):
 
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, "pales_test_1.nef", local=False)
+    path = path_in_test_data(__file__, "pales_test_1.nef", local=True)
 
     input_stream = open(path).read()
 
@@ -95,12 +94,11 @@ EXPECTED_DELETE_NAME = """\
 
 
 # noinspection PyUnusedLocal
-@pytest.mark.skip(reason="hangs")
 def test_delete_name(typer_app, using_frames, monkeypatch, clear_cache):
 
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, "pales_test_1.nef", local=False)
+    path = path_in_test_data(__file__, "pales_test_1.nef", local=True)
 
     input_stream = open(path).read()
 
