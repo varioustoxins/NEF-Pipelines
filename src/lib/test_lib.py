@@ -6,7 +6,6 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import IO, AnyStr, List, Optional
 
-import pytest
 from click.testing import Result
 from pynmrstar import Entry
 from typer import Typer
@@ -174,8 +173,8 @@ def path_in_parent_directory(root: str, target: str) -> str:
 
 
 def root_path(initial_path: str):
-    """given a path wotk up the directory structure till you find the
-    directory containg the nef executable
+    """given a path work up the directory structure till you find the
+    directory containing the nef executable
 
     initial_path (str): the path to start searching from
     """
