@@ -21,7 +21,7 @@ def run_and_read_pytest(args):
     sys.stdout = StringIO()
     sys.stderr = StringIO()
 
-    retcode = main(f" -c  {args}")
+    retcode = main(args)
 
     output = sys.stdout.getvalue()
     error_output = sys.stderr.getvalue()
