@@ -150,7 +150,7 @@ def test_ppm_out_short_no_sequence(typer_app, using_nmrview, monkeypatch):
     )
 
     assert "ERROR" in result.stdout
-    assert "did you read a sequence?" in result.stdout
+    assert "couldn't read from stdin" in result.stdout
 
 
 # noinspection PyUnusedLocal
