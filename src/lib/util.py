@@ -202,6 +202,15 @@ def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
     except Exception as e:
         exit_error("couldn't read from stdin or -pipe file", e)
 
+    if isinstance(result, StringIteratorIO):
+
+        result = "\n".join(list(result))
+
+        if len(result) == 0:
+            result = None
+        else:
+            result = io.StringIO(result)
+
     if result is None:
         exit_error("couldn't read from stdin and no -pipe in args")
 
