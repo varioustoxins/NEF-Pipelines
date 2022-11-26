@@ -40,7 +40,7 @@ def shifts(
         ..., help="input files of type nmrview.out", metavar="<NMRVIEW-shifts>.out"
     ),
 ):
-    """convert nmrview shift file <nmrview-shifts>.out files to NEF"""
+    """convert nmrview shift file <nmrview-shifts>.out to NEF"""
 
     try:
         args = get_args()
