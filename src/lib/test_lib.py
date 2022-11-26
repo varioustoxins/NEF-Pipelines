@@ -181,8 +181,16 @@ def root_path(initial_path: str):
 
     target = Path(initial_path)
 
-    while not (target / "nef").is_file():
+    belt_and_braces = 100  # noqa: F841 this appears to be a bug
+    while not (Path(target.root) == target) and not (target / "src" / "nef").is_file():
         target = target.parent
+        belt_and_braces -= 1
+        if belt_and_braces < 0:
+            msg = f"""\
+                Error, while search for the rot of the path {initial_path} i walked up 100
+                directories this looks like a bug!
+            """
+            raise Exception(msg)
 
     return target
 
