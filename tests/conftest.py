@@ -1,10 +1,17 @@
-"""
-    Dummy conftest.py for nef_pipelines.
+import pytest
 
-    If you don't know what this is for, just leave it empty.
-    Read more about conftest.py under:
-    - https://docs.pytest.org/en/stable/fixture.html
-    - https://docs.pytest.org/en/stable/writing_plugins.html
-"""
 
-# import pytest
+@pytest.fixture
+def typer_app():
+    import typer
+
+    import nef_app
+
+    if not nef_app.app:
+        nef_app.app = typer.Typer()
+
+        # if only one command is registered it is ignored on the command line...
+        dummy_app = typer.Typer()
+        nef_app.app.add_typer(dummy_app, name="dummy")
+
+    return nef_app.app
