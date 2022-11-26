@@ -1,36 +1,34 @@
-from lib.structures import  ShiftList, ShiftData, AtomLabel
-from textwrap import dedent
-from transcoders.nmrview.nmrview_lib import  parse_shifts
 import pytest
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
-
-
 from typer.testing import CliRunner
+
+from lib.test_lib import assert_lines_match, path_in_test_data
+
 runner = CliRunner()
 
-TABULATE_FRAMES= ['frames', 'tabulate']
+TABULATE_FRAMES = ["frames", "tabulate"]
 
 
 @pytest.fixture
 def using_chains():
     # register the module under test
-    import tools.chains
+    import tools.chains  # noqa: F401
+
 
 # noinspection PyUnusedLocal
 def test_frame_basic(typer_app, using_chains, monkeypatch, clear_cache):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, 'tailin_seq_short.nef')
+    path = path_in_test_data(__file__, "tailin_seq_short.nef")
 
-    result = runner.invoke(typer_app, [*TABULATE_FRAMES, '--pipe', path])
+    result = runner.invoke(typer_app, [*TABULATE_FRAMES, "--pipe", path])
 
     if result.exit_code != 0:
-        print('INFO: stdout from failed read:\n', result.stdout)
+        print("INFO: stdout from failed read:\n", result.stdout)
 
     assert result.exit_code == 0
 
-    EXPECTED =  '''\
+    EXPECTED = """\
       ind   chain       seq   resn     link
          1  A             10  GLU      start
          2  A             11  TYR      middle
@@ -46,9 +44,9 @@ def test_frame_basic(typer_app, using_chains, monkeypatch, clear_cache):
         12  A             21  GLU      middle
         13  A             22  ASP      end
 
-    '''
+    """
 
-    for line in zip(EXPECTED.split('\n'), result.stdout.split('\n')):
+    for line in zip(EXPECTED.split("\n"), result.stdout.split("\n")):
         print(line)
 
-    assert_lines_match (EXPECTED, result.stdout)
+    assert_lines_match(EXPECTED, result.stdout)

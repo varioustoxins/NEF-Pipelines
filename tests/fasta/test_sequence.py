@@ -1,28 +1,21 @@
-from textwrap import dedent
-
-from freezegun import freeze_time
-
 import pytest
-from icecream import ic
-
 from typer.testing import CliRunner
 
-from lib.sequence_lib import translate_1_to_3, BadResidue, sequence_3let_to_sequence_residues
-from lib.structures import SequenceResidue
-from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data, clear_cache
+from lib.test_lib import assert_lines_match, isolate_frame, path_in_test_data
 
-MOLECULAR_SYSTEM = 'nef_molecular_system'
-FASTA_IMPORT_SEQUENCE = ['fasta', 'import', 'sequence']
+MOLECULAR_SYSTEM = "nef_molecular_system"
+FASTA_IMPORT_SEQUENCE = ["fasta", "import", "sequence"]
 
 runner = CliRunner()
+
 
 @pytest.fixture
 def using_fasta():
     # register the module under test
-    import transcoders.fasta
+    import transcoders.fasta  # noqa: F401
 
 
-EXPECTED_3AA = '''\
+EXPECTED_3AA = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -42,26 +35,27 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
+
 
 # noinspection PyUnusedLocal
 def test_3aa(typer_app, using_fasta, clear_cache, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa.fasta', local=True)
+    path = path_in_test_data(__file__, "3aa.fasta", local=True)
     result = runner.invoke(typer_app, [*FASTA_IMPORT_SEQUENCE, path])
 
     print(result.stdout)
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
 
-EXPECTED_3A_AB = '''\
+EXPECTED_3A_AB = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -84,24 +78,25 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
 
 
 # noinspection PyUnusedLocal
 def test_3aa_x2(typer_app, using_fasta, clear_cache, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa_x2.fasta')
+    path = path_in_test_data(__file__, "3aa_x2.fasta")
     result = runner.invoke(typer_app, [*FASTA_IMPORT_SEQUENCE, path])
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
 
-EXPECTED_3A_AB_B_start_11 = '''\
+
+EXPECTED_3A_AB_B_start_11 = """\
 save_nef_molecular_system
    _nef_molecular_system.sf_category   nef_molecular_system
    _nef_molecular_system.sf_framecode  nef_molecular_system
@@ -124,19 +119,21 @@ save_nef_molecular_system
 
    stop_
 
-save_'''
+save_"""
+
 
 # noinspection PyUnusedLocal
 def test_3aa_x2_off_10_b(typer_app, using_fasta, clear_cache, monkeypatch):
 
-    monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
 
-    path = path_in_test_data(__file__, '3aa_x2.fasta')
-    result = runner.invoke(typer_app, [*FASTA_IMPORT_SEQUENCE, '--starts', '1,11', path])
+    path = path_in_test_data(__file__, "3aa_x2.fasta")
+    result = runner.invoke(
+        typer_app, [*FASTA_IMPORT_SEQUENCE, "--starts", "1,11", path]
+    )
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, '%s' % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB_B_start_11, mol_sys_result)
-
