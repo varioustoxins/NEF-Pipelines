@@ -211,24 +211,6 @@ def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
     return str(Path(test_data, file_name).absolute())
 
 
-@pytest.fixture
-def clear_cache():
-    """
-    clear the lru cache used by lib.util cached_stdin
-    see https://stackoverflow.com/questions/40273767/clear-all-lru-cache-in-python
-    """
-    import functools
-    import gc
-
-    gc.collect()
-    wrappers = [
-        a for a in gc.get_objects() if isinstance(a, functools._lru_cache_wrapper)
-    ]
-
-    for wrapper in wrappers:
-        wrapper.cache_clear()
-
-
 def run_and_report(
     typer_app: Typer,
     args: List[str],
