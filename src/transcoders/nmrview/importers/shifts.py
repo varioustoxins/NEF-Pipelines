@@ -97,6 +97,8 @@ def sequence_from_frames(frames: Saveframe) -> List[SequenceResidue]:
     return residues
 
 
+# TODO this should be replaced by a library function from nef or sequence utils...
+# also need ro report what file we are trying to read shifts from
 def _get_sequence_or_exit(args):
     sequence_file = None
     if "sequence" in args:
