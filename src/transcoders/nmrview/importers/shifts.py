@@ -37,7 +37,7 @@ def shifts(
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
     file_names: List[Path] = typer.Argument(
-        ..., help="input files of type nmrview.xpk", metavar="<NMRVIEW-shifts>.out"
+        ..., help="input files of type nmrview.out", metavar="<NMRVIEW-shifts>.out"
     ),
 ):
     """convert nmrview shift file <nmrview-shifts>.out files to NEF"""
