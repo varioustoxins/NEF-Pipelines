@@ -33,9 +33,9 @@ def test(
 
     from pytest import main
 
-    dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent / "tests"
+    dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
-    root_path = f'{str(dir_path.parent / ".." / "tests")}'
+    root_path = f'{str(dir_path.parent / "tests")}'
 
     tests = _find_pytest_commands(root_path, targets)
 
