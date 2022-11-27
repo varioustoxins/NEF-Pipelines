@@ -50,11 +50,39 @@ It also provides tools for importing and exporing non NEF files from the followi
   - sequence [read]
 
 ## Pipelines and Standalone Use
+ All commands also have a
+help options triggered using `--help` or when no input is detected. So for example the nef command on its own produces
 
-Individual nef pipeline componenets can be used standalone by using the `--in` or `--pipe` parameter which with either
-read a foreign file for translators or read a NEF file for commands that manipulate NEF files. All commands also have a
-help options triggered using `--help` or when no input is detected. So for example to lists the frames in NEF frame you
-can type
+```
+Usage: nef [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --install-completion [bash|zsh|fish|powershell|pwsh]
+                                  Install completion for the specified shell.
+  --show-completion [bash|zsh|fish|powershell|pwsh]
+                                  Show completion for the specified shell, to
+                                  copy it or customize the installation.
+
+  --help                          Show this message and exit.
+
+Commands:
+  chains   - carry out operations on chains
+  fasta    - read and write fasta sequences
+  frames   - carry out operations on frames in nef frames
+  header   - add a header to the stream
+  mars     - export mars [shifts and sequences]
+  nmrpipe  - read nmrpipe [peaks shifts & sequencess]
+  nmrview  - read and write nmrview [peaks, sequences & shifts]
+  pales    - read and write pales/dc [rdcs]
+  pdb      - read pdb [sequences]
+  stream   - stream a nef file
+  test     - run the test suite
+
+```
+
+Individual nef pipeline componenets can be used standalone by using the `--in` or `--pipe` parameter which will either
+read a foreign file for translators or read a NEF file for commands that manipulate NEF files. So for example to lists
+the frames in NEF frame you can type
 
 ```bash
 nef frames list --in test_data/pales_test_1.nef
@@ -68,7 +96,7 @@ entry pales_test
 nef_molecular_system  nef_rdc_restraint_list_test_1
 ```
 
-this will produce the entry name followed by the frames in the file `test_data/pales_test_1.nef`. However,  the real
+which shows  the entry name followed by the frames in the file `test_data/pales_test_1.nef`. However,  the real
 power in NEF-Pipelines comes from combining pipeline commands together or with command line tools. For example
 
 ```bash
@@ -79,8 +107,8 @@ nef header                                   \
 > tailin1.nef
 ```
 
-will create avalid NEF header and the tailin1 sequence and import shifts and peaks for talin1 before writing a new NEF
-file tailin1.nef
+will create a valid NEF header followed by the tailin1 sequence as a molecular system and then import shifts and peaks
+for talin1 before writing a new NEF file `tailin1.nef`
 
 The commands provided by NEF-Pipelines are hierarchical in nature. All commands are call by the NEF command but there
 are sub commands so for example to import a sequence froma pdb file tou would type  `nef psb import sequence` followed
