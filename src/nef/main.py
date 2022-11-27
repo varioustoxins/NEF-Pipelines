@@ -63,17 +63,18 @@ def main():
 
     try:
         # import components which will self register, this could and will be automated
-        import tools.chains  # noqa: F401
-        import tools.frames  # noqa: F401
-        import tools.header  # noqa: F401
-        import tools.stream  # noqa: F401
-        import tools.test  # noqa: F401
         import transcoders.fasta  # noqa: F401
         import transcoders.mars  # noqa: F401
         import transcoders.nmrpipe  # noqa: F401
         import transcoders.nmrview  # noqa: F401
         import transcoders.pales  # noqa: F401
         import transcoders.pdb  # noqa: F401
+
+        import tools.chains  # noqa: F401
+        import tools.frames  # noqa: F401
+        import tools.header  # noqa: F401
+        import tools.stream  # noqa: F401
+        import tools.test  # noqa: F401
 
     except Exception as e:
         msg = """\
