@@ -67,7 +67,8 @@ def main():
         import nef_pipelines.tools.frames  # noqa: F401
         import nef_pipelines.tools.header  # noqa: F401
         import nef_pipelines.tools.stream  # noqa: F401
-        import nef_pipelines.tools.test  # noqa: F401
+
+        # import nef_pipelines.tools.test  # noqa: F401
         import nef_pipelines.transcoders.fasta  # noqa: F401
         import nef_pipelines.transcoders.mars  # noqa: F401
         import nef_pipelines.transcoders.nmrpipe  # noqa: F401
