@@ -49,7 +49,7 @@ def main():
         do_exit_error(msg, e)
 
     try:
-        import nef_app
+        from nef import nef_app
 
         nef_app.app = typer.Typer(no_args_is_help=True)
         app = nef_app.app  # noqa: F841
@@ -63,18 +63,17 @@ def main():
 
     try:
         # import components which will self register, this could and will be automated
-        import transcoders.fasta  # noqa: F401
-        import transcoders.mars  # noqa: F401
-        import transcoders.nmrpipe  # noqa: F401
-        import transcoders.nmrview  # noqa: F401
-        import transcoders.pales  # noqa: F401
-        import transcoders.pdb  # noqa: F401
-
-        import tools.chains  # noqa: F401
-        import tools.frames  # noqa: F401
-        import tools.header  # noqa: F401
-        import tools.stream  # noqa: F401
-        import tools.test  # noqa: F401
+        import nef.tools.chains  # noqa: F401
+        import nef.tools.frames  # noqa: F401
+        import nef.tools.header  # noqa: F401
+        import nef.tools.stream  # noqa: F401
+        import nef.tools.test  # noqa: F401
+        import nef.transcoders.fasta  # noqa: F401
+        import nef.transcoders.mars  # noqa: F401
+        import nef.transcoders.nmrpipe  # noqa: F401
+        import nef.transcoders.nmrview  # noqa: F401
+        import nef.transcoders.pales  # noqa: F401
+        import nef.transcoders.pdb  # noqa: F401
 
     except Exception as e:
         msg = """\
