@@ -49,9 +49,31 @@ It also provides tools for importing and exporing non NEF files from the followi
 - __pdb__
   - sequence [read]
 
+## Installation
+
+NEF-Pipelines can be installed using pip, just type
+
+```bash
+pip install nef-pipelines
+```
+
+after the install has completed you can type
+
+```bash
+nef
+```
+
+and should see output that starts
+
+```
+Usage: nef [OPTIONS] COMMAND [ARGS]...                                                                                                                                                                                        ✔ ╱ took 14s  ╱ nef_pipelines  ╱ at 23:29:36 
+
+Options:
+...
+```
 ## Pipelines and Standalone Use
  All commands also have a
-help options triggered using `--help` or when no input is detected. So for example the nef command on its own produces
+help options triggered using `--help` or when no input is detected. So for example the `nef` command on its own produces
 
 ```
 Usage: nef [OPTIONS] COMMAND [ARGS]...
