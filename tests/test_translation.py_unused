@@ -47,6 +47,3 @@ def test_link_and_unlink_checm_com_ala(test_data_file):
         output_json = json.dumps(json.loads(chem_comp.json()),indent=4)
 
         assert loaded_json == output_json
-
-
-
