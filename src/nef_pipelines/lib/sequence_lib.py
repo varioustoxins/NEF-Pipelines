@@ -1,5 +1,6 @@
 import string
 import sys
+from collections import Counter
 from dataclasses import replace
 from textwrap import dedent
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -8,7 +9,9 @@ from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
 
 from nef_pipelines.lib.constants import NEF_UNKNOWN
-from nef_pipelines.lib.nef_lib import loop_to_dataframe
+from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
+
+# from nef_pipelines.lib.nef_lib import loop_to_dataframe
 from nef_pipelines.lib.structures import Linking, SequenceResidue
 from nef_pipelines.lib.util import (
     cached_stdin,
@@ -298,16 +301,16 @@ def sequence_residues_to_sequence_3let(
 
 def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
     """
-    given a list of nef molecular systems list the chains found
+     a nef molecular systems list the chains found
 
-    :param sequence_frames: list of nef molecular system save frames
+    :param sequence_frames: a nef molecular system save frame
     :return: a list of chain_codes
     """
 
     chains = set()
     for loop in sequence_frame.loop_dict.values():
-        data_frame = loop_to_dataframe(loop)
-        chains.update(data_frame[NEF_CHAIN_CODE].unique())
+        for row in loop_row_namespace_iter(loop):
+            chains.add(row.chain_code)
 
     if NEF_UNKNOWN in chains:
         chains.remove(NEF_UNKNOWN)
@@ -319,22 +322,20 @@ def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
 
 def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]:
     """
-    given a nef molecular system list and a chain list the number of residues
+    given a nef molecular system and a chain list the number of residues of each type in the chain
 
-    :param sequence_frames: list of nef molecular system save frames
+    :param sequence_frames: a nef molecular system save frame
     :return: a list of chain_codes
     """
 
-    result = {}
-    sequence_dataframe = loop_to_dataframe(list(sequence_frame.loop_dict.values())[0])
+    residue_number_to_residue_name = {}
+    for row in loop_row_namespace_iter(sequence_frame):
+        if row.chain_code == chain_code:
+            residue_number_to_residue_name[row.sequence_code] = row.residue_name
 
-    rows_with_chain = sequence_dataframe[sequence_dataframe.chain_code == chain_code]
-    residues = rows_with_chain.residue_name.unique()
-
-    for residue in sorted(residues):
-        residue_selector = rows_with_chain.residue_name == residue
-        count = rows_with_chain.residue_name[residue_selector].count()
-        result[residue] = count
+    result = Counter()
+    for residue_name in sorted(residue_number_to_residue_name):
+        result[residue_name] += 1
 
     return result
 
