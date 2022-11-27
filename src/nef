@@ -34,75 +34,80 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
-try:
-    import typer
-    from click import ClickException
+def main():
+    try:
+        import typer
+        from click import ClickException
 
-except Exception as e:
+    except Exception as e:
 
-    msg = """\
+        msg = """\
 
              Initializaion error: one of the core libraries [friendly_tracback/typer] if missing from you environment
              please make sure they are installed an try again
              exiting..."""
-    do_exit_error(msg, e)
+        do_exit_error(msg, e)
 
-try:
-    import nef_app
+    try:
+        import nef_app
 
-    nef_app.app = typer.Typer(no_args_is_help=True)
-    app = nef_app.app
+        nef_app.app = typer.Typer(no_args_is_help=True)
+        app = nef_app.app  # noqa: F841
 
-except Exception as e:
-    msg = """\
+    except Exception as e:
+        msg = """\
 
-             Initialisation error: failed to start the typer app, message the developer
-             exiting..."""
-    do_exit_error(msg, e)
+                 Initialisation error: failed to start the typer app, message the developer
+                 exiting..."""
+        do_exit_error(msg, e)
 
-try:
-    # import components which will self register, this could and will be automated
-    import tools.chains  # noqa: F401
-    import tools.frames  # noqa: F401
-    import tools.header  # noqa: F401
-    import tools.stream  # noqa: F401
-    import tools.test  # noqa: F401
-    import transcoders.fasta  # noqa: F401
-    import transcoders.mars  # noqa: F401
-    import transcoders.nmrpipe  # noqa: F401
-    import transcoders.nmrview  # noqa: F401
-    import transcoders.pales  # noqa: F401
-    import transcoders.pdb  # noqa: F401
+    try:
+        # import components which will self register, this could and will be automated
+        import tools.chains  # noqa: F401
+        import tools.frames  # noqa: F401
+        import tools.header  # noqa: F401
+        import tools.stream  # noqa: F401
+        import tools.test  # noqa: F401
+        import transcoders.fasta  # noqa: F401
+        import transcoders.mars  # noqa: F401
+        import transcoders.nmrpipe  # noqa: F401
+        import transcoders.nmrview  # noqa: F401
+        import transcoders.pales  # noqa: F401
+        import transcoders.pdb  # noqa: F401
 
-except Exception as e:
-    msg = """\
+    except Exception as e:
+        msg = """\
 
-         Initialisation error: failed to load a plugin, remove the plugin or contact the developer
-         """
+             Initialisation error: failed to load a plugin, remove the plugin or contact the developer
+             """
 
-    do_exit_error(msg, e)
+        do_exit_error(msg, e)
 
-try:
+    try:
 
-    nef_app.app
+        nef_app.app
 
-    command = typer.main.get_command(nef_app.app)
+        command = typer.main.get_command(nef_app.app)
 
-    command(standalone_mode=False)
+        command(standalone_mode=False)
 
-except ClickException as e:
-    e.show()
-    do_exit_error(
-        f"inputs: {' '.join(sys.argv[1:])}", trace_back=False, exit_code=e.exit_code
-    )
+    except ClickException as e:
+        e.show()
+        do_exit_error(
+            f"inputs: {' '.join(sys.argv[1:])}", trace_back=False, exit_code=e.exit_code
+        )
 
-except Exception as e:
+    except Exception as e:
 
-    msg = f"""\
+        msg = f"""\
 
-          Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
-          inputs: {' '.join(sys.argv[1:])}
-          message: {e}
-          """
+              Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
+              inputs: {' '.join(sys.argv[1:])}
+              message: {e}
+              """
 
-    do_exit_error(msg)
+        do_exit_error(msg)
+
+
+if __name__ == "__main__":
+    main()
