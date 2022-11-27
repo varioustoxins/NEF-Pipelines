@@ -35,11 +35,11 @@ def test(
 
     dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
-    root_path = f'{str(dir_path.parent / "tests")}'
+    root_path = str(dir_path.parent)
+
+    os.chdir(Path(root_path).absolute())
 
     tests = _find_pytest_commands(root_path, targets)
-
-    os.chdir(Path(root_path).absolute() / "..")
 
     if not targets or (targets and len(tests) != 0):
         command = ["-vvv", "--full-trace", *tests]
@@ -54,6 +54,8 @@ def _find_pytest_commands(root_path, targets):
         targets = "*"
 
     ret_code, stdout, stderr = run_and_read_pytest(["--collect-only", "-qq", root_path])
+
+    print(stdout)
 
     if ret_code != 0:
         output = f"""
