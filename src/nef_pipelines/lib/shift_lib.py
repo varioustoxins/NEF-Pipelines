@@ -38,7 +38,7 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
                     for name, value in vars(row).items()
                     if name in atom_field_names
                 }
-                residue = SequenceResidue(residue_fields)
+                residue = SequenceResidue(**residue_fields)
                 label = AtomLabel(residue, **atom_fields)
                 shifts.append(ShiftData(label, row.value, row.value_uncertainty))
 
