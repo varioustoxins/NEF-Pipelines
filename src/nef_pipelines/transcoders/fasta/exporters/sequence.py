@@ -13,8 +13,6 @@ from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import exit_error
 from nef_pipelines.transcoders.fasta import export_app
 
-app = typer.Typer()
-
 
 # noinspection PyUnusedLocal
 @export_app.command()
