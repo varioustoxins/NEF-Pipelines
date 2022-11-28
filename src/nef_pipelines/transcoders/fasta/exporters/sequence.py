@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Dict, List
 
@@ -13,6 +14,9 @@ from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import exit_error
 from nef_pipelines.transcoders.fasta import export_app
 
+# TODO: move to lib
+STDOUT = "-"
+
 
 # noinspection PyUnusedLocal
 @export_app.command()
@@ -27,6 +31,11 @@ def sequence(
     in_file: Path = typer.Option(
         None, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
+    output_file: str = typer.Argument(
+        None,
+        help="file name to output to [default <entry_id>.fasta] for stdout use -",
+        metavar="<FASTA-SEQUENCE-FILE>",
+    ),
 ):
     """- convert nef sequence to fasta"""
 
@@ -36,10 +45,21 @@ def sequence(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
 
+    output_file = f"{entry.entry_id}.fasta" if output_file is None else output_file
+
     fasta_records = fasta_records_from_entry(entry, chain_codes)
 
+    # TODO: move to utility function and use in all outputs
+    file_h = sys.stdout if output_file == STDOUT else open(output_file, "w")
+
     for record in fasta_records.values():
-        print("\n".join(record))
+        print("\n".join(record), file=file_h)
+
+    if output_file != STDOUT:
+        file_h.close()
+
+        if not sys.stdout.isatty():
+            print(entry)
 
 
 def fasta_records_from_entry(entry, chain_codes):

@@ -20,6 +20,11 @@ def sequence(
     in_file: Path = typer.Option(
         None, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
+    output_file: Path = typer.Argument(
+        None,
+        help="file name to output to [default <ENTRY-ID.fasta>] for stdout use -",
+        metavar="<FASTA-SEQUENCE-FILE>",
+    ),
 ):
 
-    fasta_sequence(chain_code, in_file)
+    fasta_sequence(chain_code, in_file, output_file)

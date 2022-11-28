@@ -1,4 +1,5 @@
 # original implementation by esther
+import sys
 from dataclasses import dataclass
 from string import digits
 from typing import List
@@ -13,6 +14,8 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
 from nef_pipelines.lib.util import exit_error, is_float, is_int
 from nef_pipelines.transcoders.mars import export_app
+
+STDOUT_PATH = "-"
 
 app = typer.Typer()
 
@@ -37,12 +40,17 @@ def shifts(
         "--frame",
         help="selector for the shift restraint frames to use, can be called multiple times and include wild cards",
     ),
-    chains: str = typer.Option(
+    chain: str = typer.Option(
         [],
         "-c",
         "--chain",
         help="chains to export, to add mutiple chains use repeated calls  [default: 'A']",
         metavar="<CHAIN-CODE>",
+    ),
+    output_file: str = typer.Argument(
+        None,
+        help="file name to output to [default <entry_id>_shifts.tab] for stdout use -",
+        metavar="<MARS_SHIFT_FILE>",
     ),
 ):
     """- convert nef chemical shifts to mars"""
@@ -51,6 +59,8 @@ def shifts(
         shift_frames = ["*"]
 
     entry = create_entry_from_stdin_or_exit()
+
+    output_file = f"{entry.entry_id}_shifts.tab" if output_file is None else output_file
 
     frames = entry.get_saveframes_by_category("nef_chemical_shift_list")
 
@@ -158,4 +168,12 @@ def shifts(
             else:
                 line.append("-         ")
 
-    print(tabulate(lines, headers=headers, tablefmt="plain"))
+    file_h = sys.stdout if output_file == "-" else open(output_file, "w")
+
+    print(tabulate(lines, headers=headers, tablefmt="plain"), file=file_h)
+
+    if output_file != STDOUT_PATH:
+        file_h.close()
+
+        if not sys.stdout.isatty():
+            print(entry)
