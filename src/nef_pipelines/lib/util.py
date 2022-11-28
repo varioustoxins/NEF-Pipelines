@@ -223,6 +223,7 @@ def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
 
 @iter_cache
 def cached_stdin():
+    # TODO: this doesn't work!'
     return sys.stdin
 
 
