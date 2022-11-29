@@ -31,7 +31,7 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @export_app.command()
 def rdcs(
-    chains: str = typer.Option(
+    chains: List[str] = typer.Option(
         [],
         "-c",
         "--chain",
@@ -46,7 +46,7 @@ def rdcs(
         " multiple weights may be added by repeated calls, efault is HN,N,1.0",
     ),
     frame_selectors: List[str] = typer.Option(
-        "*",
+        [],
         "-f",
         "--frame",
         help="selector for the rdc restraint frame to use, can be called multiple times and include wild cards",
@@ -68,7 +68,7 @@ def rdcs(
     entry = create_entry_from_stdin_or_exit()
     rdc_frames = entry.get_saveframes_by_category(NEF_RDC_CATEGORY)
 
-    if frame_selectors is None:
+    if frame_selectors is []:
         frame_selectors = [""]
     frames = select_frames_by_name(rdc_frames, frame_selectors)
 
