@@ -85,7 +85,7 @@ def rdcs(
 
 
 def _translate_atom_names(
-    restraints: list[RdcRestraint], naming_scheme="iupac"
+    restraints: List[RdcRestraint], naming_scheme="iupac"
 ) -> List[RdcRestraint]:
     result = []
     for restraint in restraints:

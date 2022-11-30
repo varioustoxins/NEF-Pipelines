@@ -1,4 +1,4 @@
-import functools
+# import functools
 from textwrap import dedent
 from typing import Dict, Iterable, List, Tuple
 
@@ -45,7 +45,7 @@ def _process_emptys_and_singles(value: ParseResults) -> ParseResults:
     return value
 
 
-@functools.cache
+# @functools.cache
 def get_tcl_parser() -> ParserElement:
     """
     build a simple tcl parser suitable for nmrview files and cach it
