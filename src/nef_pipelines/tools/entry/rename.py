@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 
 import typer
-from lib.nef_lib import create_entry_from_stdin_or_exit
 
+from nef_pipelines.lib.nef_lib import create_entry_from_stdin_or_exit
 from nef_pipelines.tools.entry import entry_app
 
 

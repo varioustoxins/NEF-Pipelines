@@ -3,8 +3,8 @@ import sys
 from pathlib import Path
 
 import typer
-from lib.nef_lib import create_entry_from_stdin_or_exit
 
+from nef_pipelines.lib.nef_lib import create_entry_from_stdin_or_exit
 from nef_pipelines.transcoders.mars import export_app
 
 MARS_DEFAULT_FILE = "mars.inp"
