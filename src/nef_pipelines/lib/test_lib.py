@@ -209,6 +209,7 @@ def root_path(initial_path: str):
     return target
 
 
+# TODO: remove local we now use a hierarchical search
 def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
     """
     given a root and a file name find the relative to the file
