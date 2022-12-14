@@ -195,7 +195,7 @@ def root_path(initial_path: str):
     belt_and_braces = 100  # noqa: F841 this appears to be a bug
     while (
         not (Path(target.root) == target)
-        and not (target / "src" / "nef" / "main.py").is_file()
+        and not (target / "src" / "nef_pipelines" / "main.py").is_file()
     ):
         target = target.parent
         belt_and_braces -= 1
