@@ -261,7 +261,7 @@ def run_and_report(
             print("-" * 40, "exception", "-" * 40)
             formatted = list(traceback.TracebackException(*result.exc_info).format())
 
-            # this is a hack, i would lobe to have a better solution!
+            # TODO: this is a hack, I would love to have a better solution!
             if "SystemExit" in formatted[-1]:
                 for i, line in enumerate(reversed(formatted)):
                     if (
