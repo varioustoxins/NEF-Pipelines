@@ -210,7 +210,7 @@ def root_path(initial_path: str):
 
 
 # TODO: remove local we now use a hierarchical search
-def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
+def path_in_test_data(root: str, file_name: str) -> str:
     """
     given a root and a file name find the relative to the file
     in the parents test_data directory
@@ -218,17 +218,20 @@ def path_in_test_data(root: str, file_name: str, local: bool = True) -> str:
     Args:
         root (str): root of the path
         file_name (str): the name of the file
-        local (bool): whether to use the directory of the tool
-        or read from the global test data
 
     Returns:
         str: the target paths as a string
     """
 
-    if not local:
-        test_data = root_path(root) / "tests" / "test_data"
+    test_data_local = root_path(root) / "src" / "nef_pipelines" / "tests" / "test_data"
+    test_data_root = path_in_parent_directory(root, "test_data")
+
+    if test_data_local.is_file():
+        test_data = test_data_local
     else:
-        test_data = path_in_parent_directory(root, "test_data")
+        test_data = test_data_root
+
+    # TODO: add an error on shadowing global files
 
     return str(Path(test_data, file_name).absolute())
 
