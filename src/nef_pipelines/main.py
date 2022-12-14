@@ -34,6 +34,16 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
+def create_nef_app():
+    import typer
+
+    from nef_pipelines import nef_app
+
+    nef_app.app = typer.Typer(no_args_is_help=True)
+    app = nef_app.app  # noqa: F841
+    return nef_app
+
+
 def main():
     try:
         import typer
@@ -49,10 +59,7 @@ def main():
         do_exit_error(msg, e)
 
     try:
-        from nef_pipelines import nef_app
-
-        nef_app.app = typer.Typer(no_args_is_help=True)
-        app = nef_app.app  # noqa: F841
+        nef_app = create_nef_app()
 
     except Exception as e:
         msg = """\
