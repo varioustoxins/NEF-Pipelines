@@ -53,7 +53,9 @@ def _find_pytest_commands(root_path, targets):
     if not targets:
         targets = "*"
 
-    ret_code, stdout, stderr = run_and_read_pytest(["--collect-only", "-qq", root_path])
+    ret_code, stdout, stderr = run_and_read_pytest(
+        ["--collect-only", "-qqq", root_path]
+    )
 
     print(stdout)
 
