@@ -134,6 +134,17 @@ def assert_lines_match(
 
         if reported_line_stripped != expected_line_stripped:
 
+            for line in lines_expected:
+                print(f"exp|{line}")
+            print()
+
+            for line in lines_reported:
+                print(f"rep|{line}")
+            print()
+
+            print("line that caused the error:")
+            print()
+
             print(f"exp|{i}|  |{expected_line_stripped}|")
             print(f"rep|{i}|  |{reported_line_stripped}|")
 
