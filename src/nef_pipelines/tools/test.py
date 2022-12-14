@@ -35,7 +35,7 @@ def test(
 
     dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
-    root_path = str(dir_path.parent / "..")
+    root_path = str(dir_path.parent / "nef_pipelines" / "tests")
 
     os.chdir(Path(root_path).absolute())
 
