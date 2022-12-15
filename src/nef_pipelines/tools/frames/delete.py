@@ -6,7 +6,7 @@ from typing import List
 import typer
 from pynmrstar import Entry
 
-from nef_pipelines.lib.util import cached_stdin, exit_error, running_in_pycharm
+from nef_pipelines.lib.util import exit_error, running_in_pycharm
 from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
@@ -69,6 +69,7 @@ def calling_function():
     return inspect.stack()[2][3]
 
 
+# TODO: This should be a library function
 def _create_entry_from_stdin_or_exit(command_name: str):
 
     try:
@@ -81,11 +82,7 @@ def _create_entry_from_stdin_or_exit(command_name: str):
         if running_in_pycharm():
             exit_error("you can't build read fron stdin in pycharm...")
 
-        result = cached_stdin()
-
-        # result is an iterable as well as an iter, but may have been read already making the iter empty?
-        # hence the need to call iter?
-        lines = list(iter(result))
+        lines = list(iter(sys.stdin))
 
         if len(lines) == 0:
             exit_error(
