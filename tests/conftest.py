@@ -5,9 +5,8 @@ import pytest
 
 @pytest.fixture
 def typer_app():
-    import typer
-
     import nef_app
+    import typer
 
     if not nef_app.app:
         nef_app.app = typer.Typer()
@@ -34,9 +33,13 @@ def clear_cache():
     import gc
 
     gc.collect()
-    wrappers = [
-        a for a in gc.get_objects() if isinstance(a, functools._lru_cache_wrapper)
-    ]
+    wrappers = []
+    for elem in gc.get_objects():
+        try:
+            if isinstance(elem, functools._lru_cache_wrapper):
+                wrappers.append(elem)
+        except ReferenceError:
+            pass
 
     for wrapper in wrappers:
         wrapper.cache_clear()
