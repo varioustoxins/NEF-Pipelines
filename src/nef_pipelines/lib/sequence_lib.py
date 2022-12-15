@@ -329,12 +329,12 @@ def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]
     """
 
     residue_number_to_residue_name = {}
-    for row in loop_row_namespace_iter(sequence_frame):
+    for row in loop_row_namespace_iter(sequence_frame.loops[0]):
         if row.chain_code == chain_code:
             residue_number_to_residue_name[row.sequence_code] = row.residue_name
 
     result = Counter()
-    for residue_name in sorted(residue_number_to_residue_name):
+    for residue_name in sorted(residue_number_to_residue_name.values()):
         result[residue_name] += 1
 
     return result

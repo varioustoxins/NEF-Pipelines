@@ -167,6 +167,10 @@ def loop_row_dict_iter(
     :param convert: try to convert values to ints or floats if possible [default is True]
     :return: iterator of rows as dictionaries
     """
+
+    if not isinstance(loop, Loop):
+        raise Exception(f"loop must be loop you presented {type(loop)}")
+
     for row in loop:
         row = {tag: value for tag, value in zip(loop.tags, row)}
 
