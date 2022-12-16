@@ -1,5 +1,4 @@
 import os
-import sys
 from pathlib import Path
 from textwrap import dedent
 from typing import List
@@ -49,18 +48,54 @@ def test(
         main(command)
 
 
+def _find_pytest_root(root_path):
+
+    stdout = _run_pytest_and_exit_error(["--fixtures", root_path])
+
+    result = None
+
+    for line in stdout.split("\n"):
+
+        if line.startswith("rootdir:"):
+            spaced_fields = line.split()
+            fields = []
+
+            for field in spaced_fields:
+                fields.extend(field.split(","))
+            result = fields[1]
+            break
+
+    return result
+
+
 def _find_pytest_commands(root_path, targets):
     if not targets:
         targets = "*"
 
-    ret_code, stdout, stderr = run_and_read_pytest(
-        ["--collect-only", "-qqq", root_path]
-    )
+    stdout = _run_pytest_and_exit_error(["--collect-only", "-qq", root_path])
 
-    print(stdout)
+    pytest_root = _find_pytest_root(root_path)
+
+    if not pytest_root:
+        exit_error(f"couldn't find pytest root directory starting from: {root_path}")
+
+    tests = stdout.split("\n")[:-3]
+
+    result = [
+        Path(pytest_root) / test_path
+        for test_path in select_matching_tests(tests, targets)
+    ]
+
+    return result
+
+
+def _run_pytest_and_exit_error(commands):
+    ret_code, stdout, stderr = run_and_read_pytest(commands)
 
     if ret_code != 0:
-        output = f"""
+        msg = f"""
+        running pytest failed:
+
         return code: {ret_code}
         __________________________________________________________________stdout_______________________________________________________________
         {stdout}
@@ -69,14 +104,10 @@ def _find_pytest_commands(root_path, targets):
         {stderr}
         _______________________________________________________________________________________________________________________________________
         """
-        print(output, file=sys.stderr)
-        _exit_if_stderr(stdout)
 
-    tests = stdout.split("\n")[:-3]
+        exit_error(msg)
 
-    return [
-        Path.cwd() / test_path for test_path in select_matching_tests(tests, targets)
-    ]
+    return stdout
 
 
 def _exit_if_stderr(stderr):
