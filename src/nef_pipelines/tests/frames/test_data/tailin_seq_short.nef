@@ -1,0 +1,32 @@
+data_talin1
+
+save_nef_molecular_system_talin1
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system_talin1
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1      A   10     GLU   start    .   .
+     2      A   11     TYR   middle   .   .
+     3      A   12     ALA   middle   .   .
+     4      A   13     GLN   middle   .   .
+     5      A   14     PRO   middle   .   .
+     6      A   15     ARG   middle   .   .
+     7      A   16     LEU   middle   .   .
+     8      A   17     ARG   middle   .   .
+     9      A   18     LEU   middle   .   .
+     10     A   19     GLY   middle   .   .
+     11     A   20     PHE   middle   .   .
+     12     A   21     GLU   middle   .   .
+     13     A   22     ASP   end      .   .
+
+   stop_
+
+save_
