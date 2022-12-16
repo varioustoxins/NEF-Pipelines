@@ -194,7 +194,7 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
         result = iter(cached_file_stream(args.pipe))
     # pycharm doesn't treat stdstreams correcly and hangs
     elif not sys.stdin.isatty() and not running_in_pycharm():
-        result = cached_stdin()
+        result = iter(sys.stdin.read().split("\n"))
 
     return StringIteratorIO(result) if result else None
 
