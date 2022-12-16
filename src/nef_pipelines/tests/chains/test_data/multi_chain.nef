@@ -1,0 +1,26 @@
+data_test
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+          _nef_sequence.ccpn_comment
+          _nef_sequence.ccpn_chain_role
+          _nef_sequence.ccpn_compound_name
+          _nef_sequence.ccpn_chain_comment
+
+         1    A   3    HIS   .   .   .   .   .   Sec5   .
+         2    A   4    MET   .   .   .   .   .   Sec5   .
+         3    B   5    ARG   .   .   .   .   .   Sec5   .
+         4    B   6    GLN   .   .   .   .   .   Sec5   .
+         5    C   7    PRO   .   .   .   .   .   Sec5   .
+
+       stop_
+    save_
