@@ -226,7 +226,7 @@ def path_in_test_data(root: str, file_name: str) -> str:
     test_data_local = root_path(root) / "src" / "nef_pipelines" / "tests" / "test_data"
     test_data_root = path_in_parent_directory(root, "test_data")
 
-    if test_data_local.is_file():
+    if (Path(test_data_local) / file_name).is_file():
         test_data = test_data_local
     else:
         test_data = test_data_root
