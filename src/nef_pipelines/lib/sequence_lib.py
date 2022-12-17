@@ -388,12 +388,19 @@ def get_sequence() -> List[SequenceResidue]:
 
         entry = Entry.from_string(text)
 
-        if entry is not None:
-            frames = entry.get_saveframes_by_category("nef_molecular_system")
+        result = sequence_from_entry(entry)
 
-            if frames:
-                result = sequence_from_frame(frames[0])
+    return result
 
+
+def sequence_from_entry(entry):
+
+    result = None
+    if entry is not None:
+        frames = entry.get_saveframes_by_category("nef_molecular_system")
+
+        if frames:
+            result = sequence_from_frame(frames[0])
     return result
 
 
