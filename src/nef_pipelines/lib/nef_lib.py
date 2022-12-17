@@ -3,19 +3,13 @@ from argparse import Namespace
 from enum import auto
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Dict, Iterator, List, Union
+from typing import Dict, Iterator, List, Tuple, Union
 
 # from pandas import DataFrame
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import LowercaseStrEnum
 
-from nef_pipelines.lib.util import (
-    cached_stdin,
-    exit_error,
-    is_float,
-    is_int,
-    running_in_pycharm,
-)
+from nef_pipelines.lib.util import exit_error, is_float, is_int, running_in_pycharm
 
 NEF_CATEGORY_ATTR = "__NEF_CATEGORY__"
 
@@ -83,7 +77,7 @@ def select_frames_by_name(
     frames: Union[List[Saveframe], Entry],
     name_selectors: Union[List[str], str],
     exact=False,
-) -> List[Saveframe]:
+) -> Tuple[Saveframe]:
     """
     select frames  by names and wild cards, to avoid typing *s on the command line the match is greedy by default
     if an exact match is not found for one of the frames first time we search will all the name selectors turned into
@@ -122,7 +116,7 @@ def select_frames_by_name(
         name_selectors = [f"*{selector}*" for selector in name_selectors]
         result = match_frames(frames, name_selectors)
 
-    return list(result.values())
+    return tuple(result.values())
 
 
 # refactor to two functions one of which gets a TextIO
