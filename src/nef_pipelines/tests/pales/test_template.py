@@ -1,5 +1,4 @@
 import typer
-from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
@@ -8,7 +7,6 @@ from nef_pipelines.lib.test_lib import (
 )
 from nef_pipelines.transcoders.pales.exporters.template import template
 
-runner = CliRunner()
 app = typer.Typer()
 app.command()(template)
 
