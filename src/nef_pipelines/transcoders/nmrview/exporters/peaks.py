@@ -43,6 +43,145 @@ HEADING_TRANSLATIONS = {
 }
 
 
+# noinspection PyUnusedLocal
+@export_app.command()
+def peaks(
+    file_name_template: str = typer.Option(
+        "%s",
+        help="the template for the filename to export to %s will get replaced by the axis_name of the peak frame",
+        metavar="<peak-file.xpk>",
+    ),
+    frame_selectors: List[str] = typer.Argument(
+        None, help="the names of the frames to export", metavar="<frames>"
+    ),
+):
+    frame_selectors = parse_comma_separated_options(frame_selectors)
+
+    if len(frame_selectors) == 0:
+        frame_selectors = [
+            "*",
+        ]
+
+    entry = create_entry_from_stdin_or_exit()
+
+    SPECTRUM_CATEGORY = "nef_nmr_spectrum"
+    peaks = entry.get_saveframes_by_category(SPECTRUM_CATEGORY)
+
+    names_and_frames = {
+        frame.name[len(SPECTRUM_CATEGORY) :].lstrip("_"): frame for frame in peaks
+    }
+
+    selected_frames = {}
+    for frame_selector in frame_selectors:
+        selection = {
+            name: frame
+            for name, frame in names_and_frames.items()
+            if fnmatch(name, frame_selector)
+        }
+
+        selected_frames.update(selection)
+
+    if len(selected_frames) == 0:
+        for frame_selector in frame_selectors:
+            selection = {
+                name: frame
+                for name, frame in names_and_frames.items()
+                if fnmatch(name, f"*{frame_selector}*")
+            }
+
+            selected_frames.update(selection)
+
+    if not "%s" and len(selected_frames) > 1:
+        exit_error(
+            f"%s is not in the filename template and there is more than one file, template {file_name_template}"
+        )
+
+    # bad_characters = '''\
+    #     `:';~@$%^&().<>"
+    # '''
+    # replacements = '_' * len(bad_characters)
+    # translation_table = str.maketrans(bad_characters, replacements)
+
+    for frame_name, frame in selected_frames.items():
+        # peak_list_name = f'''{frame_name.translate(translation_table).strip('_')}.xpk'''
+
+        SPECTRUM_DIMESIONS = "_nef_spectrum_dimension"
+        PEAKS = "_nef_peak"
+        spectrum_dimensions = list(loop_row_namespace_iter(frame[SPECTRUM_DIMESIONS]))
+
+        spectrum_name = (
+            frame["ccpn_spectrum_file_path"][0]
+            if "ccpn_spectrum_file_path" in frame
+            else "unknown"
+        )
+        spectrum_name = Path(spectrum_name).parts[-1]
+
+        result = ["label dataset sw sf"]
+
+        axis_names = [
+            dimension.axis_code
+            if "axis_code" in dimension and dimension != NEF_UNKNOWN
+            else "unknown"
+            for dimension in spectrum_dimensions
+        ]
+
+        axis_names = _make_names_unique(axis_names)
+
+        result.append(" ".join(axis_names))
+
+        # TODO: issue warning if spectrum name doesn't end in nv!
+        nmrview_spectrum_name = Path(spectrum_name)
+        nmrview_spectrum_name = f"{nmrview_spectrum_name.stem}.nv"
+        result.append(nmrview_spectrum_name)
+
+        spectrometer_frequencies = [
+            dimension.spectrometer_frequency for dimension in spectrum_dimensions
+        ]
+        spectrometer_frequencies = _convert_to_floats_or_exit(
+            spectrometer_frequencies, "spectrometer_frequencies"
+        )
+
+        sweep_widths = [dimension.spectral_width for dimension in spectrum_dimensions]
+        sweep_widths = _convert_to_floats_or_exit(sweep_widths, "sweep_widths")
+
+        sweep_widths = [
+            sweep_width * spectrometer_frequency
+            for sweep_width, spectrometer_frequency in zip(
+                sweep_widths, spectrometer_frequencies
+            )
+        ]
+
+        sweep_widths = [f"{{{sweep_width:.3f}}}" for sweep_width in sweep_widths]
+        result.append(" ".join(sweep_widths))
+
+        spectrometer_frequencies = [
+            f"{{{spectrometer_frequency:.3f}}}"
+            for spectrometer_frequency in spectrometer_frequencies
+        ]
+        result.append(" ".join(spectrometer_frequencies))
+
+        print("\n".join(result))
+
+        headings = [
+            f"{axis_name}.{item}" for axis_name in axis_names for item in "LPWBEJU"
+        ]
+        headings.extend("vol int stat comment flag0".split())
+        headings.insert(0, "")
+
+        table = [headings]
+
+        pipeline_peaks = []
+        for peak_row in list(loop_row_dict_iter(frame[PEAKS])):
+            pipeline_peaks.append(_row_to_peak(axis_names, peak_row))
+
+        for peak in pipeline_peaks:
+
+            row = _build_nmrview_row(peak, axis_names)
+            table.append(row)
+
+        print(tabulate(table, tablefmt="plain"))
+
+
 def _peak_to_atom_labels(row: Namespace) -> List[AtomLabel]:
     result = []
     for i in range(1, 15):
@@ -300,142 +439,3 @@ def _make_names_unique(axis_names: List[str]) -> List[str]:
         result.append(axis_name)
 
     return result
-
-
-# noinspection PyUnusedLocal
-@export_app.command()
-def peaks(
-    file_name_template: str = typer.Option(
-        "%s",
-        help="the template for the filename to export to %s will get replaced by the axis_name of the peak frame",
-        metavar="<peak-file.xpk>",
-    ),
-    frame_selectors: List[str] = typer.Argument(
-        None, help="the names of the frames to export", metavar="<frames>"
-    ),
-):
-    frame_selectors = parse_comma_separated_options(frame_selectors)
-
-    if len(frame_selectors) == 0:
-        frame_selectors = [
-            "*",
-        ]
-
-    entry = create_entry_from_stdin_or_exit()
-
-    SPECTRUM_CATEGORY = "nef_nmr_spectrum"
-    peaks = entry.get_saveframes_by_category(SPECTRUM_CATEGORY)
-
-    names_and_frames = {
-        frame.name[len(SPECTRUM_CATEGORY) :].lstrip("_"): frame for frame in peaks
-    }
-
-    selected_frames = {}
-    for frame_selector in frame_selectors:
-        selection = {
-            name: frame
-            for name, frame in names_and_frames.items()
-            if fnmatch(name, frame_selector)
-        }
-
-        selected_frames.update(selection)
-
-    if len(selected_frames) == 0:
-        for frame_selector in frame_selectors:
-            selection = {
-                name: frame
-                for name, frame in names_and_frames.items()
-                if fnmatch(name, f"*{frame_selector}*")
-            }
-
-            selected_frames.update(selection)
-
-    if not "%s" and len(selected_frames) > 1:
-        exit_error(
-            f"%s is not in the filename template and there is more than one file, template {file_name_template}"
-        )
-
-    # bad_characters = '''\
-    #     `:';~@$%^&().<>"
-    # '''
-    # replacements = '_' * len(bad_characters)
-    # translation_table = str.maketrans(bad_characters, replacements)
-
-    for frame_name, frame in selected_frames.items():
-        # peak_list_name = f'''{frame_name.translate(translation_table).strip('_')}.xpk'''
-
-        SPECTRUM_DIMESIONS = "_nef_spectrum_dimension"
-        PEAKS = "_nef_peak"
-        spectrum_dimensions = list(loop_row_namespace_iter(frame[SPECTRUM_DIMESIONS]))
-
-        spectrum_name = (
-            frame["ccpn_spectrum_file_path"][0]
-            if "ccpn_spectrum_file_path" in frame
-            else "unknown"
-        )
-        spectrum_name = Path(spectrum_name).parts[-1]
-
-        result = ["label dataset sw sf"]
-
-        axis_names = [
-            dimension.axis_code
-            if "axis_code" in dimension and dimension != NEF_UNKNOWN
-            else "unknown"
-            for dimension in spectrum_dimensions
-        ]
-
-        axis_names = _make_names_unique(axis_names)
-
-        result.append(" ".join(axis_names))
-
-        # TODO: issue warning if spectrum name doesn't end in nv!
-        nmrview_spectrum_name = Path(spectrum_name)
-        nmrview_spectrum_name = f"{nmrview_spectrum_name.stem}.nv"
-        result.append(nmrview_spectrum_name)
-
-        spectrometer_frequencies = [
-            dimension.spectrometer_frequency for dimension in spectrum_dimensions
-        ]
-        spectrometer_frequencies = _convert_to_floats_or_exit(
-            spectrometer_frequencies, "spectrometer_frequencies"
-        )
-
-        sweep_widths = [dimension.spectral_width for dimension in spectrum_dimensions]
-        sweep_widths = _convert_to_floats_or_exit(sweep_widths, "sweep_widths")
-
-        sweep_widths = [
-            sweep_width * spectrometer_frequency
-            for sweep_width, spectrometer_frequency in zip(
-                sweep_widths, spectrometer_frequencies
-            )
-        ]
-
-        sweep_widths = [f"{{{sweep_width:.3f}}}" for sweep_width in sweep_widths]
-        result.append(" ".join(sweep_widths))
-
-        spectrometer_frequencies = [
-            f"{{{spectrometer_frequency:.3f}}}"
-            for spectrometer_frequency in spectrometer_frequencies
-        ]
-        result.append(" ".join(spectrometer_frequencies))
-
-        print("\n".join(result))
-
-        headings = [
-            f"{axis_name}.{item}" for axis_name in axis_names for item in "LPWBEJU"
-        ]
-        headings.extend("vol int stat comment flag0".split())
-        headings.insert(0, "")
-
-        table = [headings]
-
-        pipeline_peaks = []
-        for peak_row in list(loop_row_dict_iter(frame[PEAKS])):
-            pipeline_peaks.append(_row_to_peak(axis_names, peak_row))
-
-        for peak in pipeline_peaks:
-
-            row = _build_nmrview_row(peak, axis_names)
-            table.append(row)
-
-        print(tabulate(table, tablefmt="plain"))

@@ -12,7 +12,7 @@ from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     cached_file_stream,
     exit_error,
-    get_pipe_file_or_exit,
+    get_pipe_file_text_or_exit,
     process_stream_and_add_frames,
 )
 from nef_pipelines.transcoders.nmrview import import_app
@@ -107,9 +107,9 @@ def _get_sequence_or_exit(args):
     sequence = None
     if not sequence_file:
         try:
-            stream = get_pipe_file_or_exit(args)
+            lines = get_pipe_file_text_or_exit(args)
 
-            entry = Entry.from_file(stream)
+            entry = Entry.from_string(lines)
             frames = entry.get_saveframes_by_category("nef_molecular_system")
             sequence = sequence_from_frames(frames)
 
