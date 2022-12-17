@@ -199,6 +199,41 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     return StringIteratorIO(result) if result else None
 
 
+def get_pipe_file_text(args: Namespace) -> Optional[str]:
+    """
+    get an input on stdin or from an argument called pipe
+
+    Args:
+        args (Namespace): command line arguments
+
+    Returns:
+        TextIO: an input stream or None
+
+    """
+
+    result = None
+    if "pipe" in args and args.pipe:
+        result = open(args.pipe, "r").read()
+    # pycharm doesn't treat stdstreams correcly and hangs
+    elif not sys.stdin.isatty() and not running_in_pycharm():
+        result = sys.stdin.read()
+
+    return result if result else None
+
+
+def get_pipe_file_text_or_exit(args: Namespace) -> Optional[TextIO]:
+
+    try:
+        result = get_pipe_file_text(args)
+    except Exception as e:
+        exit_error("couldn't read from stdin or -pipe file", e)
+
+    if result is None:
+        exit_error("couldn't read from stdin and no -pipe in command line arguments")
+
+    return result
+
+
 def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
 
     try:
