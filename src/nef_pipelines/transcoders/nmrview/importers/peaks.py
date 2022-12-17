@@ -491,7 +491,9 @@ def create_spectrum_frame(args, entry_name, peaks_list):
     return frame
 
 
-def remove_suffix(string, suffix):
+# TODO: can be replaced by str.removesuffix when min python version >= 3.9
+def _remove_suffix(string: str, suffix: str) -> str:
+
     result = string
     if string.endswith(suffix):
         result = string[: -len(suffix)]
@@ -501,6 +503,6 @@ def remove_suffix(string, suffix):
 
 def make_peak_list_entry_name(peaks_list):
     entry_name = peaks_list.peak_list_data.data_set.replace(" ", "_")
-    entry_name = remove_suffix(entry_name, ".nv")
+    entry_name = _remove_suffix(entry_name, ".nv")
     entry_name = entry_name.replace(".", "_")
     return entry_name
