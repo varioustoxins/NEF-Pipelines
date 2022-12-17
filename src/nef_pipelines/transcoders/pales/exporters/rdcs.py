@@ -11,7 +11,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames_by_name,
 )
 from nef_pipelines.lib.sequence_lib import (
-    get_sequence_or_exit,
+    sequence_from_entry,
     sequence_residues_to_sequence_3let,
     translate_3_to_1,
 )
@@ -54,10 +54,13 @@ def rdcs(
 ):
     """- convert nef rdc restraints to pales"""
 
+    entry = create_entry_from_stdin_or_exit()
+
     if not chains:
         chains = ["A"]
     weights = _parse_weights(raw_weights)
-    sequence = get_sequence_or_exit()
+
+    sequence = sequence_from_entry(entry)
 
     sequence_3_let = sequence_residues_to_sequence_3let(sequence)
 
@@ -65,11 +68,11 @@ def rdcs(
 
     NEF_RDC_CATEGORY = "nef_rdc_restraint_list"
 
-    entry = create_entry_from_stdin_or_exit()
     rdc_frames = entry.get_saveframes_by_category(NEF_RDC_CATEGORY)
 
-    if frame_selectors is []:
-        frame_selectors = [""]
+    if not frame_selectors:
+        frame_selectors = ["*"]
+
     frames = select_frames_by_name(rdc_frames, frame_selectors)
 
     restaints = _rdc_restraints_from_frames(frames, chains, weights)
