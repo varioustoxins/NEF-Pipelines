@@ -376,7 +376,7 @@ def is_int(value: str) -> bool:
     try:
         int(value)
         result = True
-    except ValueError:
+    except (ValueError, TypeError):
         pass
 
     return result
@@ -396,7 +396,7 @@ def is_float(value: str) -> bool:
     try:
         float(value)
         result = True
-    except ValueError:
+    except (ValueError, TypeError):
         pass
 
     return result
