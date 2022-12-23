@@ -12,6 +12,8 @@ from strenum import LowercaseStrEnum
 from nef_pipelines.lib.util import exit_error, is_float, is_int, running_in_pycharm
 
 NEF_CATEGORY_ATTR = "__NEF_CATEGORY__"
+NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
+NEF_METADATA = "nef_nmr_meta_data"
 
 UNUSED = "."
 
@@ -136,7 +138,7 @@ def create_entry_from_stdin_or_exit() -> Entry:
                 lines = "".join(stdin_lines)
 
             if len(lines.strip()) == 0:
-                raise Exception("stdin is empty")
+                exit_error("stdin is empty")
             else:
                 entry = Entry.from_string(lines)
         else:
@@ -246,13 +248,12 @@ def select_frames(
 def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
     """
     read a star entry from stdin or a file or exit.
-    note 1. the stdin stream is cached
-         2. this exits with an error if stdin can't be read because its a terminal
+    note this exits with an error if stdin can't be read because its a terminal
 
     :param file:
     :return:
     """
-    if file is None:
+    if file is None or file == Path("-"):
         entry = create_entry_from_stdin_or_exit()
     else:
         try:

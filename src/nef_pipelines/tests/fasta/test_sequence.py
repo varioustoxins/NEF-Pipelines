@@ -1,6 +1,7 @@
 import typer
 from typer.testing import CliRunner
 
+from nef_pipelines.lib.nef_lib import NEF_MOLECULAR_SYSTEM
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
@@ -8,8 +9,6 @@ from nef_pipelines.lib.test_lib import (
     run_and_report,
 )
 from nef_pipelines.transcoders.fasta.importers.sequence import sequence
-
-MOLECULAR_SYSTEM = "nef_molecular_system"
 
 runner = CliRunner()
 app = typer.Typer()
@@ -45,7 +44,7 @@ def test_3aa(clear_cache):
     path = path_in_test_data(__file__, "3aa.fasta")
     result = run_and_report(app, [path])
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -84,7 +83,7 @@ def test_3aa_x2(clear_cache):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
 
@@ -121,6 +120,6 @@ def test_3aa_x2_off_10_b(clear_cache):
     path = path_in_test_data(__file__, "3aa_x2.fasta")
     result = run_and_report(app, ["--starts", "1,11", path])
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB_B_start_11, mol_sys_result)

@@ -1,6 +1,7 @@
 import typer
 from freezegun import freeze_time
 
+from nef_pipelines.lib.nef_lib import NEF_METADATA, NEF_MOLECULAR_SYSTEM
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
@@ -8,9 +9,6 @@ from nef_pipelines.lib.test_lib import (
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrview.importers.sequence import sequence
-
-MOLECULAR_SYSTEM = "nef_molecular_system"
-METADATA_NMRVIEW = "nef_nmr_meta_data"
 
 app = typer.Typer()
 app.command()(sequence)
@@ -67,7 +65,7 @@ def test_3aa():
     path = path_in_test_data(__file__, "3aa.seq")
     result = run_and_report(app, [path], input=HEADER)
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -78,7 +76,7 @@ def test_3aa10():
     path = path_in_test_data(__file__, "3aa10.seq")
     result = run_and_report(app, [path], input=HEADER)
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
@@ -120,8 +118,8 @@ def test_pipe_header(fixed_seed):
     path_header = path_in_test_data(__file__, "test_header_entry.txt")
     result = run_and_report(app, ["--pipe", path_header, path])
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
-    meta_data_result = isolate_frame(result.stdout, "%s" % METADATA_NMRVIEW)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+    meta_data_result = isolate_frame(result.stdout, "%s" % NEF_METADATA)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
     assert_lines_match(EXPECTED_HEADER, meta_data_result)
@@ -134,6 +132,6 @@ def test_header(fixed_seed):
     path = path_in_test_data(__file__, "3aa10.seq")
     result = run_and_report(app, [path], input=HEADER)
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)

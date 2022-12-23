@@ -1,5 +1,6 @@
 import typer
 
+from nef_pipelines.lib.nef_lib import NEF_MOLECULAR_SYSTEM
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
@@ -12,9 +13,6 @@ app = typer.Typer()
 app.command()(sequence)
 
 HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
-
-MOLECULAR_SYSTEM = "nef_molecular_system"
-PDB_IMPORT_SEQUENCE = ["pdb", "import", "sequence"]
 
 EXPECTED_3AA = """\
 save_nef_molecular_system
@@ -45,10 +43,8 @@ def test_3aa():
     path = path_in_test_data(__file__, "3aa.pdb")
     result = run_and_report(app, [path], input=HEADER)
 
-    print(result.stdout)
-
     assert result.exit_code == 0
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -87,7 +83,7 @@ def test_3a_ab():
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
 
@@ -124,7 +120,7 @@ def test_3a_segid_cccc_dddd():
     path = path_in_test_data(__file__, "3a_ab.pdb")
     result = run_and_report(app, ["--segid", path], input=HEADER)
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
 
@@ -137,7 +133,7 @@ def test_3a_force_segid_cccc_dddd():
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_CCCC_DDDD, mol_sys_result)
 

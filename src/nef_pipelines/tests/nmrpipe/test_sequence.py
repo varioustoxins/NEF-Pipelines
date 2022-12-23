@@ -1,6 +1,7 @@
 import typer as typer
 from freezegun import freeze_time
 
+from nef_pipelines.lib.nef_lib import NEF_METADATA, NEF_MOLECULAR_SYSTEM
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
@@ -10,10 +11,6 @@ from nef_pipelines.lib.test_lib import (
 from nef_pipelines.transcoders.nmrpipe.importers.sequence import sequence
 
 HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
-
-MOLECULAR_SYSTEM_NMRPIPE = "nef_molecular_system"
-METADATA_NMRPIPE = "nef_nmr_meta_data"
-
 
 app = typer.Typer()
 app.command()(sequence)
@@ -71,7 +68,7 @@ def test_3aa():
     result = run_and_report(app, [path], input=HEADER)
 
     assert result.exit_code == 0
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
 
@@ -84,7 +81,7 @@ def test_3aa10():
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
@@ -129,8 +126,8 @@ def test_pipe_header(fixed_seed):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
-    meta_data_result = isolate_frame(result.stdout, "%s" % METADATA_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+    meta_data_result = isolate_frame(result.stdout, "%s" % NEF_METADATA)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
     assert_lines_match(EXPECTED_HEADER, meta_data_result)
@@ -145,6 +142,6 @@ def test_header(fixed_seed):
 
     assert result.exit_code == 0
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % MOLECULAR_SYSTEM_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
