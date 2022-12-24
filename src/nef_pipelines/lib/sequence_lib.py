@@ -395,7 +395,7 @@ def get_sequence() -> List[SequenceResidue]:
 
 def sequence_from_entry(entry):
 
-    result = None
+    result = []
     if entry is not None:
         frames = entry.get_saveframes_by_category("nef_molecular_system")
 
