@@ -468,7 +468,7 @@ def sequence_3let_to_res(
 def get_chain_starts(residues: List[SequenceResidue]) -> Dict[str, int]:
     """
     from a list of residues get the lowest residue number for each chain ignoring any sequence codes that
-    can't be convetrted to an integer
+    can't be converted to an integer
 
     :param residues:  a list of residues from one ore more chains
     :return: a dictionary of chain starts by chain_code
