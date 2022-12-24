@@ -74,7 +74,6 @@ def get_linking(
     get the correct linking for residue in a standard sequenced chain
 
     Args:
-        target_index (int):  index in the sequence
         target_sequence (List[SequenceResidue]) : the sequence
         no_chain_start (List[str]): if the chain isn't in the list cap it at the start
         no_end (List[str]): if the chain isn't in the list cap it at the end
