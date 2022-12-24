@@ -177,6 +177,33 @@ def running_in_pycharm():
     return "PYCHARM_HOSTED" in os.environ
 
 
+def get_text_from_file_or_exit(file_name: Path) -> str:
+    """
+    get text from stdin or from a file argument
+
+    Args:
+        file_name (str): name of the file Path('-') indicates stdin
+
+    Returns:
+        str: text from file
+
+    """
+
+    result = None
+
+    if file_name == Path("-") or not file_name:
+        if sys.stdin.isatty():
+            exit_error("attempting to read from a terminal")
+        result = sys.stdin.read()
+    else:
+        try:
+            result = open(file_name).read()
+        except IOError as e:
+            exit_error(f"couldn't read from {file_name} because of an error", e)
+
+    return result
+
+
 def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     """
     get an input on stdin or from an argument called pipe
