@@ -9,7 +9,10 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_entry, sequence_to_nef_frame
-from nef_pipelines.lib.util import get_file_text, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    get_text_from_file_or_exit,
+    parse_comma_separated_options,
+)
 from nef_pipelines.transcoders.xplor import import_app
 from nef_pipelines.transcoders.xplor.psf_lib import parse_xplor_PSF
 
@@ -62,7 +65,7 @@ def sequence(
     no_chain_ends = parse_comma_separated_options(no_chain_ends)
 
     for file_path in file_paths:
-        text = get_file_text(file_path)
+        text = get_text_from_file_or_exit(file_path)
         sequence_residues.update(parse_xplor_PSF(text))
 
     sequence_frame = sequence_to_nef_frame(
