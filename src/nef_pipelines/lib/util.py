@@ -4,6 +4,7 @@ import sys
 import traceback
 from argparse import Namespace
 from pathlib import Path
+from textwrap import dedent
 from typing import Dict, Iterator, List, Optional, TextIO, TypeVar, Union
 
 from cacheable_iter import iter_cache
@@ -339,7 +340,10 @@ def exit_error(msg, exception=None):
         traceback.print_exception(*exc_info, file=sys.stderr)
         print(file=sys.stderr)
 
-    print(f"ERROR: {msg}", file=sys.stderr)
+    msg = dedent(msg).split("\n")
+    print(f"ERROR: {msg[0]}", file=sys.stderr)
+    for line in msg[1:]:
+        print(f"       {line}", file=sys.stderr)
     print("exiting...", file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
