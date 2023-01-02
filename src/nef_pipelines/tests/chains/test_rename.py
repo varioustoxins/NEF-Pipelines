@@ -145,7 +145,7 @@ def test_rename_select_frame_by_name(clear_cache):
     path = path_in_test_data(__file__, "multi_chain_shifts.nef")
 
     result = run_and_report(
-        app, [*RENAME_CHAINS_A_E, "--frame", "test"], input=open(path)
+        app, ["--frame", "test", *RENAME_CHAINS_A_E], input=open(path)
     )
 
     if result.exit_code != 0:
@@ -218,7 +218,7 @@ def test_rename_select_frame_by_category(clear_cache):
     path = path_in_test_data(__file__, "multi_chain_shifts.nef")
     input = open(path).read()
 
-    command = [*RENAME_CHAINS_A_E, "--frame", "mol", "--category"]
+    command = [*RENAME_CHAINS_A_E, "--frame", "mol", "--selector-type", "category"]
 
     result = run_and_report(app, command, input=input)
 
