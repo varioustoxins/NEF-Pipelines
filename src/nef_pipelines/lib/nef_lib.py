@@ -29,6 +29,10 @@ class SelectionType(LowercaseStrEnum):
         return self.value, str(other).upper()
 
 
+SELECTORS_LOWER = ", ".join(
+    [selector.lower() for selector in SelectionType.__members__]
+)
+
 # currently disabled as they add a dependency on pandas and numpy
 # def loop_to_dataframe(loop: Loop) -> DataFrame:
 #     """
