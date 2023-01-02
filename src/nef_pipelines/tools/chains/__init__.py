@@ -14,3 +14,4 @@ if nef_app.app:
     import nef_pipelines.tools.chains.clone  # noqa: F401
     import nef_pipelines.tools.chains.list  # noqa: F401
     import nef_pipelines.tools.chains.rename  # noqa: F401
+    import nef_pipelines.tools.chains.renumber  # noqa: F401
