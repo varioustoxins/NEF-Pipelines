@@ -85,9 +85,9 @@ def select_frames_by_name(
     exact=False,
 ) -> Tuple[Saveframe]:
     """
-    select frames  by names and wild cards, to avoid typing *s on the command line the match is greedy by default
-    if an exact match is not found for one of the frames first time we search will all the name selectors turned into
-    wild cards by surrounding them with the * as a fence so name_selector-> *name_selector*
+    select frames  by names and wild cards, to avoid typing *s on the command line the match is greedy by default,
+    if an exact match is not found for one of the frames first time we search again with all the name selectors
+    turned into wild cards by surrounding them with the * as a fence so name_selector-> *name_selector*
 
     :param frames: the list of frames or entry to search
     :param name_selectors: a single string or list of strings to use to match frame names, selectors can contain
