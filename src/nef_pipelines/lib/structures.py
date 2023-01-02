@@ -37,6 +37,28 @@ class PeakAxis:
 
 
 @dataclass
+class DistanceRestraint:
+    atom_list_1: List[AtomLabel]
+    atom_list_2: List[AtomLabel]
+
+    distance: float
+    distance_minus: float
+    distance_plus: float
+
+
+@dataclass
+class DihedralRestraint:
+    atom_list_1: List[AtomLabel]
+    atom_list_2: List[AtomLabel]
+    atom_list_3: List[AtomLabel]
+    atom_list_4: List[AtomLabel]
+
+    target: float
+    lower_limit: float
+    upper_limit: float
+
+
+@dataclass
 class PeakValues:
     serial: int
 
