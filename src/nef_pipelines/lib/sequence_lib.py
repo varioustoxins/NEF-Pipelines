@@ -403,15 +403,34 @@ def sequence_from_entry(entry):
     return result
 
 
-def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
+ANY_CHAIN = "ANY_CHAIN"
+
+
+def sequence_from_frame(
+    frame: Saveframe, chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN
+) -> List[SequenceResidue]:
 
     """
     read sequences from a nef molecular system save frame
     can raise Exceptions
 
     :param frame: the save frame to read residues from, must have category nef molecular system
+    :param chain_code_to_select: the chain codes to select,t this can be either a string or list of strings,
+                                 any chain is selected using the instance of the constant string ANY_CHAIN [default]
     :return: a list of parsed residues and chains, in the order they were read
     """
+
+    if chain_codes_to_select is not ANY_CHAIN and isinstance(
+        chain_codes_to_select, str
+    ):
+        chain_codes_to_select = set(
+            [
+                chain_codes_to_select,
+            ]
+        )
+    elif chain_codes_to_select is not ANY_CHAIN:
+        chain_codes_to_select = set(chain_codes_to_select)
+
     residues = OrderedSet()
 
     if frame.category != "nef_molecular_system":
@@ -429,20 +448,21 @@ def sequence_from_frame(frame: Saveframe) -> List[SequenceResidue]:
 
     for line in loop:
         chain_code = line[chain_code_index]
-        sequence_code = line[sequence_code_index]
-        residue_name = line[residue_name_index]
-        linking = (
-            Linking[line[linking_index].upper()]
-            if line[linking_index] != NEF_UNKNOWN
-            else None
-        )
-        residue = SequenceResidue(
-            chain_code=chain_code,
-            sequence_code=sequence_code,
-            residue_name=residue_name,
-            linking=linking,
-        )
-        residues.append(residue)
+        if chain_codes_to_select is ANY_CHAIN or chain_code in chain_codes_to_select:
+            sequence_code = line[sequence_code_index]
+            residue_name = line[residue_name_index]
+            linking = (
+                Linking[line[linking_index].upper()]
+                if line[linking_index] != NEF_UNKNOWN
+                else None
+            )
+            residue = SequenceResidue(
+                chain_code=chain_code,
+                sequence_code=sequence_code,
+                residue_name=residue_name,
+                linking=linking,
+            )
+            residues.append(residue)
 
     return list(residues)
 

@@ -2,7 +2,7 @@ from itertools import islice
 from textwrap import dedent
 
 import pytest
-from pynmrstar import Saveframe
+from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
@@ -12,9 +12,11 @@ from nef_pipelines.lib.sequence_lib import (
     get_chain_starts,
     offset_chain_residues,
     sequence_3let_to_sequence_residues,
+    sequence_from_frame,
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import SequenceResidue
+from nef_pipelines.lib.test_lib import path_in_test_data
 
 ABC_SEQUENCE_1LET = "acdefghiklmnpqrstvwy"
 ABC_SEQUENCE_3LET = (
@@ -243,5 +245,39 @@ def test_chain_code_iter_with_exclude():
     assert EXPECTED == result
 
 
-if __name__ == "__main__":
-    pytest.main([f"{__file__}", "-vv"])
+def test_sequence_from_frame():
+    path = path_in_test_data(__file__, "multi_chain.nef")
+
+    frames = Entry.from_file(path).get_saveframes_by_category("nef_molecular_system")
+
+    sequence = sequence_from_frame(frames[0], chain_codes_to_select=["B", "C"])
+
+    EXPECTED = [
+        SequenceResidue(
+            chain_code="B",
+            sequence_code="5",
+            residue_name="ARG",
+        ),
+        SequenceResidue(chain_code="B", sequence_code="6", residue_name="GLN"),
+        SequenceResidue(chain_code="C", sequence_code="7", residue_name="PRO"),
+    ]
+
+    assert sequence == EXPECTED
+
+
+def test_sequence_from_frame_all():
+    path = path_in_test_data(__file__, "multi_chain.nef")
+
+    frames = Entry.from_file(path).get_saveframes_by_category("nef_molecular_system")
+
+    sequence = sequence_from_frame(frames[0])
+
+    EXPECTED = [
+        SequenceResidue(chain_code="A", sequence_code="3", residue_name="HIS"),
+        SequenceResidue(chain_code="A", sequence_code="4", residue_name="MET"),
+        SequenceResidue(chain_code="B", sequence_code="5", residue_name="ARG"),
+        SequenceResidue(chain_code="B", sequence_code="6", residue_name="GLN"),
+        SequenceResidue(chain_code="C", sequence_code="7", residue_name="PRO"),
+    ]
+
+    assert sequence == EXPECTED
