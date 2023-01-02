@@ -227,7 +227,7 @@ def select_frames(
     filters = list(filters)
     filters.extend(star_filters)
 
-    result = []
+    result = {}
     for frame in entry.frame_dict.values():
 
         accept_frame_category = any(
@@ -237,19 +237,17 @@ def select_frames(
 
         if (
             selector_type in (SelectionType.NAME, SelectionType.ANY)
-            and not accept_frame_name
+            and accept_frame_name
         ):
-            continue
+            result[frame.category, frame.name] = frame
 
         if (
             selector_type in (SelectionType.CATEGORY, SelectionType.ANY)
-            and not accept_frame_category
+            and accept_frame_category
         ):
-            continue
+            result[frame.category, frame.name] = frame
 
-        result.append(frame)
-
-    return result
+    return list(result.values())
 
 
 def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
