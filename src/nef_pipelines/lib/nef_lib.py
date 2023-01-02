@@ -216,6 +216,9 @@ def select_frames(
     :return: a list of selected saveframes
     """
 
+    if not filters:
+        filters = ["*"]
+
     star_filters = [f"*{filter}*" for filter in filters]
     filters = list(filters)
     filters.extend(star_filters)
