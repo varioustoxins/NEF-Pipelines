@@ -55,6 +55,9 @@ def sequence(
     # 1. we read in the residues and add them to the current sequence frame if there is one
     # 2. this means if you have a sequence frame already you may want to delete it if it clashes...
 
+    if len(file_paths) == 0:
+        exit_error("no psf files provided to read sequences from")
+
     if input_path:
         entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
     else:

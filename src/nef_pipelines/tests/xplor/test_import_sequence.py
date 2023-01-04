@@ -46,8 +46,13 @@ def test_3ab(clear_cache):
     path = path_in_test_data(__file__, "3a_ab.psf")
     result = run_and_report(app, [path])
 
-    assert result.exit_code == 0
+    result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
-    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+    assert_lines_match(EXPECTED_3A_AB, result)
 
-    assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
+
+def test_no_sequence_files(clear_cache):
+
+    result = run_and_report(app, [], expected_exit_code=1)
+
+    assert "no psf files provided to read sequences from" in result.stdout
