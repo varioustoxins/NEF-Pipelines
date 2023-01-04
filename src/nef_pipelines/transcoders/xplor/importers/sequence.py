@@ -13,6 +13,7 @@ from nef_pipelines.lib.util import (
     get_text_from_file_or_exit,
     parse_comma_separated_options,
 )
+from nef_pipelines.tools.offset_shifts import exit_error
 from nef_pipelines.transcoders.xplor import import_app
 from nef_pipelines.transcoders.xplor.psf_lib import parse_xplor_PSF
 
@@ -64,9 +65,15 @@ def sequence(
     no_chain_starts = parse_comma_separated_options(no_chain_starts)
     no_chain_ends = parse_comma_separated_options(no_chain_ends)
 
+    xplor_psf_residues = []
     for file_path in file_paths:
         text = get_text_from_file_or_exit(file_path)
-        sequence_residues.update(parse_xplor_PSF(text))
+        xplor_psf_residues = parse_xplor_PSF(text)
+
+    if len(xplor_psf_residues) == 0:
+        exit_error(f"no residues read from {input_path}")
+
+    sequence_residues.update(xplor_psf_residues)
 
     sequence_frame = sequence_to_nef_frame(
         sequence_residues, no_chain_starts, no_chain_ends
