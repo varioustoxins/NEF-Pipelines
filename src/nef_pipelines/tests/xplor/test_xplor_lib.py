@@ -79,20 +79,20 @@ def test_read_multiple_dihedral_restraints():
     assert len(result) == 2
 
     assert result[0].as_list() == [
-        ["AAAA", 6, "C"],
-        ["AAAA", 7, "N"],
-        ["AAAA", 7, "CA"],
-        ["AAAA", 7, "C"],
+        ["AAAA", 1, "C"],
+        ["AAAA", 2, "N"],
+        ["AAAA", 2, "CA"],
+        ["AAAA", 2, "C"],
         1.0,
         -45.7,
         120.5,
         2,
     ]
     assert result[1].as_list() == [
-        ["AAAA", 7, "N"],
-        ["AAAA", 7, "CA"],
-        ["AAAA", 7, "C"],
-        ["AAAA", 8, "N"],
+        ["AAAA", 2, "N"],
+        ["AAAA", 2, "CA"],
+        ["AAAA", 2, "C"],
+        ["AAAA", 3, "N"],
         1.0,
         65.4,
         120.7,
