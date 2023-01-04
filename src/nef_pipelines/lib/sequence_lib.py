@@ -371,7 +371,7 @@ def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
 
     if file_name == STDIN and sys.stdin.isatty():
         exit_error(
-            "trying to read sequence from stdin but stdin is not a stream [did you forget to add a nef file to your "
+            "trying to read sequence from stdin, but stdin is not a stream [did you forget to add a nef file to your "
             "pipeline?]"
         )
 
@@ -392,7 +392,7 @@ def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
     try:
         text = fh.read()
     except Exception as e:
-        msg = f"couldn't read NEF data from  {display_file_name}"
+        msg = f"couldn't read NEF data from {display_file_name}"
         exit_error(msg, e)
 
     try:
