@@ -2,6 +2,7 @@ import string
 import sys
 from collections import Counter
 from dataclasses import replace
+from pathlib import Path
 from textwrap import dedent
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -13,14 +14,9 @@ from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
 
 # from nef_pipelines.lib.nef_lib import loop_to_dataframe
 from nef_pipelines.lib.structures import Linking, SequenceResidue
-from nef_pipelines.lib.util import (
-    cached_stdin,
-    chunks,
-    exit_error,
-    is_int,
-    running_in_pycharm,
-)
+from nef_pipelines.lib.util import chunks, exit_error, is_int, running_in_pycharm
 
+STDIN = Path("-")
 NEF_CHAIN_CODE = "chain_code"
 
 
@@ -339,14 +335,17 @@ def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]
     return result
 
 
-def get_sequence_or_exit() -> Optional[List[SequenceResidue]]:
+def get_sequence_or_exit(
+    file_name: Path = Path("-"),
+) -> Optional[List[SequenceResidue]]:
     """
-    read a sequence from a nef molecular system on stdin or exit
+    read a sequence from a nef molecular system on a file or stdin or exit, return a list of residues
 
+    file_name: a path to read the nef from Path('-') read from stdin
     :return: a list of parsed residues and chains, in the order they were read
     """
     try:
-        result = get_sequence()
+        result = get_sequence(file_name)
     except Exception as e:
         msg = "couldn't read sequence from nef input stream, either no stream or no nef molecular system frame"
         exit_error(msg, e)
@@ -358,10 +357,11 @@ def get_sequence_or_exit() -> Optional[List[SequenceResidue]]:
     return result
 
 
-def get_sequence() -> List[SequenceResidue]:
+def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
     """
     read a sequence from a nef molecular system on stdin and return a list of residues
 
+    file_name: a path to read the nef from Path('-') read from stdin
     can raise Exceptions
 
     :return:a list of parsed residues and chains, in the order they were read
@@ -369,7 +369,7 @@ def get_sequence() -> List[SequenceResidue]:
 
     result = []
 
-    if sys.stdin.isatty():
+    if file_name == STDIN and sys.stdin.isatty():
         exit_error(
             "trying to read sequence from stdin but stdin is not a stream [did you forget to add a nef file to your "
             "pipeline?]"
@@ -380,14 +380,28 @@ def get_sequence() -> List[SequenceResidue]:
             "reading from stdin doesn't work in pycharm debug environment as there is no shell..."
         )
 
-    stream = cached_stdin()
+    display_file_name = "stdin" if file_name == STDIN else file_name
 
-    if stream:
-        text = "".join(stream)
+    fh = sys.stdin
+    if not file_name == STDIN:
+        try:
+            fh = open(file_name)
+        except Exception as e:
+            msg = f"couldn't open {display_file_name} to read NEF data"
+            exit_error(msg, e)
+    try:
+        text = fh.read()
+    except Exception as e:
+        msg = f"couldn't read NEF data from  {display_file_name}"
+        exit_error(msg, e)
 
+    try:
         entry = Entry.from_string(text)
+    except Exception as e:
+        msg = f"couldn't parse text in {display_file_name} as NEF data"
+        exit_error(msg, e)
 
-        result = sequence_from_entry(entry)
+    result = sequence_from_entry(entry)
 
     return result
 
