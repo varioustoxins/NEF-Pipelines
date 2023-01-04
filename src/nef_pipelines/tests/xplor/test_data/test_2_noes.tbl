@@ -1,0 +1,2 @@
+assign (segid AAAA and resid 3 and name HN) (segid AAAA and resid 3 and name HDA#) 3.6 3 2.4
+assign (segid AAAA and resid 7 and name HN) (segid AAAA and resid 7 and name HD1#) 4 3.3 2.7
