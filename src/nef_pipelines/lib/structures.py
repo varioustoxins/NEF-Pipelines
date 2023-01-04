@@ -48,10 +48,10 @@ class DistanceRestraint:
 
 @dataclass
 class DihedralRestraint:
-    atom_list_1: List[AtomLabel]
-    atom_list_2: List[AtomLabel]
-    atom_list_3: List[AtomLabel]
-    atom_list_4: List[AtomLabel]
+    atom_list_1: AtomLabel
+    atom_list_2: AtomLabel
+    atom_list_3: AtomLabel
+    atom_list_4: AtomLabel
 
     target: float
     lower_limit: float
