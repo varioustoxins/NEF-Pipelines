@@ -77,16 +77,14 @@ def _convert_1let_3let_if_needed(shifts: ShiftList) -> ShiftList:
 
     new_shifts = []
     for shift in shifts.shifts:
-        residue = shift.atom.residue.residue_name
-        if len(residue) == 1:
+        residue_name = [
+            shift.atom.residue.residue_name,
+        ]
 
-            residue = translate_1_to_3(
-                [
-                    residue,
-                ]
-            )
+        if len(residue_name[0]) == 1:
+            residue_name = translate_1_to_3(residue_name)
 
-        new_residue = replace(shift.atom.residue, residue_name=residue[0])
+        new_residue = replace(shift.atom.residue, residue_name=residue_name[0])
         new_atom = replace(shift.atom, residue=new_residue)
         new_shift = replace(shift, atom=new_atom)
 
