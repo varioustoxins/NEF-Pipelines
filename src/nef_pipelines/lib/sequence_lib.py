@@ -21,8 +21,8 @@ from nef_pipelines.lib.util import (
     read_from_file_or_exit,
 )
 
-STDIN = Path("-")
 NEF_CHAIN_CODE = "chain_code"
+ANY_CHAIN = "ANY_CHAIN"
 
 
 def chain_code_iter(
@@ -394,9 +394,6 @@ def sequence_from_entry(entry):
         if frames:
             result = sequence_from_frame(frames[0])
     return result
-
-
-ANY_CHAIN = "ANY_CHAIN"
 
 
 def sequence_from_frame(
