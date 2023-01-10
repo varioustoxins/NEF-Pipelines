@@ -545,3 +545,12 @@ def make_chunked_sequence_1let(
         row_strings.append(" ".join(row_string))
 
     return row_strings
+
+
+def residues_to_residue_name_lookup(
+    sequence: List[SequenceResidue],
+) -> Dict[Tuple[str, str], str]:
+    return {
+        (residue.chain_code, str(residue.sequence_code)): residue.residue_name
+        for residue in sequence
+    }
