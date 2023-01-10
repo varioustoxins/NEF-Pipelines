@@ -564,3 +564,7 @@ def end_with_ordinal(n):
     return str(n) + {1: "st", 2: "nd", 3: "rd"}.get(
         4 if 10 <= n % 100 < 20 else n % 10, "th"
     )
+
+
+def get_display_file_name(file_name: Path) -> str:
+    return "stdin" if file_name == STDIN else file_name
