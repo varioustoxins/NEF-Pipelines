@@ -26,6 +26,7 @@ from nef_pipelines.lib.structures import LineInfo
 
 STDIN = Path("-")
 
+
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
 
     result = None
@@ -373,7 +374,11 @@ def exit_error(msg, exception=None):
         print(file=sys.stderr)
 
     msg = dedent(msg).split("\n")
+
+    print(file=sys.stderr)
+
     print(f"ERROR: {msg[0]}", file=sys.stderr)
+
     for line in msg[1:]:
         print(f"       {line}", file=sys.stderr)
     print("exiting...", file=sys.stderr)
