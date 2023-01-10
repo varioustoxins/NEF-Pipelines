@@ -24,6 +24,7 @@ from nef_pipelines.lib.header_lib import (
 )
 from nef_pipelines.lib.structures import LineInfo
 
+STDIN = Path("-")
 
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
 
