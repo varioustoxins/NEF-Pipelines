@@ -1,5 +1,4 @@
 import string
-import sys
 from collections import Counter
 from dataclasses import replace
 from pathlib import Path
@@ -14,7 +13,13 @@ from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
 
 # from nef_pipelines.lib.nef_lib import loop_to_dataframe
 from nef_pipelines.lib.structures import Linking, SequenceResidue
-from nef_pipelines.lib.util import chunks, exit_error, is_int, running_in_pycharm
+from nef_pipelines.lib.util import (
+    chunks,
+    exit_error,
+    get_display_file_name,
+    is_int,
+    read_from_file_or_exit,
+)
 
 STDIN = Path("-")
 NEF_CHAIN_CODE = "chain_code"
@@ -367,33 +372,9 @@ def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
     :return:a list of parsed residues and chains, in the order they were read
     """
 
-    result = []
+    text = read_from_file_or_exit(file_name, "sequence from NEF molecular system")
 
-    if file_name == STDIN and sys.stdin.isatty():
-        exit_error(
-            "trying to read sequence from stdin, but stdin is not a stream [did you forget to add a nef file to your "
-            "pipeline?]"
-        )
-
-    if running_in_pycharm():
-        exit_error(
-            "reading from stdin doesn't work in pycharm debug environment as there is no shell..."
-        )
-
-    display_file_name = "stdin" if file_name == STDIN else file_name
-
-    fh = sys.stdin
-    if not file_name == STDIN:
-        try:
-            fh = open(file_name)
-        except Exception as e:
-            msg = f"couldn't open {display_file_name} to read NEF data"
-            exit_error(msg, e)
-    try:
-        text = fh.read()
-    except Exception as e:
-        msg = f"couldn't read NEF data from {display_file_name}"
-        exit_error(msg, e)
+    display_file_name = get_display_file_name(file_name)
 
     try:
         entry = Entry.from_string(text)
@@ -401,9 +382,7 @@ def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
         msg = f"couldn't parse text in {display_file_name} as NEF data"
         exit_error(msg, e)
 
-    result = sequence_from_entry(entry)
-
-    return result
+    return sequence_from_entry(entry)
 
 
 def sequence_from_entry(entry):
