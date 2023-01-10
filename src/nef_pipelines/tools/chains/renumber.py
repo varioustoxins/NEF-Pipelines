@@ -13,7 +13,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames,
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_frame
-from nef_pipelines.lib.util import chunks, exit_error, is_int
+from nef_pipelines.lib.util import chunks, end_with_ordinal, exit_error, is_int
 from nef_pipelines.tools.chains import chains_app
 
 app = typer.Typer()
@@ -175,16 +175,10 @@ def get_chain_offset_pairs_or_exit(chain_offsets):
 def exit_if_offset_isnt_int(chain, offset, i):
     if not is_int(offset):
         msg = f"""\
-                the offset/start {offset} in the {ordinaltg(i)} chain offset/start pair: {chain} {offset}
+                the offset/start {offset} in the {end_with_ordinal(i)} chain offset/start pair: {chain} {offset}
                 can't be converted to an int
             """
         exit_error(msg)
-
-
-def ordinaltg(n):
-    return str(n) + {1: "st", 2: "nd", 3: "rd"}.get(
-        4 if 10 <= n % 100 < 20 else n % 10, "th"
-    )
 
 
 def exit_if_chains_and_offsets_dont_match(chains, offsets):
