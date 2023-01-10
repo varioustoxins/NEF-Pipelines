@@ -1,10 +1,11 @@
 from argparse import Namespace
+from dataclasses import replace
 from pathlib import Path
 from typing import Iterable, List
 
 import typer
 
-from nef_pipelines.lib.sequence_lib import chain_code_iter
+from nef_pipelines.lib.sequence_lib import chain_code_iter, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
 from nef_pipelines.lib.typer_utils import get_args
@@ -61,6 +62,8 @@ def process_shifts(args: Namespace):
 
             nmrpipe_shifts = read_shifts(lines, chain_code=chain_code)
 
+            nmrpipe_shifts = _convert_1let_3let_if_needed(nmrpipe_shifts)
+
             frame = shifts_to_nef_frame(nmrpipe_shifts, args.entry_name)
 
             nmrpipe_frames.append(frame)
@@ -68,6 +71,30 @@ def process_shifts(args: Namespace):
     entry = process_stream_and_add_frames(nmrpipe_frames, args)
 
     print(entry)
+
+
+def _convert_1let_3let_if_needed(shifts: ShiftList) -> ShiftList:
+
+    new_shifts = []
+    for shift in shifts.shifts:
+        residue = shift.atom.residue.residue_name
+        if len(residue) == 1:
+
+            residue = translate_1_to_3(
+                [
+                    residue,
+                ]
+            )
+
+        new_residue = replace(shift.atom.residue, residue_name=residue[0])
+        new_atom = replace(shift.atom, residue=new_residue)
+        new_shift = replace(shift, atom=new_atom)
+
+        new_shifts.append(new_shift)
+
+    new_shift_list = ShiftList(new_shifts)
+
+    return new_shift_list
 
 
 def read_shifts(
