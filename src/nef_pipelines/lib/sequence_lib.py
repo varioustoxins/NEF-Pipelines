@@ -34,6 +34,7 @@ def chain_code_iter(
 
     Args:
         user_chain_codes (str):  string of dot separated chain codes
+        exclude: chain codes to not include in the iteration
 
     Returns:
         Iterable[str] single codes
