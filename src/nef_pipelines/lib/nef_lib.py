@@ -33,6 +33,27 @@ SELECTORS_LOWER = ", ".join(
     [selector.lower() for selector in SelectionType.__members__]
 )
 
+
+class PotentialTypes(LowercaseStrEnum):
+    UNDEFINED = auto()
+    LOG_HARMONIC = "log-harmonic"
+    PARABOLIC = auto()
+    SQUARE_WELL_PARABOLIC = "square-well-parabolic"
+    SQUARE_WELL_PARABOLIC_LINEAR = "square-well-parabolic-linear"
+    UPPER_BOUND_PARABOLIC = "upper-bound-parabolic"
+    LOWER_BOUND_PARABOLIC = "lower-bound-parabolic"
+    UPPER_BOUND_PARABOLIC_LINEAR = "upper-bound-parabolic-linear"
+    LOWER_BOUND_PARABOLIC_LINEAR = "lower-bound-parabolic-linear "
+
+    # see https://github.com/irgeek/StrEnum/issues/9
+    def _cmp_values(self, other):
+        return self.value, str(other).upper()
+
+
+POTENTIAL_TYPES_LOWER = ", ".join(
+    [selector.lower() for selector in PotentialTypes.__members__]
+)
+
 # currently disabled as they add a dependency on pandas and numpy
 # def loop_to_dataframe(loop: Loop) -> DataFrame:
 #     """
