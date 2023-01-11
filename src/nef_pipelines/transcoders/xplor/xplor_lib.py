@@ -25,8 +25,14 @@ from pyparsing import (
 )
 from pyparsing.common import pyparsing_common as ppc
 
-from nef_pipelines.lib.nef_lib import UNUSED
-from nef_pipelines.lib.structures import AtomLabel, DihedralRestraint, SequenceResidue
+from nef_pipelines.lib.nef_lib import UNUSED, PotentialTypes
+from nef_pipelines.lib.sequence_lib import ANY_CHAIN, replace_chain_in_atom_labels
+from nef_pipelines.lib.structures import (
+    AtomLabel,
+    DihedralRestraint,
+    DistanceRestraint,
+    SequenceResidue,
+)
 from nef_pipelines.lib.util import (
     end_with_ordinal,
     exit_error,
@@ -984,6 +990,7 @@ def _get_selection_expressions_from_selection(
         result = [selection]
 
     return result
+
 
 def _get_atom_selections_from_selection_expression(selection_expression: ParseResults):
 
