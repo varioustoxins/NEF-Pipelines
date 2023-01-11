@@ -345,7 +345,7 @@ def _remove_xplor_comments(data_lines: List[str]) -> List[str]:
     return result
 
 
-def get_single_atom_selection(
+def _get_single_atom_selection(
     parsed: ParseResults,
     residue_types: Dict[Tuple[str, str], str],
     default_chain_code: str = "A",
