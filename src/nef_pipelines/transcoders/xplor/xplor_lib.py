@@ -985,18 +985,6 @@ def _get_selection_expressions_from_selection(
 
     return result
 
-
-def _merge_sub_terms(sub_terms_items):
-
-    sub_terms = {}
-    for sub_term in sub_terms_items:
-        for sub_term_name, sub_term in sub_term.items():
-            sub_terms.setdefault(sub_term_name, []).append(sub_term[0])
-
-    return sub_terms
-    # print('to_merge',sub_terms)
-
-
 def _get_atom_selections_from_selection_expression(selection_expression: ParseResults):
 
     if not selection_expression.get_name() == "selection-expression":
