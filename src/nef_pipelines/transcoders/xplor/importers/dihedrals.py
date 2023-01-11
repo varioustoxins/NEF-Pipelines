@@ -17,6 +17,7 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.transcoders.xplor import import_app
 from nef_pipelines.transcoders.xplor.xplor_lib import (
+    _exit_if_chains_and_filenames_dont_match,
     dihedral_restraints_to_nef,
     read_dihedral_restraints_or_exit_error,
 )
