@@ -1,6 +1,7 @@
 import typer
 
 from nef_pipelines.lib.test_lib import (
+    NOQA_E501,
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
@@ -59,7 +60,7 @@ def test_2_dihedrals():
            stop_
         save_
     """.replace(
-        "# noqa: E501", ""
+        NOQA_E501, ""
     )
 
     result = isolate_frame(
@@ -127,7 +128,7 @@ def test_2_dihedrals_no_segids():
            stop_
         save_
     """.replace(
-        "# noqa: E501", ""
+        NOQA_E501, ""
     )
 
     result = isolate_frame(

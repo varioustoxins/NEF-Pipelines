@@ -2,7 +2,7 @@ import pytest
 from pyparsing import ParseException
 
 from nef_pipelines.lib.structures import AtomLabel, SequenceResidue
-from nef_pipelines.lib.test_lib import path_in_test_data
+from nef_pipelines.lib.test_lib import NOQA_E501, path_in_test_data
 from nef_pipelines.transcoders.xplor.xplor_lib import (
     XPLOR_COMMENT,
     XPLORParseException,
@@ -345,13 +345,13 @@ def test_get_approximate_restraint():
            assign  (segid AAAA and resid    1 and name C    ) (segid AAAA and resid    2 and name N    )
                    (segid AAAA and resid    2 and name CA   ) (segid AAAA and resid    2 and name C    )    1.0 -45.7   120.5 2
         """.replace(
-            "# noqa: E501", ""
+            NOQA_E501, ""
         ),
         """# noqa: E501 \
            assign  (segid AAAA and resid    2 and name N    ) (segid AAAA and resid    2 and name CA   )
                    (segid AAAA and resid    2 and name C    ) (segid AAAA and resid    3 and name N    )    1.0  65.4   120.7 2
         """.replace(
-            "# noqa: E501", ""
+            NOQA_E501, ""
         ),
     ]
 

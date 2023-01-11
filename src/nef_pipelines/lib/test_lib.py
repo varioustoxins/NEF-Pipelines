@@ -11,6 +11,8 @@ from pynmrstar import Entry
 from typer import Typer
 from typer.testing import CliRunner
 
+NOQA_E501 = "# noqa: E501"
+
 
 def run_and_read_pytest(args):
 
