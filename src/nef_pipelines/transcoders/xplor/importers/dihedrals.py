@@ -12,7 +12,6 @@ from nef_pipelines.lib.sequence_lib import (
     residues_to_residue_name_lookup,
 )
 from nef_pipelines.lib.util import (
-    exit_error,
     parse_comma_separated_options,
     process_stream_and_add_frames,
 )
