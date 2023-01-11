@@ -48,12 +48,12 @@ class DistanceRestraint:
 
 @dataclass
 class DihedralRestraint:
-    atom_list_1: AtomLabel
-    atom_list_2: AtomLabel
-    atom_list_3: AtomLabel
-    atom_list_4: AtomLabel
+    atom_1: AtomLabel
+    atom_2: AtomLabel
+    atom_3: AtomLabel
+    atom_4: AtomLabel
 
-    target: float
+    target_angle: float
     lower_limit: float
     upper_limit: float
 

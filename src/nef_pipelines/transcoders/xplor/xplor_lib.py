@@ -1,9 +1,10 @@
 from collections import UserList
 from functools import partial
 from pathlib import Path
+from textwrap import dedent
 from typing import Dict, List, Tuple
 
-from pynmrstar import Loop
+from pynmrstar import Loop, Saveframe
 from pyparsing import (
     CaselessLiteral,
     Combine,
@@ -449,18 +450,18 @@ def restraints_to_nef(restraints):
     return loop
 
 
-def dihedral_restraints_to_nef(restraints):
+def dihedral_restraints_to_nef(restraints, frame_name):
     loop = Loop.from_scratch(category=NEF_DIHEDRAL_RESTRAINT)
 
     for tag in DIHEDRAL_RESTRAINT_TAGS:
         loop.add_tag(tag)
 
     for i, restraint in enumerate(restraints, start=1):
-        selection_1 = restraint.atom_list_1[0]
-        selection_2 = restraint.atom_list_2[0]
-        selection_3 = restraint.atom_list_3[0]
-        selection_4 = restraint.atom_list_4[0]
-        target = restraint.target
+        selection_1 = restraint.atom_1
+        selection_2 = restraint.atom_2
+        selection_3 = restraint.atom_3
+        selection_4 = restraint.atom_4
+        target = restraint.target_angle
         lower_limit = restraint.lower_limit
         upper_limit = restraint.upper_limit
 
@@ -488,10 +489,20 @@ def dihedral_restraints_to_nef(restraints):
 
         loop.add_data([row])
 
-    return loop
+    save_frame_name = f"nef_dihedral_restraint_list_{frame_name}"
+
+    save_frame = Saveframe.from_scratch(save_frame_name, "nef_dihedral_restraint")
+
+    save_frame.add_tag("sf_category", "nef_dihedral_restraint_list")
+    save_frame.add_tag("sf_framecode", save_frame_name)
+    save_frame.add_tag("potential_type", "square-well-parabolic")
+
+    save_frame.add_loop(loop)
+
+    return save_frame
 
 
-def get_approximate_restraint_strings(text: str) -> List[str]:
+def _get_approximate_restraint_strings(text: str) -> List[str]:
 
     new_lines = []
     for line in text.split("\n"):
@@ -500,17 +511,20 @@ def get_approximate_restraint_strings(text: str) -> List[str]:
             if len(new_line.strip()) > 0:
                 new_lines.append(new_line)
         else:
-            new_lines.apppend(line)
+            new_lines.append(line)
 
-    new_lines = "\n".join()
+    new_lines = "\n".join(new_lines)
 
     restraints = new_lines.split(ASSIGN)
+
+    if restraints[0] == "":
+        restraints = restraints[1:]
 
     return [f"{ASSIGN} {restraint}" for restraint in restraints]
 
 
 def read_dihedral_restraints_or_exit_error(
-    file_path: Path, residue_name_lookup: Dict[Tuple[str, str], str]
+    file_path: Path, residue_name_lookup: Dict[Tuple[str, str], str], chain: str
 ) -> List[DihedralRestraint]:
 
     restraint_text = read_from_file_or_exit(file_path, "xplor dihedral restraints")
@@ -518,14 +532,16 @@ def read_dihedral_restraints_or_exit_error(
     file_path_display_name = get_display_file_name(file_path)
 
     restraints = parse_dihedral_restraints(
-        restraint_text, residue_name_lookup, file_path_display_name
+        restraint_text, residue_name_lookup, file_path_display_name, chain
     )
+
+    # for restrain in restraints
 
     return restraints
 
 
 def parse_dihedral_restraints(
-    restraint_text, residue_name_lookup, file_path_display_name
+    restraint_text, residue_name_lookup, file_path_display_name, chain
 ):
     try:
         xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
@@ -544,23 +560,30 @@ def parse_dihedral_restraints(
         atom_selections = []
 
         for atom_index in range(1, 5):
-            xplor_atoms = restraint.get(f"atoms_{atom_index}")
+
+            xplor_atoms = restraint.get(f"atoms_{atom_index}")[0]
 
             try:
-                nef_atoms = get_single_atom_selection(xplor_atoms, residue_name_lookup)
+                nef_atoms = get_single_atom_selection(
+                    xplor_atoms, residue_name_lookup, chain
+                )
 
             except XPLORParseException as e:
                 atom_number = end_with_ordinal(atom_index)
-                approximate_restraints = get_approximate_restraint_strings(
+                approximate_restraints = _get_approximate_restraint_strings(
                     restraint_text
                 )
+                approximate_restraint = approximate_restraints[i - 1]
+                approximate_restraint = approximate_restraint.split("\n")
                 msg = f"""\
                     got a multi atom selection for the {atom_number} atom in restraint number {i}
                     in {file_path_display_name}
                     dihedral restrainst require single atom selections...
                     the restraint text is most probably:
-                        {approximate_restraints[i - 1]}
                 """
+                msg = dedent(msg)
+                for elem in approximate_restraint:
+                    msg += f"    {elem}\n"
                 exit_error(msg, e)
 
             atom_selections.append(nef_atoms)
@@ -865,7 +888,6 @@ def _get_selection_expressions_from_selection(
     result = []
     if len(drill_down) >= 4:
         if drill_down[0:3] == ["selection", "selection-expression", "term"]:
-            print(len(selection[0][0]))
 
             term_names = set([term.get_name() for term in selection[0][0]])
             atom_selection_names = {"segid", "resid", "atom"}
@@ -898,6 +920,13 @@ def _get_selection_expressions_from_selection(
                    value was: {_selection_expression}
                 """
                 raise XPLORParseException(msg)
+    elif (
+        len(drill_down) == 3
+        and drill_down[0] == "selection-expression"
+        and len(selection) == 1
+    ):
+        result = [selection]
+
     return result
 
 

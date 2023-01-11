@@ -10,6 +10,7 @@ from nef_pipelines.transcoders.xplor.xplor_lib import (
     _dihedral_restraint,
     _dihedral_restraints,
     _distance_restraints,
+    _get_approximate_restraint_strings,
     _get_selection_expressions_from_selection,
     _NamedToken,
     _residue_factor,
@@ -330,3 +331,50 @@ def test_convert_selection_to_selection_expressions_double_sub_selection():
         "[[atom : HA], [atom : HB]]"
         "]]"
     )
+
+
+def test_get_approximate_restraint():
+    dihedrals_path = path_in_test_data(__file__, "test_2_dihedrals.tbl")
+
+    dihdedral_restraints = open(dihedrals_path, "r").read()
+
+    result = _get_approximate_restraint_strings(dihdedral_restraints)
+
+    EXPECTED = [
+        """# noqa: E501 \
+           assign  (segid AAAA and resid    1 and name C    ) (segid AAAA and resid    2 and name N    )
+                   (segid AAAA and resid    2 and name CA   ) (segid AAAA and resid    2 and name C    )    1.0 -45.7   120.5 2
+        """.replace(
+            "# noqa: E501", ""
+        ),
+        """# noqa: E501 \
+           assign  (segid AAAA and resid    2 and name N    ) (segid AAAA and resid    2 and name CA   )
+                   (segid AAAA and resid    2 and name C    ) (segid AAAA and resid    3 and name N    )    1.0  65.4   120.7 2
+        """.replace(
+            "# noqa: E501", ""
+        ),
+    ]
+
+    for expected, reported in zip(EXPECTED, result):
+        expected = [elem.strip() for elem in expected.split()]
+        reported = [elem.strip() for elem in reported.split()]
+
+        assert reported == expected
+
+
+def test_get_single_atom_selection_dihderal_restraint():
+    dihedrals_path = path_in_test_data(__file__, "test_2_dihedrals.tbl")
+
+    dihdedral_restraints = open(dihedrals_path, "r").read()
+
+    xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
+        dihdedral_restraints
+    )
+
+    restraint = xplor_basic_restraints[0].get("atoms_1")[0]
+
+    selection_expressions = _get_selection_expressions_from_selection(restraint, "")
+
+    assert len(selection_expressions) == 1
+
+    assert str(selection_expressions[0]) == "[[segid : AAAA, resid : 1, atom : C]]"

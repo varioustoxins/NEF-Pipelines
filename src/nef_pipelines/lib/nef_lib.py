@@ -268,3 +268,21 @@ def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
         except IOError as e:
             exit_error(f"couldn't read from the file {file}", e)
     return entry
+
+
+def file_name_path_to_frame_name(path: str) -> str:
+    """
+    convert a filename or complete path to a name suitable for use as a frame name, this does the following mappings
+        . -> _
+        - -> _
+
+    :param file_name: the filename to convert
+    :return: a string suitable for use as a NEF framename
+    """
+    path = Path(path)
+
+    stem = str(path.stem)
+    stem = stem.replace("-", "_")
+    stem = stem.replace(".", "_")
+
+    return stem

@@ -1,0 +1,7 @@
+! Phi/Psi Angles From 'Strong' TALOS-N Predictions:
+!    error margins are set to conservative default values of double the
+!    standard deviation observed in TALOS-N capped at a minimum of +/-20 degree.
+assign (resid    1 and name C    ) (resid    2 and name N    )
+       (resid    2 and name CA   ) (resid    2 and name C    )    1.0 -45.7   120.5 2
+assign (resid    2 and name N    ) (resid    2 and name CA   )
+       (resid    2 and name C    ) (resid    3 and name N    )    1.0  65.4   120.7 2
