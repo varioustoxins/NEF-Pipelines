@@ -46,8 +46,12 @@ It also provides tools for importing and exporing non NEF files from the followi
 - __pales__
   - rdc restraints [write]
   - rdc restraints template [write]
-- __pdb__
+- __pdbx__
   - sequence [read]
+- __xplor__
+  - sequence [read]
+  - dihedral restraints [read]
+  - distance restraints 'single atom selections [read]
 
 ## Installation
 

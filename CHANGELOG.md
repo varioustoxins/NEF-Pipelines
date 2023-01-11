@@ -51,3 +51,11 @@ A reliance on caching stdin was removed
 
 There were no changes in the tools and transcoders provided in this release,
 other than the test subcommand, as this release was focused on testing.
+
+## Version 0.1.23 (development)
+
+support reading xplor distance restraints [but currently only single atom selections]
+add xplor nih dihedral restraints
+read sequences from xplor psf files
+run tests from the nef command line [nef test]
+minor improvemenets to help text and error messages
