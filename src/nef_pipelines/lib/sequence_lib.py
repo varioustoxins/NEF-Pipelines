@@ -12,7 +12,7 @@ from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
 
 # from nef_pipelines.lib.nef_lib import loop_to_dataframe
-from nef_pipelines.lib.structures import Linking, SequenceResidue
+from nef_pipelines.lib.structures import AtomLabel, Linking, SequenceResidue
 from nef_pipelines.lib.util import (
     chunks,
     exit_error,
@@ -22,7 +22,7 @@ from nef_pipelines.lib.util import (
 )
 
 NEF_CHAIN_CODE = "chain_code"
-ANY_CHAIN = "ANY_CHAIN"
+ANY_CHAIN = "_"
 
 
 def chain_code_iter(
@@ -555,3 +555,22 @@ def residues_to_residue_name_lookup(
         (residue.chain_code, str(residue.sequence_code)): residue.residue_name
         for residue in sequence
     }
+
+
+def replace_chain_in_atom_labels(
+    atom_labels: List[AtomLabel], chain_code: str
+) -> List[AtomLabel]:
+    """
+    replace the chain in a list of AtomLabels, not this operation is not inplace new AtomLabels are returned
+
+    :param atom_labels: a list of AtomLabels
+    :param chain_code: the new chain_code
+    :return: the updated AtomLabels
+    """
+    result = []
+
+    for selection in atom_labels:
+        new_residue = replace(selection.residue, chain_code=chain_code)
+        result.append(replace(selection, residue=new_residue))
+
+    return result
