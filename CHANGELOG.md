@@ -54,8 +54,13 @@ other than the test subcommand, as this release was focused on testing.
 
 ## Version 0.1.23 (development)
 
-support reading xplor distance restraints [but currently only single atom selections]
-add xplor nih dihedral restraints
+supports reading xplor distance restraints [but currently only single atom selections]
+
+adds xplor nih dihedral restraints
+
 read sequences from xplor psf files
-run tests from the nef command line [nef test]
-minor improvemenets to help text and error messages
+
+minor improvements to help text and error messages
+
+note: the xplor support includes a proper parser for xplor nested restraint selections
+including SEGIDentifier RESIDue and NAME including proper literal abbreviations.
