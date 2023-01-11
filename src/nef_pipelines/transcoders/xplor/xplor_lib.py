@@ -467,7 +467,15 @@ def distance_restraints_to_nef(
     return loop
 
 
-def dihedral_restraints_to_nef(restraints, frame_name):
+def dihedral_restraints_to_nef(
+    restraints: List[DihedralRestraint], frame_name: str
+) -> Saveframe:
+    """
+    convert a list of DihedralRestraints to a new dihedral restraint save frame
+    :param restraints: the restraints
+    :param frame_name: the name of the new save frame
+    :return: a new save frame
+    """
     loop = Loop.from_scratch(category=NEF_DIHEDRAL_RESTRAINT)
 
     for tag in DIHEDRAL_RESTRAINT_TAGS:
@@ -512,7 +520,7 @@ def dihedral_restraints_to_nef(restraints, frame_name):
 
     save_frame.add_tag("sf_category", "nef_dihedral_restraint_list")
     save_frame.add_tag("sf_framecode", save_frame_name)
-    save_frame.add_tag("potential_type", "square-well-parabolic")
+    save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
 
     save_frame.add_loop(loop)
 
