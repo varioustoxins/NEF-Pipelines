@@ -415,7 +415,15 @@ def get_single_atom_selection(
     return result
 
 
-def restraints_to_nef(restraints):
+def distance_restraints_to_nef(
+    restraints: List[DistanceRestraint], frame_name: str
+) -> Saveframe:
+    """
+    convert a list of DistanceRestraints to a new distance restraint save frame
+    :param restraints: the restraints
+    :param frame_name: the name of the new save frame
+    :return: a new save frame
+    """
     loop = Loop.from_scratch(category="nef_distance_restraint")
 
     for tag in DISTANCE_RESTRAINT_TAGS:
@@ -444,8 +452,17 @@ def restraints_to_nef(restraints):
             UPPER_LIMIT: round(d + d_plus, DEFAULT_PRECISION),
         }
 
-        # print(row)
         loop.add_data([row])
+
+    save_frame_name = f"nef_distance_restraint_list_{frame_name}"
+
+    save_frame = Saveframe.from_scratch(save_frame_name, "nef_distance_restraint")
+
+    save_frame.add_tag("sf_category", "nef_distance_restraint_list")
+    save_frame.add_tag("sf_framecode", save_frame_name)
+    save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
+
+    save_frame.add_loop(loop)
 
     return loop
 
