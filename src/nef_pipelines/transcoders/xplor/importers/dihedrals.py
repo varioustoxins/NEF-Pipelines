@@ -47,7 +47,7 @@ def dihedrals(
     ),
     use_chains: bool = typer.Option(False, "--use-chains", help=USE_CHAINS_HELP),
     file_names: List[Path] = typer.Argument(
-        ..., help="input dihedrals tables", metavar="<DIHEDRALS-TBL>"
+        ..., help="input dihedral restraint tables", metavar="<DIHEDRALS-TBL>"
     ),
 ):
     """- read xplor dihedral restraints"""
