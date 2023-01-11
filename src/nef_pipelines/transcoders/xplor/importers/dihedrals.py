@@ -82,17 +82,3 @@ def dihedrals(
     )
 
     print(entry)
-
-
-def _exit_if_chains_and_filenames_dont_match(chains, file_names):
-    num_file_names = len(file_names)
-    num_chains = len(chains)
-    if num_file_names != num_chains:
-        msg = f"""\
-            your provided {num_file_names} files and {num_chains} chains
-            there must be a filename for each chain you provide
-            file names were: {','.join(file_names)}
-            chains were: {','.join(chains)}
-        """
-        msg = dedent(msg)
-        exit_error(msg)
