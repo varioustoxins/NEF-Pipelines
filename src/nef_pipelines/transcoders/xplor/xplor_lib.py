@@ -549,25 +549,53 @@ def _get_approximate_restraint_strings(text: str) -> List[str]:
 
 
 def read_dihedral_restraints_or_exit_error(
-    file_path: Path, residue_name_lookup: Dict[Tuple[str, str], str], chain: str
+    file_path: Path,
+    residue_name_lookup: Dict[Tuple[str, str], str],
+    chain_code: str,
+    use_chains: bool = False,
 ) -> List[DihedralRestraint]:
+    """
+    read a list of dihedral restraints from a file or stream or exit
+
+    :param file_path: the poth of the file Path('-') indicates stdin
+    :param residue_name_lookup:  a dictionary of residue names keyes on chain_code, residue_code
+    :param chain_code: a chain code to use if no chain code is specified or use_chains is True
+    :param use_chains: use the passed in chain_code rather than any read segids
+    :return: a list of dihedral restraints
+    """
 
     restraint_text = read_from_file_or_exit(file_path, "xplor dihedral restraints")
 
     file_path_display_name = get_display_file_name(file_path)
 
     restraints = parse_dihedral_restraints(
-        restraint_text, residue_name_lookup, file_path_display_name, chain
+        restraint_text,
+        residue_name_lookup,
+        file_path_display_name,
+        chain_code,
+        use_chains,
     )
-
-    # for restrain in restraints
 
     return restraints
 
 
 def parse_dihedral_restraints(
-    restraint_text, residue_name_lookup, file_path_display_name, chain
-):
+    restraint_text: str,
+    residue_name_lookup: Dict[Tuple[str, str], str],
+    file_path_display_name: str,
+    chain_code: str,
+    use_chains: bool = False,
+) -> List[DihedralRestraint]:
+    """
+    parse xplor dihedral restraints into DihedralRestraint structures
+
+    :param restraint_text: the text of the restraints in xplor format
+    :param residue_name_lookup: a lookup for residue names from a  chain_code, residue_code key
+    :param file_path_display_name: the source of the restraints for error reporting
+    :param chain_code: a chain code to use for the restraints if non is provided or use_chains is true
+    :param use_chains: use the passed in chain_code rather than any read segids
+    :return:  a list of dihedral restraints
+    """
     try:
         xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
             restraint_text
@@ -589,8 +617,8 @@ def parse_dihedral_restraints(
             xplor_atoms = restraint.get(f"atoms_{atom_index}")[0]
 
             try:
-                nef_atoms = get_single_atom_selection(
-                    xplor_atoms, residue_name_lookup, chain
+                nef_atoms = _get_single_atom_selection(
+                    xplor_atoms, residue_name_lookup, chain_code
                 )
 
             except XPLORParseException as e:
@@ -612,6 +640,9 @@ def parse_dihedral_restraints(
                 exit_error(msg, e)
 
             atom_selections.append(nef_atoms)
+
+        if use_chains and chain_code != ANY_CHAIN:
+            atom_selections = replace_chain_in_atom_labels(atom_selections, chain_code)
 
         target_angle = restraint.get(ANGLE)
         angle_range = restraint.get(RANGE)
