@@ -1,0 +1,3 @@
+! wibble
+assign (segid AAAA and resid 1 and name HN) (segid AAAA and resid 2 and name HDA#) 2.6 2 3.0
+assign (segid AAAA and resid 2 and name HN) (segid AAAA and resid 3 and name HD1#) 4.5 3.0 1.7

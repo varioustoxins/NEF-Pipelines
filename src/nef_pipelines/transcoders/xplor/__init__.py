@@ -21,4 +21,5 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.xplor.importers.dihedrals
+    import nef_pipelines.transcoders.xplor.importers.distances  # noqa: F401
     import nef_pipelines.transcoders.xplor.importers.sequence  # noqa: F401

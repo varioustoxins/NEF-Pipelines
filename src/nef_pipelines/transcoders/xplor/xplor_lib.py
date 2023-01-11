@@ -421,6 +421,39 @@ def _get_single_atom_selection(
     return result
 
 
+def read_distance_restraints_or_exit_error(
+    file_path: Path,
+    residue_name_lookup: Dict[Tuple[str, str], str],
+    chain_code: str,
+    use_chains: bool = False,
+) -> List[DihedralRestraint]:
+    """
+    read a list of dihedral restraints from a file or stream or exit
+
+    :param file_path: the path of the file Path('-') indicates stdin
+    :param residue_name_lookup:  a dictionary of residue names keyes on chain_code, residue_code
+    :param chain_code: a chain code to use if no chain code is specified or use_chains is True
+    :param use_chains: use the passed in chain_code rather than any read segids
+    :return: a list of dihedral restraints
+    """
+
+    restraint_text = read_from_file_or_exit(
+        file_path, f"xplor distance restraints from {file_path}"
+    )
+
+    file_path_display_name = get_display_file_name(file_path)
+
+    restraints = parse_distance_restraints(
+        restraint_text,
+        residue_name_lookup,
+        file_path_display_name,
+        chain_code,
+        use_chains,
+    )
+
+    return restraints
+
+
 def distance_restraints_to_nef(
     restraints: List[DistanceRestraint], frame_name: str
 ) -> Saveframe:
@@ -438,7 +471,7 @@ def distance_restraints_to_nef(
     for i, restraint in enumerate(restraints, start=1):
         selection_1 = restraint.atom_list_1[0]
         selection_2 = restraint.atom_list_2[0]
-        d = restraint.distance
+        d = restraint.target_distance
         d_minus = restraint.distance_minus
         d_plus = restraint.distance_plus
 
@@ -470,7 +503,7 @@ def distance_restraints_to_nef(
 
     save_frame.add_loop(loop)
 
-    return loop
+    return save_frame
 
 
 def dihedral_restraints_to_nef(
@@ -570,7 +603,9 @@ def read_dihedral_restraints_or_exit_error(
     :return: a list of dihedral restraints
     """
 
-    restraint_text = read_from_file_or_exit(file_path, "xplor dihedral restraints")
+    restraint_text = read_from_file_or_exit(
+        file_path, f"xplor dihedral restraints from {file_path}"
+    )
 
     file_path_display_name = get_display_file_name(file_path)
 
@@ -663,6 +698,88 @@ def parse_dihedral_restraints(
         )
 
         restraints.append(restraint)
+    return restraints
+
+
+def parse_distance_restraints(
+    restraint_text: str,
+    residue_name_lookup: Dict[Tuple[str, str], str],
+    file_path_display_name: str,
+    chain_code: str,
+    use_chains: bool = False,
+) -> List[DihedralRestraint]:
+    """
+    parse xplor distance restraints into DistanceRestraint structures
+
+    :param restraint_text: the text of the restraints in xplor format
+    :param residue_name_lookup: a lookup for residue names from a  chain_code, residue_code key
+    :param file_path_display_name: the source of the restraints for error reporting
+    :param chain_code: a chain code to use for the restraints if non is provided or use_chains is true
+    :param use_chains: use the passed in chain_code rather than any read segids
+    :return:  a list of dihedral restraints
+    """
+    try:
+        xplor_basic_restraints = _distance_restraints.ignore(XPLOR_COMMENT).parseString(
+            restraint_text
+        )
+    except ParseException as parse_exception:
+        msg = f"""\
+            failed to read distance restraints from the file {file_path_display_name} because:
+            {str(parse_exception)}
+        """
+        exit_error(msg)
+
+    restraints = []
+    for i, restraint in enumerate(xplor_basic_restraints, start=1):
+
+        atom_selections = []
+
+        for atom_index in range(1, 3):
+
+            xplor_atoms = restraint.get(f"atoms_{atom_index}")[0]
+
+            try:
+                nef_atoms = _get_single_atom_selection(
+                    xplor_atoms, residue_name_lookup, chain_code
+                )
+
+            except XPLORParseException as e:
+                atom_number = end_with_ordinal(atom_index)
+                approximate_restraints = _get_approximate_restraint_strings(
+                    restraint_text
+                )
+                approximate_restraint = approximate_restraints[i - 1]
+                approximate_restraint = approximate_restraint.split("\n")
+                msg = f"""\
+                    got a multi atom selection for the {atom_number} atom in restraint number {i}
+                    in {file_path_display_name}
+                    dihedral restrainst require single atom selections...
+                    the restraint text is most probably:
+                """
+                msg = dedent(msg)
+                for elem in approximate_restraint:
+                    msg += f"    {elem}\n"
+                exit_error(msg, e)
+
+            atom_selections.append(nef_atoms)
+
+        if use_chains and chain_code != ANY_CHAIN:
+            atom_selections = replace_chain_in_atom_labels(atom_selections, chain_code)
+
+        target_distance = restraint.get(DISTANCE)
+        distance_minus = restraint.get(DISTANCE_MINUS)
+        distance_plus = restraint.get(DISTANCE_PLUS)
+
+        atom_selections = [[atom_selection] for atom_selection in atom_selections]
+        restraint = DistanceRestraint(
+            *atom_selections,
+            target_distance=target_distance,
+            distance_minus=target_distance - distance_minus,
+            distance_plus=target_distance + distance_plus,
+        )
+
+        restraints.append(restraint)
+
     return restraints
 
 
@@ -1020,7 +1137,6 @@ def _get_atom_selections_from_selection_expression(selection_expression: ParseRe
                     sub_terms = _get_atom_selections_from_selection_expression(elem)
 
                     for sub_term_name, sub_term in sub_terms.items():
-                        print(sub_term_name, sub_term)
                         result[sub_term_name] = sub_term
 
         else:
@@ -1045,3 +1161,17 @@ def _parse_result_to_atom_selections(parse_result):
         _get_atom_selections_from_selection_expression(selection_expression)
         for selection_expression in selections
     ]
+
+
+def _exit_if_chains_and_filenames_dont_match(chains, file_names):
+    num_file_names = len(file_names)
+    num_chains = len(chains)
+    if num_file_names != num_chains:
+        msg = f"""\
+            your provided {num_file_names} files and {num_chains} chains
+            there must be a filename for each chain you provide
+            file names were: {','.join(file_names)}
+            chains were: {','.join(chains)}
+        """
+        msg = dedent(msg)
+        exit_error(msg)

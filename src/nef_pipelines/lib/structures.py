@@ -41,7 +41,7 @@ class DistanceRestraint:
     atom_list_1: List[AtomLabel]
     atom_list_2: List[AtomLabel]
 
-    distance: float
+    target_distance: float
     distance_minus: float
     distance_plus: float
 
