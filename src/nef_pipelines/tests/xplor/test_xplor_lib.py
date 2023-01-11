@@ -12,11 +12,11 @@ from nef_pipelines.transcoders.xplor.xplor_lib import (
     _distance_restraints,
     _get_approximate_restraint_strings,
     _get_selection_expressions_from_selection,
+    _get_single_atom_selection,
     _NamedToken,
     _residue_factor,
     _segid_factor,
     _selection,
-    get_single_atom_selection,
 )
 
 
@@ -268,7 +268,7 @@ def test_get_single_atom_selection_correct():
 
     selected_atoms = _selection.parseString(TEST_DATA)
 
-    result = get_single_atom_selection(
+    result = _get_single_atom_selection(
         selected_atoms, residue_types={("AAAA", "1"): "Ala"}
     )
 
@@ -287,7 +287,7 @@ def test_get_single_atom_selection_multiple_selections():
     selected_atoms = _selection.parseString(TEST_DATA)
 
     with pytest.raises(XPLORParseException):
-        get_single_atom_selection(selected_atoms, residue_types={("AAAA", "1"): "Ala"})
+        _get_single_atom_selection(selected_atoms, residue_types={("AAAA", "1"): "Ala"})
 
 
 def test_convert_selection_to_selection_expressions_double():
