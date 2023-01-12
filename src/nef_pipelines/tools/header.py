@@ -5,6 +5,7 @@ from nef_pipelines import nef_app
 from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
 from nef_pipelines.lib.header_lib import create_header_frame
 from nef_pipelines.lib.typer_utils import get_args
+from nef_pipelines.lib.util import script_name
 
 
 # noinspection PyUnusedLocal
@@ -21,7 +22,6 @@ def header(
 
 
 def build_meta_data(args):
-    from lib.util import script_name
 
     result = Entry.from_scratch(args.name)
     header_frame = create_header_frame(

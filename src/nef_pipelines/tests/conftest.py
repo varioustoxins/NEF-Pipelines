@@ -28,3 +28,9 @@ def clear_cache():
 
     for wrapper in wrappers:
         wrapper.cache_clear()
+
+
+def pytest_configure(config):
+    from nef_pipelines.main import create_nef_app
+
+    create_nef_app()
