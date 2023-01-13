@@ -23,6 +23,7 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.nmrview.exporters.peaks  # noqa: F401
+    import nef_pipelines.transcoders.nmrview.exporters.sequences  # noqa: F401
     import nef_pipelines.transcoders.nmrview.importers.peaks  # noqa: F401
     import nef_pipelines.transcoders.nmrview.importers.sequence  # noqa: F401
     import nef_pipelines.transcoders.nmrview.importers.shifts  # noqa: F401
