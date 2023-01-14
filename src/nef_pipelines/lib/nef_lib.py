@@ -18,6 +18,16 @@ NEF_METADATA = "nef_nmr_meta_data"
 UNUSED = "."
 
 
+class BadNefFileException(Exception):
+    """
+    marker class for star files that don't conform to NEF conventions, e.g. files with multiple singletons
+    as an example the molecular system should be a singleton
+    ths doesn't imply the file has invalid star syntax, the star syntax will be valid
+    """
+
+    pass
+
+
 # what the selection type is for Star SaveFrames
 class SelectionType(LowercaseStrEnum):
     NAME = auto()
@@ -307,3 +317,45 @@ def file_name_path_to_frame_name(path: str) -> str:
     stem = stem.replace(".", "_")
 
     return stem
+
+
+def molecular_system_from_entry_or_exit(entry: Entry):
+    """
+    read the nef molecular system [a singleton] from a star entry or exit with a helpful message
+    :param entry: The NEF star entry
+    :return: the molecular system save frame or None if there isn't one
+    """
+
+    molecular_system = None
+    try:
+        molecular_system = molecular_system_from_entry(entry)
+    except BadNefFileException as e:
+        exit_error(str(e))
+
+    if not molecular_system:
+        exit_error(
+            "Couldn't find a molecular system frame it should be labelled 'save_nef_molecular_system'"
+        )
+
+    return molecular_system
+
+
+def molecular_system_from_entry(entry):
+    """
+    read the nef molecular system [a singleton] from a star entry or raise a BadNefFileException
+    :param entry: The NEF star entry
+    :return: the molecular system save frame or None if there isn't one
+    """
+    result = None
+
+    molecular_systems = entry.get_saveframes_by_category(NEF_MOLECULAR_SYSTEM)
+    if len(molecular_systems) == 1:
+        result = molecular_systems[0]
+    elif len(molecular_systems) > 1:
+        msg = f"""\
+                there must be only one molecular_system i found {len(molecular_systems)}
+                frame_names are {', '.join([frame.name for frame in molecular_systems])}
+        """
+        raise BadNefFileException(msg)
+
+    return result
