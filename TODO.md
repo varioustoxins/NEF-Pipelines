@@ -15,7 +15,7 @@ lines marked with '!x' are current priorities
 * xEasy shifts - not important currently
 * Xplor shifts export? - can wait
 * missing frame update bug - important '!4'
-* add pipe functions '!5'
+* add pipe functions '!5' - started
 * update merging and replacemenet of save frames and support of empty save frames
 * make tools update meta data
 
