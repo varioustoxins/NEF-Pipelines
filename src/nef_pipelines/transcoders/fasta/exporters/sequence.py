@@ -4,18 +4,18 @@ from typing import Dict, List
 
 import typer
 
-from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.nef_lib import (
+    molecular_system_from_entry_or_exit,
+    read_entry_from_file_or_stdin_or_exit_error,
+)
 from nef_pipelines.lib.sequence_lib import (
     make_chunked_sequence_1let,
     sequence_from_frame,
     translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.util import STDOUT
 from nef_pipelines.transcoders.fasta import export_app
-
-# TODO: move to lib
-STDOUT = "-"
 
 
 # noinspection PyUnusedLocal
@@ -50,7 +50,7 @@ def sequence(
     fasta_records = fasta_records_from_entry(entry, chain_codes)
 
     # TODO: move to utility function and use in all outputs
-    file_h = sys.stdout if output_file == STDOUT else open(output_file, "w")
+    file_h = sys.stdout if output_file == str(STDOUT) else open(output_file, "w")
 
     for record in fasta_records.values():
         print("\n".join(record), file=file_h)
@@ -71,21 +71,6 @@ def fasta_records_from_entry(entry, chain_codes):
     fasta_records = nef_to_fasta_records(residues, chain_codes)
 
     return fasta_records
-
-
-def molecular_system_from_entry_or_exit(entry):
-
-    # noinspection PyUnboundLocalVariable
-    molecular_systems = entry.get_saveframes_by_category("nef_molecular_system")
-    if not molecular_systems:
-        exit_error(
-            "Couldn't find a molecular system frame it should be labelled 'save_nef_molecular_system'"
-        )
-
-    if len(molecular_systems) > 1:
-        exit_error("There can only be one molecular system in a NEF file")
-
-    return molecular_systems[0]
 
 
 def nef_to_fasta_records(
