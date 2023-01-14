@@ -24,6 +24,8 @@ from nef_pipelines.lib.header_lib import (
 )
 from nef_pipelines.lib.structures import LineInfo
 
+import contextlib
+
 STDIN = Path("-")
 
 
@@ -604,9 +606,6 @@ def end_with_ordinal(n):
 
 def get_display_file_name(file_name: Path) -> str:
     return "stdin" if file_name == STDIN else file_name
-
-
-import contextlib
 
 
 class StdStream(StrEnum):
