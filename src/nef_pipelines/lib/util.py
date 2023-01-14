@@ -604,3 +604,38 @@ def end_with_ordinal(n):
 
 def get_display_file_name(file_name: Path) -> str:
     return "stdin" if file_name == STDIN else file_name
+
+
+import contextlib
+
+
+class StdStream(StrEnum):
+    STDIN = auto()
+    STDOUT = auto()
+    STDERR = auto()
+
+
+STREAM_MODES = {StdStream.STDIN: "r", StdStream.STDOUT: "w", StdStream.STDERR: "w"}
+
+
+@contextlib.contextmanager
+def smart_open(filename=None, stream_type=StdStream.STDOUT):
+    f"""
+    context manager to open a file or use stdout depending on the filename, stdin is defined as '-'
+    by corollary a std stream won't be closed on exit only file system streams
+    :param filename: the filename to use '-' indicates a standar stream selected by stream_type
+    :param stream_type: how to treat the stream choices are {', '.join(StdStream.__members__)}
+
+    """
+
+    mode = STREAM_MODES[stream_type]
+    if filename and str(filename) != "-":
+        fh = open(filename, mode)
+    else:
+        fh = sys.stdout
+
+    try:
+        yield fh
+    finally:
+        if fh not in (sys.stdout, sys.stdin, sys.stderr):
+            fh.close()
