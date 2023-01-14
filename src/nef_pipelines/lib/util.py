@@ -1,14 +1,17 @@
+import contextlib
 import io
 import os
 import sys
 import traceback
 from argparse import Namespace
+from enum import auto
 from pathlib import Path
 from textwrap import dedent
 from typing import Dict, Iterator, List, Optional, TextIO, TypeVar, Union
 
 from cacheable_iter import iter_cache
 from pynmrstar import Entry, Loop, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.constants import (
     EXIT_ERROR,
@@ -24,9 +27,8 @@ from nef_pipelines.lib.header_lib import (
 )
 from nef_pipelines.lib.structures import LineInfo
 
-import contextlib
-
 STDIN = Path("-")
+STDOUT = Path("-")
 
 
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
