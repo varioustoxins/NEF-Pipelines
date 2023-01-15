@@ -9,6 +9,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Dict, Iterator, List, Optional, TextIO, TypeVar, Union
 
+import click
 from cacheable_iter import iter_cache
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
@@ -330,7 +331,18 @@ def script_name(file: str) -> Path:
     Returns:
         Path: path to the file
     """
-    return Path(file).name
+
+    current_context = click.get_current_context()
+
+    in_pytest = "pytest" in sys.modules
+    if in_pytest:
+        command = current_context.command_path.split()
+    else:
+        command = current_context.command_path.split()[1:]
+
+    command = f"{'/'.join(command)}.py"
+
+    return command
 
 
 def read_from_file_or_exit(file_name: Path, target: str) -> str:
