@@ -93,12 +93,12 @@ def test_lib_parse_shifts():
     )
 
     test_data = """\
-          1.CA      52.000 1
-          1.HA       4.220 1
-          2.CG2     19.300 1
-          2.HG21     0.814 1
-          2.HG22     0.814 1
-          3.N      125.058 1
+        1.CA      52.000 1
+        1.HA       4.220 1
+        2.CG2     19.300 1
+        2.HG21     0.814 1
+        2.HG22     0.814 1
+        3.N      125.058 1
     """
 
     chain_seqid_to_type = {("A", 1): "ASP", ("A", 2): "VAL", ("A", 3): "GLN"}
@@ -110,32 +110,31 @@ def test_lib_parse_shifts():
     assert shifts == EXPECTED
 
 
-#
 EXPECTED_PPM_OUT_SHORT = """\
-save_nef_chemical_shift_list_nmrview
-   _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
-   _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_nmrview
+    save_nef_chemical_shift_list_nmrview
+        _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+        _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_nmrview
 
-   loop_
-      _nef_chemical_shift_list.chain_code
-      _nef_chemical_shift_list.sequence_code
-      _nef_chemical_shift_list.residue_name
-      _nef_chemical_shift_list.atom_name
-      _nef_chemical_shift_list.value
-      _nef_chemical_shift_list.value_uncertainty
-      _nef_chemical_shift_list.element
-      _nef_chemical_shift_list.isotope_number
+        loop_
+            _nef_chemical_shift_list.chain_code
+            _nef_chemical_shift_list.sequence_code
+            _nef_chemical_shift_list.residue_name
+            _nef_chemical_shift_list.atom_name
+            _nef_chemical_shift_list.value
+            _nef_chemical_shift_list.value_uncertainty
+            _nef_chemical_shift_list.element
+            _nef_chemical_shift_list.isotope_number
 
-     A   1   ASP   CA     52.0      .   .   .
-     A   1   ASP   HA     4.22      .   .   .
-     A   2   VAL   CG2    19.3      .   .   .
-     A   2   VAL   HG21   0.814     .   .   .
-     A   2   VAL   HG22   0.814     .   .   .
-     A   3   GLN   N      125.058   .   .   .
+            A   1   ASP   CA     52.0      .   .   .
+            A   1   ASP   HA     4.22      .   .   .
+            A   2   VAL   CG2    19.3      .   .   .
+            A   2   VAL   HG21   0.814     .   .   .
+            A   2   VAL   HG22   0.814     .   .   .
+            A   3   GLN   N      125.058   .   .   .
 
-   stop_
+        stop_
 
-save_
+    save_
 """
 
 
@@ -158,6 +157,7 @@ def test_ppm_out_short(clear_cache):
     STREAM = open(path_in_test_data(__file__, "ppm_short_seq.nef")).read()
 
     path = path_in_test_data(__file__, "ppm_short.out")
+
     result = run_and_report(app, [path], input=STREAM)
 
     mol_sys_result = isolate_frame(result.stdout, SHIFTS_NMRPIPE)

@@ -15,26 +15,27 @@ app.command()(sequence)
 HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
 
 EXPECTED_3AA = """\
-save_nef_molecular_system
-   _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system
+    save_nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
 
-   loop_
-      _nef_sequence.index
-      _nef_sequence.chain_code
-      _nef_sequence.sequence_code
-      _nef_sequence.residue_name
-      _nef_sequence.linking
-      _nef_sequence.residue_variant
-      _nef_sequence.cis_peptide
+        loop_
+            _nef_sequence.index
+            _nef_sequence.chain_code
+            _nef_sequence.sequence_code
+            _nef_sequence.residue_name
+            _nef_sequence.linking
+            _nef_sequence.residue_variant
+            _nef_sequence.cis_peptide
 
-     1   A   1   ALA   start    .   .
-     2   A   2   ALA   middle   .   .
-     3   A   3   ALA   end      .   .
+            1   A   1   ALA   start    .   .
+            2   A   2   ALA   middle   .   .
+            3   A   3   ALA   end      .   .
 
-   stop_
+        stop_
 
-save_"""
+    save_
+"""
 
 
 # noinspection PyUnusedLocal
@@ -50,29 +51,30 @@ def test_3aa():
 
 
 EXPECTED_3A_AB = """\
-save_nef_molecular_system
-   _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system
+    save_nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
 
-   loop_
-      _nef_sequence.index
-      _nef_sequence.chain_code
-      _nef_sequence.sequence_code
-      _nef_sequence.residue_name
-      _nef_sequence.linking
-      _nef_sequence.residue_variant
-      _nef_sequence.cis_peptide
+        loop_
+            _nef_sequence.index
+            _nef_sequence.chain_code
+            _nef_sequence.sequence_code
+            _nef_sequence.residue_name
+            _nef_sequence.linking
+            _nef_sequence.residue_variant
+            _nef_sequence.cis_peptide
 
-     1   A    1   ALA   start    .   .
-     2   A    2   ALA   middle   .   .
-     3   A    3   ALA   end      .   .
-     4   B   11   ALA   start    .   .
-     5   B   12   ALA   middle   .   .
-     6   B   13   ALA   end      .   .
+            1   A    1   ALA   start    .   .
+            2   A    2   ALA   middle   .   .
+            3   A    3   ALA   end      .   .
+            4   B   11   ALA   start    .   .
+            5   B   12   ALA   middle   .   .
+            6   B   13   ALA   end      .   .
 
-   stop_
+        stop_
 
-save_"""
+    save_
+"""
 
 
 # noinspection PyUnusedLocal
@@ -89,29 +91,29 @@ def test_3a_ab():
 
 
 EXPECTED_3A_CCCC_DDDD = """\
-save_nef_molecular_system
-   _nef_molecular_system.sf_category   nef_molecular_system
-   _nef_molecular_system.sf_framecode  nef_molecular_system
+    save_nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
 
-   loop_
-      _nef_sequence.index
-      _nef_sequence.chain_code
-      _nef_sequence.sequence_code
-      _nef_sequence.residue_name
-      _nef_sequence.linking
-      _nef_sequence.residue_variant
-      _nef_sequence.cis_peptide
+        loop_
+            _nef_sequence.index
+            _nef_sequence.chain_code
+            _nef_sequence.sequence_code
+            _nef_sequence.residue_name
+            _nef_sequence.linking
+            _nef_sequence.residue_variant
+            _nef_sequence.cis_peptide
 
-     1   CCCC    1   ALA   start    .   .
-     2   CCCC    2   ALA   middle   .   .
-     3   CCCC    3   ALA   end      .   .
-     4   DDDD   11   ALA   start    .   .
-     5   DDDD   12   ALA   middle   .   .
-     6   DDDD   13   ALA   end      .   .
+            1   CCCC    1   ALA   start    .   .
+            2   CCCC    2   ALA   middle   .   .
+            3   CCCC    3   ALA   end      .   .
+            4   DDDD   11   ALA   start    .   .
+            5   DDDD   12   ALA   middle   .   .
+            6   DDDD   13   ALA   end      .   .
 
-   stop_
+        stop_
 
-save_"""
+    save_"""
 
 
 # noinspection PyUnusedLocal
