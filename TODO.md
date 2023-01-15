@@ -16,7 +16,9 @@ lines marked with '!x' are current priorities
 * Xplor shifts export? - can wait
 * missing frame update bug - important '!4'
 * add pipe functions '!5' - started
-* update merging and replacemenet of save frames and support of empty save frames
+* update merging and replacement of save frames and support of empty save frames
 * make tools update meta data
+* test on ubuntu latest
+* test hannah's problems - done
 
 release - done
