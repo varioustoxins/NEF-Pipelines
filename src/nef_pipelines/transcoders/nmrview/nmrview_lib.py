@@ -278,7 +278,9 @@ def parse_shifts(
                       i got {stereo_specificty_code} at line {i + 1}"""
             exit_error(msg)
 
-        seq_key = chain_code, residue_number
+        residue_name = _get_residue_name_from_chain_code_and_sequence_code(
+            chain_code, residue_code, chain_seqid_to_type
+        )
 
         residue_name = chain_seqid_to_type.setdefault(seq_key, UNUSED).upper()
 
