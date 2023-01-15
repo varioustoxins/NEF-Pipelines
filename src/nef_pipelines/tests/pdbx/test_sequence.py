@@ -146,4 +146,5 @@ def test_3a_test_no_chain_segid():
 
     assert result.exit_code == 1
 
-    assert "ERROR: residue with no chain code" in result.stdout
+    assert "ERROR" in result.stdout
+    assert "residue with no chain code" in result.stdout

@@ -43,11 +43,13 @@ def test_3peaks_bad_axis_codes(clear_cache):
     ]
     result = run_and_report(app, args, expected_exit_code=1)
 
-    EXPECTED = """\
-    ERROR: can't find isotope code for axis 2 got axis codes 1H,15N
-    exiting..."""
+    EXPECTED = [
+        "can't find isotope code for axis 2 got axis codes 1H,15N",
+        "exiting...",
+    ]
 
-    assert_lines_match(EXPECTED, result.stdout)
+    for expected in EXPECTED:
+        assert expected in result.stdout
 
 
 EXPECTED_JOE_CLIC = """\

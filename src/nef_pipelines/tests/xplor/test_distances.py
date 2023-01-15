@@ -70,7 +70,8 @@ def test_2_distances_bad():
     args = [distances_path]
     result = run_and_report(app, args, input=nef_sequence, expected_exit_code=1)
 
-    assert "ERROR: failed to read distance restraints" in result.stdout
+    assert "ERROR" in result.stdout
+    assert "failed to read distance restraints" in result.stdout
 
 
 def test_2_dihstances_no_segids():

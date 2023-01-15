@@ -393,7 +393,9 @@ def exit_error(msg, exception=None):
 
     print(file=sys.stderr)
 
-    print(f"ERROR: {msg[0]}", file=sys.stderr)
+    script = script_name(__file__)
+
+    print(f"ERROR [in {script}]: {msg[0]}", file=sys.stderr)
 
     for line in msg[1:]:
         print(f"       {line}", file=sys.stderr)

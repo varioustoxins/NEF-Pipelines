@@ -54,10 +54,10 @@ def test_2_dihedrals():
               _nef_dihedral_restraint.lower_limit
               _nef_dihedral_restraint.upper_limit
 
-             1   1   .   AAAA   1   .   C   AAAA   2   .   N    AAAA   2   .   CA   AAAA   2   .   C   1.0   -45.7   -166.2   74.8
-             2   2   .   AAAA   2   .   N   AAAA   2   .   CA   AAAA   2   .   C    AAAA   3   .   N   1.0   65.4    -55.3    186.1
+                1   1   .   AAAA   1   .   C   AAAA   2   .   N    AAAA   2   .   CA   AAAA   2   .   C   1.0   -45.7   -166.2   74.8
+                2   2   .   AAAA   2   .   N   AAAA   2   .   CA   AAAA   2   .   C    AAAA   3   .   N   1.0   65.4    -55.3    186.1
 
-           stop_
+            stop_
         save_
     """.replace(
         NOQA_E501, ""
@@ -79,7 +79,8 @@ def test_2_dihedrals_bad():
     args = [dihedrals_path]
     result = run_and_report(app, args, input=nef_sequence, expected_exit_code=1)
 
-    assert "ERROR: failed to read dihedral restraints" in result.stdout
+    assert "ERROR" in result.stdout
+    assert "failed to read dihedral restraints" in result.stdout
 
 
 def test_2_dihedrals_no_segids():

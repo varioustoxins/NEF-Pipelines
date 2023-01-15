@@ -90,7 +90,7 @@ save_nef_nmr_meta_data
    _nef_nmr_meta_data.format_name      nmr_exchange_format
    _nef_nmr_meta_data.format_version   1.1
    _nef_nmr_meta_data.program_name     NEFPipelines
-   _nef_nmr_meta_data.script_name      util.py
+   _nef_nmr_meta_data.script_name      sequence.py
    _nef_nmr_meta_data.program_version  0.0.1
    _nef_nmr_meta_data.creation_date    2012-01-14T12:00:01.123456
    _nef_nmr_meta_data.uuid             NEFPipelines-2012-01-14T12:00:01.123456-1043321819
