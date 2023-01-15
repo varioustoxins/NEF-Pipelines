@@ -250,13 +250,13 @@ def parse_shifts(
                                         i got{num_atom_fields} at line {i + 1}
                                         with data: {line}"""
             exit_error(msg)
-        residue_number, atom = atom_fields
+        residue_code, atom = atom_fields
 
         try:
-            residue_number = int(residue_number)
+            residue_code = int(residue_code)
         except ValueError:
             msg = f"""An nmrview residue number should be an integer
-                      i got {residue_number} at line {i + 1}"""
+                      i got {residue_code} at line {i + 1}"""
             exit_error(msg)
 
         try:
@@ -282,13 +282,9 @@ def parse_shifts(
             chain_code, residue_code, chain_seqid_to_type
         )
 
-        residue_name = chain_seqid_to_type.setdefault(seq_key, UNUSED).upper()
-
-        if (
-            residue_number != UNUSED and chain_code != UNUSED
-        ) and residue_name == UNUSED:
+        if (residue_code != UNUSED and chain_code != UNUSED) and residue_name == UNUSED:
             msg = f"""\
-            [nmrview shifts] residue not defined for chain {chain_code} residue {residue_number}
+            residue not defined for chain {chain_code} residue {residue_code}
             line number {i+1}
             line was |{line}|
             in file {file_name}
@@ -296,9 +292,7 @@ def parse_shifts(
             msg = dedent(msg)
             exit_error(msg)
 
-        atom = AtomLabel(
-            SequenceResidue(chain_code, residue_number, residue_name), atom
-        )
+        atom = AtomLabel(SequenceResidue(chain_code, residue_code, residue_name), atom)
         shift = ShiftData(atom, shift)
         shifts.append(shift)
 
