@@ -386,7 +386,17 @@ def get_sequence(file_name: Path = Path("-")) -> List[SequenceResidue]:
     return sequence_from_entry(entry)
 
 
-def sequence_from_entry(entry):
+def sequence_from_entry_or_exit(entry: Entry) -> List[SequenceResidue]:
+    sequence = sequence_from_entry(entry)
+
+    if not sequence:
+        msg = "did you read a sequence? a sequence is required and was not read"
+        exit_error(msg)
+
+    return sequence
+
+
+def sequence_from_entry(entry) -> List[SequenceResidue]:
 
     result = []
     if entry is not None:
