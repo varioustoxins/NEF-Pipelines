@@ -640,3 +640,26 @@ def smart_open(filename=None, stream_type=StdStream.STDOUT):
     finally:
         if fh not in (sys.stdout, sys.stdin, sys.stderr):
             fh.close()
+
+
+class DebugStdout:
+    """
+    class to intercept stdout and print debugging info of where strings ae printed from
+
+    usage:
+
+        from contextlib import redirect_stdout
+        with redirect_stdout(DebugStdout):
+            ... # your code here
+    """
+
+    def __init__(self, in_old_stdout):
+        self.old_stdout = in_old_stdout
+
+    def write(self, msg):
+        self.old_stdout.write(msg)
+        from inspect import currentframe, getframeinfo
+
+        frameinfo = getframeinfo(currentframe().f_back)
+
+        print(f" <-[{frameinfo.filename}, {frameinfo.lineno}]", file=sys.stderr)
