@@ -47,10 +47,10 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
 
 def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
     """
-
-    :param shift_list:
-    :param frame_name:
-    :return:
+    convert a shift list to a nef chemical shift list frame
+    :param shift_list: the shifts
+    :param frame_name: the name for the frame to appended to nef_chemical_shift_list
+    :return: the shift list frame
     """
     category = "nef_chemical_shift_list"
 
