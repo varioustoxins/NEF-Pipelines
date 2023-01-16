@@ -1,5 +1,5 @@
 from textwrap import dedent
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple
 
 from pyparsing import (
     Forward,
@@ -15,13 +15,14 @@ from pyparsing import (
 )
 
 from nef_pipelines.lib.nef_lib import UNUSED
+from nef_pipelines.lib.sequence_lib import get_residue_name_from_lookup
 from nef_pipelines.lib.structures import (
     AtomLabel,
     SequenceResidue,
     ShiftData,
     ShiftList,
 )
-from nef_pipelines.lib.util import exit_error, is_int
+from nef_pipelines.lib.util import exit_error
 
 
 def _process_emptys_and_singles(value: ParseResults) -> ParseResults:
@@ -277,7 +278,7 @@ def parse_shifts(
                       i got {stereo_specificty_code} at line {i + 1}"""
             exit_error(msg)
 
-        residue_name = _get_residue_name_from_chain_code_and_sequence_code(
+        residue_name = get_residue_name_from_lookup(
             chain_code, residue_code, chain_seqid_to_type
         )
 
@@ -298,34 +299,3 @@ def parse_shifts(
     result = ShiftList(shifts)
 
     return result
-
-
-# TODO: duplicated merge implementations
-def _get_residue_name_from_chain_code_and_sequence_code(
-    chain_code: str,
-    sequence_code: Union[str, int],
-    lookup_table: Dict[Union[str, int], str],
-) -> str:
-    """
-    get a residue name from a chain_code and sequence_code, using the provided lookup table. The sequence code is
-    treated being as either  a string or an int, strs are checked first
-    :param chain_code: the chain code
-    :param sequence_code: the residue code treated as both an int and a string
-    :param lookup_table: the table of residues names indexed by chain_code_sequence_code
-    :return:
-    """
-
-    seq_key = chain_code, str(sequence_code)
-
-    residue_name = lookup_table.get(seq_key, None)
-
-    if not residue_name:
-        if is_int(sequence_code):
-            seq_key = chain_code, int(sequence_code)
-
-    residue_name = lookup_table.get(seq_key, UNUSED)
-
-    if residue_name is not None:
-        residue_name = residue_name.upper()
-
-    return residue_name
