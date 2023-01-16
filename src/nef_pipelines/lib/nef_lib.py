@@ -200,7 +200,11 @@ def loop_row_dict_iter(
     """
 
     if not isinstance(loop, Loop):
-        raise Exception(f"loop must be loop you presented {type(loop)}")
+        msg = f"""\
+            loop must be of type Loop you provided a {loop.__class__.__name__}"
+            value: {loop}
+        """
+        raise Exception(msg)
 
     for row in loop:
         row = {tag: value for tag, value in zip(loop.tags, row)}
