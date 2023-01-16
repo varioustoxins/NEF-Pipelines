@@ -67,11 +67,27 @@ def sequence(
     """- convert fasta sequence to nef"""
 
     chain_codes = parse_comma_separated_options(chain_codes)
+    if not chain_codes:
+        chain_codes = ["A"]
+
     no_chain_starts = parse_comma_separated_options(no_chain_starts)
+    if not no_chain_starts:
+        no_chain_starts = [False]
+
     no_chain_ends = parse_comma_separated_options(no_chain_ends)
+    if no_chain_ends:
+        no_chain_ends = [False]
+
     starts = [int(elem) for elem in parse_comma_separated_options(starts)]
+    if not starts:
+        starts = [1]
 
     args = get_args()
+
+    args.chain_codes = chain_codes
+    args.no_chain_starts = no_chain_starts
+    args.no_chain_ends = no_chain_ends
+    args.starts = starts
 
     process_sequences(args)
 
