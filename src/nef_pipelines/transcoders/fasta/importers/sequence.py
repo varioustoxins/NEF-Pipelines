@@ -90,9 +90,7 @@ def process_sequences(args):
 
     fasta_sequences = offset_chain_residues(fasta_sequences, offsets)
 
-    fasta_sequences = sorted(
-        fasta_sequences, key=lambda x: (x.chain_code, x.sequence_code)
-    )
+    fasta_sequences = sorted(fasta_sequences)
 
     fasta_frames.append(sequence_to_nef_frame(fasta_sequences))
 
