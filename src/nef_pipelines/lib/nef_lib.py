@@ -9,7 +9,15 @@ from typing import Dict, Iterator, List, Tuple, Union
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import LowercaseStrEnum
 
-from nef_pipelines.lib.util import exit_error, is_float, is_int, running_in_pycharm
+from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
+from nef_pipelines.lib.util import (
+    exit_error,
+    fixup_metadata,
+    is_float,
+    is_int,
+    running_in_pycharm,
+    script_name,
+)
 
 NEF_CATEGORY_ATTR = "__NEF_CATEGORY__"
 NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
@@ -363,3 +371,54 @@ def molecular_system_from_entry(entry):
         raise BadNefFileException(msg)
 
     return result
+
+
+def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
+    # TODO deal with merging esp wrt to molecular systems and possibly with other information
+    # TODO add frame rename and frame delete
+    """
+    take a set of save frames and  add them to an Entry and update the NEF metadata header
+
+    Args:
+        entry: an entry to add the save frames to
+        frames: a set of save frames to add, they must have different names to those present already
+
+
+    Returns:
+        the updated entry containing the frames
+    """
+
+    fixup_metadata(entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
+
+    for frame in frames:
+
+        new_frame_name = frame.name
+
+        frame_in_entry = save_frame_name_in_entry(entry, new_frame_name)
+
+        if frame_in_entry:
+            msg = (
+                f"the frame named {new_frame_name} already exists in the stream, rename it or delete to add "
+                f"the new frame shift frame"
+            )
+            exit_error(msg)
+
+        entry.add_saveframe(frame)
+
+    return entry
+
+
+def save_frame_name_in_entry(entry: Entry, frame_name: str) -> bool:
+    """
+    check if a save frame name exists in an entry
+    :param entry: the entry
+    :param frame_name: the frame name
+    :return: if a savefame with the name is present
+    """
+    frame_in_entry = False
+    try:
+        entry.get_saveframe_by_name(frame_name)
+    except KeyError:
+        frame_in_entry = False
+
+    return frame_in_entry
