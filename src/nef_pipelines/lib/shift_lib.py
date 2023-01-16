@@ -187,7 +187,9 @@ def _collapse_cluster(shifts: List[ShiftData]) -> List[ShiftData]:
                 first_atom.chain_code, first_atom.sequence_code, first_atom.residue_name
             )
             new_atom = AtomLabel(residue, f"{stem}*")
-            new_shift = ShiftData(new_atom, first_shift.shift, first_shift.error)
+            new_shift = ShiftData(
+                new_atom, first_shift.value, first_shift.value_uncertainty
+            )
 
             result.append(new_shift)
         else:
