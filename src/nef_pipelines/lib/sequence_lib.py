@@ -9,7 +9,7 @@ from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
 
 from nef_pipelines.lib.constants import NEF_UNKNOWN
-from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
+from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
 
 # from nef_pipelines.lib.nef_lib import loop_to_dataframe
 from nef_pipelines.lib.structures import AtomLabel, Linking, SequenceResidue
@@ -583,4 +583,49 @@ def replace_chain_in_atom_labels(
         new_residue = replace(selection.residue, chain_code=chain_code)
         result.append(replace(selection, residue=new_residue))
 
+    return result
+
+
+def get_residue_name_from_lookup(
+    chain_code: str,
+    sequence_code: Union[str, int],
+    lookup_table: Dict[Union[str, int], str],
+) -> str:
+    """
+    get a residue name from a chain_code and sequence_code, using the provided lookup table. The sequence code is
+    treated being as either  a string or an int, strs are checked first
+    :param chain_code: the chain code
+    :param sequence_code: the residue code treated as both an int and a string
+    :param lookup_table: the table of residues names indexed by chain_code_sequence_code
+    :return:
+    """
+
+    seq_key = chain_code, str(sequence_code)
+
+    residue_name = lookup_table.get(seq_key, None)
+
+    if not residue_name:
+        if is_int(sequence_code):
+            seq_key = chain_code, int(sequence_code)
+
+    residue_name = lookup_table.get(seq_key, UNUSED)
+
+    if residue_name is not None:
+        residue_name = residue_name.upper()
+
+    return residue_name
+
+
+def sequence_to_residue_type_lookup(
+    sequence: List[SequenceResidue],
+) -> Dict[Tuple[str, int], str]:
+
+    """
+    build a lookup table from sequence_code, chain_code to residue_type from a list of sequence residues
+    :param sequence: a list of sequence residues
+    :return: the lookup table
+    """
+    result: Dict[Tuple[str, int], str] = {}
+    for residue in sequence:
+        result[residue.chain_code, residue.sequence_code] = residue.residue_name
     return result
