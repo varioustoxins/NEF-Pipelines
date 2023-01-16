@@ -36,8 +36,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="CA",
                 ),
-                shift=52.00,
-                error=None,
+                value=52.00,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -46,8 +46,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="HA",
                 ),
-                shift=4.220,
-                error=None,
+                value=4.220,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -56,8 +56,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="CG2",
                 ),
-                shift=19.300,
-                error=None,
+                value=19.300,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -66,8 +66,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="HG21",
                 ),
-                shift=0.814,
-                error=None,
+                value=0.814,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -76,8 +76,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="HG22",
                 ),
-                shift=0.814,
-                error=None,
+                value=0.814,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -86,8 +86,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="N",
                 ),
-                shift=125.058,
-                error=None,
+                value=125.058,
+                value_uncertainty=None,
             ),
         ]
     )

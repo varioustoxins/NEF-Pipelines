@@ -121,11 +121,11 @@ def shifts(
                 atom_name=atom_name,
             )
 
-            if not is_float(shift.shift):
+            if not is_float(shift.value):
                 continue
 
                 # TODO: should be value
-            value = float(shift.shift)
+            value = float(shift.value)
 
             pseudo_atom_shifts[pseudo_atom] = value
 

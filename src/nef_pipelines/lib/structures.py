@@ -26,6 +26,8 @@ class SequenceResidue:
 class AtomLabel:
     residue: SequenceResidue
     atom_name: str
+    element: str = None
+    isotope_number: int = None
 
 
 @dataclass
@@ -134,8 +136,8 @@ class LineInfo:
 @dataclass
 class ShiftData:
     atom: AtomLabel
-    shift: float
-    error: Optional[float] = None
+    value: float
+    value_uncertainty: Optional[float] = None
 
 
 @dataclass

@@ -84,13 +84,20 @@ def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
         loop.add_data_by_tag("sequence_code", shift.atom.residue.sequence_code)
         loop.add_data_by_tag("residue_name", shift.atom.residue.residue_name)
         loop.add_data_by_tag("atom_name", shift.atom.atom_name)
-        loop.add_data_by_tag("value", shift.shift)
-        if shift.error is not None:
-            loop.add_data_by_tag("value_uncertainty", shift.error)
-        else:
-            loop.add_data_by_tag("value_uncertainty", UNUSED)
-        loop.add_data_by_tag("element", UNUSED)
-        loop.add_data_by_tag("isotope_number", UNUSED)
+        loop.add_data_by_tag("value", shift.value)
+
+        value_uncertainty = (
+            shift.value_uncertainty if shift.value_uncertainty else UNUSED
+        )
+        loop.add_data_by_tag("value_uncertainty", value_uncertainty)
+
+        element = shift.atom.element if shift.atom.element else UNUSED
+        loop.add_data_by_tag("element", element)
+
+        isotope_number = (
+            shift.atom.isotope_number if shift.atom.isotope_number else UNUSED
+        )
+        loop.add_data_by_tag("isotope_number", isotope_number)
 
     return frame
 
@@ -141,7 +148,7 @@ def _cluster_by_shift(shifts: List[ShiftData]) -> List[List[ShiftData]]:
     shift_map = {}
 
     for shift in shifts:
-        shift_map.setdefault(shift.shift, []).append(shift)
+        shift_map.setdefault(shift.value, []).append(shift)
 
     result = []
     for entry in shift_map.values():

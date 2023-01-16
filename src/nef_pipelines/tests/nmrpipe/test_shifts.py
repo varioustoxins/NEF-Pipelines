@@ -39,8 +39,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="N",
                 ),
-                shift=125.74,
-                error=None,
+                value=125.74,
+                value_uncertainty=None,
             ),
             ShiftData(
                 atom=AtomLabel(
@@ -49,8 +49,8 @@ def test_lib_parse_shifts():
                     ),
                     atom_name="HN",
                 ),
-                shift=8.31,
-                error=None,
+                value=8.31,
+                value_uncertainty=None,
             ),
         ]
     )
