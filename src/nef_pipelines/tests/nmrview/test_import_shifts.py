@@ -17,8 +17,7 @@ from nef_pipelines.lib.test_lib import (
 from nef_pipelines.transcoders.nmrview.importers.shifts import shifts
 from nef_pipelines.transcoders.nmrview.nmrview_lib import parse_shifts
 
-SHIFTS_NMRPIPE = "nef_chemical_shift_list_nmrview"
-METADATA_NMRVIEW = "nef_nmr_meta_data"
+SHIFTS_NMRVIEW = "nef_chemical_shift_list_nmrview"
 
 
 app = typer.Typer()
@@ -160,6 +159,6 @@ def test_ppm_out_short(clear_cache):
 
     result = run_and_report(app, [path], input=STREAM)
 
-    mol_sys_result = isolate_frame(result.stdout, SHIFTS_NMRPIPE)
+    mol_sys_result = isolate_frame(result.stdout, SHIFTS_NMRVIEW)
 
     assert_lines_match(EXPECTED_PPM_OUT_SHORT, mol_sys_result)
