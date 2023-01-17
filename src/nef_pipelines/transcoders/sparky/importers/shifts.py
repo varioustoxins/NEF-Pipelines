@@ -51,7 +51,7 @@ def shifts(
         metavar="<CHAIN-CODES>",
     ),
     frame_name: str = typer.Option(
-        "nmrview", "-f", "--frame-name", help="a name for the frame"
+        "sparky", "-f", "--frame-name", help="a name for the frame"
     ),
     input: Path = typer.Option(
         STDIN,
