@@ -20,14 +20,14 @@ save_nef_chemical_shift_list_sparky
 
 
     loop_
-        _nef_chemical_shift_list.chain_code
-        _nef_chemical_shift_list.sequence_code
-        _nef_chemical_shift_list.residue_name
-        _nef_chemical_shift_list.atom_name
-        _nef_chemical_shift_list.value
-        _nef_chemical_shift_list.value_uncertainty
-        _nef_chemical_shift_list.element
-        _nef_chemical_shift_list.isotope_number
+        _nef_chemical_shift.chain_code
+        _nef_chemical_shift.sequence_code
+        _nef_chemical_shift.residue_name
+        _nef_chemical_shift.atom_name
+        _nef_chemical_shift.value
+        _nef_chemical_shift.value_uncertainty
+        _nef_chemical_shift.element
+        _nef_chemical_shift.isotope_number
 
         A   236   PRO   C      176.443   .   C   13
         A   236   PRO   CA     62.822    .   C   13

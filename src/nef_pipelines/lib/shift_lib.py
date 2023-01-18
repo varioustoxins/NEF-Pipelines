@@ -52,13 +52,14 @@ def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
     :param frame_name: the name for the frame to appended to nef_chemical_shift_list
     :return: the shift list frame
     """
-    category = "nef_chemical_shift_list"
+    SHIFT_LIST_FRAME_CATEGORY = "nef_chemical_shift_list"
+    SHIFT_LOOP_CATEGORY = "nef_chemical_shift"
 
-    frame_code = f"{category}_{frame_name}"
+    frame_code = f"{SHIFT_LIST_FRAME_CATEGORY}_{frame_name}"
 
-    frame = Saveframe.from_scratch(frame_code, category)
+    frame = Saveframe.from_scratch(frame_code, SHIFT_LIST_FRAME_CATEGORY)
 
-    frame.add_tag("sf_category", category)
+    frame.add_tag("sf_category", SHIFT_LIST_FRAME_CATEGORY)
     frame.add_tag("sf_framecode", frame_code)
 
     loop = Loop.from_scratch()
@@ -75,7 +76,7 @@ def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
         "isotope_number",
     )
 
-    loop.set_category(category)
+    loop.set_category(SHIFT_LOOP_CATEGORY)
     loop.add_tag(tags)
 
     for shift in shift_list.shifts:

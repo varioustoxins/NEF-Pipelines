@@ -115,14 +115,14 @@ EXPECTED_PPM_OUT_SHORT = """\
         _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_nmrview
 
         loop_
-            _nef_chemical_shift_list.chain_code
-            _nef_chemical_shift_list.sequence_code
-            _nef_chemical_shift_list.residue_name
-            _nef_chemical_shift_list.atom_name
-            _nef_chemical_shift_list.value
-            _nef_chemical_shift_list.value_uncertainty
-            _nef_chemical_shift_list.element
-            _nef_chemical_shift_list.isotope_number
+            _nef_chemical_shift.chain_code
+            _nef_chemical_shift.sequence_code
+            _nef_chemical_shift.residue_name
+            _nef_chemical_shift.atom_name
+            _nef_chemical_shift.value
+            _nef_chemical_shift.value_uncertainty
+            _nef_chemical_shift.element
+            _nef_chemical_shift.isotope_number
 
             A   1   ASP   CA     52.0      .   .   .
             A   1   ASP   HA     4.22      .   .   .
