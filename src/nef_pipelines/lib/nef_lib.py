@@ -394,7 +394,7 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
 
         new_frame_name = frame.name
 
-        frame_in_entry = save_frame_name_in_entry(entry, new_frame_name)
+        frame_in_entry = is_save_frame_name_in_entry(entry, new_frame_name)
 
         if frame_in_entry:
             msg = (
@@ -408,7 +408,7 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
     return entry
 
 
-def save_frame_name_in_entry(entry: Entry, frame_name: str) -> bool:
+def is_save_frame_name_in_entry(entry: Entry, frame_name: str) -> bool:
     """
     check if a save frame name exists in an entry
     :param entry: the entry
