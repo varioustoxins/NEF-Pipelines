@@ -149,6 +149,6 @@ class ShiftList:
 class RdcRestraint:
     atom_1: AtomLabel
     atom_2: AtomLabel
-    rdc: float
-    rdc_error: float
+    value: float
+    value_uncertainty: float
     weight: Optional[float] = None
