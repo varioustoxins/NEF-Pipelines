@@ -31,9 +31,9 @@ def test_renumber_basic():
     EXPECTED = """\
         data_talin1
 
-        save_nef_molecular_system_talin1
+        save_nef_molecular_system
            _nef_molecular_system.sf_category   nef_molecular_system
-           _nef_molecular_system.sf_framecode  nef_molecular_system_talin1
+           _nef_molecular_system.sf_framecode  nef_molecular_system
 
            loop_
               _nef_sequence.index
