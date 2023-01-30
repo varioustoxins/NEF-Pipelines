@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external_lib/PyNMRSTAR" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external_lib/SAS" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external_lib/SAS/PyNMRSTAR" vcs="Git" />
   </component>
 </project>
