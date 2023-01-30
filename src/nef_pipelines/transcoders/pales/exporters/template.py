@@ -3,11 +3,7 @@ from typing import Dict, List, Tuple
 import tabulate
 import typer
 
-from nef_pipelines.lib.sequence_lib import (
-    get_sequence_or_exit,
-    sequence_residues_to_sequence_3let,
-    translate_3_to_1,
-)
+from nef_pipelines.lib.sequence_lib import get_sequence_or_exit
 from nef_pipelines.lib.structures import (
     AtomLabel,
     Linking,
@@ -50,18 +46,8 @@ def template(
     weights = _parse_weights(raw_weights)
     sequence = get_sequence_or_exit()
 
-    sequence_3_let = sequence_residues_to_sequence_3let(sequence)
-
-    sequence_1_let = translate_3_to_1(sequence_3_let)
-
-    print(f"REMARK NEF CHAIN {chain_code}")
-    print(f"REMARK NEF START RESIDUE {sequence[0].sequence_code}")
-    print()
-    _print_pipe_sequence(sequence_1_let)
-
     restaints = _build_dummy_restraints(sequence, template_atoms)
 
-    print()
     _print_restraints(restaints, weights=weights)
 
 

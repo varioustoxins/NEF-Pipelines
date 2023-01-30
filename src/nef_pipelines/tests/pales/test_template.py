@@ -25,10 +25,6 @@ def test_template(clear_cache):
 
     # note: sequence starts at residue 10 so residue 10 has an amine not an amide and isn't in the tremplate...
     EXPECTED = """\
-        REMARK NEF CHAIN A
-        REMARK NEF START RESIDUE 10
-
-        DATA SEQUENCE EYAQPRLRLG FED
 
         VARS    RESID_I  RESNAME_I  ATOMNAME_I  RESID_J  RESNAME_J  ATOMNAME_J  D      DD     W
         FORMAT  %5d      %6s        %6s         %5d      %6s        %6s         %9.3f  %9.3f  %.2f
