@@ -509,6 +509,23 @@ def get_chain_starts(residues: List[SequenceResidue]) -> Dict[str, int]:
     }
 
 
+def sequence_to_chains(residues: List[SequenceResidue]) -> List[str]:
+    """
+    from a list of residues get chain_codes
+
+    :param residues:  a list of residues from one ore more chains
+    :return: a list of chain_codes
+    """
+
+    chain_codes = set()
+
+    for residue in residues:
+
+        chain_codes.add(residue.chain_code)
+
+    return sorted(tuple(chain_codes))
+
+
 def offset_chain_residues(
     residues: List[SequenceResidue], chain_residue_offsets: Dict[str, int]
 ) -> List[SequenceResidue]:
