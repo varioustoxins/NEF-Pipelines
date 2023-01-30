@@ -7,7 +7,7 @@ from argparse import Namespace
 from enum import auto
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Iterator, List, Optional, TextIO, TypeVar, Union
+from typing import Any, Dict, Iterator, List, Optional, TextIO, TypeVar, Union
 
 import click
 from cacheable_iter import iter_cache
@@ -677,3 +677,15 @@ class DebugStdout:
         frameinfo = getframeinfo(currentframe().f_back)
 
         print(f" <-[{frameinfo.filename}, {frameinfo.lineno}]", file=sys.stderr)
+
+
+def flatten(in_list: Union[List[Any], List[Union[List[Any], Any]]]) -> List[Any]:
+    """
+    flatten a list of lists into a single list
+    :param in_list: a putative lists of lists
+    :return: a list of anything but lists
+    """
+    out = []
+    for sublist in in_list:
+        out.extend(sublist)
+    return out
