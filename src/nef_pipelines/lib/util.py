@@ -331,8 +331,11 @@ def script_name(file: str) -> Path:
     Returns:
         Path: path to the file
     """
+    try:
+        current_context = click.get_current_context()
+    except RuntimeError:
 
-    current_context = click.get_current_context()
+        current_context = Namespace(command_path="unknown unknown")
 
     in_pytest = "pytest" in sys.modules
     if in_pytest:
