@@ -1,0 +1,47 @@
+data_fasta
+
+save_nef_nmr_meta_data
+    _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+    _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+    _nef_nmr_meta_data.format_name      nmr_exchange_format
+    _nef_nmr_meta_data.format_version   1.1
+    _nef_nmr_meta_data.program_name     NEFPipelines
+    _nef_nmr_meta_data.script_name      fasta/import/sequence.py
+    _nef_nmr_meta_data.program_version  0.0.1
+    _nef_nmr_meta_data.creation_date    2023-01-17T08:53:56.378671
+    _nef_nmr_meta_data.uuid             NEFPipelines-2023-01-17T08:53:56.378671-4180324105
+
+    loop_
+        _nef_run_history.run_number
+        _nef_run_history.program_name
+        _nef_run_history.program_version
+        _nef_run_history.script_name
+
+
+    stop_
+
+save_
+
+save_nef_molecular_system
+    _nef_molecular_system.sf_category   nef_molecular_system
+    _nef_molecular_system.sf_framecode  nef_molecular_system
+
+    loop_
+        _nef_sequence.index
+        _nef_sequence.chain_code
+        _nef_sequence.sequence_code
+        _nef_sequence.residue_name
+        _nef_sequence.linking
+        _nef_sequence.residue_variant
+        _nef_sequence.cis_peptide
+
+        1    A   235   GLY   start    .   .
+        2    A   236   PRO   middle   .   .
+        3    A   237   ALA   middle   .   .
+        4    A   238   MET   middle   .   .
+        5    A   239   THR   middle   .   .
+
+
+    stop_
+
+save_
