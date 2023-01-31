@@ -1,0 +1,65 @@
+data_xplor
+
+    save_nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
+
+        loop_
+            _nef_sequence.index
+            _nef_sequence.chain_code
+            _nef_sequence.sequence_code
+            _nef_sequence.residue_name
+            _nef_sequence.linking
+            _nef_sequence.residue_variant
+            _nef_sequence.cis_peptide
+
+            1   AAAA   1    ALA   start    .   .
+            2   AAAA   2    ALA   middle   .   .
+            3   AAAA   3    ALA   end      .   .
+            4   BBBB   11   ALA   start    .   .
+            5   BBBB   12   ALA   middle   .   .
+            6   BBBB   13   ALA   end      .   .
+
+        stop_
+    save_
+
+    save_nef_rdc_restraint_list_rdcs
+        _nef_rdc_restraint_list.sf_category           nef_rdc_restraint_list
+        _nef_rdc_restraint_list.sf_framecode          nef_rdc_restraint_list_rdcs
+        _nef_rdc_restraint_list.restraint_origin      .
+        _nef_rdc_restraint_list.tensor_magnitude      .
+        _nef_rdc_restraint_list.tensor_rhombicity     .
+        _nef_rdc_restraint_list.tensor_chain_code     .
+        _nef_rdc_restraint_list.tensor_sequence_code  .
+        _nef_rdc_restraint_list.tensor_residue_name   .
+
+        loop_
+            _nef_rdc_restraint.index
+            _nef_rdc_restraint.restraint_id
+            _nef_rdc_restraint.restraint_combination_id
+            _nef_rdc_restraint.chain_code_1
+            _nef_rdc_restraint.sequence_code_1
+            _nef_rdc_restraint.residue_name_1
+            _nef_rdc_restraint.atom_name_1
+            _nef_rdc_restraint.chain_code_2
+            _nef_rdc_restraint.sequence_code_2
+            _nef_rdc_restraint.residue_name_2
+            _nef_rdc_restraint.atom_name_2
+            _nef_rdc_restraint.weight
+            _nef_rdc_restraint.target_value
+            _nef_rdc_restraint.target_value_uncertainty
+            _nef_rdc_restraint.lower_linear_limit
+            _nef_rdc_restraint.lower_limit
+            _nef_rdc_restraint.upper_limit
+            _nef_rdc_restraint.upper_linear_limit
+            _nef_rdc_restraint.scale
+            _nef_rdc_restraint.distance_dependent
+
+            0   0   .   AAAA   1   ALA   HA     AAAA   1   ALA   HN   1.0   1.3   1.0   .   .   .   .   1.0   .
+            1   1   .   AAAA   1   ALA   HB     AAAA   1   ALA   HN   1.0   4.6   2.0   .   .   .   .   1.0   .
+            2   2   .   AAAA   2   ALA   HG3#   AAAA   2   ALA   HN   1.0   2.4   3.0   .   .   .   .   1.0   .
+            3   3   .   AAAA   3   ALA   HA     AAAA   3   ALA   HN   1.0   6.7   4.0   .   .   .   .   1.0   .
+
+        stop_
+
+    save_
