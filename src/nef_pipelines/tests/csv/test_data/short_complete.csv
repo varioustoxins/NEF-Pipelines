@@ -1,0 +1,5 @@
+﻿chain_code_1,sequence_code_1,atom_1,chain_code_2,sequence_code_2,atom_2,value,value_uncertainty
+AAAA,1,HA,AAAA,1,HN,1.3,1.0
+AAAA,1,HB,AAAA,1,HN,4.6,2.0
+AAAA,2,HG3#,AAAA,2,HN,2.4,3.0
+AAAA,3,HA,AAAA,3,HN,6.7,4.0
