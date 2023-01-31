@@ -75,7 +75,7 @@ jobs:
           --installpkg '${{ needs.prepare.outputs.wheel-distribution }}'
           -- -rFEx --durations 10 --color yes
       - name: Generate coverage report
-        run: pipx run coverage lcov -o coverage.lcov
+        run: pipx run coverage lcov -o coverage.lcov --debug trace
       - name: Upload partial coverage report
         uses: coverallsapp/github-action@master
         with:
