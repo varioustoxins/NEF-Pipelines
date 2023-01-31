@@ -197,7 +197,7 @@ def root_path(initial_path: str):
     belt_and_braces = 100  # noqa: F841 this appears to be a bug
     while (
         not (Path(target.root) == target)
-        and not (target / "src" / "nef_pipelines" / "main.py").is_file()
+        and not (target / "nef_pipelines" / "main.py").is_file()
     ):
         target = target.parent
         belt_and_braces -= 1
@@ -207,6 +207,8 @@ def root_path(initial_path: str):
                 directories this looks like a bug!
             """
             raise Exception(msg)
+
+    target /= "nef_pipelines"
 
     return target
 
@@ -225,8 +227,8 @@ def path_in_test_data(root: str, file_name: str) -> str:
         str: the target paths as a string
     """
 
-    test_data_local = root_path(root) / "src" / "nef_pipelines" / "tests" / "test_data"
-    test_data_root = path_in_parent_directory(root, "test_data")
+    test_data_root = root_path(root) / "tests" / "test_data"
+    test_data_local = path_in_parent_directory(root, "test_data")
 
     if (Path(test_data_local) / file_name).is_file():
         test_data = test_data_local
