@@ -72,3 +72,11 @@ added support for import of RDCs from a csv file
 added support for segment codes to pales / dc when exporting rdcs
 
 added support for exporting neff rdc restraints to xplor legacy format
+
+## Version 0.1.25 (development)
+
+added missing test files
+
+## Version 0.1.26 (development)
+
+corrected an error in how test files are searched for
