@@ -3,11 +3,13 @@ import re
 from enum import auto
 from io import TextIOWrapper
 from pathlib import Path
+from textwrap import dedent
 from typing import List, Tuple
 
 import typer
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
+from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
@@ -16,6 +18,7 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
+    sequence_from_entry,
     sequence_from_entry_or_exit,
     sequence_to_residue_type_lookup,
 )
@@ -23,6 +26,7 @@ from nef_pipelines.lib.structures import AtomLabel, RdcRestraint, SequenceResidu
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
+    get_display_file_name,
     is_float,
     is_int,
     parse_comma_separated_options,
@@ -79,6 +83,24 @@ DEFAULT_ATOMS_HELP = (
 )
 
 
+class BadSequenceException(Exception):
+    pass
+
+
+def _exit_bad_sequence(e, entry_input, sequence_table=None):
+    msg = (
+        f"{dedent(str(e))}\n"
+        f"the source of the residue sequence was: {get_display_file_name(entry_input)}\n\n"
+    )
+    if not sequence_table:
+        msg += "note: if you would like to see a complete input sequence use the verbose option"
+    else:
+        msg += "sequence was:\n\n"
+        msg += sequence_table
+
+    exit_error(msg)
+
+
 @import_app.command(no_args_is_help=True)
 def rdcs(
     entry_input: Path = typer.Option(
@@ -92,7 +114,7 @@ def rdcs(
     csv_file_encoding: str = typer.Option(
         "utf-8-sig", "-e", "--encoding", help="encoding for the csv file"
     ),
-    csv_file: Path = typer.Argument(None, metavar="<CSV-FILE>"),
+    verbose: bool = typer.Option(False, help="report verbose information"),
     default_atoms: List[str] = typer.Option(
         [], "-a", "--atoms", help=DEFAULT_ATOMS_HELP
     ),
@@ -102,6 +124,7 @@ def rdcs(
         "--chain-code",
         help="default chain code to use if none is provided in the file",
     ),
+    csv_file: Path = typer.Argument(None, metavar="<CSV-FILE>"),
 ):
     default_atoms = parse_comma_separated_options(default_atoms)
 
@@ -112,14 +135,19 @@ def rdcs(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(entry_input)
 
-    pipe(
-        entry,
-        default_chain_code,
-        default_atoms,
-        csv_file,
-        csv_file_encoding,
-        csv_format,
-    )
+    try:
+        pipe(
+            entry,
+            default_chain_code,
+            default_atoms,
+            csv_file,
+            csv_file_encoding,
+            csv_format,
+        )
+    except BadSequenceException as e:
+
+        sequence_table = _tabulate_sequence(entry) if verbose else None
+        _exit_bad_sequence(e, entry_input, sequence_table)
 
     print(entry)
 
@@ -308,11 +336,11 @@ def _parse_csv(
                 else:
                     value_uncertainty = UNUSED
 
-                residue_name_1 = get_residue_name_from_lookup(
+                residue_name_1 = _lookup_residue_name_or_exit(
                     chain_code_1, sequence_code_1, lookup
                 )
-                residue_name_2 = get_residue_name_from_lookup(
-                    chain_code_1, sequence_code_2, lookup
+                residue_name_2 = _lookup_residue_name_or_exit(
+                    chain_code_2, sequence_code_2, lookup
                 )
 
                 residue_1 = SequenceResidue(
@@ -408,13 +436,31 @@ def _get_csv_reader_for_format(csv_format, csv_fp, encoding):
     return rdc_reader
 
 
-# https://stackoverflow.com/questions/1007481/how-to-replace-whitespaces-with-underscore
-def make_name_for_file(s):
+def _lookup_residue_name_or_exit(chain_code, sequence_code, lookup):
+    residue_name = get_residue_name_from_lookup(chain_code, sequence_code, lookup)
+    if residue_name == UNUSED:
+        msg = f"""
+                            There is no residue with chain {chain_code} and sequence code {sequence_code} in the input
+                            sequence so I can't find a residue name for this residue
+                        """
+        raise BadSequenceException(msg)
 
-    # Remove all non-word characters (everything except numbers and letters)
-    s = re.sub(r"[^\w\s]", "", s)
+    return residue_name
 
-    # Replace all runs of whitespace with a single dash
-    s = re.sub(r"\s+", "_", s)
 
-    return s
+def _tabulate_sequence(entry: Entry) -> None:
+
+    sequence = sequence_from_entry(entry)
+    table = []
+    for residue in sequence:
+        row = [residue.chain_code, residue.sequence_code, residue.residue_name]
+        table.append(row)
+
+    if not table:
+        result = "NO SEQUENCE..!"
+    else:
+        headers = "chain_code sequence_code residue_name".split()
+        headers = [header.replace("_", " ") for header in headers]
+        result = tabulate(table, headers=headers)
+
+    return result
