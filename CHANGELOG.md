@@ -64,3 +64,11 @@ minor improvements to help text and error messages
 
 note: the xplor support includes a proper parser for xplor nested restraint selections
 including SEGIDentifier RESIDue and NAME including proper literal abbreviations.
+
+## Version 0.1.24 (development)
+
+added support for import of RDCs from a csv file
+
+added support for segment codes to pales / dc when exporting rdcs
+
+added support for exporting neff rdc restraints to xplor legacy format
