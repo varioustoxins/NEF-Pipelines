@@ -44,7 +44,7 @@ def shifts(
         [],
         "-c",
         "--chain",
-        help="chains to export, to add mutiple chains use repeated calls  [default: 'A']",
+        help="chains to export, to add multiple chains use repeated calls  [default: 'A']",
         metavar="<CHAIN-CODE>",
     ),
     output_file: str = typer.Argument(
