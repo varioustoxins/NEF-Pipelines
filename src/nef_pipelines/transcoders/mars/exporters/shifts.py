@@ -141,12 +141,26 @@ def shifts(
         ("HA", ("HA", 0)),
         ("HA-1", ("HA", 1)),
     )
-    headers = (" ", "H", "N", "CA", "CA-1", "CB", "CB-1", "CO", "CO-1", "HA", "HA-1")
+    base_headers = (
+        "",
+        "H",
+        "N",
+        "CA",
+        "CA-1",
+        "CB",
+        "CB-1",
+        "CO",
+        "CO-1",
+        "HA",
+        "HA-1",
+    )
 
     pseudo_residues = {}
     for pseudo_atom in pseudo_atom_shifts:
         key = (pseudo_atom.atom_name, pseudo_atom.negative_offset)
         pseudo_residues.setdefault(pseudo_atom.sequence_code, {})[key] = pseudo_atom
+
+    headers = _filter_headings_by_pseudoatoms(base_headers, pseudo_residues)
 
     lines = []
     for pseudo_residue_num in sorted(pseudo_residues):
@@ -165,7 +179,7 @@ def shifts(
                 shift = pseudo_atom_shifts[pseudo_atom]
 
                 line.append("%-7.3f    " % shift)
-            else:
+            elif heading.upper() in headers:
                 line.append("-         ")
 
     file_h = sys.stdout if output_file == "-" else open(output_file, "w")
@@ -177,3 +191,20 @@ def shifts(
 
         if not sys.stdout.isatty():
             print(entry)
+
+
+def _filter_headings_by_pseudoatoms(base_headers, pseudo_residues):
+    atom_names = set()
+    for pseudo_residue in pseudo_residues.values():
+        for pseudo_atom in pseudo_residue.values():
+            offset = (
+                f"-{pseudo_atom.negative_offset}"
+                if pseudo_atom.negative_offset == 1
+                else ""
+            )
+            atom_names.add(f"{pseudo_atom.atom_name.upper()}{offset}")
+    headers = []
+    for header in base_headers:
+        if header == "" or header in atom_names:
+            headers.append(header)
+    return headers
