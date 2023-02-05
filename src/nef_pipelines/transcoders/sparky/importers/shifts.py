@@ -38,6 +38,8 @@ ATOM = "Atom"
 GROUP = "Group"
 NUCLEUS = "Nuc"
 
+EXPECTED_HEADINGS = set(f"{GROUP} {ATOM} {NUCLEUS} {SHIFT} SDev Assignments".split())
+
 app = typer.Typer()
 
 
@@ -154,9 +156,6 @@ def _parse_shifts(
     file_name="unknown",
 ) -> ShiftList:
 
-    EXPECTED_HEADINGS = set(
-        f"{GROUP} {ATOM} {NUCLEUS} {SHIFT} SDev Assignments".split()
-    )
     heading_indices = {}
 
     read_shifts = []
@@ -176,46 +175,47 @@ def _parse_shifts(
         elif not line:
             continue
         else:
-            fields = line_info.line.split()
-
-            _exit_if_wrong_number_data_columns(fields, headings, line_info)
-
-            fields = {
-                heading: fields[column] for heading, column in heading_indices.items()
-            }
-
-            group = fields[GROUP]
-            atom = fields[ATOM]
-            shift = float(fields[SHIFT])
-            nucleus = fields[NUCLEUS]
-
-            residue_type = _read_residue_name_from_group_or_exit(group, line_info)
-
-            sequence_code = read_residue_number_from_group_or_exit(
-                group, residue_type, line_info
+            shift = _parse_shifts_line(
+                line_info, heading_indices, chain_code, chain_seqid_to_type
             )
-
-            residue_type = _convert_residue_type_to_3_let_or_exit(
-                residue_type, line_info
-            )
-
-            residue = SequenceResidue(chain_code, sequence_code, residue_type)
-
-            _exit_if_residue_doesnt_equal_sequence(
-                residue, chain_seqid_to_type, line_info
-            )
-
-            element, isotope_number = _parse_element_and_isotope_number(nucleus)
-
-            atom_label = AtomLabel(
-                residue, atom, element=element, isotope_number=isotope_number
-            )
-
-            shift = ShiftData(atom_label, shift)
 
             read_shifts.append(shift)
 
     return ShiftList(read_shifts)
+
+
+def _parse_shifts_line(line_info, heading_indices, chain_code, chain_seqid_to_type):
+    fields = line_info.line.split()
+
+    _exit_if_wrong_number_data_columns(fields, heading_indices, line_info)
+
+    fields = {heading: fields[column] for heading, column in heading_indices.items()}
+
+    group = fields[GROUP]
+    atom = fields[ATOM]
+    shift = float(fields[SHIFT])
+    nucleus = fields[NUCLEUS]
+
+    residue_type = _read_residue_name_from_group_or_exit(group, line_info)
+
+    sequence_code = read_residue_number_from_group_or_exit(
+        group, residue_type, line_info
+    )
+
+    residue_type = _convert_residue_type_to_3_let_or_exit(residue_type, line_info)
+
+    residue = SequenceResidue(chain_code, sequence_code, residue_type)
+
+    _exit_if_residue_doesnt_equal_sequence(residue, chain_seqid_to_type, line_info)
+
+    element, isotope_number = _parse_element_and_isotope_number(nucleus)
+
+    atom_label = AtomLabel(
+        residue, atom, element=element, isotope_number=isotope_number
+    )
+
+    shift = ShiftData(atom_label, shift)
+    return shift
 
 
 def _exit_if_wrong_number_data_columns(fields, headings, line_info):
@@ -237,7 +237,7 @@ def _exit_if_bad_header(headings, EXPECTED_HEADINGS, line_info):
     if not set(headings).issubset(EXPECTED_HEADINGS):
         msg = f"""\
                     the file {line_info.file_name} doesn't look like a sparky file"
-                    line 1 hould contain the the standard sparky headings:
+                    line 1 should contain the the standard sparky headings:
                     {', '.join(EXPECTED_HEADINGS)}
                     i got:
                     {line_info.line}
