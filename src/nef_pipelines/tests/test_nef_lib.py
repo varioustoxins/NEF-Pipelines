@@ -9,12 +9,17 @@ import pytest
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe,; NEF_CATEGORY_ATTR,
+    BadNefFileException,
+    create_entry_from_stdin,
     create_entry_from_stdin_or_exit,
     loop_row_dict_iter,
     loop_row_namespace_iter,
+    read_or_create_entry_exit_error_on_bad_file,
     select_frames_by_name,
 )
 from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
+from nef_pipelines.lib.util import STDIN
+from nef_pipelines.main import EXIT_ERROR
 
 # def test_nef_to_pandas():
 #
@@ -80,6 +85,63 @@ from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
 #     new_loop_2 = dataframe_to_loop(frame, category="wibble")
 #     # note pynmrstar includes the leading _ in the category, I don't...!
 #     assert new_loop_2.category == "_wibble"
+
+
+def test_create_entry_from_empty_stdin(mocker):
+
+    mocker.patch("sys.stdin", StringIO())
+    result = create_entry_from_stdin()
+    assert result is None
+
+
+def test_create_entry_from_bad_stdin(mocker):
+    mocker.patch("sys.stdin", StringIO("wibble"))
+
+    with pytest.raises(BadNefFileException):
+        result = create_entry_from_stdin()
+        assert result is None
+
+
+def test_create_entry_from_stdin(mocker):
+    INPUT = """
+        data_test
+    """
+    mocker.patch("sys.stdin", StringIO(INPUT))
+
+    result = create_entry_from_stdin()
+
+    assert result == Entry.from_scratch("test")
+
+
+def test_read_or_create_entry_exit_error_on_bad_file_empty_stdin(mocker):
+    mocker.patch("sys.stdin", StringIO())
+    result = read_or_create_entry_exit_error_on_bad_file(STDIN)
+    assert result == Entry.from_scratch("nef")
+
+
+def test_read_or_create_entry_exit_error_on_bad_file_exception(mocker, tmp_path):
+    mocker.patch("sys.exit")
+    read_or_create_entry_exit_error_on_bad_file(tmp_path / "doesnt_exists.neff")
+    assert sys.exit.called_once_with(EXIT_ERROR)
+
+
+def test_read_or_create_entry_exit_error_on_bad_file_bad_stdin(mocker):
+    mocker.patch("sys.stdin", StringIO("wibble"))
+    mocker.patch("sys.exit")
+
+    read_or_create_entry_exit_error_on_bad_file(STDIN)
+    assert sys.exit.called_once_with(EXIT_ERROR)
+
+
+def test_read_or_create_entry_exit_error_on_bad_file(mocker):
+    INPUT = """
+        data_test
+    """
+    mocker.patch("sys.stdin", StringIO(INPUT))
+
+    result = create_entry_from_stdin()
+
+    assert result == Entry.from_scratch("test")
 
 
 def test_select_frames():

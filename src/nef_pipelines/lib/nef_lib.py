@@ -3,12 +3,14 @@ from argparse import Namespace
 from enum import auto
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Dict, Iterator, List, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 # from pandas import DataFrame
 from pynmrstar import Entry, Loop, Saveframe
+from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
 
+from nef_pipelines.lib import util
 from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
 from nef_pipelines.lib.util import (
     exit_error,
@@ -165,10 +167,38 @@ def select_frames_by_name(
 
 
 # refactor to two functions one of which gets a TextIO
+def create_entry_from_stdin() -> Optional[Entry]:
+
+    """
+    read a star file entry from stdin or return None
+
+    can throw a ParsingError from PyNMRStar
+
+    :return: a star file entry or None
+    """
+
+    try:
+        entry = None
+        if not sys.stdin.isatty() or running_in_pycharm():
+            stdin_lines = sys.stdin.read()
+            if stdin_lines is None:
+                lines = ""
+            else:
+                lines = "".join(stdin_lines)
+
+            if len(lines.strip()) != 0:
+                entry = Entry.from_string(lines)
+    except ParsingError as e:
+        raise BadNefFileException(str(e)) from e
+
+    return entry
+
+
+# refactor to two functions one of which gets a TextIO
 def create_entry_from_stdin_or_exit() -> Entry:
 
     """
-    read a star file entry from stdin or exit withan error message
+    read a star file entry from stdin or exit with an error message
     :return: a star file entry
     """
 
@@ -310,6 +340,48 @@ def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
 
         except IOError as e:
             exit_error(f"couldn't read from the file {file}", e)
+    return entry
+
+
+# TODO: should be used as underpinnings for other related functions here
+def read_or_create_entry_exit_error_on_bad_file(
+    file: Path, entry_name: str = "nef"
+) -> Entry:
+    """
+    read a star entry from stdin or create a new one. If a badly formatted Star file is read exit error...
+
+    :param file: a file whih can be either on the file system or stding Path('-')
+    :return: an Entry a new Entry is created if no entry can be read
+    """
+
+    entry = None
+    try:
+        if file is None or file == Path("-"):
+            entry = create_entry_from_stdin()
+        else:
+            try:
+                with open(file) as fh:
+                    lines = fh.read()
+                    lines = lines.strip()
+                    if lines:
+                        entry = Entry.from_string(fh)
+
+            except IOError as e:
+                msg = f"""
+                    while reading the file {util.get_display_file_name(file)} the file wasn't readable
+                    error from operating system was {str(e)}
+                """
+                exit_error(msg)
+    except BadNefFileException as e:
+        msg = f"""
+            while reading the file {util.get_display_file_name(file)} the format was bad
+            error from star file parser was {str(e)}
+        """
+        exit_error(msg)
+
+    if entry is None:
+        entry = Entry.from_scratch(entry_name)
+
     return entry
 
 
