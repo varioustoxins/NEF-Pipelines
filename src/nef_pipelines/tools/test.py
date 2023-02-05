@@ -26,6 +26,7 @@ def test(
     warnings: bool = typer.Option(
         False, "-w", "--warnings", help="include all warnings"
     ),
+    # native_tracebacks: bool = typer.Option(False, '-n', '--native-tracebacks', help='use standard python tracebacks'),
     targets: List[str] = typer.Argument(None, help=TARGET_HELP),
 ):
     """-  run the test suite"""
@@ -45,6 +46,8 @@ def test(
 
         if not warnings:
             command = ["--disable-warnings", *command]
+        # if native_tracebacks:
+        #     command = ['--tb=native', *command]
         main(command)
 
 
