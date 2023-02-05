@@ -70,6 +70,7 @@ def main():
 
     try:
         # import components which will self register, this could and will be automated
+        import nef_pipelines.tools.about  # noqa: F401
         import nef_pipelines.tools.chains  # noqa: F401
         import nef_pipelines.tools.entry  # noqa: F401
         import nef_pipelines.tools.frames  # noqa: F401
