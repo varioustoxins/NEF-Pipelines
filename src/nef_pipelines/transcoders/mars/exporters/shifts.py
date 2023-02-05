@@ -2,7 +2,7 @@
 import sys
 from dataclasses import dataclass
 from string import digits
-from typing import List
+from typing import List, Union
 
 import typer
 from tabulate import tabulate
@@ -73,7 +73,7 @@ def shifts(
 
     @dataclass(frozen=True, order=True)
     class PseudoAtom:
-        sequence_code: int
+        sequence_code: Union[int, str]
         residue_name: str
         negative_offset: int
         atom_name: str
