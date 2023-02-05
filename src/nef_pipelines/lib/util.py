@@ -379,6 +379,17 @@ def read_from_file_or_exit(file_name: Path, target: str) -> str:
     return text
 
 
+def _script_to_command(script: str) -> str:
+    """
+    turns a script path into the equivalent nef pipelines command
+    :param script: the script path
+    :return: the command name
+    """
+    script_path = script.split("/")
+    script_path[-1] = script_path[-1].strip(".py")
+    return " ".join(script_path)
+
+
 def exit_error(msg, exception=None):
     """
     print an error message and exit error
@@ -398,7 +409,9 @@ def exit_error(msg, exception=None):
 
     script = script_name(__file__)
 
-    print(f"ERROR [in {script}]: {msg[0]}", file=sys.stderr)
+    command = _script_to_command(script)
+
+    print(f"ERROR [in: {command}]: {msg[0]}", file=sys.stderr)
 
     for line in msg[1:]:
         print(f"       {line}", file=sys.stderr)
