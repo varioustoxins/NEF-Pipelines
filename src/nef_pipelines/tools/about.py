@@ -1,46 +1,52 @@
 import sys
 from datetime import date
-from pathlib import Path
-from textwrap import dedent
+from textwrap import dedent, indent
+
+import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.util import get_version
 
 if nef_app:
     # noinspection PyUnusedLocal
     @nef_app.app.command()
-    def about():
+    def about(
+        version: bool = typer.Option(
+            False, "--version", help="only display the current version"
+        )
+    ):
         "- info about NEF-Pipelines"
 
-        file_path = Path(__file__)
-        root_path = file_path.parent.parent
-        version_path = root_path / "VERSION"
+        print(cmd(version), file=sys.stderr)
 
-        with open(version_path) as file_h:
-            version = file_h.read().strip()
+    def cmd(version):
+        version_data = get_version()
 
-        NEF_PIPLINES_URL = "https://github.com/varioustoxins/NEF-Pipelines"
-        msg = f"""\
+        if version:
+            result = str(version_data)
+        else:
+            NEF_PIPLINES_URL = "https://github.com/varioustoxins/NEF-Pipelines"
+            msg = f"""\
 
-            This is NEF-Pipelines version {version}
+                This is NEF-Pipelines version {version_data}
 
-            For information about this program and the code please see: {NEF_PIPLINES_URL}
-            For bug reporting please goto: {NEF_PIPLINES_URL}/issues
+                For information about this program and the code please see: {NEF_PIPLINES_URL}
+                For bug reporting please goto: {NEF_PIPLINES_URL}/issues
 
-            If you like this project please star it on the projects github page (listed above)!
-            If you want to cite the project please cite it as
+                If you like this project please star it on the projects github page (listed above)!
+                If you want to cite the project please cite it as
 
-            G. S. Thompson {NEF_PIPLINES_URL} ({date.today().year})
+                G. S. Thompson {NEF_PIPLINES_URL} ({date.today().year})
 
-            regards Gary (aka varioustoxins)
-        """
+                regards Gary (aka varioustoxins)
+            """
 
-        msg = dedent(msg)
+            msg = dedent(msg)
 
-        max_width = max([len(line) for line in msg.split("\n")])
+            max_width = max([len(line) for line in msg.split("\n")])
 
-        header = "=" * (max_width + 4)
+            header = "=" * (max_width + 4)
 
-        print(header, file=sys.stderr)
-        for line in msg.split("\n"):
-            print(f"  {line}", file=sys.stderr)
-        print(header, file=sys.stderr)
+            result = "\n".join([header, indent(msg, "  "), header])
+
+        return result
