@@ -80,3 +80,13 @@ added missing test files
 ## Version 0.1.26 (development)
 
 corrected an error in how test files are searched for
+
+## version 0.1.27
+
+added support for reading MARS shift files
+
+
+## version 0.1.28
+
+added an about command for information about the project
+adder support for export xcamshift chemical shift restraint files
