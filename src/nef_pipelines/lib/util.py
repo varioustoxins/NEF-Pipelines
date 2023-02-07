@@ -10,7 +10,6 @@ from textwrap import dedent
 from typing import Any, Dict, Iterator, List, Optional, TextIO, TypeVar, Union
 
 import click
-import packaging
 from cacheable_iter import iter_cache
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
@@ -708,10 +707,10 @@ def flatten(in_list: Union[List[Any], List[Union[List[Any], Any]]]) -> List[Any]
     return out
 
 
-def get_version() -> packaging.Version:
+def get_version() -> str:
     """
-        get the current version of nef piplines
-    :return: a version
+        get the current version of nef pipelines
+    :return: a version string
     """
 
     file_path = Path(__file__)
@@ -721,4 +720,4 @@ def get_version() -> packaging.Version:
     with open(version_path) as file_h:
         version = file_h.read().strip()
 
-    return packaging.version.parse(version)
+    return version
