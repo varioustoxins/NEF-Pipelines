@@ -17,7 +17,7 @@ VERSION=`ver --file $VERSION_FILE |  awk '{print $3}'`
 
 # update the version  in the repo
 git add src/nef_pipelines/VERSION
-git commit -m "updated version to $VERSION"
+git commit -m "updated version to $VERSION" --no-verify
 
 # stash any uncommited changes to avoid version+1 errors
 git stash
