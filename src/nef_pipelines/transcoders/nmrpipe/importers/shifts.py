@@ -1,19 +1,18 @@
-from argparse import Namespace
 from dataclasses import replace
 from pathlib import Path
 from typing import Iterable, List
 
 import typer
 
+from nef_pipelines.lib.nef_lib import (
+    add_frames_to_entry,
+    read_file_or_exit,
+    read_or_create_entry_exit_error_on_bad_file,
+)
 from nef_pipelines.lib.sequence_lib import chain_code_iter, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
-from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import (
-    cached_file_stream,
-    exit_error,
-    process_stream_and_add_frames,
-)
+from nef_pipelines.lib.util import STDIN
 from nef_pipelines.transcoders.nmrpipe import import_app
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     read_db_file_records,
@@ -26,15 +25,18 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command()
 def shifts(
-    chain_codes: str = typer.Option(
-        "A",
+    chain_codes: List[str] = typer.Option(
+        None,
         "--chains",
         help="chain codes as a list of names spearated by dots",
         metavar="<CHAIN-CODES>",
     ),
     entry_name: str = typer.Option("nmrpipe", help="a name for the entry"),
-    pipe: Path = typer.Option(
-        None,
+    frame_name: str = typer.Option("nmrpipe", help="a name for the frame"),
+    input: Path = typer.Option(
+        STDIN,
+        "-i",
+        "--input",
         metavar="|PIPE|",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
@@ -43,20 +45,19 @@ def shifts(
     ),
 ):
     """convert nmrpipe shift file <nmrpipe>.tab files to NEF"""
-    try:
-        args = get_args()
 
-        process_shifts(args)
-    except Exception as e:
-        exit_error(f"reading sequence failed because {e}", e)
+    entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name)
+
+    if not chain_codes:
+        chain_codes = ["A"]
+
+    pipe(entry, chain_codes, file_names, frame_name)
 
 
-def process_shifts(args: Namespace):
+def pipe(entry, chain_codes, file_names, frame_name):
     nmrpipe_frames = []
 
-    for file_name, chain_code in zip(
-        file_names, chain_code_iter(chain_codes)
-    ):
+    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
 
         lines = read_file_or_exit(file_name)
 
