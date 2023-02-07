@@ -1,0 +1,87 @@
+
+data_nmrpipe
+
+save_nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+   _nef_nmr_meta_data.format_name      nmr_exchange_format
+   _nef_nmr_meta_data.format_version   1.1
+   _nef_nmr_meta_data.program_name     NEFPipelines
+   _nef_nmr_meta_data.script_name      nmrpipe/import/shifts.py
+   _nef_nmr_meta_data.program_version  0.0.1
+   _nef_nmr_meta_data.creation_date    2023-02-07T21:37:55.622293
+   _nef_nmr_meta_data.uuid             NEFPipelines-2023-02-07T21:37:55.789850-2510221128
+   _nef_nmr_meta_data.creation_time    2023-02-07T21:37:55.789850
+
+   loop_
+      _nef_run_history.run_number
+      _nef_run_history.program_name
+      _nef_run_history.program_version
+      _nef_run_history.script_name
+
+     1   NEFPipelines   0.0.1   nmrpipe/import/sequence.py
+
+   stop_
+
+save_
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1     AAAA   1     ALA   start    .   .
+     2     AAAA   2     GLY   middle   .   .
+     3     AAAA   3     VAL   middle   .   .
+
+
+
+   stop_
+
+save_
+
+save_nef_chemical_shift_list_nmrpipe
+   _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_nmrpipe
+
+   loop_
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+      _nef_chemical_shift.value_uncertainty
+      _nef_chemical_shift.element
+      _nef_chemical_shift.isotope_number
+
+     AAAA   1     ALA   N     115.74    .   .   .
+     AAAA   1     ALA   C     181.08    .   .   .
+     AAAA   1     ALA   CA    53.27     .   .   .
+     AAAA   1     ALA   CB    20.34     .   .   .
+     AAAA   1     ALA   HA    5.32      .   .   .
+     AAAA   2     GLY   HN    7.31      .   .   .
+     AAAA   2     GLY   N     117.94    .   .   .
+     AAAA   2     GLY   C     176.92    .   .   .
+     AAAA   2     GLY   CA    46.77     .   .   .
+     AAAA   2     GLY   HA2   4.89      .   .   .
+     AAAA   2     GLY   HA3   3.6       .   .   .
+     AAAA   3     VAL   HN    8.82      .   .   .
+     AAAA   3     VAL   N     116.85    .   .   .
+     AAAA   3     VAL   C     172.98    .   .   .
+     AAAA   3     VAL   CA    71.71     .   .   .
+     AAAA   3     VAL   CB    33.15     .   .   .
+     AAAA   3     VAL   CG1   23.14     .   .   .
+     AAAA   3     VAL   MG1   1.72      .   .   .
+     AAAA   3     VAL   CG2   323.87     .   .   .
+     AAAA   3     VAL   MG2   1.79      .   .   .
+     AAAA   3     VAL   HA    5.02      .   .   .
+   stop_
+save_

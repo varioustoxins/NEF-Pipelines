@@ -85,6 +85,7 @@ def main():
         import nef_pipelines.transcoders.pales  # noqa: F401
         import nef_pipelines.transcoders.pdbx  # noqa: F401
         import nef_pipelines.transcoders.sparky  # noqa: F401
+        import nef_pipelines.transcoders.xcamshift  # noqa: F401
         import nef_pipelines.transcoders.xplor  # noqa: F401
 
     except Exception as e:
