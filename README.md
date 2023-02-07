@@ -55,12 +55,41 @@ It also provides tools for importing and exporing non NEF files from the followi
 
 ## Installation
 
-NEF-Pipelines can be installed using pip, just type
+NEF-Pipelines can be installed using pip and pipx
+
+Firstly install pipx if you need to, using the commands for your OS ...
+
+#### OSX
 
 ```bash
-pip install nef-pipelines
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+```
+#### Windows using WSL2
+
+follow the instruction for linux distro of choice inside WSL2...
+
+#### Ubuntu / Mint
+
+```bash
+sudo apt install pipx python3-venv
 ```
 
+#### Fedora / RHEL / Centos/ ROCKY Linux / AlmaLinux
+
+```bash
+sudo dnf install pipx
+```
+
+#### openSUSE
+```bash
+sudo zypper install python3-pipx
+```
+
+#### Then to install NEF-Pipelines
+```bash
+python3 -m pipx install nef-pipelines
+```
 after the install has completed you can type
 
 ```bash
@@ -75,6 +104,13 @@ Usage: nef [OPTIONS] COMMAND [ARGS]...                                          
 Options:
 ...
 ```
+
+## Updating NEF-Pipelines
+
+```bash
+python3 -m pip install --user -U pipx
+```
+
 ## Pipelines and Standalone Use
  All commands also have a
 help options triggered using `--help` or when no input is detected. So for example the `nef` command on its own produces
@@ -172,12 +208,7 @@ similarities to [NMRStar] files used by the [BMRB] and [PDBx / mmCIF] used by th
 underling format. However, its is not directly interchangeable with these file formats as it has a different syntax and
 intention / underlying use easy and accurate NMR data interchange] as opposed to archiving for example.
 
-<!-- pyscaffold-notes -->
 
-## Note
-
-This project has been set up using PyScaffold 4.3.1. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
 
 [NEF paper]: https://www.nature.com/articles/nsmb.3041
 [guide to nef]: https://www.ccpn.ac.uk/manual/v3/NEF.html
