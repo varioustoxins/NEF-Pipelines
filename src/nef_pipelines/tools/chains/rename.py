@@ -1,12 +1,17 @@
+from pathlib import Path
 from typing import List
 
 import typer
 from ordered_set import OrderedSet
-from pynmrstar import Entry
 from typer import Argument, Option
 
-from nef_pipelines.lib.nef_lib import SELECTORS_LOWER, SelectionType, select_frames
-from nef_pipelines.lib.util import get_pipe_file
+from nef_pipelines.lib.nef_lib import (
+    SELECTORS_LOWER,
+    SelectionType,
+    read_entry_from_file_or_stdin_or_exit_error,
+    select_frames,
+)
+from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.chains import chains_app
 
 app = typer.Typer()
@@ -30,6 +35,13 @@ def rename(
         help=f"how to select frames to renumber, can be one of: {SELECTORS_LOWER}."
         "Any will match on names first and then if there is no match attempt to match on category",
     ),
+    input: Path = typer.Option(
+        STDIN,
+        "-i",
+        "--input",
+        metavar="|PIPE|",
+        help="input to read NEF data from [- is stdin]",
+    ),
     frame_selectors: List[str] = Option(
         None,
         "-f",
@@ -44,8 +56,7 @@ def rename(
     old = new_old[0]
     new = new_old[1]
 
-    lines = "".join(get_pipe_file([]).readlines())
-    entry = Entry.from_string(lines)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
     changes = 0
     changed_frames = OrderedSet()
