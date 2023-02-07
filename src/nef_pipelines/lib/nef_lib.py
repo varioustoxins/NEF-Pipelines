@@ -193,6 +193,22 @@ def create_entry_from_stdin() -> Optional[Entry]:
 
     return entry
 
+def read_file_or_exit(file_path: Path) -> List[str]:
+    """
+    read the contenst of a file or exit with error
+
+    :param file_path: the path to the file
+    :return: a list of strings from the file
+    """
+    try:
+        result = open(file_path).readlines()
+    except IOError as e:
+        msg = f"""\
+            failed to read from {file_path} because {e}
+        """
+        exit_error(msg)
+
+    return result
 
 # refactor to two functions one of which gets a TextIO
 def read_entry_from_stdin_or_exit() -> Entry:

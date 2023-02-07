@@ -55,20 +55,20 @@ def process_shifts(args: Namespace):
     nmrpipe_frames = []
 
     for file_name, chain_code in zip(
-        args.file_names, chain_code_iter(args.chain_codes)
+        file_names, chain_code_iter(chain_codes)
     ):
-        # cached_file_stream
-        with cached_file_stream(file_name) as lines:
 
-            nmrpipe_shifts = read_shifts(lines, chain_code=chain_code)
+        lines = read_file_or_exit(file_name)
 
-            nmrpipe_shifts = _convert_1let_3let_if_needed(nmrpipe_shifts)
+        nmrpipe_shifts = read_shifts(lines, chain_code=chain_code)
 
-            frame = shifts_to_nef_frame(nmrpipe_shifts, args.entry_name)
+        nmrpipe_shifts = _convert_1let_3let_if_needed(nmrpipe_shifts)
 
-            nmrpipe_frames.append(frame)
+        frame = shifts_to_nef_frame(nmrpipe_shifts, frame_name)
 
-    entry = process_stream_and_add_frames(nmrpipe_frames, args)
+        nmrpipe_frames.append(frame)
+
+    entry = add_frames_to_entry(entry, nmrpipe_frames)
 
     print(entry)
 
