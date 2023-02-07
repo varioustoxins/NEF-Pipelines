@@ -11,9 +11,9 @@ from pynmrstar import Entry, Loop
 from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe,; NEF_CATEGORY_ATTR,
     BadNefFileException,
     create_entry_from_stdin,
-    create_entry_from_stdin_or_exit,
     loop_row_dict_iter,
     loop_row_namespace_iter,
+    read_entry_from_stdin_or_exit,
     read_or_create_entry_exit_error_on_bad_file,
     select_frames_by_name,
 )
@@ -227,7 +227,7 @@ def replace_stdin(target: str):
 def test_read_entry_stdin_or_exit_empty_stdin(clear_cache):
     with replace_stdin(""):
         with pytest.raises(SystemExit) as pytest_wrapped_e:
-            create_entry_from_stdin_or_exit()
+            read_entry_from_stdin_or_exit()
 
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
@@ -268,7 +268,7 @@ def test_read_entry_stdin_or_exit(clear_cache):
     lines = open(path).read()
 
     with replace_stdin(lines):
-        entry = create_entry_from_stdin_or_exit()
+        entry = read_entry_from_stdin_or_exit()
 
     assert_lines_match(str(entry), EXPECTED)
 

@@ -8,7 +8,7 @@ import typer
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
-    create_entry_from_stdin_or_exit,
+    read_entry_from_stdin_or_exit,
     select_frames_by_name,
 )
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
@@ -58,7 +58,7 @@ def shifts(
     if len(shift_frames) == 0:
         shift_frames = ["*"]
 
-    entry = create_entry_from_stdin_or_exit()
+    entry = read_entry_from_stdin_or_exit()
 
     output_file = f"{entry.entry_id}_shifts.tab" if output_file is None else output_file
 

@@ -11,9 +11,9 @@ from tabulate import tabulate
 
 from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.nef_lib import (
-    create_entry_from_stdin_or_exit,
     loop_row_dict_iter,
     loop_row_namespace_iter,
+    read_entry_from_stdin_or_exit,
 )
 from nef_pipelines.lib.structures import AtomLabel, Peak, PeakValues, SequenceResidue
 from nef_pipelines.lib.util import exit_error, is_float, parse_comma_separated_options
@@ -62,7 +62,7 @@ def peaks(
             "*",
         ]
 
-    entry = create_entry_from_stdin_or_exit()
+    entry = read_entry_from_stdin_or_exit()
 
     SPECTRUM_CATEGORY = "nef_nmr_spectrum"
     peaks = entry.get_saveframes_by_category(SPECTRUM_CATEGORY)

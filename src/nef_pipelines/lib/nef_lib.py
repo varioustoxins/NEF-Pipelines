@@ -195,7 +195,7 @@ def create_entry_from_stdin() -> Optional[Entry]:
 
 
 # refactor to two functions one of which gets a TextIO
-def create_entry_from_stdin_or_exit() -> Entry:
+def read_entry_from_stdin_or_exit() -> Entry:
 
     """
     read a star file entry from stdin or exit with an error message
@@ -332,7 +332,7 @@ def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
     :return:
     """
     if file is None or file == Path("-"):
-        entry = create_entry_from_stdin_or_exit()
+        entry = read_entry_from_stdin_or_exit()
     else:
         try:
             with open(file) as fh:

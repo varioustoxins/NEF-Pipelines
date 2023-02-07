@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from nef_pipelines.lib.nef_lib import create_entry_from_stdin_or_exit
+from nef_pipelines.lib.nef_lib import read_entry_from_stdin_or_exit
 from nef_pipelines.tools.entry import entry_app
 
 
@@ -24,7 +24,7 @@ def rename(
 ):
     """- rename the current entry"""
 
-    entry = create_entry_from_stdin_or_exit()
+    entry = read_entry_from_stdin_or_exit()
 
     if name is not None:
         entry.entry_id = name
