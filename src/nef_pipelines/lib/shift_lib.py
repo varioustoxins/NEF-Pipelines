@@ -11,6 +11,8 @@ from nef_pipelines.lib.structures import (
     ShiftList,
 )
 
+NEF_CHEMICAL_SHIFT_LOOP = "nef_chemical_shift"
+
 
 def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
     """
@@ -25,22 +27,24 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
         field.name for field in dataclasses.fields(AtomLabel) if field.name != "residue"
     ]
     for frame in frames:
-        for loop in frame:
-            for row in loop_row_namespace_iter(loop):
 
-                residue_fields = {
-                    name: value
-                    for name, value in vars(row).items()
-                    if name in residue_field_names
-                }
-                atom_fields = {
-                    name: value
-                    for name, value in vars(row).items()
-                    if name in atom_field_names
-                }
-                residue = SequenceResidue(**residue_fields)
-                label = AtomLabel(residue, **atom_fields)
-                shifts.append(ShiftData(label, row.value, row.value_uncertainty))
+        loop = frame.get_loop(NEF_CHEMICAL_SHIFT_LOOP)
+
+        for row in loop_row_namespace_iter(loop):
+
+            residue_fields = {
+                name: value
+                for name, value in vars(row).items()
+                if name in residue_field_names
+            }
+            atom_fields = {
+                name: value
+                for name, value in vars(row).items()
+                if name in atom_field_names
+            }
+            residue = SequenceResidue(**residue_fields)
+            label = AtomLabel(residue, **atom_fields)
+            shifts.append(ShiftData(label, row.value, row.value_uncertainty))
 
     return shifts
 
