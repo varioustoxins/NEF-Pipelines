@@ -31,10 +31,10 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command()
 def sequence(
-    chain_codes: str = typer.Option(
-        "A",
+    chain_codes: List[str] = typer.Option(
+        None,
         "--chains",
-        help="chain codes as a list of names spearated by dots",
+        help="chain codes as a list of names separated by dots",
         metavar="<CHAIN-CODES>",
     ),
     no_chain_start: bool = typer.Option(
@@ -72,9 +72,10 @@ def sequence(
 def process_sequence(args: Namespace):
     nmrpipe_frames = []
 
-    for file_name, chain_code in zip(
-        args.file_names, chain_code_iter(args.chain_codes)
-    ):
+    chain_codes = args.chain_codes
+    if not chain_codes:
+        chain_codes = ["A"]
+    for file_name, chain_code in zip(args.file_names, chain_code_iter(chain_codes)):
         # cached_file_stream
         with cached_file_stream(file_name) as lines:
 
