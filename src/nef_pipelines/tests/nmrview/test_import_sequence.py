@@ -8,6 +8,7 @@ from nef_pipelines.lib.test_lib import (
     path_in_test_data,
     run_and_report,
 )
+from nef_pipelines.lib.util import get_version
 from nef_pipelines.transcoders.nmrview.importers.sequence import sequence
 
 app = typer.Typer()
@@ -83,7 +84,7 @@ def test_3aa10():
 
 HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
 
-EXPECTED_HEADER = """\
+EXPECTED_HEADER = f"""\
 save_nef_nmr_meta_data
    _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
    _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
@@ -91,7 +92,7 @@ save_nef_nmr_meta_data
    _nef_nmr_meta_data.format_version   1.1
    _nef_nmr_meta_data.program_name     NEFPipelines
    _nef_nmr_meta_data.script_name      sequence.py
-   _nef_nmr_meta_data.program_version  0.0.1
+   _nef_nmr_meta_data.program_version  {get_version()}
    _nef_nmr_meta_data.creation_date    2012-01-14T12:00:01.123456
    _nef_nmr_meta_data.uuid             NEFPipelines-2012-01-14T12:00:01.123456-1043321819
    _nef_nmr_meta_data.creation_time    2012-01-14T12:00:01.123456

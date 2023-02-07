@@ -1,7 +1,5 @@
 NEF_PIPELINES = "NEFPipelines"
 
-NEF_PIPELINES_VERSION = "0.0.1"
-
 NEF_VERSION = "1.1"
 
 NEF_META_DATA = "nef_nmr_meta_data"

@@ -5,6 +5,7 @@ from freezegun import freeze_time
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import assert_lines_match
+from nef_pipelines.lib.util import get_version
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.tools.header import header
 
@@ -16,7 +17,7 @@ app.command()(header)
 
 runner = CliRunner()
 
-EXPECTED_TEMPLATE = """
+EXPECTED_TEMPLATE = f"""
     data_%(name)s
 
     save_nef_nmr_meta_data
@@ -26,7 +27,7 @@ EXPECTED_TEMPLATE = """
        _nef_nmr_meta_data.format_version   1.1
        _nef_nmr_meta_data.program_name     NEFPipelines
        _nef_nmr_meta_data.script_name      header.py
-       _nef_nmr_meta_data.program_version  0.0.1
+       _nef_nmr_meta_data.program_version  {get_version()}
        _nef_nmr_meta_data.creation_date    2012-01-14T12:00:01.123456
        _nef_nmr_meta_data.uuid             NEFPipelines-2012-01-14T12:00:01.123456-1043321819
 

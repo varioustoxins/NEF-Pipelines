@@ -18,7 +18,6 @@ from nef_pipelines.lib.constants import (
     EXIT_ERROR,
     NEF_META_DATA,
     NEF_PIPELINES,
-    NEF_PIPELINES_VERSION,
     NEF_UNKNOWN,
 )
 from nef_pipelines.lib.header_lib import (
@@ -107,7 +106,7 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
             )
             run_history_loop.add_data(["."] * 4)
     else:
-        header = create_header_frame(NEF_PIPELINES, NEF_PIPELINES_VERSION, script)
+        header = create_header_frame(NEF_PIPELINES, get_version(), script)
         entry.add_saveframe(header)
 
 
@@ -453,9 +452,7 @@ def process_stream_and_add_frames(
         else Entry.from_scratch(input_args.entry_name)
     )
 
-    fixup_metadata(
-        new_entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__)
-    )
+    fixup_metadata(new_entry, NEF_PIPELINES, get_version(), script_name(__file__))
 
     # TODO: check if frame exists
     for frame in frames:

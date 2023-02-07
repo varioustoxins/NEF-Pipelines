@@ -11,10 +11,11 @@ from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib import util
-from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
+from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
+    get_version,
     is_float,
     is_int,
     running_in_pycharm,
@@ -193,6 +194,7 @@ def create_entry_from_stdin() -> Optional[Entry]:
 
     return entry
 
+
 def read_file_or_exit(file_path: Path) -> List[str]:
     """
     read the contenst of a file or exit with error
@@ -209,6 +211,7 @@ def read_file_or_exit(file_path: Path) -> List[str]:
         exit_error(msg)
 
     return result
+
 
 # refactor to two functions one of which gets a TextIO
 def read_entry_from_stdin_or_exit() -> Entry:
@@ -476,7 +479,7 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
         the updated entry containing the frames
     """
 
-    fixup_metadata(entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
+    fixup_metadata(entry, NEF_PIPELINES, get_version(), script_name(__file__))
 
     for frame in frames:
 

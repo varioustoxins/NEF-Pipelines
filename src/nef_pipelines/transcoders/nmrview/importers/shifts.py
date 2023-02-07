@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import typer
 from pynmrstar import Entry, Saveframe
 
-from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
+from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_from_entry_or_exit
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
@@ -15,6 +15,7 @@ from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
     get_pipe_file_text_or_exit,
+    get_version,
     script_name,
 )
 from nef_pipelines.transcoders.nmrview import import_app
@@ -99,7 +100,7 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
         the updated entry containing the frames
     """
 
-    fixup_metadata(entry, NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__))
+    fixup_metadata(entry, NEF_PIPELINES, get_version(), script_name(__file__))
 
     for frame in frames:
 

@@ -2,10 +2,10 @@ import typer
 from pynmrstar import Entry
 
 from nef_pipelines import nef_app
-from nef_pipelines.lib.constants import NEF_PIPELINES, NEF_PIPELINES_VERSION
+from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.header_lib import create_header_frame
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import script_name
+from nef_pipelines.lib.util import get_version, script_name
 
 
 # noinspection PyUnusedLocal
@@ -23,10 +23,9 @@ def header(
 
 def build_meta_data(args):
 
+    version = get_version()
     result = Entry.from_scratch(args.name)
-    header_frame = create_header_frame(
-        NEF_PIPELINES, NEF_PIPELINES_VERSION, script_name(__file__)
-    )
+    header_frame = create_header_frame(NEF_PIPELINES, version, script_name(__file__))
     result.add_saveframe(header_frame)
 
     return result
