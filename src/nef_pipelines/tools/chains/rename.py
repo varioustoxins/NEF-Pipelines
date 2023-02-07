@@ -19,7 +19,7 @@ app = typer.Typer()
 def rename(
     new_old: List[str] = Argument(
         ...,
-        help="old chain code followed by new chain code, multiple pairs of old and new "
+        help="old chain-code followed by new chain-code, multiple pairs of old and new "
         "chain-codes can be provided",
     ),
     # TODO: just use --category instead to make life simpler???
