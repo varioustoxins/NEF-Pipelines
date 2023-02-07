@@ -441,7 +441,7 @@ def process_stream_and_add_frames(
         exit_error(f"failed to load pipe file because {e}")
 
     if stream is not None:
-        lines = "".join(stream.readlines())
+        lines = "\n".join(stream.readlines())
     else:
         lines = ""
 
