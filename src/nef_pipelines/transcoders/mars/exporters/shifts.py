@@ -86,8 +86,10 @@ def shifts(
         chain_code = shift.atom.residue.chain_code
         sequence_code = shift.atom.residue.sequence_code
         atom_name = shift.atom.atom_name
-        if chain_code.startswith("@-") and sequence_code.startswith("@"):
-            sequence_code = sequence_code.lstrip("@")
+        if (
+            chain_code.startswith("@") or chain_code.startswith("#")
+        ) and sequence_code.startswith("@"):
+            sequence_code = sequence_code.lstrip("@").lstrip("#")
             sequence_code_fields = sequence_code.split("-")
 
             if len(sequence_code_fields) > 2:
