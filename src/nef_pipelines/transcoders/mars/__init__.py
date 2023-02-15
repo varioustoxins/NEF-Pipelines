@@ -19,6 +19,7 @@ if nef_app.app:
     app.add_typer(import_app, name="import", help="- import mars [shifts]")
 
     # import of specific importers must be after app creation to avoid circular imports
+    import nef_pipelines.transcoders.mars.exporters.fragments  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.input  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.sequence  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.shifts  # noqa: F401
