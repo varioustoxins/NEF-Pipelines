@@ -7,6 +7,7 @@ from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 # from pandas import DataFrame
 from pynmrstar import Entry, Loop, Saveframe
+from pynmrstar.definitions import STR_CONVERSION_DICT
 from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
 
@@ -27,6 +28,9 @@ NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
 NEF_METADATA = "nef_nmr_meta_data"
 
 UNUSED = "."
+
+# this stops pynmrstar failing on empty strings
+STR_CONVERSION_DICT[""] = UNUSED
 
 
 class BadNefFileException(Exception):
