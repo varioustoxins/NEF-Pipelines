@@ -229,21 +229,32 @@ def read_entry_from_stdin_or_exit() -> Entry:
     :return: a star file entry
     """
 
-    try:
-        if not sys.stdin.isatty() or running_in_pycharm():
-            stdin_lines = sys.stdin.read()
-            if stdin_lines is None:
-                lines = ""
-            else:
-                lines = "".join(stdin_lines)
+    if sys.stdin.isatty():
+        exit_error("you appear to be reading from an empty stdin")
 
-            if len(lines.strip()) == 0:
-                exit_error("stdin is empty")
-            else:
-                entry = Entry.from_string(lines)
-        else:
-            exit_error("you appear to be reading from an empty stdin")
-    except Exception as e:
+    if running_in_pycharm():
+        exit_error("streaming doesn't work inside pycharm")
+
+    try:
+        stdin_lines = sys.stdin.read()
+        if stdin_lines is None:
+            lines = [
+                "",
+            ]
+        lines = "".join(stdin_lines)
+    except IOError as e:
+        exit_error(
+            f"failed to read stdin because: {e}",
+            e,
+        )
+
+    if len(lines.strip()) == 0:
+        exit_error("stdin is empty")
+
+    try:
+        entry = Entry.from_string(lines)
+
+    except ParsingError as e:
         exit_error(
             f"failed to read nef entry from stdin because the NEF parser replied: {e}",
             e,
