@@ -1,5 +1,10 @@
+# add check for uncommitted or auto stash
+git update-index --refresh >/dev/null
+git diff-index --quiet HEAD --
 
-# define wehere the version file is found
+test $? -eq 0 || echo "ERROR: the repo is dirty clean it before building!"; exit 1
+
+# define where the version file is found
 VERSION_FILE=src/nef_pipelines/VERSION
 
 # cheange to the correct working directory
