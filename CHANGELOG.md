@@ -91,3 +91,7 @@ added support for reading MARS shift files
 added an about command for information about the project
 added support for export xcamshift chemical shift restraint files
 added export of mars connected pseudo residue file
+
+## version 0.1.29
+
+correct error in mars export fragments (mars connected pseudo residue file)
