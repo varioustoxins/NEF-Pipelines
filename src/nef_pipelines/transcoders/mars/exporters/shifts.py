@@ -89,7 +89,7 @@ def shifts(
         if (
             chain_code.startswith("@") or chain_code.startswith("#")
         ) and sequence_code.startswith("@"):
-            sequence_code = sequence_code.lstrip("@").lstrip("#")
+            sequence_code = sequence_code.lstrip("@")
             sequence_code_fields = sequence_code.split("-")
 
             if len(sequence_code_fields) > 2:
