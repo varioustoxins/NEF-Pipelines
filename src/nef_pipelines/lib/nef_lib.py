@@ -23,6 +23,10 @@ from nef_pipelines.lib.util import (
     script_name,
 )
 
+NEF_TRUE = "true"
+
+NEF_FALSE = "false"
+
 NEF_CATEGORY_ATTR = "__NEF_CATEGORY__"
 NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
 NEF_METADATA = "nef_nmr_meta_data"
@@ -287,6 +291,10 @@ def do_reasonable_type_conversions(value: str) -> Union[str, float, int]:
         value = int(value)
     elif is_float(value):
         value = float(value)
+    elif value.lower() == NEF_FALSE:
+        value = False
+    elif value.lower() == NEF_TRUE:
+        value = True
     return value
 
 
