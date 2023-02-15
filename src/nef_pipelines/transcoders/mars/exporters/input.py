@@ -48,14 +48,14 @@ def input(
 
     output_file = f"{entry.entry_id}_mars.inp" if output_file is None else output_file
     pred_file = (
-        f"{entry.entry_id}_mars_pred.tab"
+        f"{entry.entry_id}_pred.tab"
         if output_file is None
         else convert_output_to(output_file, "_pred", "tab")
     )
     ass_file = (
-        f"{entry.entry_id}_mars_ass.tab"
+        f"{entry.entry_id}_fix_ass.tab"
         if output_file is None
-        else convert_output_to(output_file, "_ass", "tab")
+        else convert_output_to(output_file, "_fix_ass", "tab")
     )
 
     deuterated = int(deuterated)
