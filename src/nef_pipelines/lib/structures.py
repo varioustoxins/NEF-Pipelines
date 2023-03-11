@@ -12,10 +12,15 @@ class Linking(StrEnum):
 
 
 @dataclass(frozen=True, order=True)
-class SequenceResidue:
+class Residue:
     chain_code: str
     sequence_code: Union[int, str]
     residue_name: str
+
+
+@dataclass(frozen=True, order=True)
+class SequenceResidue(Residue):
+
     is_cis: bool = False
     linking: Optional[Linking] = None
     variant: Optional[str] = None
@@ -24,7 +29,7 @@ class SequenceResidue:
 # should contain a residue and have constructors?
 @dataclass(frozen=True, order=True)
 class AtomLabel:
-    residue: SequenceResidue
+    residue: Residue
     atom_name: str
     element: str = None
     isotope_number: int = None
