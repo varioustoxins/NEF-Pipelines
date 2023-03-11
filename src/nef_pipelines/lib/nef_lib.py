@@ -146,8 +146,9 @@ def select_frames_by_name(
     :return: a list or matching frames
     """
 
-    def match_frames(frames, name_selectors):
-
+    def match_frames(
+        frames: List[Saveframe], name_selectors: List[str]
+    ) -> List[Saveframe]:
         result = {}
 
         for frame in frames:
