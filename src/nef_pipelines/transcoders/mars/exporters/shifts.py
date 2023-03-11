@@ -83,8 +83,8 @@ def shifts(
 
         # first deal with completely unassigned residues chain_code @- and sequence_code @xxxx where xxx
         # is the pseudo residue
-        chain_code = shift.atom.residue.chain_code
-        sequence_code = shift.atom.residue.sequence_code
+        chain_code = str(shift.atom.residue.chain_code)
+        sequence_code = str(shift.atom.residue.sequence_code)
         atom_name = shift.atom.atom_name
         if (
             chain_code.startswith("@") or chain_code.startswith("#")
