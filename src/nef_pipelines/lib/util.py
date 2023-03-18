@@ -13,6 +13,7 @@ import click
 from cacheable_iter import iter_cache
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
+from tabulate import tabulate
 
 from nef_pipelines.lib.constants import (
     EXIT_ERROR,
@@ -762,3 +763,21 @@ def unused_to_empty_string(value):
     if value == UNUSED:
         value = ""
     return value
+
+
+def _row_to_table(
+    rows: Dict[str, str], headers=("tag", "value")
+) -> List[List[str, str]]:
+    """
+    convert a dictionary into a table with tabulate with two columns containing
+    keys and values
+    :param rows: a dictionary of key value pairs [tags and values...]
+    :return: a formatted tabulate table as a string
+    """
+    values = [
+        headers,
+    ]
+    for key, value in rows.items():
+        values.append([key, value])
+    value_string = tabulate(values, headers="firstrow")
+    return value_string
