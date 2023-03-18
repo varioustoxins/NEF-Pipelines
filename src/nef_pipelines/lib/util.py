@@ -718,3 +718,17 @@ def get_version() -> str:
         version = file_h.read().strip()
 
     return version
+
+
+class FStringTemplate:
+    """class for makes an f string based template substitution is delayed
+    until the instance is converted to a string
+    """
+
+    def __init__(self, template):
+        self.template = template
+
+    def __str__(self):
+        variables = inspect.currentframe().f_back.f_globals.copy()
+        variables.update(inspect.currentframe().f_back.f_locals)
+        return self.template.format(**variables)
