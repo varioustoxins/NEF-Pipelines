@@ -732,3 +732,33 @@ class FStringTemplate:
         variables = inspect.currentframe().f_back.f_globals.copy()
         variables.update(inspect.currentframe().f_back.f_locals)
         return self.template.format(**variables)
+
+
+def unused_to_none(value: str) -> str:
+    """
+    If the value is a NEF UNUSED [.] replace it with None
+    :param value: value which might be UNUSED
+    :return: value or None if the value was UNUSED
+    """
+    from nef_pipelines.lib.nef_lib import (
+        UNUSED,  # to avoid circular import, move to constants?
+    )
+
+    if value == UNUSED:
+        value = None
+    return value
+
+
+def unused_to_empty_string(value):
+    """
+    If the value is a NEF UNUSED [.] replace it with the empty string
+    :param value: value which might be UNUSED
+    :return: value or "" if the value was UNUSED
+    """
+    from nef_pipelines.lib.nef_lib import (
+        UNUSED,  # to avoid circular import , move to constants?
+    )
+
+    if value == UNUSED:
+        value = ""
+    return value
