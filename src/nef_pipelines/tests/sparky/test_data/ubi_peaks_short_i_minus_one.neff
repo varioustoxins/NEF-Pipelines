@@ -1,0 +1,70 @@
+data_sparky
+    save_nef_nmr_spectrum_peaks
+       _nef_nmr_spectrum.sf_category                nef_nmr_spectrum
+       _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_peaks
+       _nef_nmr_spectrum.num_dimensions             3
+       _nef_nmr_spectrum.chemical_shift_list        .
+       _nef_nmr_spectrum.experiment_classification  .
+       _nef_nmr_spectrum.experiment_type            .
+
+       loop_
+          _nef_spectrum_dimension.dimension_id
+          _nef_spectrum_dimension.axis_unit
+          _nef_spectrum_dimension.axis_code
+          _nef_spectrum_dimension.spectrometer_frequency
+          _nef_spectrum_dimension.spectral_width
+          _nef_spectrum_dimension.value_first_point
+          _nef_spectrum_dimension.folding
+          _nef_spectrum_dimension.absolute_peak_positions
+          _nef_spectrum_dimension.is_acquisition
+
+         1   ppm   15N   60.833    28.242   129.413    none   true   false
+         2   ppm   13C   150.123   40.160    60.13     none   true   false
+         3   ppm   1H    600.123    3.763    9.761     none   true   true
+
+
+       stop_
+
+       loop_
+          _nef_spectrum_dimension_transfer.dimension_1
+          _nef_spectrum_dimension_transfer.dimension_2
+          _nef_spectrum_dimension_transfer.transfer_type
+          _nef_spectrum_dimension_transfer.is_indirect
+
+         1   2   onebond   false
+         2   3   onebond   false
+
+       stop_
+
+       loop_
+          _nef_peak.index
+          _nef_peak.peak_id
+          _nef_peak.chain_code_1
+          _nef_peak.sequence_code_1
+          _nef_peak.residue_name_1
+          _nef_peak.atom_name_1
+          _nef_peak.position_1
+          _nef_peak.position_uncertainty_1
+          _nef_peak.chain_code_2
+          _nef_peak.sequence_code_2
+          _nef_peak.residue_name_2
+          _nef_peak.atom_name_2
+          _nef_peak.position_2
+          _nef_peak.position_uncertainty_2
+          _nef_peak.chain_code_3
+          _nef_peak.sequence_code_3
+          _nef_peak.residue_name_3
+          _nef_peak.atom_name_3
+          _nef_peak.position_3
+          _nef_peak.position_uncertainty_3
+          _nef_peak.volume
+          _nef_peak.volume_uncertainty
+          _nef_peak.height
+          _nef_peak.height_uncertainty
+
+         0    0    @-   @36   .   N   120.519   .   @-   @36   .   H   6.169   .    @-   @36     .   CA   56.12   .   1   5   9   13
+         1    1    @-   @36   .   N   104.406   .   @-   @36   .   H   6.18    .    @-   @36-1   .   CA   52.67   .   2   6   10  14
+         2    2    @-   @65   .   N   104.408   .   @-   @65   .   H   6.517   .    @-   @65     .   CA   53.15   .   3   7   11  15
+         3    3    @-   @65   .   N   103.504   .   @-   @65   .   H   7.048   .    @-   @65-1   .   CA   52.13   .   4   8   12  16
+       stop_
+    save_
