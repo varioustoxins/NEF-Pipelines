@@ -386,7 +386,7 @@ def _script_to_command(script: str) -> str:
     :return: the command name
     """
     script_path = script.split("/")
-    script_path[-1] = script_path[-1].strip(".py")
+    script_path[-1] = script_path[-1][: -len(".py")]
     return " ".join(script_path)
 
 
