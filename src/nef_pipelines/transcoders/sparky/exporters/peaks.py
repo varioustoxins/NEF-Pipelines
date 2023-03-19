@@ -285,8 +285,7 @@ def _if_chains_overlap_raise(peaks):
     if len(peak_residues_by_chain) > 1:
         msg = f"""
             you asked to ignore chains but there is an overlap in the sequence codes between the chains present
-            the chain codes  are {' '.join(peak_residues_by_chain.keys())}
-            the overlapping sequence codes are
+            the chain codes  are {' '.join(peak_residues_by_chain.keys())} the overlapping sequence codes are
             {' '.join([str(residue) for residue in residue_intersection])}
         """
 
