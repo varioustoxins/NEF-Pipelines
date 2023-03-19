@@ -141,8 +141,10 @@ class LineInfo:
 @dataclass(frozen=True, order=True)
 class ShiftData:
     atom: AtomLabel
-    value: float
-    value_uncertainty: Optional[float] = None
+    value: float  # TODO: should be position
+    value_uncertainty: Optional[float] = None  # TODO: should be position_uncertainty
+    line_width: Optional[float] = None  # line width in Hz
+    line_width_uncertainty: Optional[float] = None  # uncertainty of line width in Hz
 
 
 @dataclass
