@@ -405,32 +405,3 @@ def test_ppm_out_short_overlapped_chains():
     assert " B " in result.stdout
     assert "66" in result.stdout
     assert "36" in result.stdout
-
-
-# EXPECTED_3D_m1_no_negatives = """\
-# ****************************** nef_nmr_spectrum_peaks ******************************
-#
-# Assignment                      w1      w2       w3     Height  Volume
-#
-#   PR_36N-H-CA               120.519  6.169   56.120          9       1
-#   PR_36N-PR_36H-?CA         104.406  6.180   52.670         10       2
-#   PR_65N-H-CA               104.408  6.517   53.150         11       3
-#   PR_65N-PR_65H-?CA         103.504  7.048   52.130         12       4
-#
-# ************************************************************************************
-#
-#
-# """
-#
-# def test_ppm_out_short_3d_m1_no_negatives():
-#
-#     STREAM = open(path_in_test_data(__file__, "ubi_peaks_short_i_minus_one.neff")).read()
-#
-#     result = run_and_report(app, ['--file-name-template', '-', '--no-negatives'], input=STREAM)
-#
-#     assert_lines_match(EXPECTED_3D_m1_no_negatives, result.stdout)
-
-# todo
-# assigned chain with no residue -> sequence or error
-# nmr chains
-# test output to files

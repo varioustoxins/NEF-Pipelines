@@ -87,10 +87,10 @@ ADD_DATA_HELP = "don't include the data string before the volume and height colu
 
 NO_CHAINS_HELP = "don't include chains in the output [this will fail warnings if try to output more than one chain...]"
 
-NO_NEGATIVES_HELP = """ \
-    don't include information on shifts from negative nmr_residues
-    [default: @-.@65-1..CA -> PR_65p1CA with this option @-.@65-1..CA -> ?CA]
-"""
+NO_NEGATIVES_HELP = (
+    "don't include information on shifts from negative nmr_residues "
+    "[default: @-.@65-1..CA -> PR_65p1CA with this option @-.@65-1..CA -> ?CA]"
+)
 
 DISCARD_ASSIGNMENTS_HELP = (
     "discard the peak assignments. note: peaks unassign provides more options"
@@ -130,12 +130,6 @@ def peaks(
     ),
     no_height: bool = typer.Option(
         False, help="don't include a height column in the output"
-    ),
-    pseudo_residue_prefix: str = typer.Option(
-        "PR_", "prefix for an nmr residue which is not assigned"
-    ),
-    pseudo_chain_prefix: str = typer.Option(
-        "PC_", "prefix for an nmr chain which is not assigned and is connected"
     ),
 ):
     """-  write sparky peaks"""
@@ -177,8 +171,6 @@ def peaks(
             no_chains=no_chains,
             no_height=no_height,
             no_volume=no_volume,
-            pseudo_residue_prefix=pseudo_residue_prefix,
-            pseudo_chain_prefix=pseudo_chain_prefix,
         )
     except SparkyPeaksExportException as e:
         exit_error(str(e))
@@ -190,214 +182,6 @@ def peaks(
     _write_output_tables(sparky_tables, output_to_files)
 
     _output_entry_if_required(entry, output_to_files)
-
-
-def pipe(
-    entry: Entry,
-    selected_frame_names: List[str],
-    include_assignments=True,
-    include_full_assignments: bool = False,
-    show_data_tag_in_header=False,
-    chain_separator=":",
-    no_negative_pseudo_residues=False,
-    no_chains=False,
-    no_volume=False,
-    no_height=False,
-    pseudo_residue_prefix: str = "PR_",
-    pseudo_chain_prefix: str = "PC_",
-) -> Tuple[Entry, Dict[str, List[str]]]:
-
-    selected_frame_names = set(selected_frame_names)
-
-    spectrum_frames = entry.get_saveframes_by_category(SPECTRUM_CATEGORY)
-
-    names_and_frames = {
-        frame.name: frame
-        for frame in spectrum_frames
-        if frame.name in selected_frame_names
-    }
-
-    sparky_lines = {}
-    for frame_name, frame in names_and_frames.items():
-
-        peaks = frame_to_peaks(frame)
-
-        if no_chains:
-            _if_chains_overlap_raise(peaks)
-
-        sparky_lines[frame_name] = _build_sparky_lines(
-            peaks,
-            include_assignments=include_assignments,
-            abbreviate_assignments=not include_full_assignments,
-            show_data_tag_in_header=show_data_tag_in_header,
-            chain_sequence_separator=chain_separator,
-            no_negative_pseudo_residues=no_negative_pseudo_residues,
-            no_chains=no_chains,
-            no_heights=no_height,
-            no_volumes=no_volume,
-            pseudo_residue_prefix=pseudo_residue_prefix,
-            pseudo_chain_prefix=pseudo_chain_prefix,
-        )
-
-    return entry, sparky_lines
-
-
-def _build_sparky_lines(
-    peaks_list: List[NewPeak],
-    include_assignments=False,
-    abbreviate_assignments=False,
-    show_data_tag_in_header=False,
-    chain_sequence_separator=".",
-    no_negative_pseudo_residues=False,
-    no_chains=False,
-    no_volumes=False,
-    no_heights=False,
-    pseudo_residue_prefix: str = "PR_",
-    pseudo_chain_prefix: str = "PC_",
-):
-
-    lines = []
-
-    header = ["Assignment"]
-
-    if len(peaks_list) > 0:
-        num_dimensions = len(peaks_list[0].shifts)
-
-        position_headers = [
-            f"w{dimension}" for dimension in range(1, num_dimensions + 1)
-        ]
-
-        header.extend(position_headers)
-
-        has_volumes = _peak_loop_has_volumes(peaks_list) and not no_volumes
-        has_heights = _peak_loop_has_heights(peaks_list) and not no_heights
-
-        if (has_heights or has_volumes) and show_data_tag_in_header:
-            header.append("Data")
-
-        if has_heights:
-            header.append("Height")
-
-        if has_volumes:
-            header.append("Volume")
-
-        #
-        # # could check for line widths here
-        # # format for line widths is lw1 (hz)
-        #
-
-        for peak in peaks_list:
-            out_row = []
-            lines.append(out_row)
-
-            assignments = []
-
-            number_residues = len(
-                set([shift.atom.residue.sequence_code for shift in peak.shifts])
-            )
-            number_chains = len(
-                set([shift.atom.residue.chain_code for shift in peak.shifts])
-            )
-
-            can_abbreviate = number_residues == 1 and number_chains == 1
-
-            if include_assignments:
-                for atom in [shift.atom for shift in peak.shifts]:
-
-                    chain_code = atom.residue.chain_code
-                    sequence_code = str(atom.residue.sequence_code)
-                    residue_name = atom.residue.residue_name
-                    atom_name = atom.atom_name
-                    current_chain_sequence_separator = chain_sequence_separator
-
-                    if chain_code == "@-":
-                        chain_code = ""
-                    elif chain_code.startswith("#"):
-                        chain_code = f"{pseudo_chain_prefix}{chain_code}"
-                    elif chain_code == UNUSED or no_chains:
-                        chain_code = ""
-                        current_chain_sequence_separator = ""
-
-                    if not chain_code or len(chain_code) == 0:
-                        current_chain_sequence_separator = ""
-
-                    if sequence_code.endswith("-1"):
-                        if no_negative_pseudo_residues:
-                            sequence_code = "?"
-                        else:
-                            sequence_code = f"{sequence_code[:-2]}"
-                            atom_name = f"{atom_name}m1"
-                        can_abbreviate = False
-
-                    if sequence_code.startswith("@"):
-                        sequence_code = f"{pseudo_residue_prefix}{sequence_code[1:]}"
-
-                    if residue_name in TRANSLATIONS_3_1:
-                        residue_name = TRANSLATIONS_3_1[residue_name]
-
-                    if not residue_name:
-                        residue_name = ""
-
-                    group = f"{chain_code}{current_chain_sequence_separator}{residue_name}{sequence_code}"
-
-                    assignment = f"{group}{atom_name}"
-                    assignments.append(assignment)
-
-            else:
-                assignments.extend(["?"] * num_dimensions)
-
-            common_prefix = commonprefix(assignments)
-            need_to_join = True
-            if common_prefix != "?" and abbreviate_assignments and can_abbreviate:
-
-                split_common_prefix = re.split(r"(\d+)", common_prefix)
-                common_prefix = f"{split_common_prefix[0]}{split_common_prefix[1]}"
-
-                if len(common_prefix) > 0 and common_prefix != "?":
-                    for i, assignment in enumerate(assignments):
-                        assignments[i] = assignment[len(common_prefix) :]
-
-                    assignments = f"{common_prefix}{'-'.join(assignments)}"
-                    need_to_join = False
-
-            if need_to_join:
-                assignments = "-".join(assignments)
-
-            out_row.append(assignments)
-
-            out_row.extend([f"{shift.value:7.3f}" for shift in peak.shifts])
-
-            if (has_heights or has_volumes) and show_data_tag_in_header:
-                out_row.append("")
-            if has_heights:
-                height = peak.height if peak.height != UNUSED else 0.000
-                out_row.append(height)
-
-            if has_volumes:
-                volume = peak.volume if peak.volume != UNUSED else 0.000
-                out_row.append(volume)
-
-    return header, lines
-
-
-def _check_column_has_floats(peak_list: List[NewPeak], column_name: str):
-    result = False
-
-    for peak in peak_list:
-
-        value = getattr(peak, column_name)
-        if value != UNUSED and is_float(value):
-            result = True
-            break
-    return result
-
-
-def _peak_loop_has_volumes(loop: Loop):
-    return _check_column_has_floats(loop, "volume")
-
-
-def _peak_loop_has_heights(loop: Loop):
-    return _check_column_has_floats(loop, "height")
 
 
 def _output_entry_if_required(entry, output_to_files):
@@ -507,3 +291,208 @@ def _if_chains_overlap_raise(peaks):
         """
 
         raise OverlappingChainsException(msg)
+
+
+def pipe(
+    entry: Entry,
+    selected_frame_names: List[str],
+    include_assignments=True,
+    include_full_assignments: bool = False,
+    show_data_tag_in_header=False,
+    chain_separator=":",
+    no_negative_pseudo_residues=False,
+    no_chains=False,
+    no_volume=False,
+    no_height=False,
+) -> Tuple[Entry, Dict[str, List[str]]]:
+
+    selected_frame_names = set(selected_frame_names)
+
+    spectrum_frames = entry.get_saveframes_by_category(SPECTRUM_CATEGORY)
+
+    names_and_frames = {
+        frame.name: frame
+        for frame in spectrum_frames
+        if frame.name in selected_frame_names
+    }
+
+    sparky_lines = {}
+    for frame_name, frame in names_and_frames.items():
+
+        peaks = frame_to_peaks(frame)
+
+        if no_chains:
+            _if_chains_overlap_raise(peaks)
+
+        sparky_lines[frame_name] = _build_sparky_lines(
+            peaks,
+            include_assignments=include_assignments,
+            abbreviate_assignments=not include_full_assignments,
+            show_data_tag_in_header=show_data_tag_in_header,
+            chain_sequence_separator=chain_separator,
+            no_negative_pseudo_residues=no_negative_pseudo_residues,
+            no_chains=no_chains,
+            no_heights=no_height,
+            no_volumes=no_volume,
+        )
+
+    return entry, sparky_lines
+
+
+def _check_column_has_floats(peak_list: List[NewPeak], column_name: str):
+    result = False
+
+    for peak in peak_list:
+
+        value = getattr(peak, column_name)
+        if value != UNUSED and is_float(value):
+            result = True
+            break
+    return result
+
+
+def _peak_loop_has_volumes(loop: Loop):
+    return _check_column_has_floats(loop, "volume")
+
+
+def _peak_loop_has_heights(loop: Loop):
+    return _check_column_has_floats(loop, "height")
+
+
+def _build_sparky_lines(
+    peaks_list: List[NewPeak],
+    include_assignments=False,
+    abbreviate_assignments=False,
+    show_data_tag_in_header=False,
+    chain_sequence_separator=".",
+    no_negative_pseudo_residues=False,
+    no_chains=False,
+    no_volumes=False,
+    no_heights=False,
+):
+
+    lines = []
+
+    header = ["Assignment"]
+
+    if len(peaks_list) > 0:
+        num_dimensions = len(peaks_list[0].shifts)
+
+        position_headers = [
+            f"w{dimension}" for dimension in range(1, num_dimensions + 1)
+        ]
+
+        header.extend(position_headers)
+
+        has_volumes = _peak_loop_has_volumes(peaks_list) and not no_volumes
+        has_heights = _peak_loop_has_heights(peaks_list) and not no_heights
+
+        if (has_heights or has_volumes) and show_data_tag_in_header:
+            header.append("Data")
+
+        if has_heights:
+            header.append("Height")
+
+        if has_volumes:
+            header.append("Volume")
+
+        #
+        # # could check for line widths here
+        # # format for line widths is lw1 (hz)
+        #
+
+        for peak in peaks_list:
+            out_row = []
+            lines.append(out_row)
+
+            assignments = []
+
+            number_residues = len(
+                set([shift.atom.residue.sequence_code for shift in peak.shifts])
+            )
+            number_chains = len(
+                set([shift.atom.residue.chain_code for shift in peak.shifts])
+            )
+
+            can_abbreviate = number_residues == 1 and number_chains == 1
+
+            if include_assignments:
+                for atom in [shift.atom for shift in peak.shifts]:
+
+                    chain_code = atom.residue.chain_code
+                    sequence_code = str(atom.residue.sequence_code)
+                    residue_name = atom.residue.residue_name
+                    atom_name = atom.atom_name
+                    current_chain_sequence_separator = chain_sequence_separator
+
+                    if chain_code == "@-":
+                        chain_code = ""
+                    elif chain_code.startswith("#"):
+                        chain_code = f"PC_{chain_code}"
+                    elif chain_code == UNUSED or no_chains:
+                        chain_code = ""
+                        current_chain_sequence_separator = ""
+
+                    if not chain_code or len(chain_code) == 0:
+                        current_chain_sequence_separator = ""
+
+                    if sequence_code.endswith("-1"):
+                        if no_negative_pseudo_residues:
+                            sequence_code = "?"
+                        else:
+                            sequence_code = f"{sequence_code[:-2]}"
+                            atom_name = f"{atom_name}m1"
+                        can_abbreviate = False
+
+                    if sequence_code.startswith("@"):
+                        sequence_code = f"PR_{sequence_code[1:]}"
+                    # if chain_code.startswith('PC_'):
+                    #     sequence_code = f'{chain_code}:{sequence_code}'
+                    #     chain_sequence_separator = ''
+
+                    if residue_name in TRANSLATIONS_3_1:
+                        residue_name = TRANSLATIONS_3_1[residue_name]
+
+                    if not residue_name:
+                        residue_name = ""
+
+                    group = f"{chain_code}{current_chain_sequence_separator}{residue_name}{sequence_code}"
+
+                    assignment = f"{group}{atom_name}"
+                    assignments.append(assignment)
+
+            else:
+                assignments.extend(["?"] * num_dimensions)
+
+            common_prefix = commonprefix(assignments)
+            need_to_join = True
+            if common_prefix != "?" and abbreviate_assignments and can_abbreviate:
+
+                split_common_prefix = re.split(r"(\d+)", common_prefix)
+                common_prefix = f"{split_common_prefix[0]}{split_common_prefix[1]}"
+
+                if len(common_prefix) > 0 and common_prefix != "?":
+                    for i, assignment in enumerate(assignments):
+                        assignments[i] = assignment[len(common_prefix) :]
+
+                    assignments = f"{common_prefix}{'-'.join(assignments)}"
+                    need_to_join = False
+
+            if need_to_join:
+                assignments = "-".join(assignments)
+
+            out_row.append(assignments)
+
+            out_row.extend([f"{shift.value:7.3f}" for shift in peak.shifts])
+
+            if (has_heights or has_volumes) and show_data_tag_in_header:
+                out_row.append("")
+            if has_heights:
+                height = peak.height if peak.height != UNUSED else 0.000
+                out_row.append(height)
+
+            if has_volumes:
+                volume = peak.volume if peak.volume != UNUSED else 0.000
+                out_row.append(volume)
+
+    return header, lines
