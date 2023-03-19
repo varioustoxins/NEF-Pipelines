@@ -95,3 +95,7 @@ added export of mars connected pseudo residue file
 ## version 0.1.29
 
 correct error in mars export fragments (mars connected pseudo residue file)
+
+## version 0.1.30
+
+add support for writing sparky peak lists
