@@ -700,8 +700,11 @@ def flatten(in_list: Union[List[Any], List[Union[List[Any], Any]]]) -> List[Any]
     :return: a list of anything but lists
     """
     out = []
-    for sublist in in_list:
-        out.extend(sublist)
+    for elem in in_list:
+        if not isinstance(elem, str):
+            out.extend(elem)
+        else:
+            out.append(elem)
     return out
 
 
