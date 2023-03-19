@@ -171,3 +171,9 @@ class NewPeak:
     height_uncertainty: Optional[float] = None
     volume: Optional[float] = None
     volume_uncertainty: Optional[float] = None
+
+
+@dataclass
+class DimensionInfo:
+    axis_code: str  # this is the isotope code for us...
+    axis_unit: Optional[str] = "ppm"
