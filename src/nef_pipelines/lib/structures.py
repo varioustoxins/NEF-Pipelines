@@ -138,7 +138,7 @@ class LineInfo:
     line: str
 
 
-@dataclass
+@dataclass(frozen=True, order=True)
 class ShiftData:
     atom: AtomLabel
     value: float
