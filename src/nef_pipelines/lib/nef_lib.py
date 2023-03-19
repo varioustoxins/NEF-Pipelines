@@ -24,8 +24,8 @@ from nef_pipelines.lib.util import (
 )
 
 NEF_TRUE = "true"
-
 NEF_FALSE = "false"
+NEF_NONE = "none"
 
 NEF_CATEGORY_ATTR = "__NEF_CATEGORY__"
 NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
