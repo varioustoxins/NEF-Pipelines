@@ -769,9 +769,7 @@ def unused_to_empty_string(value):
     return value
 
 
-def _row_to_table(
-    rows: Dict[str, str], headers=("tag", "value")
-) -> List[List[str, str]]:
+def _row_to_table(rows: Dict[str, str], headers=("tag", "value")) -> List[List[str]]:
     """
     convert a dictionary into a table with tabulate with two columns containing
     keys and values
