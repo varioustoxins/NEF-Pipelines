@@ -1,3 +1,4 @@
+# TODO move some of this to a spark lib
 import re
 import sys
 from os.path import commonprefix
