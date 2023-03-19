@@ -159,3 +159,15 @@ class RdcRestraint:
     value: float
     value_uncertainty: float
     weight: Optional[float] = None
+
+
+@dataclass(frozen=True, order=True)
+class NewPeak:
+
+    shifts: List[ShiftData]
+
+    id: Optional[int] = None
+    height: Optional[float] = None
+    height_uncertainty: Optional[float] = None
+    volume: Optional[float] = None
+    volume_uncertainty: Optional[float] = None
