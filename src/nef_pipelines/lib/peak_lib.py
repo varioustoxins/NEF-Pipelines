@@ -8,11 +8,11 @@ from nef_pipelines.lib.isotope_lib import GAMMA_RATIOS, Isotope
 from nef_pipelines.lib.nef_frames_lib import (
     ABSOLUTE_PEAK_POSITIONS,
     ATOM_NAME,
-    ATOM_NAME__DIM_INDEX,
+    ATOM_NAME__DIMENSION_INDEX,
     AXIS_CODE,
     AXIS_UNIT,
     CHAIN_CODE,
-    CHAIN_CODE__DIM_INDEX,
+    CHAIN_CODE__DIMENSION_INDEX,
     CHEMICAL_SHIFT_LIST,
     DIMENSION__DIMENSION_INDEX,
     DIMENSION_ID,
@@ -31,12 +31,12 @@ from nef_pipelines.lib.nef_frames_lib import (
     ONE_BOND,
     PEAK_ID,
     PEAK_LOOP_TAGS,
-    POSITION__DIM_INDEX,
-    POSITION_UNCERTAINTY__DIM_INDEX,
+    POSITION__DIMENSION_INDEX,
+    POSITION_UNCERTAINTY__DIMENSION_INDEX,
     RESIDUE_NAME,
-    RESIDUE_NAME__DIM_INDEX,
+    RESIDUE_NAME__DIMENSION_INDEX,
     SEQUENCE_CODE,
-    SEQUENCE_CODE__DIM_INDEX,
+    SEQUENCE_CODE__DIMENSION_INDEX,
     SF_CATEGORY,
     SF_FRAMECODE,
     SPECTRAL_WIDTH,
@@ -67,7 +67,6 @@ from nef_pipelines.lib.structures import (
     ShiftData,
 )
 from nef_pipelines.lib.util import (
-    FStringTemplate,
     _row_to_table,
     exit_error,
     is_float,
@@ -148,13 +147,12 @@ def _expand_templates(
     :param values_list: a list of dictionaries of values
     :return: a list of formatted strings
     """
-    result = []
+    result = set()
     for tag in templates:
         for values in values_list:
-            f_tag_template = FStringTemplate(tag)
-            result.append(f_tag_template.format(values))
+            result.add(tag.format(**values))
 
-    return result
+    return list(result)
 
 
 def peaks_to_frame(
@@ -263,8 +261,8 @@ def peaks_to_frame(
         dim_2 = i + 1
 
         transfer_data = {
-            DIMENSION__DIMENSION_INDEX.format({DIMENSION_INDEX, dim_1}): dim_1,
-            DIMENSION__DIMENSION_INDEX.format({DIMENSION_INDEX, dim_2}): dim_2,
+            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: dim_1}): dim_1,
+            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: dim_2}): dim_2,
             TRANSFER_TYPE: ONE_BOND,
             IS_INDIRECT: NEF_FALSE,
         }
@@ -299,21 +297,23 @@ def peaks_to_frame(
 
         for dim_index, shift in enumerate(peak.shifts, start=1):
             peak_data[
-                CHAIN_CODE__DIM_INDEX.format(dim_index=dim_index)
+                CHAIN_CODE__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.residue.chain_code
             peak_data[
-                SEQUENCE_CODE__DIM_INDEX.format(dim_index=dim_index)
+                SEQUENCE_CODE__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.residue.sequence_code
             peak_data[
-                RESIDUE_NAME__DIM_INDEX.format(dim_index=dim_index)
+                RESIDUE_NAME__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.residue.residue_name
             peak_data[
-                ATOM_NAME__DIM_INDEX.format(dim_index=dim_index)
+                ATOM_NAME__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.atom_name
 
-            peak_data[POSITION__DIM_INDEX.format(dim_index=dim_index)] = shift.value
             peak_data[
-                POSITION_UNCERTAINTY__DIM_INDEX.format(dim_index=dim_index)
+                POSITION__DIMENSION_INDEX.format(dimension_index=dim_index)
+            ] = shift.value
+            peak_data[
+                POSITION_UNCERTAINTY__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.value_uncertainty
 
         peak_loop.add_data(
@@ -347,13 +347,13 @@ def frame_to_peaks(frame: Saveframe, source="unknown") -> List[NewPeak]:
             values = {}
             fields = [CHAIN_CODE, SEQUENCE_CODE, RESIDUE_NAME, ATOM_NAME]
             raw_tags = [
-                CHAIN_CODE__DIM_INDEX,
-                SEQUENCE_CODE__DIM_INDEX,
-                RESIDUE_NAME__DIM_INDEX,
-                ATOM_NAME__DIM_INDEX,
+                CHAIN_CODE__DIMENSION_INDEX,
+                SEQUENCE_CODE__DIMENSION_INDEX,
+                RESIDUE_NAME__DIMENSION_INDEX,
+                ATOM_NAME__DIMENSION_INDEX,
             ]
             dimension_tags = [
-                raw_tag.format(dim_index=dim_index) for raw_tag in raw_tags
+                raw_tag.format(dimension_index=dim_index) for raw_tag in raw_tags
             ]
             for name, tag in zip(fields, dimension_tags):
                 value = unused_to_empty_string(row[tag])
@@ -372,7 +372,7 @@ def frame_to_peaks(frame: Saveframe, source="unknown") -> List[NewPeak]:
 
             atom_label = AtomLabel(residue, values[ATOM_NAME])
 
-            position = row[POSITION__DIM_INDEX.format(dim_index=dim_index)]
+            position = row[POSITION__DIMENSION_INDEX.format(dimension_index=dim_index)]
 
             line_info = LineInfo(
                 f"{source}[{frame.name} ]", line_number, _row_to_table(row)
@@ -380,7 +380,11 @@ def frame_to_peaks(frame: Saveframe, source="unknown") -> List[NewPeak]:
             _raise_if_position_isnt_float(position, line_info)
 
             position_uncertainty = unused_to_none(
-                row[POSITION_UNCERTAINTY__DIM_INDEX.format(dim_index=dim_index)]
+                row[
+                    POSITION_UNCERTAINTY__DIMENSION_INDEX.format(
+                        dimension_index=dim_index
+                    )
+                ]
             )
 
             shift_datum = ShiftData(atom_label, position, position_uncertainty)
