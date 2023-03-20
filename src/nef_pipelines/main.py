@@ -75,6 +75,7 @@ def main():
         import nef_pipelines.tools.entry  # noqa: F401
         import nef_pipelines.tools.frames  # noqa: F401
         import nef_pipelines.tools.header  # noqa: F401
+        import nef_pipelines.tools.shifts  # noqa: F401
         import nef_pipelines.tools.stream  # noqa: F401
         import nef_pipelines.tools.test  # noqa: F401
         import nef_pipelines.transcoders.csv  # noqa: F401
