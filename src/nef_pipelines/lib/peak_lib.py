@@ -224,6 +224,9 @@ def peaks_to_frame(
 
         axis_code = dimension[AXIS_CODE]
 
+        # TODO: need to check we have an axis code here
+        # TODO: need to reasonable translations here H-> 1H H1 -> 1H [especially as 1H isn't possible because of
+        #  technical limitations]
         dimension_spectrometer_frequency = proton_frequency_to_axis_frequency(
             spectrometer_frequency, axis_code
         )
