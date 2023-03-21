@@ -1,18 +1,20 @@
 import fnmatch
 import sys
-from argparse import Namespace
 from collections import Counter
 from pathlib import Path
 from typing import Dict, List
 
 import typer
-from pynmrstar import Entry, Saveframe
+from pynmrstar import Saveframe
 from tabulate import tabulate as tabulate_formatter
 from tabulate import tabulate_formats
 
-from nef_pipelines.lib.nef_lib import UNUSED
+from nef_pipelines.lib.nef_lib import (
+    UNUSED,
+    read_or_create_entry_exit_error_on_bad_file,
+)
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import exit_error, get_pipe_file, read_integer_or_exit
+from nef_pipelines.lib.util import exit_error, read_integer_or_exit
 from nef_pipelines.tools.frames import frames_app
 
 ALL_LOOPS = "ALL"
@@ -86,16 +88,9 @@ def tabulate(
 
     args = get_args()
 
-    pipe_file = get_pipe_file(Namespace(pipe=pipe))
+    entry = read_or_create_entry_exit_error_on_bad_file(pipe)
 
-    if pipe_file:
-
-        raw_lines = pipe_file.readlines()
-        lines = "".join(raw_lines)
-
-        entry = Entry.from_string(lines)
-
-        tabulate_frames(entry, args)
+    tabulate_frames(entry, args)
 
 
 def tabulate_frames(entry, args):
