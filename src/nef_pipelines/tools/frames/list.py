@@ -8,10 +8,14 @@ import typer
 from pynmrstar import Entry
 from tabulate import tabulate
 
-from nef_pipelines.lib.nef_lib import SelectionType, select_frames
+from nef_pipelines.lib.nef_lib import (
+    SelectionType,
+    read_or_create_entry_exit_error_on_bad_file,
+    select_frames,
+)
 from nef_pipelines.lib.sequence_lib import count_residues, frame_to_chains
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import chunks, exit_error, get_pipe_file
+from nef_pipelines.lib.util import chunks, exit_error
 from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
@@ -81,14 +85,12 @@ def list(
     args = get_args()
 
     if entry is None:
-        pipe_file = get_pipe_file(args)
-        raw_lines = pipe_file.readlines()
-        lines = "".join(raw_lines)
 
         try:
-            entry = Entry.from_string(lines)
+            entry = read_or_create_entry_exit_error_on_bad_file(pipe)
         except Exception as e:
             exit_error(f"failed to read nef file {args.pipe} because", e)
+        lines = str(entry)
 
     if entry is None:
         if args.pipe is not None:
@@ -104,7 +106,8 @@ def list(
         import hashlib
 
         md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
-        print(f"    lines: {len(raw_lines)} frames: {len(entry)} checksum: {md5} [md5]")
+        num_lines = len(lines.split("\n"))
+        print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
     print()
 
     frames = select_frames(entry, selector_type, filters)
