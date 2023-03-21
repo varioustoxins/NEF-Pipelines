@@ -79,7 +79,7 @@ def insert(
                         ok_external_frame = True
             if not use_categories and not exact:
                 for name in select:
-                    if fnmatch(external_frame.category, f"*{name}*"):
+                    if fnmatch(external_frame.name, f"*{name}*"):
                         ok_external_frame = True
 
             if ok_external_frame:
