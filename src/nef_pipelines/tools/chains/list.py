@@ -1,12 +1,10 @@
-from argparse import Namespace
 from pathlib import Path
 
 import typer
-from pynmrstar import Entry
 from typer import Option
 
+from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
 from nef_pipelines.lib.sequence_lib import frame_to_chains
-from nef_pipelines.lib.util import get_pipe_file
 from nef_pipelines.tools.chains import chains_app
 
 app = typer.Typer()
@@ -27,8 +25,9 @@ def list(
     stream: bool = Option(False, "-s", "--stream", help="stream file after comment"),
 ):
     """- list the chains in the molecular systems"""
-    lines = "".join(get_pipe_file(Namespace(pipe=pipe)).readlines())
-    entry = Entry.from_string(lines)
+
+    entry = read_or_create_entry_exit_error_on_bad_file(pipe)
+
     sequence_frames = entry.get_saveframes_by_category("nef_molecular_system")
 
     chains = []
@@ -45,4 +44,4 @@ def list(
     print(f"{comment}{verbose}{result}")
 
     if stream:
-        print(lines)
+        print(entry)
