@@ -17,6 +17,9 @@ from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDOUT
 from nef_pipelines.transcoders.fasta import export_app
 
+#TODO: we should be able to output *s on the ends of sequences and comments
+#TODO: we should be able to select chains by fnmatch
+
 
 # noinspection PyUnusedLocal
 @export_app.command()
@@ -52,6 +55,7 @@ def sequence(
     # TODO: move to utility function and use in all outputs
     file_h = sys.stdout if output_file == str(STDOUT) else open(output_file, "w")
 
+    #TODO we ought to output to multiple files witha template
     for record in fasta_records.values():
         print("\n".join(record), file=file_h)
 
