@@ -21,6 +21,10 @@ from nef_pipelines.transcoders.fasta import export_app
 # TODO: we should be able to output *s on the ends of sequences and comments
 # TODO: we should be able to select chains by fnmatch
 
+CHAIN_CODES_HELP = """
+    chains to export, to add multiple chains use repeated calls, to select all chains use * [default: 'A']
+"""
+
 
 # noinspection PyUnusedLocal
 @export_app.command()
@@ -29,7 +33,7 @@ def sequence(
         [],
         "-c",
         "--chain_code",
-        help="chains to export, to add multiple chains use repeated calls to select all chains use * for all [default: 'A']",
+        help=CHAIN_CODES_HELP,
         metavar="<CHAIN-CODE>",
     ),
     in_file: Path = typer.Option(
@@ -80,9 +84,7 @@ def nef_to_fasta_records(
     residues: List[SequenceResidue], target_chain_codes: List[str]
 ) -> Dict[str, List[str]]:
 
-
     all_chain_codes = sequence_to_chains(residues)
-
 
     chain_codes = []
     for target_chain_code in target_chain_codes:
