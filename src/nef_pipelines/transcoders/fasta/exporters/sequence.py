@@ -11,14 +11,15 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     make_chunked_sequence_1let,
     sequence_from_frame,
-    translate_3_to_1, sequence_to_chains,
+    sequence_to_chains,
+    translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDOUT
 from nef_pipelines.transcoders.fasta import export_app
 
-#TODO: we should be able to output *s on the ends of sequences and comments
-#TODO: we should be able to select chains by fnmatch
+# TODO: we should be able to output *s on the ends of sequences and comments
+# TODO: we should be able to select chains by fnmatch
 
 
 # noinspection PyUnusedLocal
@@ -42,7 +43,7 @@ def sequence(
 ):
     """- convert nef sequence to fasta"""
 
-    chain_codes = ['*'] if len(chain_codes) == 0 else chain_codes
+    chain_codes = ["*"] if len(chain_codes) == 0 else chain_codes
 
     entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
 
@@ -53,9 +54,9 @@ def sequence(
     # TODO: move to utility function and use in all outputs
     file_h = sys.stdout if output_file == str(STDOUT) else open(output_file, "w")
 
-    #TODO we ought to output to multiple files witha template
+    # TODO we ought to output to multiple files witha template
     for record in fasta_records.values():
-        print("\n".join(record), file=file_h)
+        print("\n\n".join(record), file=file_h)
 
     if output_file != STDOUT:
         file_h.close()
@@ -89,7 +90,7 @@ def nef_to_fasta_records(
             if target_chain_code == chain_code:
                 chain_codes.append(chain_code)
                 continue
-            if target_chain_code == '*':
+            if target_chain_code == "*":
                 chain_codes.append(chain_code)
                 continue
 
@@ -121,7 +122,7 @@ def nef_to_fasta_records(
     result = {}
     for chain_code, residue_sequence in residue_sequences.items():
         result[chain_code] = [
-            f">CHAIN: A | START RESIDUE: {chain_starts[chain_code]}",
+            f">CHAIN: {chain_code} | START RESIDUE: {chain_starts[chain_code]}",
             "\n".join(residue_sequence),
         ]
 
