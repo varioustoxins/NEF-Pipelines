@@ -403,11 +403,7 @@ def read_or_create_entry_exit_error_on_bad_file(
             entry = create_entry_from_stdin()
         else:
             try:
-                with open(file) as fh:
-                    lines = fh.read()
-                    lines = lines.strip()
-                    if lines:
-                        entry = Entry.from_string(fh)
+                entry = Entry.from_file(file.open())
 
             except IOError as e:
                 msg = f"""
