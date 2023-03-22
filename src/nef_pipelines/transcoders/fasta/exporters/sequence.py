@@ -11,7 +11,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     make_chunked_sequence_1let,
     sequence_from_frame,
-    translate_3_to_1,
+    translate_3_to_1, sequence_to_chains,
 )
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDOUT
@@ -28,7 +28,7 @@ def sequence(
         [],
         "-c",
         "--chain_code",
-        help="chains to export, to add multiple chains use repeated calls  [default: 'A']",
+        help="chains to export, to add multiple chains use repeated calls to select all chains use * for all [default: 'A']",
         metavar="<CHAIN-CODE>",
     ),
     in_file: Path = typer.Option(
@@ -42,9 +42,7 @@ def sequence(
 ):
     """- convert nef sequence to fasta"""
 
-    # frame_selectors = parse_comma_separated_options(chain_codes)
-
-    chain_codes = ["A"] if not chain_codes else chain_codes
+    chain_codes = ['*'] if len(chain_codes) == 0 else chain_codes
 
     entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
 
@@ -78,8 +76,22 @@ def fasta_records_from_entry(entry, chain_codes):
 
 
 def nef_to_fasta_records(
-    residues: List[SequenceResidue], chain_codes: List[str]
+    residues: List[SequenceResidue], target_chain_codes: List[str]
 ) -> Dict[str, List[str]]:
+
+
+    all_chain_codes = sequence_to_chains(residues)
+
+
+    chain_codes = []
+    for target_chain_code in target_chain_codes:
+        for chain_code in all_chain_codes:
+            if target_chain_code == chain_code:
+                chain_codes.append(chain_code)
+                continue
+            if target_chain_code == '*':
+                chain_codes.append(chain_code)
+                continue
 
     residues_by_chain = {}
     for chain_code in chain_codes:
