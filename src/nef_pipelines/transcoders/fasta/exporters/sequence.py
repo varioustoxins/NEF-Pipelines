@@ -24,7 +24,7 @@ from nef_pipelines.transcoders.fasta import export_app
 # noinspection PyUnusedLocal
 @export_app.command()
 def sequence(
-    chain_codes: str = typer.Option(
+    chain_codes: List[str] = typer.Option(
         [],
         "-c",
         "--chain_code",
