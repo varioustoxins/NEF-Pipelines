@@ -14,6 +14,6 @@ if nef_app.app:
     app.add_typer(export_app, name="export", help="- export rpf shifts")
 
     # import of specific importers must be after app creation to avoid circular imports
-    import nef_pipelines.transcoders.nmr_star.exporters.shifts  # noqa: F401
+    import nef_pipelines.transcoders.rpf.exporters.shifts  # noqa: F401
 
     # import nef_pipelines.transcoders.fasta.importers.sequence  # noqa: F401
