@@ -11,11 +11,12 @@ VERSION_FILE=src/nef_pipelines/VERSION
 cd /Users/garythompson/Dropbox/nef_pipelines/nef_pipelines
 
 #clear dists but don't complain if its empty
+setopt localoptions rmstarsilent
 rm -rf  dist/* || true
 
 # increase version and tag it
 ver  --file $VERSION_FILE  up --patch
-ver  --file $VERSION_FILE tag
+
 
 # grab the version
 VERSION=`ver --file $VERSION_FILE |  awk '{print $3}'`
@@ -23,6 +24,8 @@ VERSION=`ver --file $VERSION_FILE |  awk '{print $3}'`
 # update the version  in the repo
 git add src/nef_pipelines/VERSION
 git commit -m "updated version to $VERSION" --no-verify
+
+ver  --file $VERSION_FILE tag
 
 # stash any uncommited changes to avoid version+1 errors
 git stash
