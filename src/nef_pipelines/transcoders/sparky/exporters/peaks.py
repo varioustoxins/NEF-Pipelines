@@ -1,12 +1,14 @@
 # TODO move some of this to a spark lib
 import re
 import sys
+from enum import auto
 from os.path import commonprefix
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
 from pynmrstar import Entry, Loop
+from strenum import LowercaseStrEnum
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
@@ -97,6 +99,18 @@ DISCARD_ASSIGNMENTS_HELP = (
     "discard the peak assignments. note: peaks unassign provides more options"
 )
 
+
+class SUPRESSABLE_COLUMNS(LowercaseStrEnum):
+    ASSIGNMENT = auto()
+    HEIGHT = auto()
+    VOLUME = auto()
+
+
+COLUMNS_TO_SUPPRESS_HELP = f"""
+    name columns to suppress in the output [{', '.join(SUPRESSABLE_COLUMNS)}], can be called multiple times or with a
+    comma sepatated list [no spaces!]
+"""
+
 DEFAULT_CHAIN_SEPARATOR = "."
 
 
@@ -126,14 +140,20 @@ def peaks(
         DEFAULT_CHAIN_SEPARATOR, help="characters used to separate chains from residues"
     ),
     no_negative_residues: bool = typer.Option(False, help=NO_NEGATIVES_HELP),
-    no_volume: bool = typer.Option(
-        False, help="don't include a volume column in the output"
+    columns_to_suppress: List[str] = typer.Option(
+        [], "--suppress-column", help=COLUMNS_TO_SUPPRESS_HELP
     ),
-    no_height: bool = typer.Option(
-        False, help="don't include a height column in the output"
-    ),
+    # no_volume: bool = typer.Option(
+    #     False, help="don't include a volume column in the output"
+    # ),
+    # no_height: bool = typer.Option(
+    #     False, help="don't include a height column in the output"
+    # ),
+    # no_assignment: bool = Typer
 ):
     """-  write sparky peaks"""
+
+    columns_to_suppress = parse_comma_separated_options(columns_to_suppress)
 
     output_to_files = file_name_template != STDOUT_STR
 
@@ -170,8 +190,7 @@ def peaks(
             chain_separator=chain_separator,
             no_negative_pseudo_residues=no_negative_residues,
             no_chains=no_chains,
-            no_height=no_height,
-            no_volume=no_volume,
+            columns_to_suppress=columns_to_suppress,
         )
     except SparkyPeaksExportException as e:
         exit_error(str(e))
@@ -302,8 +321,7 @@ def pipe(
     chain_separator=":",
     no_negative_pseudo_residues=False,
     no_chains=False,
-    no_volume=False,
-    no_height=False,
+    columns_to_suppress: List[SUPRESSABLE_COLUMNS] = (),
 ) -> Tuple[Entry, Dict[str, List[str]]]:
 
     selected_frame_names = set(selected_frame_names)
@@ -332,8 +350,7 @@ def pipe(
             chain_sequence_separator=chain_separator,
             no_negative_pseudo_residues=no_negative_pseudo_residues,
             no_chains=no_chains,
-            no_heights=no_height,
-            no_volumes=no_volume,
+            columns_to_suppress=columns_to_suppress,
         )
 
     return entry, sparky_lines
@@ -367,13 +384,14 @@ def _build_sparky_lines(
     chain_sequence_separator=".",
     no_negative_pseudo_residues=False,
     no_chains=False,
-    no_volumes=False,
-    no_heights=False,
+    columns_to_suppress=(),
 ):
 
     lines = []
 
-    header = ["Assignment"]
+    header = []
+    if SUPRESSABLE_COLUMNS.ASSIGNMENT not in columns_to_suppress:
+        header.append("Assignment")
 
     if len(peaks_list) > 0:
         num_dimensions = len(peaks_list[0].shifts)
@@ -384,8 +402,14 @@ def _build_sparky_lines(
 
         header.extend(position_headers)
 
-        has_volumes = _peak_loop_has_volumes(peaks_list) and not no_volumes
-        has_heights = _peak_loop_has_heights(peaks_list) and not no_heights
+        has_volumes = (
+            _peak_loop_has_volumes(peaks_list)
+            and SUPRESSABLE_COLUMNS.VOLUME not in columns_to_suppress
+        )
+        has_heights = (
+            _peak_loop_has_heights(peaks_list)
+            and SUPRESSABLE_COLUMNS.HEIGHT not in columns_to_suppress
+        )
 
         if (has_heights or has_volumes) and show_data_tag_in_header:
             header.append("Data")
@@ -416,72 +440,73 @@ def _build_sparky_lines(
 
             can_abbreviate = number_residues == 1 and number_chains == 1
 
-            if include_assignments:
-                for atom in [shift.atom for shift in peak.shifts]:
+            if SUPRESSABLE_COLUMNS.ASSIGNMENT not in columns_to_suppress:
+                if include_assignments:
+                    for atom in [shift.atom for shift in peak.shifts]:
 
-                    chain_code = atom.residue.chain_code
-                    sequence_code = str(atom.residue.sequence_code)
-                    residue_name = atom.residue.residue_name
-                    atom_name = atom.atom_name
-                    current_chain_sequence_separator = chain_sequence_separator
+                        chain_code = atom.residue.chain_code
+                        sequence_code = str(atom.residue.sequence_code)
+                        residue_name = atom.residue.residue_name
+                        atom_name = atom.atom_name
+                        current_chain_sequence_separator = chain_sequence_separator
 
-                    if chain_code == "@-":
-                        chain_code = ""
-                    elif chain_code.startswith("#"):
-                        chain_code = f"PC_{chain_code}"
-                    elif chain_code == UNUSED or no_chains:
-                        chain_code = ""
-                        current_chain_sequence_separator = ""
+                        if chain_code == "@-":
+                            chain_code = ""
+                        elif chain_code.startswith("#"):
+                            chain_code = f"PC_{chain_code}"
+                        elif chain_code == UNUSED or no_chains:
+                            chain_code = ""
+                            current_chain_sequence_separator = ""
 
-                    if not chain_code or len(chain_code) == 0:
-                        current_chain_sequence_separator = ""
+                        if not chain_code or len(chain_code) == 0:
+                            current_chain_sequence_separator = ""
 
-                    if sequence_code.endswith("-1"):
-                        if no_negative_pseudo_residues:
-                            sequence_code = "?"
-                        else:
-                            sequence_code = f"{sequence_code[:-2]}"
-                            atom_name = f"{atom_name}m1"
-                        can_abbreviate = False
+                        if sequence_code.endswith("-1"):
+                            if no_negative_pseudo_residues:
+                                sequence_code = "?"
+                            else:
+                                sequence_code = f"{sequence_code[:-2]}"
+                                atom_name = f"{atom_name}m1"
+                            can_abbreviate = False
 
-                    if sequence_code.startswith("@"):
-                        sequence_code = f"PR_{sequence_code[1:]}"
-                    # if chain_code.startswith('PC_'):
-                    #     sequence_code = f'{chain_code}:{sequence_code}'
-                    #     chain_sequence_separator = ''
+                        if sequence_code.startswith("@"):
+                            sequence_code = f"PR_{sequence_code[1:]}"
+                        # if chain_code.startswith('PC_'):
+                        #     sequence_code = f'{chain_code}:{sequence_code}'
+                        #     chain_sequence_separator = ''
 
-                    if residue_name in TRANSLATIONS_3_1:
-                        residue_name = TRANSLATIONS_3_1[residue_name]
+                        if residue_name in TRANSLATIONS_3_1:
+                            residue_name = TRANSLATIONS_3_1[residue_name]
 
-                    if not residue_name:
-                        residue_name = ""
+                        if not residue_name:
+                            residue_name = ""
 
-                    group = f"{chain_code}{current_chain_sequence_separator}{residue_name}{sequence_code}"
+                        group = f"{chain_code}{current_chain_sequence_separator}{residue_name}{sequence_code}"
 
-                    assignment = f"{group}{atom_name}"
-                    assignments.append(assignment)
+                        assignment = f"{group}{atom_name}"
+                        assignments.append(assignment)
 
-            else:
-                assignments.extend(["?"] * num_dimensions)
+                else:
+                    assignments.extend(["?"] * num_dimensions)
 
-            common_prefix = commonprefix(assignments)
-            need_to_join = True
-            if common_prefix != "?" and abbreviate_assignments and can_abbreviate:
+                common_prefix = commonprefix(assignments)
+                need_to_join = True
+                if common_prefix != "?" and abbreviate_assignments and can_abbreviate:
 
-                split_common_prefix = re.split(r"(\d+)", common_prefix)
-                common_prefix = f"{split_common_prefix[0]}{split_common_prefix[1]}"
+                    split_common_prefix = re.split(r"(\d+)", common_prefix)
+                    common_prefix = f"{split_common_prefix[0]}{split_common_prefix[1]}"
 
-                if len(common_prefix) > 0 and common_prefix != "?":
-                    for i, assignment in enumerate(assignments):
-                        assignments[i] = assignment[len(common_prefix) :]
+                    if len(common_prefix) > 0 and common_prefix != "?":
+                        for i, assignment in enumerate(assignments):
+                            assignments[i] = assignment[len(common_prefix) :]
 
-                    assignments = f"{common_prefix}{'-'.join(assignments)}"
-                    need_to_join = False
+                        assignments = f"{common_prefix}{'-'.join(assignments)}"
+                        need_to_join = False
 
-            if need_to_join:
-                assignments = "-".join(assignments)
+                if need_to_join:
+                    assignments = "-".join(assignments)
 
-            out_row.append(assignments)
+                out_row.append(assignments)
 
             out_row.extend([f"{shift.value:7.3f}" for shift in peak.shifts])
 

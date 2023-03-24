@@ -36,6 +36,33 @@ def test_ppm_out_short():
     assert_lines_match(EXPECTED, result.stdout)
 
 
+EXPECTED_SUPPRESS_ASSIGNMENT = """\
+****************************** nef_nmr_spectrum_peaks ******************************
+
+       w1       w2      Height  Volume
+
+  120.519  6.169        9       1
+  104.406  6.180       10       2
+  104.408  6.517       11       3
+  103.504  7.048       12       4
+************************************************************************************
+
+"""
+
+
+def test_ppm_out_short_suppress_assigment():
+
+    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
+
+    result = run_and_report(
+        app,
+        ["--file-name-template", "-", "--suppress-column", "assignment"],
+        input=STREAM,
+    )
+
+    assert_lines_match(EXPECTED_SUPPRESS_ASSIGNMENT, result.stdout)
+
+
 EXPECTED_NO_HEIGHT = """\
 ****************************** nef_nmr_spectrum_peaks ******************************
 
@@ -56,7 +83,7 @@ def test_ppm_out_short_no_height():
     STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
 
     result = run_and_report(
-        app, ["--file-name-template", "-", "--no-height"], input=STREAM
+        app, ["--file-name-template", "-", "--suppress-column", "height"], input=STREAM
     )
 
     assert_lines_match(EXPECTED_NO_HEIGHT, result.stdout)
@@ -82,7 +109,7 @@ def test_ppm_out_short_no_volume():
     STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
 
     result = run_and_report(
-        app, ["--file-name-template", "-", "--no-volume"], input=STREAM
+        app, ["--file-name-template", "-", "--suppress-column", "volume"], input=STREAM
     )
 
     assert_lines_match(EXPECTED_NO_VOLUME, result.stdout)
@@ -108,7 +135,16 @@ def test_ppm_out_short_no_height_or_volume():
     STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
 
     result = run_and_report(
-        app, ["--file-name-template", "-", "--no-volume", "--no-height"], input=STREAM
+        app,
+        [
+            "--file-name-template",
+            "-",
+            "--suppress-column",
+            "volume",
+            "--suppress-column",
+            "height",
+        ],
+        input=STREAM,
     )
 
     assert_lines_match(EXPECTED_NO_HEIGHT_OR_VOLUME, result.stdout)
@@ -120,7 +156,13 @@ def test_ppm_out_short_no_height_or_volume_with_data():
 
     result = run_and_report(
         app,
-        ["--file-name-template", "-", "--no-volume", "--no-height", "--add-data"],
+        [
+            "--file-name-template",
+            "-",
+            "--suppress-column",
+            "volume,height",
+            "--add-data",
+        ],
         input=STREAM,
     )
 
