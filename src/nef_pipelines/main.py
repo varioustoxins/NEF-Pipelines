@@ -2,8 +2,11 @@
 # for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
 import logging
 import sys
-import traceback
+from importlib import import_module
 from textwrap import dedent
+from traceback import format_exc, print_exc
+
+verbose_mode = False
 
 try:
     import future  # noqa: F401
@@ -28,7 +31,7 @@ EXIT_ERROR = 1
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     msg = dedent(msg)
     if trace_back:
-        traceback.print_exc()
+        print_exc()
     print(msg, file=sys.stderr)
     print("exiting...", file=sys.stderr)
     sys.exit(exit_code)
@@ -45,6 +48,7 @@ def create_nef_app():
 
 
 def main():
+    global verbose_mode
     try:
         import typer
         from click import ClickException
@@ -68,29 +72,39 @@ def main():
                  exiting..."""
         do_exit_error(msg, e)
 
+    warnings = []
     try:
         # import components which will self register, this could and will be automated
-        import nef_pipelines.tools.about  # noqa: F401
-        import nef_pipelines.tools.chains  # noqa: F401
-        import nef_pipelines.tools.entry  # noqa: F401
-        import nef_pipelines.tools.frames  # noqa: F401
-        import nef_pipelines.tools.header  # noqa: F401
-        import nef_pipelines.tools.peaks  # noqa: F401
-        import nef_pipelines.tools.shifts  # noqa: F401
-        import nef_pipelines.tools.stream  # noqa: F401
-        import nef_pipelines.tools.test  # noqa: F401
-        import nef_pipelines.transcoders.csv  # noqa: F401
-        import nef_pipelines.transcoders.fasta  # noqa: F401
-        import nef_pipelines.transcoders.mars  # noqa: F401
-        import nef_pipelines.transcoders.nmrpipe  # noqa: F401
-        import nef_pipelines.transcoders.nmrview  # noqa: F401
-        import nef_pipelines.transcoders.pales  # noqa: F401
-        import nef_pipelines.transcoders.pdbx  # noqa: F401
-        import nef_pipelines.transcoders.rpf  # noqa: F401
-        import nef_pipelines.transcoders.shifty  # noqa: F401
-        import nef_pipelines.transcoders.sparky  # noqa: F401
-        import nef_pipelines.transcoders.xcamshift  # noqa: F401
-        import nef_pipelines.transcoders.xplor  # noqa: F401
+        modules = [
+            "nef_pipelines.tools.about",
+            "nef_pipelines.tools.chains",
+            "nef_pipelines.tools.entry",
+            "nef_pipelines.tools.frames",
+            "nef_pipelines.tools.header",
+            "nef_pipelines.tools.peaks",
+            "nef_pipelines.tools.shifts",
+            "nef_pipelines.tools.stream",
+            "nef_pipelines.tools.test",
+            "nef_pipelines.transcoders.csv",
+            "nef_pipelines.transcoders.fasta",
+            "nef_pipelines.transcoders.mars",
+            "nef_pipelines.transcoders.nmrpipe",
+            "nef_pipelines.transcoders.nmrview",
+            "nef_pipelines.transcoders.pales",
+            "nef_pipelines.transcoders.pdbx",
+            "nef_pipelines.transcoders.rpf",
+            "nef_pipelines.transcoders.shifty",
+            "nef_pipelines.transcoders.sparky",
+            "nef_pipelines.transcoders.xcamshift",
+            "nef_pipelines.transcoders.xplor",
+        ]
+        for module_name in modules:
+            try:
+                import_module(module_name)
+            except Exception:
+                msg = f"plugin {module_name}\n{format_exc()}"
+
+                warnings.append((module_name, msg))
 
     except Exception as e:
         msg = """\
@@ -108,6 +122,8 @@ def main():
 
         command(standalone_mode=False)
 
+        _report_warnings(warnings)
+
     except ClickException as e:
         e.show()
         do_exit_error(
@@ -124,6 +140,43 @@ def main():
               """
 
         do_exit_error(msg)
+
+
+def _report_warnings(warnings):
+    if warnings:
+
+        bad_modules = []
+        for module_name, warning in warnings:
+            bad_modules.append(module_name)
+
+            lines = warning.split("\n")
+            max_line_length = max([len(line) for line in lines])
+            msg = f"error in {module_name}"
+            line_length_m_module_name = max_line_length - len(msg)
+            stars_2_m1 = (line_length_m_module_name // 2) - 2
+
+            header = f"{'*' * stars_2_m1} {msg} {'*' * stars_2_m1}"
+            discrepancy = max_line_length - len(header)
+            header = f'{header}{"*" * discrepancy}'
+
+            print(file=sys.stderr)
+            print(header)
+            print(file=sys.stderr)
+            print(warning, file=sys.stderr)
+            print("*" * max_line_length)
+
+        NEW_LINE = "\n    "
+        msg = f"""
+                WARNING: the following plugins failed to load:
+
+                    {NEW_LINE.join(bad_modules)}
+
+                the remaining plugins will work but NEF-Pipelines is working  with reduced capabilities. The modules
+                that failed to load and the causes of the problem are listed above please report this to the authors
+                at github: https://github.com/varioustoxins/NEF-Pipelines/issues
+            """
+        msg = dedent(msg)
+        print(msg, file=sys.stderr)
 
 
 if __name__ == "__main__":
