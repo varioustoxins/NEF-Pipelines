@@ -1,3 +1,4 @@
+import platform
 import sys
 from datetime import date
 from textwrap import dedent, indent
@@ -7,25 +8,47 @@ import typer
 from nef_pipelines import nef_app
 from nef_pipelines.lib.util import get_version
 
+VERBOSE_HELP = """\
+    display more verbose information about NEF-Pipelines and its environment,
+    [ignored with the --version option]"
+"""
+
 if nef_app:
     # noinspection PyUnusedLocal
     @nef_app.app.command()
     def about(
         version: bool = typer.Option(
             False, "--version", help="only display the current version"
-        )
+        ),
+        verbose: bool = typer.Option(False, "-v", "--verbose", help=VERBOSE_HELP),
     ):
         "- info about NEF-Pipelines"
 
-        print(cmd(version), file=sys.stderr)
+        print(cmd(version, verbose), file=sys.stderr)
 
-    def cmd(version):
+    def cmd(version, verbose=False):
         version_data = get_version()
 
         if version:
             result = str(version_data)
         else:
             NEF_PIPLINES_URL = "https://github.com/varioustoxins/NEF-Pipelines"
+
+            if verbose:
+                # TODO add the modules in requirements.txt and their versions
+                extra_msg = f"""\
+
+                    Environment
+                    -----------
+
+                    Python version:   {platform.python_version()}
+                    Operating system: {platform.platform(aliased=True, terse=True)}
+
+                """
+            else:
+                extra_msg = ""
+            extra_msg = dedent(extra_msg)
+
             msg = f"""\
 
                 This is NEF-Pipelines version {version_data}
@@ -47,6 +70,8 @@ if nef_app:
 
             header = "=" * (max_width + 4)
 
-            result = "\n".join([header, indent(msg, "  "), header])
+            result = "\n".join(
+                [header, indent(msg, "  "), indent(extra_msg, "  "), header]
+            )
 
         return result
