@@ -346,9 +346,12 @@ def select_frames(
     result = {}
     for frame in entry.frame_dict.values():
 
-        accept_frame_category = any(
-            [fnmatch(frame.category, filter) for filter in filters]
-        )
+        if frame.category is not None:
+            accept_frame_category = any(
+                [fnmatch(frame.category, filter) for filter in filters]
+            )
+        else:
+            accept_frame_category = False
         accept_frame_name = any([fnmatch(frame.name, filter) for filter in filters])
 
         if (
