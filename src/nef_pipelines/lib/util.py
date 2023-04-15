@@ -414,9 +414,10 @@ def exit_error(msg, exception=None):
     command = _script_to_command(script)
 
     print(f"ERROR [in: {command}]: {msg[0]}", file=sys.stderr)
+    print(file=sys.stderr)
 
     for line in msg[1:]:
-        print(f"       {line}", file=sys.stderr)
+        print(f"  {line}", file=sys.stderr)
     print("exiting...", file=sys.stderr)
     sys.exit(EXIT_ERROR)
 
