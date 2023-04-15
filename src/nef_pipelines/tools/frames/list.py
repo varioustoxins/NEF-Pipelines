@@ -1,5 +1,3 @@
-import os
-from math import floor
 from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
@@ -15,7 +13,7 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import count_residues, frame_to_chains
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import chunks, exit_error
+from nef_pipelines.lib.util import exit_error, strings_to_table_terminal_sensitive
 from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
@@ -120,7 +118,7 @@ def list(
                 for i, frame_name in enumerate(frame_names, start=1)
             ]
 
-        frame_list = _string_list_to_tabulation(frame_names)
+        frame_list = strings_to_table_terminal_sensitive(frame_names)
         print(tabulate(frame_list, tablefmt="plain"))
 
     else:
@@ -134,7 +132,7 @@ def list(
                     f"{i}. {frame.name}" for i, frame_name in enumerate(frames, start=1)
                 ]
 
-                frame_list = _string_list_to_tabulation(frame_names)
+                frame_list = strings_to_table_terminal_sensitive(frame_names)
                 print(tabulate(frame_list, tablefmt="plain"))
 
                 print(f"    category: {frame.category}")
@@ -195,7 +193,7 @@ def list(
                         pre_string = f"              {chain}. "
                         pre_string_width = len(pre_string)
 
-                        tabulation = _string_list_to_tabulation(
+                        tabulation = strings_to_table_terminal_sensitive(
                             counts_and_percentages, pre_string_width
                         )
                         table = tabulate(tabulation, tablefmt="plain")
@@ -215,32 +213,3 @@ def _indent_with_prestring(text_block, pre_string):
             raw_result.append(f"{empty_prestring}{string}")
 
     return "\n".join(raw_result)
-
-
-def _string_list_to_tabulation(frame_names, used_columns=0):
-    try:
-        width, _ = os.get_terminal_size()
-    except Exception:
-        width = 100
-
-    width -= used_columns
-
-    # apply a sensible minimum width
-    if width < 20:
-        width = 20
-
-    if len(frame_names) > 0:
-        frame_name_widths = [len(frame_name) for frame_name in frame_names]
-        max_frame_name_width = max(frame_name_widths)
-
-        columns = int(floor(width / (max_frame_name_width + 1)))
-        column_width = int(floor(width / columns))
-
-        columns = 1 if columns == 0 else columns
-
-        frame_names = [frame_name.rjust(column_width) for frame_name in frame_names]
-        frame_name_list = chunks(frame_names, columns)
-    else:
-        frame_name_list = [[]]
-
-    return frame_name_list

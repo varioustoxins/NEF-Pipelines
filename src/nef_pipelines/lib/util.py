@@ -6,6 +6,7 @@ import sys
 import traceback
 from argparse import Namespace
 from enum import auto
+from math import floor
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, Dict, Iterator, List, Optional, TextIO, TypeVar, Union
@@ -783,3 +784,45 @@ def _row_to_table(rows: Dict[str, str], headers=("tag", "value")) -> List[List[s
         values.append([key, value])
     value_string = tabulate(values, headers="firstrow")
     return value_string
+
+
+def strings_to_table_terminal_sensitive(
+    strings: str,
+    used_width: int = 0,
+    min_width: int = 20,
+    fallback_terminal_width: int = 100,
+):
+    """
+    given a list of strings convert them to a table where the number of columns os compatible with the terminal width
+    :param strings: a list of strings to tabulate
+    :param used_width: any width of the terminal already used
+    :param min_width: the minum width for a table column
+    :param fallback_terminal_width: if the terminal width can't be determined use this width
+    :return: a list of list where each sub list is a row, which is  suitable for formatting with tabulate.tabulate
+    """
+    try:
+        width, _ = os.get_terminal_size()
+    except Exception:
+        width = fallback_terminal_width
+
+    width -= used_width
+
+    # apply a sensible minimum width
+    if width < min_width:
+        width = min_width
+
+    if len(strings) > 0:
+        frame_name_widths = [len(frame_name) for frame_name in strings]
+        max_frame_name_width = max(frame_name_widths)
+
+        columns = int(floor(width / (max_frame_name_width + 1)))
+        column_width = int(floor(width / columns))
+
+        columns = 1 if columns == 0 else columns
+
+        strings = [frame_name.rjust(column_width) for frame_name in strings]
+        frame_name_list = chunks(strings, columns)
+    else:
+        frame_name_list = [[]]
+
+    return frame_name_list
