@@ -208,10 +208,10 @@ EXPECTED_EXPERIMENT_CLASSIFICATIONS_AND_SYNONYMS = {
     ExperimentType.HNCA: ("H[N[CA]]", "HNCA"),
     ExperimentType.HNcoCA: ("H[N[co[CA]]]", "H-detected HNcoCA"),
     ExperimentType.HNCACB: ("H[N[CA[CB]]]", "H-detected HNCACB"),
-    ExperimentType.HNcoCACB: ("H[N[CO[CA[CB]]]]", "H-detected HNCOCACB"),
+    ExperimentType.HNcoCACB: ("H[N[co[CA[CB]]]]", "H-detected HNcoCACB"),
     ExperimentType.CBCAcoNH: ("h{CA|Cca}coNH", "hbCB/haCAcoNNH"),
     ExperimentType.HNCO: ("H[N[CO]]", "HNCO"),
-    ExperimentType.HNcaCO: ("H[N[CA[CO]]]", "H-detected HNCACO"),
+    ExperimentType.HNcaCO: ("H[N[ca[CO]]]", "H-detected HNcaCO"),
 }
 
 
