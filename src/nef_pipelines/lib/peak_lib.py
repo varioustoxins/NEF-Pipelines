@@ -2,6 +2,8 @@ import copy
 from textwrap import dedent
 from typing import Any, Dict, List, Tuple, Union
 
+from frozendict import frozendict
+from ordered_set import OrderedSet
 from pynmrstar import Loop, Saveframe
 
 from nef_pipelines.lib.isotope_lib import GAMMA_RATIOS, Isotope
@@ -139,7 +141,7 @@ def format_7_3_f(value: Union[int, float]) -> str:
 
 
 def _expand_templates(
-    templates: List[str], values_list: List[Dict[str, Any]]
+    template: List[Union[str, List[str]]], values_list: List[Dict[str, Any]]
 ) -> List[str]:
     """
     expand a list of templates into strings using a list of sets (dicts) of values
@@ -147,21 +149,33 @@ def _expand_templates(
     :param values_list: a list of dictionaries of values
     :return: a list of formatted strings
     """
-    result = set()
-    for tag in templates:
-        for values in values_list:
-            result.add(tag.format(**values))
+    result = OrderedSet()
+    for tag_or_tag_list in template:
+        if isinstance(tag_or_tag_list, str):
+            for values in values_list:
+                result.add(tag_or_tag_list.format(**values))
+        elif isinstance(tag_or_tag_list, list):
+            for values in values_list:
+                for tag in tag_or_tag_list:
+                    result.add(tag.format(**values))
 
     return list(result)
+
+
+DEFAULT_EXTRA_TAGS = {
+    CHEMICAL_SHIFT_LIST: UNUSED,
+    EXPERIMENT_CLASSIFICATION: UNUSED,
+    EXPERIMENT_TYPE: UNUSED,
+}
 
 
 def peaks_to_frame(
     peaks: List[NewPeak],
     dimensions: List[DimensionInfo],
     spectrometer_frequency: float,
-    frame_code="peaks",
-    shift_list_name=UNUSED,
-    source="unknown",
+    frame_code: str = "peaks",
+    extra_tags: Dict[str, str] = frozendict(DEFAULT_EXTRA_TAGS),
+    source: str = "unknown",
 ) -> Saveframe:
 
     # TODO needs a list of transfers
@@ -171,12 +185,14 @@ def peaks_to_frame(
     :param dimensions: the dimensions of the peak list
     :param spectrometer_frequency: the 1H spectrometer frequency of the peak list
     :param frame_code: the name for the frame
-    :param shift_list_name: the name of the companion shift list frame, note the default results in
-                            a non-conforming NEF file, howvever we allowno conforming files as we buil up
-                            nef files in pieces
+    :param extra_tags: extra tags to be used in the frame, non nef tags will be appended
     :param source: the source of the data for error reporting
     :return: a NEF Spectrum save frame
     """
+
+    mutable_extra_tags = {**DEFAULT_EXTRA_TAGS}
+    mutable_extra_tags.update(extra_tags)
+    extra_tags = mutable_extra_tags
 
     frame_code = f"{SPECTRUM_FRAME_CATEGORY}_{frame_code}"
 
@@ -200,16 +216,29 @@ def peaks_to_frame(
         exit_error(msg)
 
     frame.add_tag(NUM_DIMENSIONS, peak_dimensions[0])
+
+    shift_list_name = (
+        extra_tags[CHEMICAL_SHIFT_LIST] if CHEMICAL_SHIFT_LIST in extra_tags else UNUSED
+    )
     frame.add_tag(
         CHEMICAL_SHIFT_LIST, shift_list_name
-    )  # technically not correct but this is a nef file building
+    )  # technically not correct to use unused bye default here but this is a nef file building
     # tool kit so an empty shift list maybe what we need
-    # we may need to add a flag to build the shift list
+    # we may need to add a flag to build the shift list on the fly at a later date...
 
+    experiment_classification = (
+        extra_tags[EXPERIMENT_CLASSIFICATION]
+        if EXPERIMENT_CLASSIFICATION in extra_tags
+        else UNUSED
+    )
     frame.add_tag(
-        EXPERIMENT_CLASSIFICATION, UNUSED
-    )  # add via an experiment info structure?
-    frame.add_tag(EXPERIMENT_TYPE, UNUSED)
+        EXPERIMENT_CLASSIFICATION, experiment_classification
+    )  # add via an experiment info structure currently uses extra tags?
+
+    experiment_type = (
+        extra_tags[EXPERIMENT_TYPE] if EXPERIMENT_TYPE in extra_tags else UNUSED
+    )
+    frame.add_tag(EXPERIMENT_TYPE, experiment_type)
 
     dimension_loop = Loop.from_scratch(SPECTRUM_DIMENSION_LOOP_CATEGORY)
     frame.add_loop(dimension_loop)
@@ -280,11 +309,6 @@ def peaks_to_frame(
     frame.add_loop(peak_loop)
 
     peak_loop_tags = _expand_templates(PEAK_LOOP_TAGS, dimension_indices)
-
-    # for dim_index in range(1,len(dimensions)+1):
-    #     for template_string in peak_loop_tag_templates:
-    #         template = FStringTemplate(template_string)
-    #         peak_loop_tags.append(str(template))
 
     peak_loop.add_tag(peak_loop_tags)
 
