@@ -30,6 +30,8 @@ from nef_pipelines.lib.header_lib import (
 )
 from nef_pipelines.lib.structures import LineInfo
 
+FOUR_SPACES = " " * 4
+
 STDIN = Path("-")
 STDOUT = Path("-")
 
