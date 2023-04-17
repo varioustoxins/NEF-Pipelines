@@ -22,8 +22,6 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.tools.frames import frames_app
 
-FOUR_SPACES = " " * 4
-
 # TODO: add mmv like semantics as an option [https://manpages.ubuntu.com/manpages/bionic/man1/mmv.1.html]
 
 
