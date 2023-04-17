@@ -822,8 +822,12 @@ def strings_to_table_terminal_sensitive(
         columns = 1 if columns == 0 else columns
 
         strings = [frame_name.rjust(column_width) for frame_name in strings]
-        frame_name_list = chunks(strings, columns)
+        table_list = chunks(strings, columns)
     else:
-        frame_name_list = [[]]
+        table_list = [
+            [],
+        ]
+
+    return list(table_list)
 
     return frame_name_list
