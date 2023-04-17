@@ -14,6 +14,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames_by_name,
 )
 from nef_pipelines.lib.util import (
+    FOUR_SPACES,
     STDIN,
     chunks,
     exit_error,
