@@ -17,7 +17,9 @@ VERSION_FILE=src/nef_pipelines/VERSION
 cd /Users/garythompson/Dropbox/nef_pipelines/nef_pipelines
 
 #clear dists but don't complain if its empty
-setopt localoptions rmstarsilent
+if [ -n "$ZSH_VERSION" ]; then
+  setopt localoptions rmstarsilent
+fi
 rm -rf  dist/* || true
 
 # increase version and tag it
