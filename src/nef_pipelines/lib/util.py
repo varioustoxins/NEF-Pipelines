@@ -830,4 +830,15 @@ def strings_to_table_terminal_sensitive(
 
     return list(table_list)
 
-    return frame_name_list
+
+def strings_to_tabulated_terminal_sensitive(
+    strings: str,
+    used_width: int = 0,
+    min_width: int = 20,
+    fallback_terminal_width: int = 100,
+):
+
+    table = strings_to_table_terminal_sensitive(
+        strings, used_width, min_width, fallback_terminal_width
+    )
+    return tabulate(table, tablefmt="plain")
