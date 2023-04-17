@@ -99,3 +99,22 @@ correct error in mars export fragments (mars connected pseudo residue file)
 ## version 0.1.30
 
 add support for writing sparky peak lists
+
+## version 0.1.31
+
+add rudimentary rpf shift list exporter
+add a sparky peak list importer [alpha no tests]
+
+## version 0.1.32
+
+patches to rpf exporter
+
+##  version 0.1.33
+
+add the ability to rename nef frames
+add a verbose option to about [lists os and python versions]
+add the ability to suppress assignment height and volume columns in sparky peak export
+
+## version 0.1.34
+
+shifts make peaks now has test suite
