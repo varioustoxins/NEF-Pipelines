@@ -1,12 +1,14 @@
 import string
 from collections import Counter
 from dataclasses import replace
+from enum import auto
 from pathlib import Path
 from textwrap import dedent
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
+from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
@@ -20,6 +22,14 @@ from nef_pipelines.lib.util import (
     is_int,
     read_from_file_or_exit,
 )
+
+
+class MoleculeType(LowercaseStrEnum):
+    PROTEIN = auto()
+    RNA = auto()
+    DNA = auto()
+    CARBOH = auto()
+
 
 NEF_CHAIN_CODE = "chain_code"
 ANY_CHAIN = "_"
@@ -150,7 +160,22 @@ def sequence_to_nef_frame(
     return nef_frame
 
 
-TRANSLATIONS_3_1 = {
+class MoleculeTypes(LowercaseStrEnum):
+    PROTEIN = auto()
+    DNA = auto()
+    RNA = auto()
+    CARBOH = auto()
+    LIGAND = auto()
+    OTHER = auto()
+
+
+TRANSLATIONS_3_1_DNA = {"DG": "G", "DC": "C", "DT": "T", "DA": "A"}
+TRANSLATIONS_1_3_DNA = {value: key for (key, value) in TRANSLATIONS_3_1_DNA.items()}
+
+TRANSLATIONS_3_1_RNA = {"G": "G", "C": "C", "A": "A", "U": "U", "I": "I"}
+TRANSLATIONS_1_3_RNA = {value: key for (key, value) in TRANSLATIONS_3_1_RNA.items()}
+
+TRANSLATIONS_3_1_PROTEIN = {
     "ALA": "A",
     "ARG": "R",
     "ASN": "N",
@@ -172,7 +197,26 @@ TRANSLATIONS_3_1 = {
     "TYR": "Y",
     "VAL": "V",
 }
-TRANSLATIONS_1_3 = {value: key for (key, value) in TRANSLATIONS_3_1.items()}
+TRANSLATIONS_1_3_PROTEIN = {
+    value: key for (key, value) in TRANSLATIONS_3_1_PROTEIN.items()
+}
+
+TRANSLATIONS_1_3 = {
+    MoleculeTypes.PROTEIN: TRANSLATIONS_1_3_PROTEIN,
+    MoleculeTypes.DNA: TRANSLATIONS_1_3_DNA,
+    MoleculeTypes.RNA: TRANSLATIONS_1_3_RNA,
+    MoleculeTypes.CARBOH: None,
+    MoleculeTypes.OTHER: None,
+    MoleculeTypes.LIGAND: None,
+}
+TRANSLATIONS_3_1 = {
+    MoleculeTypes.PROTEIN: TRANSLATIONS_3_1_PROTEIN,
+    MoleculeTypes.DNA: TRANSLATIONS_3_1_DNA,
+    MoleculeTypes.RNA: TRANSLATIONS_3_1_RNA,
+    MoleculeTypes.CARBOH: None,
+    MoleculeTypes.OTHER: None,
+    MoleculeTypes.LIGAND: None,
+}
 
 
 class BadResidue(Exception):
