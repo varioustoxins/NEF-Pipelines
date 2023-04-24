@@ -170,6 +170,27 @@ def isolate_frame(target: str, name: str) -> Optional[str]:
     return entry
 
 
+def isolate_loop(target: str, frame_name: str, loop_name: str) -> Optional[str]:
+    """
+    Extract one frame from a NEF file by name as a string
+    Args:
+        target (Entry): target NEF entry
+        frame_name (str): name of the save frame
+        loop_name (str): the name of the loop
+
+    Returns:
+        Optional[str]: the frame as a string or None if it is not found
+    """
+
+    loop = None
+    entry = Entry.from_string(target)
+    frame = entry.get_saveframe_by_name(frame_name)
+    if frame is not None:
+        loop = str(frame.get_loop(loop_name))
+
+    return loop
+
+
 def path_in_parent_directory(root: str, target: str) -> str:
     """
     given a root and a relative path find the relative file path
