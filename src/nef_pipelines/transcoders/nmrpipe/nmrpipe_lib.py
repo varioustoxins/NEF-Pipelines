@@ -5,12 +5,12 @@ from collections import Counter
 from dataclasses import dataclass, field
 from enum import IntEnum
 from textwrap import dedent
-from typing import Callable, Dict, List, Optional, TextIO, Tuple, Union
+from typing import Callable, List, Optional, TextIO, Tuple, Union
 
 from tabulate import tabulate
 
 from nef_pipelines.lib.sequence_lib import (
-    TRANSLATIONS_1_3_PROTEIN,
+    MoleculeTypes,
     make_chunked_sequence_1let,
     translate_1_to_3,
 )
@@ -355,14 +355,14 @@ def select_records(
 
 
 def gdb_to_3let_sequence(
-    gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3_PROTEIN
+    gdb: DbFile, molecule_type: MoleculeTypes = MoleculeTypes.PROTEIN
 ) -> List[SequenceResidue]:
     """
     read sequence records from a gdb file and convert them to a list of sequence residues
     it is assumed that residues start from 1 and are in chain A
     Args:
         gdb (DbFile): the source db/tab file records
-        translations (Dict[str, str]): a translation table for 1 letter codes to 3 letter codes
+        molecule_type (MoleculeTypes): the type of the molecule to translate
 
     Returns List[SequenceResidue]:
         a list of sequence residues
@@ -376,7 +376,7 @@ def gdb_to_3let_sequence(
     flattened_sequence = functools.reduce(operator.iconcat, sequence, [])
     sequence_string = "".join(flattened_sequence)
 
-    return translate_1_to_3(sequence_string, translations)
+    return translate_1_to_3(sequence_string, molecule_type=molecule_type)
 
 
 def _assignments_to_atom_labels(assignments, dimensions, chain_code="A"):
