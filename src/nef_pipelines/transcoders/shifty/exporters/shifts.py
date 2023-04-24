@@ -10,7 +10,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_stdin_or_exit,
     select_frames_by_name,
 )
-from nef_pipelines.lib.sequence_lib import TRANSLATIONS_3_1
+from nef_pipelines.lib.sequence_lib import TRANSLATIONS_3_1_PROTEIN
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
 from nef_pipelines.lib.structures import ShiftData
 from nef_pipelines.lib.util import STDOUT, exit_error, flatten, is_int
@@ -114,7 +114,7 @@ def pipe(
         if _is_pseudo_residue(chain_code, sequence_code):
             continue
 
-        if residue_name.upper() not in TRANSLATIONS_3_1:
+        if residue_name.upper() not in TRANSLATIONS_3_1_PROTEIN:
             continue
 
         if atom_name not in SHIFTY_LOOKUP_ATOMS:
@@ -127,7 +127,7 @@ def pipe(
             continue
 
         sequence_code = int(sequence_code)
-        residue_name_1let = TRANSLATIONS_3_1[residue_name]
+        residue_name_1let = TRANSLATIONS_3_1_PROTEIN[residue_name]
         value = shift.value
 
         key = sequence_code, residue_name_1let

@@ -10,7 +10,7 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
-    TRANSLATIONS_3_1,
+    TRANSLATIONS_3_1_PROTEIN,
     BadResidue,
     chain_code_iter,
     get_residue_name_from_lookup,
@@ -226,7 +226,7 @@ def _get_residues_from_string(string):
 
     result = []
     string = string.upper()
-    for residue_name in TRANSLATIONS_3_1:
+    for residue_name in TRANSLATIONS_3_1_PROTEIN:
         if residue_name in string:
             result.append(residue_name)
     return result
