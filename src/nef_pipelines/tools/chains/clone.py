@@ -31,7 +31,7 @@ def clone(
         None,
         "-c",
         "--chains",
-        help="new chain codes to add otherwise defaults to next available ascii uper case letter,"
+        help="new chain codes to add otherwise defaults to next available ascii upper case letter,"
         " can be called mutiple times or be a comma separated list",
     ),
 ):
