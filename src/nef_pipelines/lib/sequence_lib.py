@@ -287,23 +287,23 @@ def translate_3_to_1(
     translations = TRANSLATIONS_3_1[molecule_type]
 
     result = []
-    for i, resn in enumerate(sequence, start=1):
-        resn = resn.upper()
+    for i, residue_name in enumerate(sequence, start=1):
+        residue_name = residue_name.upper()
         if translations is None:
-            if len(resn) == 1:
-                result.append(resn)
+            if len(residue_name) == 1:
+                result.append(residue_name)
             else:
                 msg = f"""
-                    it isn't possible to translate the residue name {resn} to a 1 letter code
-                    the molecule type {molecule_type} doesn't have one letter codes and the residue name: {resn}
+                    it isn't possible to translate the residue name {residue_name} to a 1 letter code
+                    the molecule type {molecule_type} doesn't have one letter codes and the residue name: {residue_name}
                     is longer than one letter and so can't be passed through
                 """
                 exit_error(msg)
-        if resn in translations:
-            result.append(translations[resn])
+        if residue_name in translations:
+            result.append(translations[residue_name])
         else:
             msg = f"""
-            unknown residue {resn}
+            unknown residue {residue_name}
             in sequence {chunks(' '.join(sequence), 10)}
             at residue number {i}
             """
