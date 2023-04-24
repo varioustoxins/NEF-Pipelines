@@ -228,25 +228,29 @@ class BadResidue(Exception):
 
 
 def translate_1_to_3(
-    sequence: str,
-    translations: Dict[str, str] = TRANSLATIONS_1_3,
-    unknown: Optional[str] = None,
+    sequence: str, molecule_type=MoleculeTypes.PROTEIN, unknown: Optional[str] = None
 ) -> List[str]:
     """
     Translate a 1 letter sequence to a 3 letter sequence
     Args:
         sequence (str): 1 letter sequence
-        translations (Dict[str, str]): a list of translations for single amino acid codes to 3 letter residue names
+        molecule_type (MoleculeTypes): type of molecule to translate residue types
         unknown (Optional[str]): optional name for residues if they are unknown, if set no error is raised if a
                                  1 letter residue name is not recognised
     Returns List[str]:
         a list of 3 residue codes
+        :param type:
 
     """
+
+    translations = TRANSLATIONS_1_3[molecule_type]
+
     result = []
     for i, residue_name_1let in enumerate(sequence):
         residue_name_1let = residue_name_1let.upper()
-        if residue_name_1let in translations:
+        if translations is None:
+            result.append(residue_name_1let)
+        elif residue_name_1let in translations:
             result.append(translations[residue_name_1let])
         else:
             if unknown:
@@ -264,14 +268,14 @@ def translate_1_to_3(
 
 
 def translate_3_to_1(
-    sequence: List[str], translations: Dict[str, str] = TRANSLATIONS_3_1
+    sequence: List[str], molecule_type=MoleculeTypes.PROTEIN
 ) -> List[str]:
     """
 
     Translate a 3 letter sequence to a 1 letter sequence
     Args:
         sequence (str): 3 letter sequence
-        translations (Dict[str, str]): a list of translations for single amino acid codes to 3 letter residue names
+        molecule_type (MoleculeTypes): type of molecule to translate residue types
 
     Returns List[str]:
         a list of 1 residue codes
@@ -279,9 +283,22 @@ def translate_3_to_1(
     :param sequence:
     :return:
     """
+
+    translations = TRANSLATIONS_3_1[molecule_type]
+
     result = []
     for i, resn in enumerate(sequence, start=1):
         resn = resn.upper()
+        if translations is None:
+            if len(resn) == 1:
+                result.append(resn)
+            else:
+                msg = f"""
+                    it isn't possible to translate the residue name {resn} to a 1 letter code
+                    the molecule type {molecule_type} doesn't have one letter codes and the residue name: {resn}
+                    is longer than one letter and so can't be passed through
+                """
+                exit_error(msg)
         if resn in translations:
             result.append(translations[resn])
         else:
