@@ -441,14 +441,14 @@ def test_column_data():
 
 def test_sequence():
 
-    SEQUENCE = f"DATA {dedent(ABC_SEQUENCE_1LET)}"
+    SEQUENCE = f"DATA SEQUENCE {dedent(ABC_SEQUENCE_1LET)}"
 
     gdb_stream = io.StringIO(SEQUENCE)
 
     records = read_db_file_records(gdb_stream)
     sequence = gdb_to_3let_sequence(records)
 
-    sequence == ABC_SEQUENCE_3LET
+    assert sorted(sequence) == sorted(list(ABC_SEQUENCE_3LET))
 
 
 if __name__ == "__main__":
