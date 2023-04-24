@@ -38,7 +38,7 @@ def sequence(
     chain_codes: List[str] = typer.Option(
         [],
         "--chains",
-        help="chain codes to use for the exported chains, can be a a comma sepatared list or can be called "
+        help="chain codes to use for the imported chains, can be a a comma separated list or can be called "
         "multiple times",
         metavar="<CHAIN-CODES>",
     ),
