@@ -230,7 +230,7 @@ def test_chain_code_iter_basic():
 
 
 def test_chain_code_iter_with_user():
-    result = [chain_code for chain_code in islice(chain_code_iter("D.E"), 3)]
+    result = [chain_code for chain_code in islice(chain_code_iter("DE"), 3)]
 
     EXPECTED = list("DEA")
 
@@ -238,7 +238,7 @@ def test_chain_code_iter_with_user():
 
 
 def test_chain_code_iter_with_exclude():
-    result = [chain_code for chain_code in islice(chain_code_iter(exclude="B.C"), 3)]
+    result = [chain_code for chain_code in islice(chain_code_iter(exclude="BC"), 3)]
 
     EXPECTED = list("ADE")
 

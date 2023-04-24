@@ -6,7 +6,11 @@ import typer
 
 from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_to_nef_frame
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import exit_error, process_stream_and_add_frames
+from nef_pipelines.lib.util import (
+    exit_error,
+    parse_comma_separated_options,
+    process_stream_and_add_frames,
+)
 from nef_pipelines.transcoders.nmrview import import_app
 from nef_pipelines.transcoders.nmrview.nmrview_lib import read_sequence
 
@@ -19,7 +23,7 @@ def sequence(
     chain_codes: str = typer.Option(
         "A",
         "--chains",
-        help="chain codes as a list of names separated by dots",
+        help="chain codes, can be called multiple times and or be a comma separated list [no spaces!]",
         metavar="<CHAIN-CODES>",
     ),
     no_chain_start: bool = typer.Option(
@@ -54,9 +58,8 @@ def sequence(
 def process_sequence(args: Namespace):
     nmrview_frames = []
 
-    for file_name, chain_code in zip(
-        args.file_names, chain_code_iter(args.chain_codes)
-    ):
+    chain_codes = parse_comma_separated_options(args.chain_codes)
+    for file_name, chain_code in zip(args.file_names, chain_code_iter(chain_codes)):
         with open(file_name, "r") as lines:
             nmrview_sequence = read_sequence(lines, chain_code=chain_code)
 

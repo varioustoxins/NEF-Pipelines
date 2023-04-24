@@ -26,14 +26,14 @@ ANY_CHAIN = "_"
 
 
 def chain_code_iter(
-    user_chain_codes: Union[str, List[str]] = "", exclude: Union[str, List[str]] = ()
+    user_chain_codes: List[str] = "", exclude: List[str] = ()
 ) -> Iterable[str]:
     """
-    split input string into chain codes separated by .s, and yield them.
-    Then yield any remaining letters of the upper case alphabet till they run out
+    Yield chain codes in user chain codes and once exhausted yield any remaining letters of the upper case alphabet
+    till they run out. A list of chain codes to not use can be provided...
 
     Args:
-        user_chain_codes (str):  string of dot separated chain codes
+        user_chain_codes (str):  string of dot separated chain codes or a list of chain codes
         exclude: chain codes to not include in the iteration
 
     Returns:
@@ -42,19 +42,9 @@ def chain_code_iter(
 
     ascii_uppercase = list(string.ascii_uppercase)
 
-    if isinstance(user_chain_codes, str):
-        if "." in user_chain_codes:
-            user_chain_codes = user_chain_codes.split(".")
-
-    if isinstance(exclude, str):
-        if "." in exclude:
-            exclude = exclude.split(".")
-
-    chain_codes = user_chain_codes if user_chain_codes else ascii_uppercase
-
     seen_codes = set()
 
-    for chain_code in chain_codes:
+    for chain_code in user_chain_codes:
         seen_codes.add(chain_code)
         if chain_code not in exclude:
             yield chain_code

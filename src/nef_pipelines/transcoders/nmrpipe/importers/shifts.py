@@ -12,7 +12,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import chain_code_iter, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
-from nef_pipelines.lib.util import STDIN
+from nef_pipelines.lib.util import STDIN, parse_comma_separated_options
 from nef_pipelines.transcoders.nmrpipe import import_app
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     read_db_file_records,
@@ -28,7 +28,7 @@ def shifts(
     chain_codes: List[str] = typer.Option(
         None,
         "--chains",
-        help="chain codes as a list of names spearated by dots",
+        help="chain codes, can be called multiple times and or be a comma separated list [no spaces!]",
         metavar="<CHAIN-CODES>",
     ),
     entry_name: str = typer.Option("nmrpipe", help="a name for the entry"),
@@ -47,6 +47,8 @@ def shifts(
     """convert nmrpipe shift file <nmrpipe>.tab files to NEF"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name)
+
+    chain_codes = parse_comma_separated_options(chain_codes)
 
     if not chain_codes:
         chain_codes = ["A"]

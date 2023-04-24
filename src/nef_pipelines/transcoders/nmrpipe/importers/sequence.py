@@ -17,6 +17,7 @@ from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     cached_file_stream,
     exit_error,
+    parse_comma_separated_options,
     process_stream_and_add_frames,
 )
 from nef_pipelines.transcoders.nmrpipe import import_app
@@ -34,7 +35,7 @@ def sequence(
     chain_codes: List[str] = typer.Option(
         None,
         "--chains",
-        help="chain codes as a list of names separated by dots",
+        help="chain codes can be called multiple times and / or  be a comma separated list",
         metavar="<CHAIN-CODES>",
     ),
     no_chain_start: bool = typer.Option(
@@ -73,6 +74,8 @@ def process_sequence(args: Namespace):
     nmrpipe_frames = []
 
     chain_codes = args.chain_codes
+
+    chain_codes = parse_comma_separated_options(chain_codes)
     if not chain_codes:
         chain_codes = ["A"]
     for file_name, chain_code in zip(args.file_names, chain_code_iter(chain_codes)):

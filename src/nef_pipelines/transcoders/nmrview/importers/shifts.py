@@ -16,6 +16,7 @@ from nef_pipelines.lib.util import (
     fixup_metadata,
     get_pipe_file_text_or_exit,
     get_version,
+    parse_comma_separated_options,
     script_name,
 )
 from nef_pipelines.transcoders.nmrview import import_app
@@ -32,7 +33,7 @@ def shifts(
     chain_codes: str = typer.Option(
         "A",
         "--chains",
-        help="chain codes as a list of names separated by dots",
+        help="chain codes, can be called multiple times and or be a comma separated list [no spaces!]",
         metavar="<CHAIN-CODES>",
     ),
     frame_name: str = typer.Option(
@@ -53,6 +54,8 @@ def shifts(
 
     try:
         entry = read_entry_from_file_or_stdin_or_exit_error(input)
+
+        chain_codes = parse_comma_separated_options(chain_codes)
 
         sequence = sequence_from_entry_or_exit(entry)
 

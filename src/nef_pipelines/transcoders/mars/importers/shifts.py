@@ -30,6 +30,7 @@ from nef_pipelines.lib.util import (
     exit_error,
     is_float,
     is_int,
+    parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.mars import import_app
 
@@ -71,10 +72,10 @@ RECOGNISE_RESIDUES_HELP = f"""\
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def shifts(
-    chain_code: str = typer.Option(
+    chain_codes: str = typer.Option(
         "-",
         "--chain",
-        help="chain codes [default -]",
+        help="chain codes [default -] can be a comma separated list or can be called mutiple times",
         metavar="<CHAIN-CODE>",
     ),
     entry_name: str = typer.Option(
@@ -109,7 +110,9 @@ def shifts(
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name)
 
-    pipe(entry, chain_code, frame_name, file_names, prefix_to_strip, parse_residues)
+    chain_codes = parse_comma_separated_options(chain_codes)
+
+    pipe(entry, chain_codes, frame_name, file_names, prefix_to_strip, parse_residues)
 
 
 def pipe(
