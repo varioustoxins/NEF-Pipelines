@@ -10,7 +10,7 @@ from typing import Callable, Dict, List, Optional, TextIO, Tuple, Union
 from tabulate import tabulate
 
 from nef_pipelines.lib.sequence_lib import (
-    TRANSLATIONS_1_3,
+    TRANSLATIONS_1_3_PROTEIN,
     make_chunked_sequence_1let,
     translate_1_to_3,
 )
@@ -355,7 +355,7 @@ def select_records(
 
 
 def gdb_to_3let_sequence(
-    gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3
+    gdb: DbFile, translations: Dict[str, str] = TRANSLATIONS_1_3_PROTEIN
 ) -> List[SequenceResidue]:
     """
     read sequence records from a gdb file and convert them to a list of sequence residues

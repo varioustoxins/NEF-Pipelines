@@ -17,7 +17,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames_by_name,
 )
 from nef_pipelines.lib.peak_lib import frame_to_peaks
-from nef_pipelines.lib.sequence_lib import TRANSLATIONS_3_1
+from nef_pipelines.lib.sequence_lib import TRANSLATIONS_3_1_PROTEIN
 from nef_pipelines.lib.structures import NewPeak
 from nef_pipelines.lib.util import (
     STDIN,
@@ -475,8 +475,8 @@ def _build_sparky_lines(
                         #     sequence_code = f'{chain_code}:{sequence_code}'
                         #     chain_sequence_separator = ''
 
-                        if residue_name in TRANSLATIONS_3_1:
-                            residue_name = TRANSLATIONS_3_1[residue_name]
+                        if residue_name in TRANSLATIONS_3_1_PROTEIN:
+                            residue_name = TRANSLATIONS_3_1_PROTEIN[residue_name]
 
                         if not residue_name:
                             residue_name = ""
