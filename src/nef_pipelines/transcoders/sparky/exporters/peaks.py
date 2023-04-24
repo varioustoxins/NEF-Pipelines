@@ -68,6 +68,7 @@ class OverlappingChainsException(SparkyPeaksExportException):
 # what does ga mean in the sparky output after a volume
 #
 # why does sparky sometime have ga after a volume I presume it's a gausiann peak fit?
+# comment gst 19/04/2023 is ga for a gaussian peak fit?
 #
 #  Assignment       w1      w2      Volume     lw1 (hz)   lw2 (hz)
 #
