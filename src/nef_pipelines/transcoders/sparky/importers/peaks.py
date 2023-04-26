@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import Dict, List
 
 import typer
+from fyeah import f
 
 from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
 from nef_pipelines.lib.nef_lib import (
@@ -13,12 +14,19 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.peak_lib import peaks_to_frame
-from nef_pipelines.lib.sequence_lib import TRANSLATIONS_1_3
+from nef_pipelines.lib.sequence_lib import (
+    TRANSLATIONS_1_3,
+    MoleculeTypes,
+    chain_code_iter,
+    residues_to_residue_name_lookup,
+    sequence_from_entry,
+)
 from nef_pipelines.lib.structures import (
     AtomLabel,
     LineInfo,
     NewPeak,
     Residue,
+    SequenceResidue,
     ShiftData,
 )
 from nef_pipelines.lib.util import (
@@ -28,6 +36,9 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.sparky import import_app
+from nef_pipelines.transcoders.sparky.importers.shifts import (
+    _exit_if_chain_codes_and_file_name_dont_match,
+)
 
 
 # TODO: this needs to be moved to a library
@@ -42,7 +53,7 @@ class IncompatibleDimensionTypesException(SparkyPeakListException):
 app = typer.Typer()
 
 DEFAULT_NUCLEI_HELP = (
-    "nuclei to use for each dimension if not defined they are guessed from the assigments"
+    "nuclei to use for each dimension, if not defined they are guessed from the assignments"
     "or an error is reported"
 )
 
@@ -50,19 +61,22 @@ DEFAULT_NUCLEI_HELP = (
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def peaks(
-    # chain_codes: List[str] = typer.Option(
-    #     None,
-    #     "--chains",
-    #     help="chain codes as a list of names separated by commas, repeated calls will add further chains [default A]",
-    #     metavar="<CHAIN-CODES>",
-    # ),
+    chain_codes: List[str] = typer.Option(
+        None,
+        "--chains",
+        help="chain codes as a list of names separated by commas, repeated calls will add further chains [default A]",
+        metavar="<CHAIN-CODES>",
+    ),
     frame_name: str = typer.Option(
-        "sparky", "-f", "--frame-name", help="a name for the frame"
+        "sparky_{file_name}",
+        "-f",
+        "--frame-name",
+        help="a templated name for the frame {file_name} will be replaced by input filename",
     ),
     input: Path = typer.Option(
         STDIN,
         "-i",
-        "--input",
+        "--in",
         metavar="|PIPE|",
         help="input to read NEF data from [- is stdin]",
     ),
@@ -76,37 +90,95 @@ def peaks(
         "--chain-code",
         help="default chain code to use if none is provided in the file",
     ),
+    molecule_type: MoleculeTypes = typer.Option(
+        MoleculeTypes.PROTEIN, help="the type of molecule"
+    ),
+    no_validate: bool = typer.Option(
+        False,
+        help="if set don't validate the peaks agains the inpuy sequence if provided",
+    ),
     spectrometer_frequency: float = typer.Option(
         600.123456789, help="spectrometer frequency in MHz"
     ),
 ):
-    """convert sparky peaks file <SPARKY-peaks>.txt to NEF [alpha]"""
+    """convert sparky peaks file <SPARKY-PEAKS>.txt to NEF [alpha]"""
 
-    print(
-        "*** WARNING *** this command [sparky peaks] is only lightly tested use at your own risk!",
-        file=sys.stderr,
-    )
+    chain_codes = parse_comma_separated_options(chain_codes)
 
-    # chain_codes = parse_comma_separated_options(chain_codes)
-    #
-    # if not chain_codes:
-    #     chain_codes = ["A"]
+    if not chain_codes:
+        chain_codes = ["A"]
 
-    # _exit_if_chain_codes_and_file_name_dont_match(chain_codes, file_names)
+    # make this a library function
+    _exit_if_chain_codes_and_file_name_dont_match(chain_codes, file_names)
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 
-    # sequence = sequence_from_entry_or_exit(entry)
+    sequence = sequence_from_entry(entry) if not no_validate else None
 
     nuclei = parse_comma_separated_options(nuclei)
 
-    pipe(
+    entry = pipe(
         entry,
         frame_name,
         file_names,
+        chain_codes,
+        sequence,
         input_dimensions=nuclei,
         spectrometer_frequency=spectrometer_frequency,
+        molecule_type=molecule_type,
     )
+
+    print(entry)
+
+
+def pipe(
+    entry,
+    frame_name,
+    file_names,
+    chain_codes,
+    sequence,
+    input_dimensions,
+    spectrometer_frequency,
+    molecule_type=MoleculeTypes.PROTEIN,
+):
+
+    sparky_frames = []
+
+    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
+
+        try:
+            with open(file_name, "r") as fp:
+                lines = fp.readlines()
+        except IOError as e:
+            msg = f"""
+                    while reading sparky peaks file {file_name} there was an error reading the file
+                    the error was: {e}
+                """
+            exit_error(msg, e)
+
+        sparky_peaks = _parse_peaks(
+            lines,
+            file_name=file_name,
+            molecule_type=molecule_type,
+            chain_code=chain_code,
+            sequence=sequence,
+        )
+
+        dimensions = _guess_dimensions_if_not_defined_or_throw(
+            sparky_peaks, input_dimensions
+        )
+
+        dimensions = [{"axis_code": dimension} for dimension in dimensions]
+
+        frame = peaks_to_frame(sparky_peaks, dimensions, spectrometer_frequency)
+
+        file_name = Path(file_name).stem
+
+        frame.name = f(frame_name)
+
+        sparky_frames.append(frame)
+
+    return add_frames_to_entry(entry, sparky_frames)
 
 
 def parse_header_to_columns(header_line: str, file_name) -> Dict[str, int]:
@@ -128,10 +200,12 @@ def parse_header_to_columns(header_line: str, file_name) -> Dict[str, int]:
             headings_to_columns[heading] = i
             continue
 
+        # TODO add a warning function in the library
         msg = f"""
             WARNING: unexpected heading {heading} in the file {file_name}...
                      this heading will be ignored, please send the heading and first
-                     few lines of this file to the developers of NEF-Pipelines
+                     few lines of this file to the developers of NEF-Pipelines if you
+                     believe this is a valid sparky peaks file
         """
 
         print(msg, file=sys.stderr)
@@ -153,15 +227,15 @@ def _exit_error_if_shift_not_float(shifts, line_info):
     for i, shift in enumerate(shifts, start=1):
         if not is_float(shift):
             msg = f"""
-                file {line_info.file_name} does not look like a spark file
-                for shift w{i} at line {line_info.line_no} the value {shift} couldn't be converted to a float
-                the full line was
+                file {line_info.file_name} does not look like a sparky file
+                for shift w{i} at line {line_info.line_no} with the value {shift} couldn't be converted to a float
+                the full line was:
                 {line_info.line}
             """
             exit_error(msg)
 
 
-def _parse_peaks(lines, file_name):
+def _parse_peaks(lines, file_name, molecule_type, chain_code, sequence):
 
     peaks = []
 
@@ -171,8 +245,10 @@ def _parse_peaks(lines, file_name):
 
     for line_number, line in enumerate(lines, start=1):
 
-        line_info = LineInfo(file_name, line_number, line)
         line = line.strip()
+
+        line_info = LineInfo(file_name, line_number, line)
+
         if len(line) == 0:
             continue
 
@@ -209,7 +285,9 @@ def _parse_peaks(lines, file_name):
             assignmnents_column = column_headers_to_indices["Assignment"]
             raw_assignment = fields[assignmnents_column]
 
-            assignments = _process_assignments(raw_assignment)
+            assignments = _process_assignments(
+                raw_assignment, chain_code, sequence, molecule_type, line_info
+            )
 
             shifts = [
                 fields[column_headers_to_indices[f"w{index}"]]
@@ -230,6 +308,7 @@ def _parse_peaks(lines, file_name):
 
             peaks.append(peak)
 
+    # raise Exception()
     return peaks
 
 
@@ -248,7 +327,7 @@ def _exit_error_not_enough_columns_in_data_row(
     column_headers_to_indices, column, line_info
 ):
     msg = f"""
-                        In sparky peaks file {line_info.file_name} at line {line_info.line_number} for column {column}
+                        In sparky peaks file {line_info.file_name} at line {line_info.line_no} for column {column}
                         there were was not enough data [expected {len(column_headers_to_indices)} columns]
                         the line was:
                         {line_info.line}
@@ -288,11 +367,19 @@ def _exit_error_header_in_data(line_info):
 
 
 # TODO this doesn't cope with abbreviated names
-def _process_assignments(assignments, chain_code="A"):
+def _process_assignments(
+    assignments, chain_code, sequence: List[SequenceResidue], molecule_type, line_info
+):
+
+    residue_name_lookup = residues_to_residue_name_lookup(sequence)
+
+    residue_name_translations = TRANSLATIONS_1_3[molecule_type]
 
     fields = assignments.split("-")
 
     assignments = []
+    last_sequence_code = None
+    last_residue_name = None
     for field in fields:
 
         if len(field) == 1 and field == "?":
@@ -303,86 +390,82 @@ def _process_assignments(assignments, chain_code="A"):
         else:
 
             without_first_letters = field.lstrip(string.ascii_letters)
+
             first_letters = field[: -len(without_first_letters)]
+
             if len(first_letters) == 0 and without_first_letters[0] == "?":
                 first_letters = "?"
                 without_first_letters = without_first_letters[1:]
 
             without_numbers = without_first_letters.lstrip(string.digits)
+            without_numbers = without_numbers.lstrip("\"'")
+
             numbers = without_first_letters[: -len(without_numbers)]
 
-            if len(numbers) == 0 and without_numbers[0] == "?":
+            if (
+                without_numbers != ""
+                and len(numbers) == 0
+                and without_numbers[0] == "?"
+            ):
                 numbers = "?"
                 without_numbers = without_numbers[1:]
 
-            if len(first_letters) == 0 or first_letters == "?":
+            if without_numbers == "":
+                residue_name = last_residue_name
+            elif len(first_letters) == 0 or first_letters == "?":
                 residue_name = UNUSED
             else:
                 residue_name = first_letters
 
-            if len(numbers) == 0 or numbers == "?":
+            if without_numbers == "":
+                sequence_code = last_sequence_code
+            elif len(numbers) == 0 or numbers == "?":
                 sequence_code = UNUSED
             else:
                 sequence_code = numbers
 
-            if len(without_numbers) == 0 or without_numbers == "?":
+            if without_numbers == "":
+                atom_name = f"{first_letters}{without_first_letters}"
+            elif len(without_numbers) == 0 or without_numbers == "?":
                 atom_name = UNUSED
             else:
                 atom_name = without_numbers
 
-            if residue_name in TRANSLATIONS_1_3:
-                residue_name = TRANSLATIONS_1_3[residue_name]
+            if residue_name_translations is not None:
+                if residue_name in residue_name_translations:
+                    translated_residue_name = residue_name_translations[residue_name]
+                else:
+                    msg = f"""
+                        The residue name {residue_name} is not defined for the molecule type {molecule_type} for the
+                        assignment {assignment} at line {line_info.line_no} in file {line_info.file_name} the line was
+                        {line_info.line}
+                    """
+                    exit_error(msg)
+
+            if sequence and ((chain_code, sequence_code) not in residue_name_lookup):
+                msg = f"""
+                    the chain code {chain_code} and sequence_code {sequence} from
+                    line {line_info.line_no} in file {line_info.file_name} were not found
+                    in the input sequence, the full line was
+
+                    {line_info.line}
+
+                    if you wish to input the peaks without validating against the input sequence use the
+                    --no-validate option of sparky import peaks
+                """
+                exit_error(msg)
 
             assignment = AtomLabel(
                 atom_name=atom_name,
-                residue=Residue(chain_code, sequence_code, residue_name),
+                residue=Residue(chain_code, sequence_code, translated_residue_name),
             )
+
             assignments.append(assignment)
 
+        last_sequence_code = sequence_code
+        last_residue_name = residue_name
+
     return assignments
-
-
-def pipe(
-    entry, frame_name, file_names, input_dimensions, spectrometer_frequency
-):  # , sequence, chain_codes,
-
-    sparky_frames = []
-
-    for (
-        file_name
-    ) in file_names:  # , chain_code in zip(file_names, chain_code_iter(chain_codes)):
-
-        # with cached_file_stream(file_name) as lines:
-        #
-        #     chain_seqid_to_type = sequence_to_residue_type_lookup(sequence)
-
-        try:
-            with open(file_name, "r") as fp:
-                lines = fp.readlines()
-        except IOError as e:
-            msg = f"""
-                    while reading sparky peaks file {file_name} there was an error reading the file
-                    the error was: {e}
-                """
-            exit_error(msg, e)
-
-        sparky_peaks = _parse_peaks(
-            lines, file_name=file_name  # chain_seqid_to_type, chain_code=chain_code,
-        )
-
-        dimensions = _guess_dimensions_if_not_defined_or_throw(
-            sparky_peaks, input_dimensions
-        )
-
-        dimensions = [{"axis_code": dimension} for dimension in dimensions]
-
-        frame = peaks_to_frame(sparky_peaks, dimensions, spectrometer_frequency)
-
-        sparky_frames.append(frame)
-    #
-    entry = add_frames_to_entry(entry, sparky_frames)
-
-    print(entry)
 
 
 # TODO: this needs to be moved to a library
