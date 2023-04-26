@@ -72,7 +72,7 @@ def make_peaks(
         help="input to read NEF data from [stdin = -]",
     ),
 ):
-    """-  make a set of peaks for an hsqc or triple resonance spectrum from a list of shifts"""
+    """-  make a set of peaks for an hsqc or triple resonance spectrum from a list of shiftsdbxcli put rh"""
 
     shift_frames = parse_comma_separated_options(shift_frame_selectors)
 
