@@ -153,42 +153,63 @@ def assert_lines_match(
         assert reported_line_stripped == expected_line_stripped
 
 
-def isolate_frame(target: str, name: str) -> Optional[str]:
+def isolate_frame(target: str, frame_name: str) -> Optional[str]:
     """
     Extract one frame from a NEF file by name as a string
     Args:
         target (Entry): target NEF entry
-        name (str): name of the save frame
+        frame_name (str): name of the save frame
 
     Returns:
         Optional[str]: the entry or a None if not found
     """
 
     entry = Entry.from_string(target)
-    entry = str(entry.get_saveframe_by_name(name))
+    try:
+        frame = entry.get_saveframe_by_name(frame_name)
+    except KeyError as e:
+        msg = f"""
+             the save frame {frame_name} wasn't found in the entry {entry.entry_id} the
+             available_frame names are {','.join([frame.name for frame in entry.frame_list])}'
+         """
+        raise KeyError(msg) from e
 
-    return entry
+    return str(frame)
 
 
-def isolate_loop(target: str, frame_name: str, loop_name: str) -> Optional[str]:
+def isolate_loop(target: str, frame_name: str, loop_category: str) -> Optional[str]:
     """
     Extract one frame from a NEF file by name as a string
     Args:
         target (Entry): target NEF entry
         frame_name (str): name of the save frame
-        loop_name (str): the name of the loop
+        loop_category (str): the name of the loop
 
     Returns:
         Optional[str]: the frame as a string or None if it is not found
     """
 
-    loop = None
     entry = Entry.from_string(target)
-    frame = entry.get_saveframe_by_name(frame_name)
-    if frame is not None:
-        loop = str(frame.get_loop(loop_name))
 
-    return loop
+    try:
+        frame = entry.get_saveframe_by_name(frame_name)
+    except KeyError as e:
+        msg = f"""
+            the save frame {frame_name} wasn't found in the entry {entry.entry_id} the
+            available_frame names are {','.join([frame.name for frame in entry.frame_list])}'
+        """
+        raise KeyError(msg) from e
+
+    try:
+        loop = str(frame.get_loop(loop_category))
+    except KeyError as e:
+        msg = f"""
+            the loop  {loop_category} wasn't found in the frame {frame.name} in entry {entry.entry_id} the
+            available_loop categories are {','.join([loop.category for loop in frame.loops])}'
+        """
+        raise KeyError(msg) from e
+
+    return str(loop)
 
 
 def path_in_parent_directory(root: str, target: str) -> str:
