@@ -16,6 +16,7 @@ NUM_DIMENSIONS = "num_dimensions"
 CHEMICAL_SHIFT_LIST = "chemical_shift_list"
 EXPERIMENT_TYPE = "experiment_type"
 EXPERIMENT_CLASSIFICATION = "experiment_classification"
+CCPN_COMMENT = "ccpn_comment"
 
 SPECTRUM_FRAME_TAGS = (
     SF_CATEGORY,
