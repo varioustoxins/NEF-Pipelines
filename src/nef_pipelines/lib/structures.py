@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import Dict, List, Optional, Union
 
-from strenum import StrEnum
+from strenum import LowercaseStrEnum, StrEnum
 
 
 class Linking(StrEnum):
@@ -161,6 +161,12 @@ class RdcRestraint:
     weight: Optional[float] = None
 
 
+class PeakFitMethod(LowercaseStrEnum):
+    GAUSSIAN = auto()
+    LORENTZIAN = auto()
+    SPLINE = auto()
+
+
 @dataclass(frozen=True, order=True)
 class NewPeak:
 
@@ -171,6 +177,8 @@ class NewPeak:
     height_uncertainty: Optional[float] = None
     volume: Optional[float] = None
     volume_uncertainty: Optional[float] = None
+    peak_fit_method: Optional[Union[str, PeakFitMethod]] = None
+    comment: str = ""
 
 
 @dataclass
