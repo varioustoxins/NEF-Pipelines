@@ -13,6 +13,7 @@ from nef_pipelines.lib.nef_frames_lib import (
     ATOM_NAME__DIMENSION_INDEX,
     AXIS_CODE,
     AXIS_UNIT,
+    CCPN_COMMENT,
     CHAIN_CODE,
     CHAIN_CODE__DIMENSION_INDEX,
     CHEMICAL_SHIFT_LIST,
@@ -201,6 +202,12 @@ def peaks_to_frame(
     frame.add_tag(SF_CATEGORY, SPECTRUM_FRAME_CATEGORY)
     frame.add_tag(SF_FRAMECODE, frame_code)
 
+    have_comments = False
+    for peak in peaks:
+        if peak.comment != "":
+            have_comments = True
+            break
+
     peak_dimensions = []
     for peak in peaks:
         peak_dimensions.append(len(peak.shifts))
@@ -309,6 +316,8 @@ def peaks_to_frame(
     frame.add_loop(peak_loop)
 
     peak_loop_tags = _expand_templates(PEAK_LOOP_TAGS, dimension_indices)
+    if have_comments:
+        peak_loop_tags.append(CCPN_COMMENT)
 
     peak_loop.add_tag(peak_loop_tags)
 
@@ -342,6 +351,11 @@ def peaks_to_frame(
             peak_data[
                 POSITION_UNCERTAINTY__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.value_uncertainty
+
+            if have_comments:
+                peak_data[CCPN_COMMENT] = (
+                    peak.comment if peak.comment is not None else UNUSED
+                )
 
         peak_loop.add_data(
             [
