@@ -1,0 +1,7 @@
+ Assignment       w1      w2      Volume     lw1 (hz)   lw2 (hz)
+
+   G16H3'-H8    4.905   8.010   7.15e+06 ga    28.6       20.0   this is a comment
+   G16H4'-H8    4.439   8.013   5.42e+06 ga    35.3       16.9
+ T17H6-G16H8    7.205   8.004   1.68e+06                         so is this as well
+ T17H7-G16H8    1.459   8.008   2.09e+07 ga    27.5       24.1
+  T17H2"-H1'    2.509   5.840   4.68e+07 ga    41.2       17.6
