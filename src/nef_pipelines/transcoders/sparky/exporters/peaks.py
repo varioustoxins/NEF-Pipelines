@@ -47,41 +47,6 @@ class OverlappingChainsException(SparkyPeaksExportException):
     pass
 
 
-#
-# sparky docs
-#
-# Make peaks on a spectrum from a peak list file (rp).
-#
-# Peaks are read from a peak list file and placed on the selected spectrum.
-# The file should contain a line for each peak. The line should have an
-# assignment followed by chemical shifts for each axis. For example
-#
-# 	C2H5-G1H1      5.395      6.030
-# The assignment can contain ? components. It can omit a group name for a component
-# -- the shorthand G1H1'-H2' where the second group is omitted is equivalent to G1H1'-G1H2'.
-# The residue name is separated from the atom name by looking for a residue number followed
-# by one of the letters H, C, N, Q, or M (upper or lower case). Extra columns become the
-# peak note. Peaks for 3-D or 4-D spectra can be read.
-#
-# what does sparky do with multiple chains?
-#
-# what does ga mean in the sparky output after a volume
-#
-# why does sparky sometime have ga after a volume I presume it's a gausiann peak fit?
-# comment gst 19/04/2023 is ga for a gaussian peak fit?
-#
-#  Assignment       w1      w2      Volume     lw1 (hz)   lw2 (hz)
-#
-#    G16H3'-H8    4.905   8.010   7.15e+06 ga    28.6       20.0
-#    G16H4'-H8    4.439   8.013   5.42e+06 ga    35.3       16.9
-#  T17H6-G16H8    7.205   8.004   1.68e+06
-#  T17H7-G16H8    1.459   8.008   2.09e+07 ga    27.5       24.1
-#   T17H2"-H1'    2.509   5.840   4.68e+07 ga    41.2       17.6
-#
-# what does ta display in a sparky project
-#
-
-
 SPECTRUM_CATEGORY = "nef_nmr_spectrum"
 FULL_ASSIGNMENTS_HELP = """
     print full assignments of the form PR_36N-PR_36H [generally assignments are printed in the form PR_36N-H if all the
