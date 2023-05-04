@@ -186,13 +186,6 @@ def parse_assignments(
                 """
                 exit_error(msg)
 
-        residue = Residue(
-            chain_code=chain_code,
-            sequence_code=sequence_code,
-            residue_name=translated_residue_name,
-        )
-        assignment = AtomLabel(residue, atom_name)
-
         residue_name_key = (chain_code, sequence_code)
 
         if residue_name == UNUSED and residue_name_lookup is None:
@@ -222,6 +215,13 @@ def parse_assignments(
                 --no-validate option of sparky import peaks
             """
             exit_error(msg)
+
+        residue = Residue(
+            chain_code=chain_code,
+            sequence_code=sequence_code,
+            residue_name=translated_residue_name,
+        )
+        assignment = AtomLabel(residue, atom_name)
 
         result.append(assignment)
 

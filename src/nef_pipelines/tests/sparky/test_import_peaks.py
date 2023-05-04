@@ -71,6 +71,23 @@ def test_basic_no_sequence():
     assert_lines_match(EXPECTED, str(loop))
 
 
+def test_basic_no_sequence_requires_sequence():
+
+    path = path_in_test_data(__file__, "sparky_manual_full_no_sequence.peaks")
+
+    sequence = open(
+        path_in_test_data(__file__, "sparky_manual_basic_sequence.nef")
+    ).read()
+
+    result = run_and_report(app, [path], input=sequence)
+
+    loop = isolate_loop(
+        result.stdout, "sparky_sparky_manual_full_no_sequence", "nef_peak"
+    )
+
+    assert_lines_match(EXPECTED, str(loop))
+
+
 def test_full():
 
     path = path_in_test_data(__file__, "sparky_manual_full.peaks")
