@@ -135,3 +135,8 @@ initial support for RNA and DNA added (only surfaced in the sparky importers)
 sparky sequence import including RNA and DNA
 
 sparky peak import fully supported with all fields shown in the spark manual
+
+## version 0.1.37
+
+improved sparky assignment parsing which is also refactored into a reusable
+library
