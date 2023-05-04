@@ -178,6 +178,7 @@ class NewPeak:
     volume: Optional[float] = None
     volume_uncertainty: Optional[float] = None
     peak_fit_method: Optional[Union[str, PeakFitMethod]] = None
+    figure_of_merit: Optional[float] = None
     comment: str = ""
 
 
