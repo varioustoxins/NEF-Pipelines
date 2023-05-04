@@ -629,10 +629,15 @@ def make_chunked_sequence_1let(
 def residues_to_residue_name_lookup(
     sequence: List[SequenceResidue],
 ) -> Dict[Tuple[str, str], str]:
-    return {
-        (residue.chain_code, str(residue.sequence_code)): residue.residue_name
-        for residue in sequence
-    }
+
+    result = None
+    if len(sequence) > 0:
+        result = {
+            (residue.chain_code, str(residue.sequence_code)): residue.residue_name
+            for residue in sequence
+        }
+
+    return result
 
 
 def replace_chain_in_atom_labels(
