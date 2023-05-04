@@ -15,22 +15,8 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.peak_lib import peaks_to_frame
-from nef_pipelines.lib.sequence_lib import (
-    TRANSLATIONS_1_3,
-    MoleculeTypes,
-    chain_code_iter,
-    residues_to_residue_name_lookup,
-    sequence_from_entry,
-)
-from nef_pipelines.lib.structures import (
-    AtomLabel,
-    LineInfo,
-    NewPeak,
-    PeakFitMethod,
-    Residue,
-    SequenceResidue,
-    ShiftData,
-)
+from nef_pipelines.lib.sequence_lib import MoleculeTypes, sequence_from_entry
+from nef_pipelines.lib.structures import LineInfo, NewPeak, PeakFitMethod, ShiftData
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
@@ -41,6 +27,7 @@ from nef_pipelines.transcoders.sparky import import_app
 from nef_pipelines.transcoders.sparky.importers.shifts import (
     _exit_if_chain_codes_and_file_name_dont_match,
 )
+from nef_pipelines.transcoders.sparky.sparly_lib import parse_assignments
 
 
 # TODO: this needs to be moved to a library
@@ -66,7 +53,8 @@ def peaks(
     chain_codes: List[str] = typer.Option(
         None,
         "--chains",
-        help="chain codes as a list of names separated by commas, repeated calls will add further chains [default A]",
+        help="chain codes as a list of names separated by commas, repeated calls will add further chains [default A] "
+        "one per file. If only one chain code is supplied it applies to all files",
         metavar="<CHAIN-CODES>",
     ),
     frame_name: str = typer.Option(
@@ -119,11 +107,32 @@ def peaks(
 
     nuclei = parse_comma_separated_options(nuclei)
 
+    file_names_and_lines = {}
+    for file_name, chain_code in zip_longest(file_names, chain_codes, fillvalue=None):
+
+        if file_name is None:
+            continue
+
+        if chain_code is None:
+            chain_code = chain_codes[-1]
+
+        try:
+            with open(file_name, "r") as fp:
+                lines = fp.readlines()
+        except IOError as e:
+            msg = f"""
+                    while reading sparky peaks file {file_name} there was an error reading the file
+                    the error was: {e}
+                """
+            exit_error(msg, e)
+
+        file_names_and_lines[file_name] = lines
+
     entry = pipe(
         entry,
         frame_name,
-        file_names,
-        chain_codes,
+        file_names_and_lines,
+        chain_code,
         sequence,
         input_dimensions=nuclei,
         spectrometer_frequency=spectrometer_frequency,
@@ -136,8 +145,8 @@ def peaks(
 def pipe(
     entry,
     frame_name,
-    file_names,
-    chain_codes,
+    file_names_and_lines,
+    chain_code,
     sequence,
     input_dimensions,
     spectrometer_frequency,
@@ -146,17 +155,7 @@ def pipe(
 
     sparky_frames = []
 
-    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
-
-        try:
-            with open(file_name, "r") as fp:
-                lines = fp.readlines()
-        except IOError as e:
-            msg = f"""
-                    while reading sparky peaks file {file_name} there was an error reading the file
-                    the error was: {e}
-                """
-            exit_error(msg, e)
+    for file_name, lines in file_names_and_lines.items():
 
         sparky_peaks = _parse_peaks(
             lines,
@@ -291,7 +290,7 @@ def _parse_peaks(lines, file_name, molecule_type, chain_code, sequence):
             assignmnents_column = column_headers_to_indices["Assignment"]
             raw_assignment = fields[assignmnents_column]
 
-            assignments = _process_assignments(
+            assignments = parse_assignments(
                 raw_assignment, chain_code, sequence, molecule_type, line_info
             )
 
@@ -428,109 +427,6 @@ def _exit_error_header_in_data(line_info):
     exit_error(msg)
 
 
-# TODO this doesn't cope with abbreviated names
-def _process_assignments(
-    assignments, chain_code, sequence: List[SequenceResidue], molecule_type, line_info
-):
-
-    residue_name_lookup = residues_to_residue_name_lookup(sequence)
-
-    residue_name_translations = TRANSLATIONS_1_3[molecule_type]
-
-    fields = assignments.split("-")
-
-    assignments = []
-    last_sequence_code = None
-    last_residue_name = None
-    for field in fields:
-
-        if len(field) == 1 and field == "?":
-            assignment = AtomLabel(
-                atom_name=UNUSED, residue=Residue("@-", UNUSED, UNUSED)
-            )
-            assignments.append(assignment)
-        else:
-
-            without_first_letters = field.lstrip(string.ascii_letters)
-
-            first_letters = field[: -len(without_first_letters)]
-
-            if len(first_letters) == 0 and without_first_letters[0] == "?":
-                first_letters = "?"
-                without_first_letters = without_first_letters[1:]
-
-            without_numbers = without_first_letters.lstrip(string.digits)
-            without_numbers = without_numbers.lstrip("\"'")
-
-            numbers = without_first_letters[: -len(without_numbers)]
-
-            if (
-                without_numbers != ""
-                and len(numbers) == 0
-                and without_numbers[0] == "?"
-            ):
-                numbers = "?"
-                without_numbers = without_numbers[1:]
-
-            if without_numbers == "":
-                residue_name = last_residue_name
-            elif len(first_letters) == 0 or first_letters == "?":
-                residue_name = UNUSED
-            else:
-                residue_name = first_letters
-
-            if without_numbers == "":
-                sequence_code = last_sequence_code
-            elif len(numbers) == 0 or numbers == "?":
-                sequence_code = UNUSED
-            else:
-                sequence_code = numbers
-
-            if without_numbers == "":
-                atom_name = f"{first_letters}{without_first_letters}"
-            elif len(without_numbers) == 0 or without_numbers == "?":
-                atom_name = UNUSED
-            else:
-                atom_name = without_numbers
-
-            if residue_name_translations is not None:
-                if residue_name in residue_name_translations:
-                    translated_residue_name = residue_name_translations[residue_name]
-                else:
-                    msg = f"""
-                        The residue name {residue_name} is not defined for the molecule type {molecule_type} for the
-                        assignment {assignment} at line {line_info.line_no} in file {line_info.file_name} the line was
-                        {line_info.line}
-                    """
-                    exit_error(msg)
-
-            if sequence and ((chain_code, sequence_code) not in residue_name_lookup):
-                msg = f"""
-                    the chain code {chain_code} and sequence_code {sequence} from
-                    line {line_info.line_no} in file {line_info.file_name} were not found
-                    in the input sequence, the full line was
-
-                    {line_info.line}
-
-                    if you wish to input the peaks without validating against the input sequence use the
-                    --no-validate option of sparky import peaks
-                """
-                exit_error(msg)
-
-            assignment = AtomLabel(
-                atom_name=atom_name,
-                residue=Residue(chain_code, sequence_code, translated_residue_name),
-            )
-
-            assignments.append(assignment)
-
-        last_sequence_code = sequence_code
-        last_residue_name = residue_name
-
-    return assignments
-
-
-# TODO: this needs to be moved to a library
 def _guess_dimensions_if_not_defined_or_throw(
     peaks: List[NewPeak], input_dimensions: List[str]
 ) -> List[str]:
