@@ -17,6 +17,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.peak_lib import peaks_to_frame
 from nef_pipelines.lib.sequence_lib import MoleculeTypes, sequence_from_entry
 from nef_pipelines.lib.structures import LineInfo, NewPeak, PeakFitMethod, ShiftData
+from nef_pipelines.lib.translation_lib import translate_new_peak
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
@@ -27,7 +28,7 @@ from nef_pipelines.transcoders.sparky import import_app
 from nef_pipelines.transcoders.sparky.importers.shifts import (
     _exit_if_chain_codes_and_file_name_dont_match,
 )
-from nef_pipelines.transcoders.sparky.sparly_lib import parse_assignments
+from nef_pipelines.transcoders.sparky.sparky_lib import parse_assignments
 
 
 # TODO: this needs to be moved to a library
@@ -164,6 +165,8 @@ def pipe(
             chain_code=chain_code,
             sequence=sequence,
         )
+
+        sparky_peaks = [translate_new_peak(peak) for peak in sparky_peaks]
 
         dimensions = _guess_dimensions_if_not_defined_or_throw(
             sparky_peaks, input_dimensions
