@@ -2,7 +2,7 @@ import string
 
 import pytest
 
-from nef_pipelines.transcoders.sparky.sparly_lib import (
+from nef_pipelines.transcoders.sparky.sparky_lib import (
     _strip_characters_left,
     parse_single_assignment,
 )
