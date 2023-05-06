@@ -203,9 +203,9 @@ def parse_assignments(
             ):
                 translated_residue_name = residue_name_lookup[residue_name_key]
 
-        if sequence and (residue_name_key not in residue_name_lookup):
+        if len(sequence) > 0 and (residue_name_key not in residue_name_lookup):
             msg = f"""
-                the chain code {chain_code} and sequence_code {sequence} from
+                the chain code {chain_code} and sequence_code {sequence_code} from
                 line {line_info.line_no} in file {line_info.file_name} were not found
                 in the input sequence, the full line was
 
