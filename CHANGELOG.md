@@ -140,3 +140,7 @@ sparky peak import fully supported with all fields shown in the spark manual
 
 improved sparky assignment parsing which is also refactored into a reusable
 library
+
+## version 0.1.37
+
+initial experiments support for echidna peaks files
