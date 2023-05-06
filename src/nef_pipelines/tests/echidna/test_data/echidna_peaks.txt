@@ -1,0 +1,12 @@
+# Echidna assignment: 36 residues assign well
+# Tensor:      Xax     Xrh   theta     psi     phi metal-x      -y       -z
+#          -3012.1 -1797.8  128.22  164.60   80.68  17.426   7.735  15.170
+      Assignment         w1         w2         w3   Data Height
+
+         10N-HN    122.836      7.826        48466 ; large violation!
+         11N-HN    118.678      8.063        66481 ; large violation!
+         12N-HN    119.301      7.842         9714 ; large violation!
+         13N-HN    122.946      8.232         2310 ; large violation!
+         14N-HN    120.475      8.948          842
+         15N-HN    118.138      8.798          594
+         16N-HN    120.784      8.035          742
