@@ -15,7 +15,7 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_entry, sequence_to_chains
 from nef_pipelines.lib.structures import AtomLabel, RdcRestraint, SequenceResidue
-from nef_pipelines.lib.translation_lib import translate_atom_label
+from nef_pipelines.lib.translation_lib import IUPAC_XPLOR, translate_atom_label
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
@@ -127,7 +127,7 @@ def rdcs(
 
         _exit_if_mixed_chain_restraints(restraints, frame_name, input)
 
-        restraints = _translate_atom_names(restraints, "xplor")
+        restraints = _translate_atom_names(restraints, IUPAC_XPLOR)
 
         restraints = _update_restraint_uncertainty(restraints, default_uncertainty)
 
@@ -137,16 +137,15 @@ def rdcs(
 
 
 def _translate_atom_names(
-    restraints: List[RdcRestraint], naming_scheme="xplor_to_iupac"
+    restraints: List[RdcRestraint], naming_scheme=IUPAC_XPLOR
 ) -> List[RdcRestraint]:
     result = []
     for restraint in restraints:
         atom_1 = restraint.atom_1
         atom_2 = restraint.atom_2
 
-        translation = {"H": "HN"}
-        atom_1 = translate_atom_label(atom_1, translation)
-        atom_2 = translate_atom_label(atom_2, translation)
+        atom_1 = translate_atom_label(atom_1, naming_scheme)
+        atom_2 = translate_atom_label(atom_2, naming_scheme)
 
         restraint = replace(restraint, atom_1=atom_1)
         restraint = replace(restraint, atom_2=atom_2)
