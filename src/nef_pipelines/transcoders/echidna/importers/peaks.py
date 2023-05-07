@@ -1,13 +1,6 @@
-# import string
-# import sys
 from collections import OrderedDict
 from dataclasses import dataclass
-from itertools import zip_longest
 from pathlib import Path
-
-# from itertools import zip_longest
-# from pathlib import Path
-# from textwrap import dedent
 from typing import Iterator, List
 
 import typer
@@ -16,35 +9,12 @@ from pynmrstar import Saveframe
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
+    extract_column,
     read_or_create_entry_exit_error_on_bad_file,
+    set_column,
+    set_column_to_value,
 )
 from nef_pipelines.lib.sequence_lib import MoleculeTypes, sequence_from_entry
-
-# from fyeah import f
-#
-# from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
-# from nef_pipelines.lib.nef_lib import (
-#     UNUSED,
-#     add_frames_to_entry,
-#     read_or_create_entry_exit_error_on_bad_file,
-# )
-# from nef_pipelines.lib.peak_lib import peaks_to_frame
-# from nef_pipelines.lib.sequence_lib import (
-#     TRANSLATIONS_1_3,
-#     MoleculeTypes,
-#     chain_code_iter,
-#     residues_to_residue_name_lookup,
-#     sequence_from_entry,
-# )
-# from nef_pipelines.lib.structures import (
-#     AtomLabel,
-#     LineInfo,
-#     NewPeak,
-#     PeakFitMethod,
-#     Residue,
-#     SequenceResidue,
-#     ShiftData,
-# )
 from nef_pipelines.lib.util import (  # STDIN,; exit_error,; parse_comma_separated_options,
     STDIN,
     is_float,
@@ -57,12 +27,10 @@ from nef_pipelines.transcoders.sparky.importers.peaks import (
 
 DEFAULT_MERIT_FUNTION = "round(x**(1.0/6.0),5)"
 
+# TODO: rationalise these into lib
 CCPN_COMMENT = "ccpn_comment"
-
 HEIGHT = "height"
-
 CCPN_MERIT = "ccpn_merit"
-
 NEF_PEAK = "nef_peak"
 
 app = typer.Typer()
@@ -333,7 +301,7 @@ def peaks(
         "nef_nmr_spectrum_{file_name}",
         "-f",
         "--frame-name",
-        help="a templated name for the frame {file_name} will be replaced by input filename",
+        help="a templated name for the frame {file_name} will be replaced by input filename without its extension",
     ),
     input: Path = typer.Option(
         STDIN,
@@ -407,7 +375,7 @@ def is_iterable(target):
 #
 def pipe(
     entry,
-    frame_name,
+    frame_name_template,
     file_names_and_lines,
     chain_code,
     sequence,
@@ -423,7 +391,7 @@ def pipe(
 
         entry = sparky_peak_import_pipe(
             entry,
-            frame_name,
+            frame_name_template,
             {file_name: lines},
             chain_code,
             sequence,
@@ -432,71 +400,103 @@ def pipe(
             molecule_type=molecule_type,
         )
 
-        file_name = file_name.stem
-        frame = entry.get_saveframe_by_name(f(frame_name))
+        file_name = file_name.stem  # used by f()
+        frame = entry.get_saveframe_by_name(f(frame_name_template))
+
+        frame_name = file_name
 
         loop = frame.get_loop(NEF_PEAK)
         loop.add_tag(CCPN_MERIT, update_data=True)
 
-        comment_index = loop.tag_index(CCPN_COMMENT)
-        comment_values = extract_column(loop, comment_index)
-        comment_values = [
-            comment.lstrip().lstrip(";").lstrip() for comment in comment_values
-        ]
-        loop.remove_tag(CCPN_COMMENT)
+        comment_values = _remove_and_store_comments(loop)
 
         height_index = loop.tag_index(HEIGHT)
         merit_index = loop.tag_index(CCPN_MERIT)
 
-        heights = extract_column(loop, height_index)
-        heights = [float(height) for height in heights]
-        set_column_to_value(loop, height_index, UNUSED)
-        merits = [eval(merit_function) for x in heights]
-        set_column(loop, merit_index, merits)
-
-        loop.add_tag(CCPN_COMMENT, update_data=True)
-        comment_index = loop.tag_index(CCPN_COMMENT)
-        set_column(loop, comment_index, comment_values)
-
-        merits_for_large_violations = []
-        for row in loop:
-            if "large violation!" in row[comment_index]:
-                merits_for_large_violations.append(float(row[merit_index]))
-
-        lowest_large_violation_merit = min(merits_for_large_violations)
-
-        note = f"NOTE: merits with values > {lowest_large_violation_merit} are flagged as large violations"
-        frame.add_tag(CCPN_COMMENT, note)
-
-        tensor_frame_category = "np_tensor_frame"
-        tensor_frame_name = f"{tensor_frame_category}_{file_name}"
-        frame.add_tag("np_tensor_frame_name", tensor_frame_name)
-
-        tag_values = {
-            "restraint_origin": "measured",
-            "ccpn_format": "angles_euler",
-            "restraint_magnitude": tensor.amplitude,
-            "restraint_rhomicity": tensor.rhombicity,
-            "ccpn_phi": tensor.phi,
-            "ccpn_psi": tensor.psi,
-            "ccpn_theta": tensor.theta,
-        }
-        tensor_save_frame = create_simple_frame(
-            tensor_frame_category, tensor_frame_name, tag_values
+        _convert_heights_to_figure_of_merit(
+            loop, height_index, merit_index, merit_function
         )
-        entry.add_saveframe(tensor_save_frame)
 
-        atom_position_category = "np_atom_position"
-        atom_position_name = f"{atom_position_category}_{file_name}"
-        frame.add_tag("np_atom_position_name", atom_position_name)
+        comment_index = _append_stored_comments(loop, comment_values)
 
-        tag_values = {"x": atom_position.x, "y": atom_position.y, "z": atom_position.z}
-        atom_position_save_frame = create_simple_frame(
-            atom_position_category, atom_position_name, tag_values
+        _add_frame_comment_for_large_violation_limit(
+            frame, loop, comment_index, merit_index
         )
-        entry.add_saveframe(atom_position_save_frame)
+
+        _add_tensor_frame_saveframe(entry, frame, tensor, frame_name)
+
+        _add_atom_position_saveframe(entry, frame, atom_position, frame_name)
 
     return entry
+
+
+def _add_atom_position_saveframe(entry, frame, atom_position, frame_name):
+    atom_position_category = "np_atom_position"
+    atom_position_name = f"{atom_position_category}_{frame_name}"
+    frame.add_tag("np_atom_position_name", atom_position_name)
+    tag_values = {"x": atom_position.x, "y": atom_position.y, "z": atom_position.z}
+    atom_position_save_frame = create_simple_frame(
+        atom_position_category, atom_position_name, tag_values
+    )
+    entry.add_saveframe(atom_position_save_frame)
+
+
+def _add_tensor_frame_saveframe(entry, frame, tensor, frame_name):
+    tensor_frame_category = "np_tensor_frame"
+    tensor_frame_name = f"{tensor_frame_category}_{frame_name}"
+    frame.add_tag("np_tensor_frame_name", tensor_frame_name)
+    tag_values = {
+        "restraint_origin": "measured",
+        "ccpn_format": "angles_euler",
+        "restraint_magnitude": tensor.amplitude,
+        "restraint_rhomicity": tensor.rhombicity,
+        "ccpn_phi": tensor.phi,
+        "ccpn_psi": tensor.psi,
+        "ccpn_theta": tensor.theta,
+    }
+    tensor_save_frame = create_simple_frame(
+        tensor_frame_category, tensor_frame_name, tag_values
+    )
+    entry.add_saveframe(tensor_save_frame)
+
+
+def _add_frame_comment_for_large_violation_limit(
+    frame, loop, comment_index, merit_index
+):
+    merits_for_large_violations = []
+    for row in loop:
+        if "large violation!" in row[comment_index]:
+            merits_for_large_violations.append(float(row[merit_index]))
+    lowest_large_violation_merit = min(merits_for_large_violations)
+    note = f"NOTE: merits with values > {lowest_large_violation_merit} are flagged as large violations"
+    frame.add_tag(CCPN_COMMENT, note)
+
+
+def _append_stored_comments(loop, comment_values):
+    loop.add_tag(CCPN_COMMENT, update_data=True)
+    comment_index = loop.tag_index(CCPN_COMMENT)
+    set_column(loop, comment_index, comment_values)
+    return comment_index
+
+
+def _convert_heights_to_figure_of_merit(
+    loop, height_index, merit_index, merit_function
+):
+    heights = extract_column(loop, height_index)
+    heights = [float(height) for height in heights]
+    set_column_to_value(loop, height_index, UNUSED)
+    merits = [eval(merit_function) for x in heights]
+    set_column(loop, merit_index, merits)
+
+
+def _remove_and_store_comments(loop):
+    comment_index = loop.tag_index(CCPN_COMMENT)
+    comment_values = extract_column(loop, comment_index)
+    comment_values = [
+        comment.lstrip().lstrip(";").lstrip() for comment in comment_values
+    ]
+    loop.remove_tag(CCPN_COMMENT)
+    return comment_values
 
 
 def create_simple_frame(atom_position_category, atom_position_name, tag_values):
@@ -508,27 +508,3 @@ def create_simple_frame(atom_position_category, atom_position_name, tag_values):
         save_frame.add_tag(tag, value)
 
     return save_frame
-
-
-def set_column(loop, merit_index, merits):
-    SENTINEL = "!!SENTINEL!!"
-    for row, merit in zip_longest(loop, merits, fillvalue=SENTINEL):
-        if row is SENTINEL:
-            break
-        row[merit_index] = merit
-
-    return loop
-
-
-def set_column_to_value(loop, height_index, value):
-    for row in loop:
-        row[height_index] = value
-
-    return loop
-
-
-def extract_column(loop, columns_index):
-    values = []
-    for row in loop:
-        values.append(row[columns_index])
-    return values

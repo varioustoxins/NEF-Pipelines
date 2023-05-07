@@ -2,8 +2,9 @@ import sys
 from argparse import Namespace
 from enum import auto
 from fnmatch import fnmatch
+from itertools import zip_longest
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 # from pandas import DataFrame
 from pynmrstar import Entry, Loop, Saveframe
@@ -44,6 +45,10 @@ class BadNefFileException(Exception):
     ths doesn't imply the file has invalid star syntax, the star syntax will be valid
     """
 
+    pass
+
+
+class NoSuchColumnException(Exception):
     pass
 
 
@@ -536,3 +541,69 @@ def is_save_frame_name_in_entry(entry: Entry, frame_name: str) -> bool:
         frame_in_entry = False
 
     return frame_in_entry
+
+
+def set_column(loop: Loop, column: Union[int, str], values: List[Any]) -> Loop:
+    """
+    set the values of a column in a loop from a list
+    :param loop:  the loop
+    :param column: the name or index of the column to modify
+    :param values: the values to put into the column
+    :return: the loop (same instance)
+    """
+
+    column = _ensure_column_is_index(loop, column)
+
+    SENTINEL = "!!SENTINEL!!"
+    for row, merit in zip_longest(loop, values, fillvalue=SENTINEL):
+        if row is SENTINEL:
+            break
+        row[column] = merit
+
+    return loop
+
+
+def _ensure_column_is_index(loop: Loop, column: Union[str, int]) -> int:
+    if isinstance(column, str):
+        if column in loop.tags:
+            column = loop.tag_index(column)
+        else:
+            msg = f"""
+                the column {column} wasn't found in the loop {loop.category}
+
+                the available columns are {', '.join(loop.tags)}
+            """
+            raise NoSuchColumnException(msg)
+    return column
+
+
+def set_column_to_value(loop: Loop, column: Union[str, int], value: Any) -> Loop:
+    """
+
+    set the values of a column in a loop to a single value
+
+    :param loop:  the loop
+    :param column: the name or index of the column to modify
+    :param values: the values to put
+    :return: the loop (same instance)
+    """
+    column = _ensure_column_is_index(loop, column)
+    for row in loop:
+        row[column] = value
+
+    return loop
+
+
+def extract_column(loop: Loop, column: Union[str, int]) -> Loop:
+    """
+    Extract all the values in the column of a loop into a list
+
+    :param the loop
+    :param column: the name or index of the column to modify
+    :return: the values in the column as a list in row order
+    """
+    column = _ensure_column_is_index(loop, column)
+    values = []
+    for row in loop:
+        values.append(row[column])
+    return values
