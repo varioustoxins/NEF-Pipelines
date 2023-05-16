@@ -1,3 +1,5 @@
+import contextlib
+import sys
 from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
@@ -8,7 +10,7 @@ from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
     SelectionType,
-    read_or_create_entry_exit_error_on_bad_file,
+    read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
 from nef_pipelines.lib.sequence_lib import count_residues, frame_to_chains
@@ -85,7 +87,7 @@ def list(
     if entry is None:
 
         try:
-            entry = read_or_create_entry_exit_error_on_bad_file(pipe)
+            entry = read_entry_from_file_or_stdin_or_exit_error(pipe)
         except Exception as e:
             exit_error(f"failed to read nef file {args.pipe} because", e)
         lines = str(entry)
@@ -98,109 +100,112 @@ def list(
         else:
             exit_error("couldn't read a nef stream from stdin")
 
-    print(f"entry {entry.entry_id}")
-    if verbose:
+    with contextlib.redirect_stdout(sys.stderr):
+        print(f"entry {entry.entry_id}")
+        if verbose:
 
-        import hashlib
+            import hashlib
 
-        md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
-        num_lines = len(lines.split("\n"))
-        print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
-    print()
+            md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
+            num_lines = len(lines.split("\n"))
+            print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
+        print()
 
-    frames = select_frames(entry, selector_type, filters)
+        frames = select_frames(entry, selector_type, filters)
 
-    if verbose == 0:
-        frame_names = [frame.name for frame in frames]
-        if number:
-            frame_names = [
-                f"{i}. {frame_name}"
-                for i, frame_name in enumerate(frame_names, start=1)
-            ]
-
-        frame_list = strings_to_table_terminal_sensitive(frame_names)
-        print(tabulate(frame_list, tablefmt="plain"))
-
-    else:
-
-        for frame in enumerate(frames, start=1):
-
-            filters = [f"*{filter}*" for filter in filters]
-
-            if verbose == 0:
+        if verbose == 0:
+            frame_names = [frame.name for frame in frames]
+            if number:
                 frame_names = [
-                    f"{i}. {frame.name}" for i, frame_name in enumerate(frames, start=1)
+                    f"{i}. {frame_name}"
+                    for i, frame_name in enumerate(frame_names, start=1)
                 ]
 
-                frame_list = strings_to_table_terminal_sensitive(frame_names)
-                print(tabulate(frame_list, tablefmt="plain"))
+            frame_list = strings_to_table_terminal_sensitive(frame_names)
+            print(tabulate(frame_list, tablefmt="plain"))
 
-                print(f"    category: {frame.category}")
-                if len(frame.name) != len(frame.category):
-                    print(
-                        f"    name: {frame.name[len(frame.category):].lstrip(UNDERSCORE)}"
-                    )
+        else:
 
-                loop_lengths = []
-                for loop in frame.loop_dict:
-                    loop_lengths.append(str(len(loop)))
+            for i, frame in enumerate(frames, start=1):
 
-                loops = ""
-                if len(loops) == 1:
-                    loops = " [length: 1]"
-                else:
-                    loops = f' [lengths: {", ".join(loop_lengths)}]'
+                filters = [f"*{filter}*" for filter in filters]
 
-                print(f"    loops: {len(frame.loop_dict)}{loops}")
-
-                frame_standard = frame.name[: len("nef")]
-                is_standard_frame = frame_standard == "nef"
-                print(f"    is nef frame: {is_standard_frame}")
-
-                # ccpn_compound_name
-                if verbose == 2 and frame.category == "nef_molecular_system":
-                    chains = frame_to_chains(frame)
-
-                    print(f'    chains: {len(chains)} [{", ".join(chains)}]')
-
-                    residue_counts = {}
-                    for chain in chains:
-                        residue_counts[chain] = count_residues(frame, chain)
-
-                    residue_count_per_chain = {}
-                    for chain in chains:
-                        residue_count_per_chain[chain] = sum(
-                            residue_counts[chain].values()
-                        )
-
-                    output = [
-                        f"{chain} {num_residues}"
-                        for chain, num_residues in residue_count_per_chain.items()
+                if verbose > 0:
+                    frame_names = [
+                        f"{i}. {frame.name}"
+                        for i, frame_name in enumerate(frames, start=1)
                     ]
-                    print(f'    residues: {", ".join(output)}')
 
-                    for chain in chains:
-                        counts_and_percentages = []
-
-                        for residue, count in residue_counts[chain].items():
-                            percentage = (
-                                f"{count/ residue_count_per_chain[chain]*100:5.2f}"
-                            )
-                            counts_and_percentages.append(
-                                f"{residue}: {count} [{percentage}%]"
-                            )
-
-                        pre_string = f"              {chain}. "
-                        pre_string_width = len(pre_string)
-
-                        tabulation = strings_to_table_terminal_sensitive(
-                            counts_and_percentages, pre_string_width
+                    frame_list = strings_to_table_terminal_sensitive(frame_names)
+                    print(f"{i}. {frame.name}")
+                    print(f"    category: {frame.category}")
+                    if len(frame.name) != len(frame.category):
+                        print(
+                            f"    name: {frame.name[len(frame.category):].lstrip(UNDERSCORE)}"
                         )
-                        table = tabulate(tabulation, tablefmt="plain")
 
-                        print(_indent_with_prestring(table, pre_string))
+                    loop_lengths = []
+                    for loop in frame.loop_dict:
+                        loop_lengths.append(str(len(loop)))
 
-    print()
+                    loops = ""
+                    if len(loops) == 1:
+                        loops = " [length: 1]"
+                    else:
+                        loops = f' [lengths: {", ".join(loop_lengths)}]'
+
+                    print(f"    loops: {len(frame.loop_dict)}{loops}")
+
+                    frame_standard = frame.name[: len("nef")]
+                    is_standard_frame = frame_standard == "nef"
+                    print(f"    is nef frame: {is_standard_frame}")
+
+                    # ccpn_compound_name
+                    if verbose == 2 and frame.category == "nef_molecular_system":
+                        chains = frame_to_chains(frame)
+
+                        print(f'    chains: {len(chains)} [{", ".join(chains)}]')
+
+                        residue_counts = {}
+                        for chain in chains:
+                            residue_counts[chain] = count_residues(frame, chain)
+
+                        residue_count_per_chain = {}
+                        for chain in chains:
+                            residue_count_per_chain[chain] = sum(
+                                residue_counts[chain].values()
+                            )
+
+                        output = [
+                            f"{chain} {num_residues}"
+                            for chain, num_residues in residue_count_per_chain.items()
+                        ]
+                        print(f'    residues: {", ".join(output)}')
+
+                        for chain in chains:
+                            counts_and_percentages = []
+
+                            for residue, count in residue_counts[chain].items():
+                                percentage = (
+                                    f"{count/ residue_count_per_chain[chain]*100:5.2f}"
+                                )
+                                counts_and_percentages.append(
+                                    f"{residue}: {count} [{percentage}%]"
+                                )
+
+                            pre_string = f"              {chain}. "
+                            pre_string_width = len(pre_string)
+
+                            tabulation = strings_to_table_terminal_sensitive(
+                                counts_and_percentages, pre_string_width
+                            )
+                            table = tabulate(tabulation, tablefmt="plain")
+
+                            print(_indent_with_prestring(table, pre_string))
+
+                print()
+
+        print()
 
 
 def _indent_with_prestring(text_block, pre_string):

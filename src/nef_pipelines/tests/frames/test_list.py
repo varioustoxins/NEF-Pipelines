@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 
 from nef_pipelines.lib.test_lib import (
@@ -55,3 +57,31 @@ def test_frame_file_first_and_select():
     """
 
     assert_lines_match(EXPECTED, result.stdout)
+
+
+def test_frame_no_file():
+
+    path = Path("NO_SUCH_FILE")
+    run_and_report(app, [path], expected_exit_code=1)
+
+
+def test_frame_basic_verbose():
+
+    path = path_in_test_data(__file__, "frames.nef")
+    result = run_and_report(app, ["--in", path, "--verbose"])
+
+    EXPECTED_VERBOSE = """
+        entry test
+            lines: 48 frames: 2 checksum: d6235a487cbdb33cb1ed5d2f5f3f2635 [md5]
+        1. nef_nmr_meta_data
+            category: nef_nmr_meta_data
+            loops: 1 [lengths: 19]
+            is nef frame: True
+        2. nef_molecular_system
+            category: nef_molecular_system
+            loops: 1 [lengths: 13]
+            is nef frame: True
+
+    """
+
+    assert_lines_match(EXPECTED_VERBOSE, result.stdout)
