@@ -144,3 +144,7 @@ library
 ## version 0.1.37
 
 initial experiments support for echidna peaks files
+
+## version 0.1.38
+
+fixed a bug in frames list (verbose option was ignored)
