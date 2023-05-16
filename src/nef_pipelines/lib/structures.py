@@ -185,4 +185,5 @@ class NewPeak:
 @dataclass
 class DimensionInfo:
     axis_code: str  # this is the isotope code for us...
+    axis_name: str = None
     axis_unit: Optional[str] = "ppm"
