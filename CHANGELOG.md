@@ -141,10 +141,10 @@ sparky peak import fully supported with all fields shown in the spark manual
 improved sparky assignment parsing which is also refactored into a reusable
 library
 
-## version 0.1.37
+## version 0.1.38
 
 initial experiments support for echidna peaks files
 
-## version 0.1.38
+## version 0.1.39
 
 fixed a bug in frames list (verbose option was ignored)
