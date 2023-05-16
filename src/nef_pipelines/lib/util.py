@@ -9,7 +9,7 @@ from enum import auto
 from math import floor
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Iterator, List, Optional, TextIO, TypeVar, Union
+from typing import Any, Dict, Iterator, List, Optional, TextIO, Tuple, TypeVar, Union
 
 import click
 from cacheable_iter import iter_cache
@@ -844,3 +844,50 @@ def strings_to_tabulated_terminal_sensitive(
         strings, used_width, min_width, fallback_terminal_width
     )
     return tabulate(table, tablefmt="plain")
+
+
+def strip_characters_left(target: str, letters: str) -> Tuple[str, str]:
+
+    """
+     strip the characters from letters from the left of the target and return a tuple containing
+        1. the string without the stripped letters
+        2. the letters that were stripped off
+
+    :param target: the string to strip
+    :param letters:  the letters to be stripper
+    :return: a tuple of the form (<stripped-string>, <stripped-letters>)
+    """
+
+    remaining = target.lstrip(letters)
+
+    stripped = target[: len(target) - len(remaining)]
+
+    return stripped, remaining
+
+
+def strip_characters_right(target: str, letters: str) -> Tuple[str, str]:
+    """
+    strip the characters from letters from the right of the target and return a tuple containing
+        1. the string without the stripped letters
+        2. the letters that were stripped off
+
+    :param target: the string to strip
+    :param letters:  the letters to be stripper
+    :return: a tuple of the form (<stripped-string>, <stripped-letters>)
+    """
+
+    remaining = target.rstrip(letters)
+
+    stripped = target[(len(target) - len(remaining)) - 1 :]
+
+    return stripped, remaining
+
+
+def strip_line_comment(line: str, comment_character: str = "#") -> Tuple[str, str]:
+    comment = None
+    if comment_character in line:
+        index = line.index(comment_character)
+        comment = line[index + 1 :]
+        line = line[:index]
+
+    return line, comment

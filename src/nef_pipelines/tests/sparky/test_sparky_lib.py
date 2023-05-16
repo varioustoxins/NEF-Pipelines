@@ -2,17 +2,15 @@ import string
 
 import pytest
 
-from nef_pipelines.transcoders.sparky.sparky_lib import (
-    _strip_characters_left,
-    parse_single_assignment,
-)
+from nef_pipelines.lib.util import strip_characters_left
+from nef_pipelines.transcoders.sparky.sparky_lib import parse_single_assignment
 
 
 def test_strip_characters_left_empty():
 
     test = ""
 
-    stripped, remaining = _strip_characters_left(test, string.digits)
+    stripped, remaining = strip_characters_left(test, string.digits)
 
     assert stripped == ""
     assert remaining == ""
@@ -22,7 +20,7 @@ def test_strip_characters_left_partial():
 
     test = "123abc"
 
-    stripped, remaining = _strip_characters_left(test, string.digits)
+    stripped, remaining = strip_characters_left(test, string.digits)
 
     assert stripped == "123"
     assert remaining == "abc"
@@ -32,7 +30,7 @@ def test_strip_characters_left_all():
 
     test = "123456"
 
-    stripped, remaining = _strip_characters_left(test, string.digits)
+    stripped, remaining = strip_characters_left(test, string.digits)
 
     assert stripped == "123456"
     assert remaining == ""

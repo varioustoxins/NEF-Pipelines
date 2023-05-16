@@ -9,7 +9,7 @@ from nef_pipelines.lib.sequence_lib import (
     residues_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import AtomLabel, LineInfo, Residue, SequenceResidue
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.util import exit_error, strip_characters_left
 
 #
 # sparky docs
@@ -50,15 +50,6 @@ from nef_pipelines.lib.util import exit_error
 SparkyAtomLabel = namedtuple("SparkyAtomLabel", "residue_number residue_name atom_name")
 
 
-def _strip_characters_left(target: str, letters: str) -> Tuple[str, str]:
-
-    remaining = target.lstrip(letters)
-
-    stripped = target[: len(target) - len(remaining)]
-
-    return stripped, remaining
-
-
 def parse_single_assignment(
     assignment: str,
     previous_residue_name: str = None,
@@ -79,7 +70,7 @@ def parse_single_assignment(
     target = assignment
 
     # remove a residue name or question mark
-    residue_name, target = _strip_characters_left(target, string.ascii_letters)
+    residue_name, target = strip_characters_left(target, string.ascii_letters)
     if len(target) == 0:
         target = residue_name
         residue_name = ""
@@ -89,7 +80,7 @@ def parse_single_assignment(
         residue_name = ""
 
     # remove residue numbers or question mark
-    residue_number, target = _strip_characters_left(target, string.digits)
+    residue_number, target = strip_characters_left(target, string.digits)
 
     if len(residue_number) == 0 and len(target) != 0 and target[0] == "?":
         target = target[1:]
