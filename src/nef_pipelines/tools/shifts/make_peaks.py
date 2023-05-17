@@ -134,13 +134,16 @@ def pipe(
 
         spectrum = spectrum.lower()
 
-        frame_name = f(name_template_string)
-
         if spectrum not in EXPERIMENT_INFO:
             _exit_bad_spectrum_type(spectrum, list(EXPERIMENT_INFO.keys()))
         spectrum_info = EXPERIMENT_INFO[spectrum]
 
         peaks = make_spectrum(shifts, spectrum_info)
+
+        if len(peaks) == 0:
+            continue
+
+        frame_name = f(name_template_string)
 
         dimensions = [
             {"axis_code": dimension} for dimension in spectrum_info.dimensions

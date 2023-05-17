@@ -148,3 +148,7 @@ initial experiments support for echidna peaks files
 ## version 0.1.39
 
 fixed a bug in frames list (verbose option was ignored)
+
+## version 0.1.40
+
+fix a bug: make peaks faaled on generating empty peak lists
