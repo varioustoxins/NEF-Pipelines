@@ -1,13 +1,11 @@
 import string
 from collections import OrderedDict
+from dataclasses import replace
 from typing import Dict, Iterator, List, Tuple, Union
 
 from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
 from nef_pipelines.lib.nef_lib import UNUSED
-from nef_pipelines.lib.sequence_lib import (
-    get_residue_name_from_lookup,
-    sequence_to_residue_type_lookup,
-)
+from nef_pipelines.lib.sequence_lib import get_residue_name_from_lookup
 from nef_pipelines.lib.structures import (
     AtomLabel,
     DimensionInfo,
@@ -26,18 +24,6 @@ from nef_pipelines.lib.util import (
 
 XEASY_PEAK_MAGIC = "FORMAT xeasy3D"
 
-test = """
-HIS     A1
-MET     A2
-ARG     A3
-GLN     A4
-PRO     A5
-PRO     A6
-LEU     A7
-VAL     A8
-THR     A9
-"""
-
 
 def line_info_iter(lines: Iterator[str], source="unknown") -> Iterator[LineInfo]:
     for line_no, line in enumerate(lines, start=1):
@@ -49,11 +35,12 @@ def line_info_iter(lines: Iterator[str], source="unknown") -> Iterator[LineInfo]
         yield LineInfo(source, line_no, line)
 
 
-def parse_xeasy_sequence(
-    lines: Iterator[str], source="unknown"
-) -> List[SequenceResidue]:
+def parse_sequence(lines: Iterator[str], source="unknown") -> List[SequenceResidue]:
     result = []
     for line_info in line_info_iter(lines, source):
+
+        if line_info.line_no == 1 and line_info.line.startswith("#"):
+            continue
 
         fields = line_info.line.split()
 
@@ -61,7 +48,17 @@ def parse_xeasy_sequence(
 
         residue_name, chain_seq_code = fields
 
-        sequence_code, chain_code = strip_characters_right(
+        if residue_name == "SS":
+            msg = f"""
+                Original xeasy sequences are not supported only those used by flya
+                at line {line_info.line_no} in file {line_info.file_name} if found a residue type SS
+                where as it must be a standard 3 letter amino acid code, the whole line was
+
+                {line_info.line}
+            """
+            exit_error(msg)
+
+        chain_code, sequence_code = strip_characters_right(
             chain_seq_code, string.digits
         )
 
@@ -167,7 +164,7 @@ def _parse_xeasy_assignment(
         exit_error(msg)
     else:
         atom_name, chain_residue = fields
-        sequence_code, chain_code = strip_characters_right(chain_residue, string.digits)
+        chain_code, sequence_code = strip_characters_right(chain_residue, string.digits)
 
         residue_name = get_residue_name_from_lookup(
             chain_code, sequence_code, residue_lookup
@@ -206,7 +203,7 @@ def parse_peaks(
     experiment_type = None
     dimensions = OrderedDict()
 
-    peaks = []
+    peaks = {}
 
     for line_info in line_info_iter(lines, source):
 
@@ -303,7 +300,24 @@ def parse_peaks(
                 volume_uncertainty=volume_error,
                 comment=comment,
             )
-            peaks.append(peak)
+
+            if peak.id in peaks:
+                peak_to_update = peaks[peak.id]
+                for i, shift in enumerate(peak_to_update.shifts):
+                    if not isinstance(shift.atom, list):
+                        old_atom = shift.atom
+                        new_shift = replace(shift, atom=[old_atom])
+                        peak_to_update.shifts[i] = new_shift
+
+                    peak_to_update.shifts[i].atom.append(peak.shifts[i].atom)
+
+                peak_to_update = replace(
+                    peak_to_update, comment=f"{peak_to_update.comment} | {peak.comment}"
+                )
+                peaks[peak.id] = peak_to_update
+
+            else:
+                peaks[peak.id] = peak
 
     dimension_names = [
         dimensions[dimension_index] for dimension_index in sorted(dimensions)
@@ -316,7 +330,7 @@ def parse_peaks(
         for axis_code, dimension_name in zip(axis_codes, dimension_names)
     ]
 
-    return experiment_type, dimension_info, tuple(axis_codes), peaks
+    return experiment_type, dimension_info, tuple(axis_codes), list(peaks.values())
 
 
 def _exit_if_no_magic_before_data(have_magic, line_info):
@@ -456,13 +470,3 @@ def exit_if_wrong_field_count_peaks(fields: List[str], line_info: LineInfo):
             """
 
         exit_error(msg)
-
-
-if __name__ == "__main__":
-    sequence = parse_xeasy_sequence(test.split("\n"))
-
-    residue_name_lookup = sequence_to_residue_type_lookup(sequence)
-
-    peaks = parse_peaks(test_peaks.split("\n"), "wibble", residue_name_lookup)
-
-    print(peaks)
