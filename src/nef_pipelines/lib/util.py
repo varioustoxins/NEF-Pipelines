@@ -860,7 +860,8 @@ def strip_characters_left(target: str, letters: str) -> Tuple[str, str]:
 
     remaining = target.lstrip(letters)
 
-    stripped = target[: len(target) - len(remaining)]
+    num_stripped = len(target) - len(remaining)
+    stripped = target[:num_stripped] if num_stripped > 0 else ""
 
     return stripped, remaining
 
@@ -877,10 +878,10 @@ def strip_characters_right(target: str, letters: str) -> Tuple[str, str]:
     """
 
     remaining = target.rstrip(letters)
+    num_stripped = len(target) - len(remaining)
+    stripped = target[-num_stripped:] if num_stripped > 0 else ""
 
-    stripped = target[(len(target) - len(remaining)) - 1 :]
-
-    return stripped, remaining
+    return remaining, stripped
 
 
 def strip_line_comment(line: str, comment_character: str = "#") -> Tuple[str, str]:
