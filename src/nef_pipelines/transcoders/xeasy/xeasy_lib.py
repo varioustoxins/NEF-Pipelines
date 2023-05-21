@@ -206,9 +206,7 @@ def parse_peaks(
 
     for line_info in line_info_iter(lines, source):
 
-        shifts = []
-        assignments = []
-
+        shifts: list[float] = []
         if line_info.line.startswith("#"):
 
             stripped_line = line_info.line.lstrip("#").lstrip()
@@ -248,8 +246,6 @@ def parse_peaks(
             _exit_if_no_magic_before_data(have_magic, line_info)
             line, comment = strip_line_comment(line_info.line)
 
-            current_column = 1
-            # print(f'{line}-{comment}')
             fields = line.split()
 
             serial = fields[0]
@@ -281,6 +277,8 @@ def parse_peaks(
             # ignore the peak integration method
             current_column += 2
 
+            assignments = []
+
             for assignment_column_number in dimensions:
                 target_column = current_column + assignment_column_number
                 assignment = _parse_xeasy_assignment(
@@ -288,10 +286,10 @@ def parse_peaks(
                 )
                 assignments.append(assignment)
 
-            shift_data = []
-            for assignment, shift in zip(assignments, shifts):
-                shift_data.append(ShiftData(assignment, shift))
-
+            shift_data = [
+                ShiftData(assignment, shift)
+                for assignment, shift in zip(assignments, shifts)
+            ]
             peak = NewPeak(
                 shifts=shift_data,
                 id=serial,
@@ -336,10 +334,10 @@ def _check_volume_is_percentage_or_exit(volume_error, column_number, line_info):
             i got {volume_error} in the file {line_info.file_name} at line {line_info.line_no} the value of the
             line was
 
-            {line_info_iter.line}
+            {line_info.line}
         """
     volume_error = float(volume_error)
-    if not (volume_error <= 100.0 and volume_error >= 0.0):
+    if not (100.0 >= volume_error >= 0.0):
         msg = f"""
             the volume error column (column {column_number}) should be a nunber between 0.0 and 100.0 i got
             {volume_error} in the file {line_info.file_name} at line {line_info.line_no} the value of the line was
@@ -357,7 +355,7 @@ def _check_volume_is_float_or_exit(volume, column_number, line_info):
             the volume column (column {column_number}) should be a floating point number i got {volume}
             in the file {line_info.file_name} at line {line_info.line_no} the value of the line was
 
-            {line_info_iter.line}
+            {line_info.line}
         """
         exit_error(msg)
 
@@ -368,7 +366,7 @@ def _check_shift_is_float_or_exit(shift, column_number, line_info):
                 chemical shift fields should be floating point numbers i got {shift} at column number {column_number}
                 in the file {line_info.file_name} at line {line_info.line_no} the value of the line was
 
-                {line_info_iter.line}
+                {line_info.line}
                     """
         exit_error(msg)
 
@@ -420,7 +418,7 @@ def check_number_dimensions_or_exit(line_info, number_dimensions):
 
 
 def _check_for_peaks_magic_or_exit(line_info):
-    if not line_info.line == (XEASY_PEAK_MAGIC):
+    if line_info.line != XEASY_PEAK_MAGIC:
         msg = f"""
                     an xeasy peak files should start with {XEASY_PEAK_MAGIC} but i got:
 
