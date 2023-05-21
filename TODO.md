@@ -10,7 +10,7 @@ lines marked with '!x' are current priorities
 * Aria - needs dedicated time -soon but not immediate
 * nmrstar -peaks sequence - wait
 * Translator -do '!3'
-* xEasy shifts - not important currently
+
 * Xplor shifts export? - can wait
 * missing frame update bug - important '!4'
 * add pipe functions '!5' - started
@@ -23,5 +23,5 @@ lines marked with '!x' are current priorities
 * renumber chains -  done
 * test hannah's problems - done
 * Fasta export - done
-
+* xEasy shifts - done
 release - done
