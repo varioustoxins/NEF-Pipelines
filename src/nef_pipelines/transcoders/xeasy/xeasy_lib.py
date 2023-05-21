@@ -1,9 +1,8 @@
 import string
 from collections import OrderedDict
-from dataclasses import replace
 from typing import Dict, Iterator, List, Tuple, Union
 
-from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE, Isotope
+from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
 from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.sequence_lib import get_residue_name_from_lookup
 from nef_pipelines.lib.structures import (
@@ -203,7 +202,7 @@ def parse_peaks(
     experiment_type = None
     dimensions = OrderedDict()
 
-    peaks = {}
+    peaks = []
 
     for line_info in line_info_iter(lines, source):
 
@@ -301,23 +300,7 @@ def parse_peaks(
                 comment=comment,
             )
 
-            if peak.id in peaks:
-                peak_to_update = peaks[peak.id]
-                for i, shift in enumerate(peak_to_update.shifts):
-                    if not isinstance(shift.atom, list):
-                        old_atom = shift.atom
-                        new_shift = replace(shift, atom=[old_atom])
-                        peak_to_update.shifts[i] = new_shift
-
-                    peak_to_update.shifts[i].atom.append(peak.shifts[i].atom)
-
-                peak_to_update = replace(
-                    peak_to_update, comment=f"{peak_to_update.comment} | {peak.comment}"
-                )
-                peaks[peak.id] = peak_to_update
-
-            else:
-                peaks[peak.id] = peak
+            peaks.append(peak)
 
     dimension_names = [
         dimensions[dimension_index] for dimension_index in sorted(dimensions)
