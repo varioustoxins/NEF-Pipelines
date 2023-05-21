@@ -63,7 +63,7 @@ def shifts(
         help="input to read NEF data from [- is stdin]",
     ),
     file_names: List[Path] = typer.Argument(
-        ..., help="input files of type nmrview.out", metavar="<NMRVIEW-shifts>.out"
+        ..., help="input files of type shifts.txt", metavar="<SPARKY-shifts>.txt"
     ),
 ):
     """convert sparky shift file <sparky-shifts>.txt to NEF"""
