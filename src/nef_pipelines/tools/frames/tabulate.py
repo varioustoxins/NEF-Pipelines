@@ -54,6 +54,7 @@ ABBREVIATED_HEADINGS = {
     "ccpn_figure_of_merit": "merit",
     "ccpn_annotation": "ann",
     "ccpn_peak_list_serial": "ccpn-serial",
+    "atom-name": "atom",
 }
 
 
