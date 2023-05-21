@@ -86,7 +86,7 @@ def peaks(
     ),
     no_validate: bool = typer.Option(
         False,
-        help="if set don't validate the peaks agains the inpuy sequence if provided",
+        help="if set don't validate the peaks against the input sequence if provided",
     ),
     spectrometer_frequency: float = typer.Option(
         600.123456789, help="spectrometer frequency in MHz"
