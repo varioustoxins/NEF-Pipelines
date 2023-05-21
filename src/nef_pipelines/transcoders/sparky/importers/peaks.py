@@ -92,7 +92,7 @@ def peaks(
         600.123456789, help="spectrometer frequency in MHz"
     ),
 ):
-    """convert sparky peaks file <SPARKY-PEAKS>.txt to NEF [alpha]"""
+    """convert sparky peaks file <SPARKY-PEAKS>.txt to NEF"""
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
