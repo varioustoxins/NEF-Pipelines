@@ -14,9 +14,9 @@ app.command()(peaks)
 
 
 EXPECTED = """
-save_xeasy_basic                                                   # noqa: E501
+save_nef_nmr_spectrum_xeasy_basic                                  # noqa: E501
    _nef_nmr_spectrum.sf_category                nef_nmr_spectrum
-   _nef_nmr_spectrum.sf_framecode               xeasy_basic
+   _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_xeasy_basic
    _nef_nmr_spectrum.num_dimensions             3
    _nef_nmr_spectrum.chemical_shift_list        .
    _nef_nmr_spectrum.experiment_classification  .
@@ -98,6 +98,6 @@ def test_basic():
 
     result = run_and_report(app, [peaks_path], input=data_sequence)
 
-    loop = isolate_frame(result.stdout, "xeasy_basic")
+    loop = isolate_frame(result.stdout, "nef_nmr_spectrum_xeasy_basic")
 
     assert_lines_match(EXPECTED, str(loop))

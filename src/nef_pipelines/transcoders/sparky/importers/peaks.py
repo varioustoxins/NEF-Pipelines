@@ -145,7 +145,7 @@ def peaks(
 
 def pipe(
     entry,
-    frame_name,
+    frame_code_template,
     file_names_and_lines,
     chain_code,
     sequence,
@@ -174,11 +174,13 @@ def pipe(
 
         dimensions = [{"axis_code": dimension} for dimension in dimensions]
 
-        frame = peaks_to_frame(sparky_peaks, dimensions, spectrometer_frequency)
-
         file_name = Path(file_name).stem  # used in f method...
 
-        frame.name = f(frame_name)
+        frame_code = f(frame_code_template)
+
+        frame = peaks_to_frame(
+            sparky_peaks, dimensions, spectrometer_frequency, frame_code=frame_code
+        )
 
         sparky_frames.append(frame)
 

@@ -55,7 +55,9 @@ def test_basic():
 
     result = run_and_report(app, ["--molecule-type", "dna", path], input=data_sequence)
 
-    loop = isolate_loop(result.stdout, "sparky_sparky_manual_basic", "nef_peak")
+    loop = isolate_loop(
+        result.stdout, "nef_nmr_spectrum_sparky_sparky_manual_basic", "nef_peak"
+    )
 
     assert_lines_match(EXPECTED, str(loop))
 
@@ -66,7 +68,9 @@ def test_basic_no_sequence():
 
     result = run_and_report(app, ["--molecule-type", "dna", path])
 
-    loop = isolate_loop(result.stdout, "sparky_sparky_manual_basic", "nef_peak")
+    loop = isolate_loop(
+        result.stdout, "nef_nmr_spectrum_sparky_sparky_manual_basic", "nef_peak"
+    )
 
     assert_lines_match(EXPECTED, str(loop))
 
@@ -82,7 +86,9 @@ def test_basic_no_sequence_requires_sequence():
     result = run_and_report(app, [path], input=sequence)
 
     loop = isolate_loop(
-        result.stdout, "sparky_sparky_manual_full_no_sequence", "nef_peak"
+        result.stdout,
+        "nef_nmr_spectrum_sparky_sparky_manual_full_no_sequence",
+        "nef_peak",
     )
 
     assert_lines_match(EXPECTED, str(loop))
@@ -94,7 +100,9 @@ def test_full():
 
     result = run_and_report(app, ["--molecule-type", "dna", path])
 
-    loop = isolate_loop(result.stdout, "sparky_sparky_manual_full", "nef_peak")
+    loop = isolate_loop(
+        result.stdout, "nef_nmr_spectrum_sparky_sparky_manual_full", "nef_peak"
+    )
 
     assert_lines_match(EXPECTED, str(loop))
 
@@ -137,6 +145,8 @@ def test_full_comment():
 
     result = run_and_report(app, ["--molecule-type", "dna", path])
 
-    loop = isolate_loop(result.stdout, "sparky_sparky_manual_full_comment", "nef_peak")
+    loop = isolate_loop(
+        result.stdout, "nef_nmr_spectrum_sparky_sparky_manual_full_comment", "nef_peak"
+    )
 
     assert_lines_match(EXPECTED_FULL_COMMENT, str(loop))

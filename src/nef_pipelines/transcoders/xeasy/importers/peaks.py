@@ -101,11 +101,13 @@ def pipe(
 
         dimensions = [{"axis_code": dimension.axis_code} for dimension in dimensions]
 
-        frame = peaks_to_frame(peaks, dimensions, spectrometer_frequency)
-
         file_name = Path(file_name).stem  # used in f method...
 
-        frame.name = f(frame_name)
+        frame_name = f(frame_name)
+
+        frame = peaks_to_frame(
+            peaks, dimensions, spectrometer_frequency, frame_code=frame_name
+        )
 
         xeasy_frames.append(frame)
 

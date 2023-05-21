@@ -7,6 +7,7 @@ import typer
 from fyeah import f
 from pynmrstar import Saveframe
 
+from nef_pipelines.lib.nef_frames_lib import SPECTRUM_FRAME_CATEGORY
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
     extract_column,
@@ -298,7 +299,7 @@ HELP_MERIT_FUNCTION = """
 @import_app.command(no_args_is_help=True)
 def peaks(
     frame_name: str = typer.Option(
-        "nef_nmr_spectrum_{file_name}",
+        "{file_name}",
         "-f",
         "--frame-name",
         help="a templated name for the frame {file_name} will be replaced by input filename without its extension",
@@ -401,7 +402,10 @@ def pipe(
         )
 
         file_name = file_name.stem  # used by f()
-        frame = entry.get_saveframe_by_name(f(frame_name_template))
+
+        frame_code = f"{SPECTRUM_FRAME_CATEGORY}_{f(frame_name_template)}"
+
+        frame = entry.get_saveframe_by_name(frame_code)
 
         frame_name = file_name
 
