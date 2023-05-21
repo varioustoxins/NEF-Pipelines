@@ -3,7 +3,7 @@ from collections import OrderedDict
 from dataclasses import replace
 from typing import Dict, Iterator, List, Tuple, Union
 
-from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
+from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE, Isotope
 from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.sequence_lib import get_residue_name_from_lookup
 from nef_pipelines.lib.structures import (
