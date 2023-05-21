@@ -38,7 +38,7 @@ def sequence(
         [], "--no-chain-end", help=NO_CHAIN_END_HELP
     ),
     file_names: List[Path] = typer.Argument(
-        ..., help="the file to read", metavar="<XEASY-SEQUENCE-FILE>"
+        ..., help="the file to read", metavar="<XEASY-SEQUENCE-FILE.seq>"
     ),
 ):
     """- convert xeasy sequences to nef"""
