@@ -156,4 +156,4 @@ fix a bug: make peaks faaled on generating empty peak lists
 ## version 0.1.41
 
 add importers for xeasy [flya dialect] sequences, peaks and shifts
-a  number of gug fixes in the sparky and exhdnia tools
+a  number of bug fixes in the sparky and echidna tools
