@@ -5,11 +5,16 @@ from nef_pipelines.lib.structures import (
     AtomLabel,
     DimensionInfo,
     NewPeak,
+    Residue,
     SequenceResidue,
     ShiftData,
 )
 from nef_pipelines.lib.test_lib import path_in_test_data
-from nef_pipelines.transcoders.xeasy.xeasy_lib import parse_peaks, parse_sequence
+from nef_pipelines.transcoders.xeasy.xeasy_lib import (
+    parse_peaks,
+    parse_sequence,
+    parse_shifts,
+)
 
 EXPECTED_SEQUENCE = [
     SequenceResidue(*residue.split())
@@ -238,3 +243,113 @@ def test_basic_peaks():
     assert dimension_info == EXPECTED_DIMENSIONS
 
     assert peaks == EXPECTED_PEAKS
+
+
+EXPECTED_SHIFTS = [
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="1", residue_name="HIS"),
+            atom_name="N",
+            element=None,
+            isotope_number=None,
+        ),
+        value="112.794",
+        value_uncertainty="0.010",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="1", residue_name="HIS"),
+            atom_name="HE1",
+            element=None,
+            isotope_number=None,
+        ),
+        value="7.955",
+        value_uncertainty="0.010",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="2", residue_name="MET"),
+            atom_name="N",
+            element=None,
+            isotope_number=None,
+        ),
+        value="113.996",
+        value_uncertainty="0.000",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="2", residue_name="MET"),
+            atom_name="QE",
+            element=None,
+            isotope_number=None,
+        ),
+        value="3.778",
+        value_uncertainty="0.010",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="2", residue_name="MET"),
+            atom_name="CE",
+            element=None,
+            isotope_number=None,
+        ),
+        value="27.054",
+        value_uncertainty="0.010",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="3", residue_name="ARG"),
+            atom_name="HD2",
+            element=None,
+            isotope_number=None,
+        ),
+        value="3.133",
+        value_uncertainty="0.000",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="3", residue_name="ARG"),
+            atom_name="HD3",
+            element=None,
+            isotope_number=None,
+        ),
+        value="3.134",
+        value_uncertainty="0.000",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+    ShiftData(
+        atom=AtomLabel(
+            residue=Residue(chain_code="A", sequence_code="3", residue_name="ARG"),
+            atom_name="HE",
+            element=None,
+            isotope_number=None,
+        ),
+        value="4.378",
+        value_uncertainty="0.010",
+        line_width=None,
+        line_width_uncertainty=None,
+    ),
+]
+
+
+def test_basic_shifts():
+
+    shifts = open(path_in_test_data(__file__, "basic_shifts.prot")).readlines()
+
+    lookup = residues_to_residue_name_lookup(EXPECTED_SEQUENCE)
+    shifts = parse_shifts(shifts, source="unknown", residue_lookup=lookup)
+
+    assert shifts == EXPECTED_SHIFTS

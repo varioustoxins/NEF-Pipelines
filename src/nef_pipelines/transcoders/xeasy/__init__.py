@@ -20,3 +20,4 @@ if nef_app.app:
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.xeasy.importers.peaks  # noqa: F401
     import nef_pipelines.transcoders.xeasy.importers.sequence  # noqa: F401
+    import nef_pipelines.transcoders.xeasy.importers.shifts  # noqa: F401

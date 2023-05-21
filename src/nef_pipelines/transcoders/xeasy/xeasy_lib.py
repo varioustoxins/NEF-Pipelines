@@ -10,6 +10,7 @@ from nef_pipelines.lib.structures import (
     DimensionInfo,
     LineInfo,
     NewPeak,
+    Residue,
     SequenceResidue,
     ShiftData,
 )
@@ -314,6 +315,124 @@ def parse_peaks(
     return experiment_type, dimension_info, peaks
 
 
+# 3.4.2 Atom List
+#
+# The atom list contains the names and frequencies of resonances. They define the possible assignments for
+# each dimension of a peak.
+#
+# Table 3.4.2.A - Atom Fields
+#
+# Fields              Description
+#
+# atom number         unique number identifying the atom
+# shift               mean chemical shift in ppm
+# shift error         deviation of the assigned peaks from the mean value
+# name                atom name
+# fragment number     number of the fragment to which the atom belongs
+# lineshapes          data structure containing the reference lineshapes
+#
+#
+# The fields listed in Table 3.4.2.A constitute an atom entry. They can be modified in the peak editing
+# window. The atom numbers, used to reference the atoms, must be unique but not necessarily continuous.
+# The number -9999 is reserved to denote invalid entries. The average chemical shift and the shift error can
+# be calculated from the assigned peaks. The command is "Average chem. shift [ac]".
+#
+# If the chemical shift is not defined it is set to the value 999.000.
+#
+# A new atom list is generated each time when a fragment list is loaded. For each fragment the
+# corresponding atoms are looked up in the fragment library file and added to the list. New atom entries are
+# added to the atom list if a non existing atom is used with the "Assign peak [ap]" command, if the fragment
+# type is changed in the peak editing window, or with the "Add new fragment [af]" command.
+#
+# The atom list file has the extension ".prot" originating from the old EASY format. The following line is
+# taken from such a file:
+#
+# 32   4.370  0.004   HA  2
+#
+# The first number is the atom number, followed by its mean chemical shift and the deviation from the
+# mean value. The atom name and the fragment number follow. The commands to read or write an atom list
+# are "Load atoms (chem. shift) [lc]" and "Write atoms (chem. shift) [wc]".
+
+
+def parse_shifts(
+    lines: Iterator[str], source: str, residue_lookup: Dict[Union[str, int], str]
+):
+    shifts = []
+    for line_no, line in enumerate(lines, start=1):
+
+        line_info = LineInfo(source, line_no, line.strip())
+
+        if len(line_info.line) == 0:
+            continue
+
+        fields = line_info.line.split()
+
+        _check_number_fields_correct_or_exit(fields, line_info)
+
+        column = 1
+        serial = fields[column - 1]
+        _check_serial_is_integer_or_exit(serial, line_info)
+
+        column += 1
+        shift = fields[column - 1]
+        _check_fields_is_float_or_exit(shift, column, line_info)
+
+        column += 1
+        shift_error = fields[column - 1]
+        _check_fields_is_float_or_exit(shift_error, column, line_info)
+
+        column += 1
+        atom_name = fields[column - 1]
+
+        column += 1
+        chain_residue = fields[column - 1]
+        chain_code, sequence_code = strip_characters_right(chain_residue, string.digits)
+
+        residue_name = get_residue_name_from_lookup(
+            chain_code, sequence_code, residue_lookup
+        )
+        _exit_if_no_residue_name_in_sequence(
+            residue_name, chain_code, sequence_code, line_info
+        )
+
+        residue = Residue(chain_code, sequence_code, residue_name)
+        atom = AtomLabel(residue, atom_name)
+
+        shift = ShiftData(atom=atom, value=shift, value_uncertainty=shift_error)
+
+        shifts.append(shift)
+
+    return shifts
+
+
+def _check_fields_is_float_or_exit(value, column, line_info):
+    if not is_float(value):
+        msg = f"""
+                column {column} of {line_info.file_name} at line {line_info.line_no} should be a floating point
+                 number I got {value}, the line was
+
+                {line_info.line}
+            """
+        exit_error(msg)
+
+
+def _check_number_fields_correct_or_exit(fields, line_info):
+
+    num_fields = len(fields)
+    if num_fields != 5:
+        msg = f"""
+                in the file {line_info.file_name} at line {line_info.line_no} I expected 5 fields but got {num_fields}
+                the line was
+
+                {line_info}
+
+                i expected something like
+
+                32 4.370 0.004 HA A2
+            """
+        exit_error(msg)
+
+
 def _exit_if_no_magic_before_data(have_magic, line_info):
     if not have_magic:
         msg = f"""
@@ -374,7 +493,7 @@ def _check_shift_is_float_or_exit(shift, column_number, line_info):
 def _check_serial_is_integer_or_exit(serial, line_info):
     if not is_int(serial):
         msg = f"""
-            the first field of a xeasy peak list should be an integer serial number i got: {serial}
+            the first field of a xeasy peak or shift  list should be an integer serial number i got: {serial}
             in file {line_info.file_name} at line {line_info.line_no}, the line was:
 
             {line_info.line}
