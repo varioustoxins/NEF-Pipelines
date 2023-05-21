@@ -144,73 +144,84 @@ EXPECTED_PEAKS = [
     NewPeak(
         [
             ShiftData(
-                [
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "5",
-                            "THR",
-                        ),
-                        "H",
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "5",
+                        "THR",
                     ),
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "5",
-                            "THR",
-                        ),
-                        "H",
-                    ),
-                ],
+                    "H",
+                ),
                 8.732,
             ),
             ShiftData(
-                [
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "6",
-                            "MET",
-                        ),
-                        "HA2",
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "6",
+                        "MET",
                     ),
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "6",
-                            "MET",
-                        ),
-                        "HA3",
-                    ),
-                ],
+                    "HA2",
+                ),
                 4.192,
             ),
             ShiftData(
-                [
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "7",
-                            "LEU",
-                        ),
-                        "N",
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "7",
+                        "LEU",
                     ),
-                    AtomLabel(
-                        SequenceResidue(
-                            "A",
-                            "7",
-                            "LEU",
-                        ),
-                        "N",
-                    ),
-                ],
+                    "N",
+                ),
                 115.254,
             ),
         ],
         id=3,
         volume=5.5,
         volume_uncertainty=0.0,
-        comment="MAP    404 | MAP    405",
+        comment="MAP    404",
+    ),
+    NewPeak(
+        [
+            ShiftData(
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "5",
+                        "THR",
+                    ),
+                    "H",
+                ),
+                8.732,
+            ),
+            ShiftData(
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "6",
+                        "MET",
+                    ),
+                    "HA3",
+                ),
+                4.192,
+            ),
+            ShiftData(
+                AtomLabel(
+                    SequenceResidue(
+                        "A",
+                        "7",
+                        "LEU",
+                    ),
+                    "N",
+                ),
+                115.254,
+            ),
+        ],
+        id=3,
+        volume=5.5,
+        volume_uncertainty=0.0,
+        comment="MAP    405",
     ),
 ]
 
@@ -219,7 +230,7 @@ def test_basic_peaks():
     peaks = open(path_in_test_data(__file__, "basic.peaks")).readlines()
 
     lookup = residues_to_residue_name_lookup(EXPECTED_SEQUENCE)
-    spectrum_type, dimension_info, isotopes, peaks = parse_peaks(
+    spectrum_type, dimension_info, peaks = parse_peaks(
         peaks, source="unknown", residue_name_lookup=lookup
     )
 
