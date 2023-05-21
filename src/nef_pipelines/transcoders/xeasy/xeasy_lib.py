@@ -197,7 +197,7 @@ def _exit_if_no_residue_name_in_sequence(
 
 def parse_peaks(
     lines: Iterator[str], source: str, residue_name_lookup: Dict[Union[str, int], str]
-) -> List[NewPeak]:
+) -> Tuple[str, List[DimensionInfo], List[NewPeak]]:
     have_magic = False
     number_dimensions = None
     experiment_type = None
@@ -330,7 +330,7 @@ def parse_peaks(
         for axis_code, dimension_name in zip(axis_codes, dimension_names)
     ]
 
-    return experiment_type, dimension_info, tuple(axis_codes), list(peaks.values())
+    return experiment_type, dimension_info, peaks
 
 
 def _exit_if_no_magic_before_data(have_magic, line_info):
