@@ -8,13 +8,13 @@ import_app = typer.Typer()
 
 if nef_app.app:
 
-    nef_app.app.add_typer(app, name="mars", help="- export mars [shifts and sequences]")
+    nef_app.app.add_typer(
+        app, name="mars", help="- read and write mars [shifts and sequences]"
+    )
 
     app.add_typer(
         export_app, name="export", help="- export mars [shifts and sequences]"
     )
-
-    nef_app.app.add_typer(app, name="mars", help="- import mars [shifts]")
 
     app.add_typer(import_app, name="import", help="- import mars [shifts]")
 
