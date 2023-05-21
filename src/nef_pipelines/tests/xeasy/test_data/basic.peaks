@@ -1,0 +1,10 @@
+# Number of dimensions 3
+#FORMAT xeasy3D
+#INAME 1 HN
+#INAME 2 H
+#INAME 3 N
+#SPECTRUM N15TOCSY HN H N
+      1    8.731    8.723  115.265 1 U   5.500000E+00  0.000000E+00 e 0 H.A2     H.A3     N.A4 #MAP    403
+      2    8.731    4.610  115.275 1 U   5.500000E+00  0.000000E+00 e 0 -         -         -
+      3    8.732    4.192  115.254 1 U   5.500000E+00  0.000000E+00 e 0 H.A5     HA2.A6   N.A7 #MAP    404
+      3    8.732    4.192  115.254 1 U   5.500000E+00  0.000000E+00 e 0 H.A5     HA3.A6   N.A7 #MAP    405
