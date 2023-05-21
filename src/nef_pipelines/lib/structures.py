@@ -138,10 +138,9 @@ class LineInfo:
     line: str
 
 
-# TODO: atom should be a list and be atoms
 @dataclass(frozen=True, order=True)
 class ShiftData:
-    atom: Union[AtomLabel, List[AtomLabel]]
+    atom: AtomLabel
     value: float  # TODO: should be position
     value_uncertainty: Optional[float] = None  # TODO: should be position_uncertainty
     line_width: Optional[float] = None  # line width in Hz
@@ -173,8 +172,7 @@ class NewPeak:
 
     shifts: List[
         ShiftData
-    ]  # shifts can have multiple assignments, if there are multiple assignments on one shift
-    # there must be an equal number of matching assignments on all other peaks...
+    ]  # shifts we support this by maving mutiples peaks with the same id
 
     id: Optional[int] = None
     height: Optional[float] = None
