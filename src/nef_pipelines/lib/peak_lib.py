@@ -324,7 +324,7 @@ def peaks_to_frame(
     for index, peak in enumerate(peaks):
         peak_data = {
             INDEX: index,
-            PEAK_ID: index,
+            PEAK_ID: index if peak.id is None else peak.id,
             HEIGHT: peak.height,
             HEIGHT_UNCERTAINTY: peak.height_uncertainty,
             VOLUME: peak.volume,
