@@ -94,7 +94,19 @@ def parse_single_assignment(
     # residue name is separated from the atom name by looking for a residue number followed
     # by one of the letters H, C, N, Q, or M ergo a residue name that starts with one of these
     # must be wrong, and we have split an atom (though we don't actually need this test?)
-    if residue_name != "" and residue_name.lower() in "HCNQM".lower():
+    residue_lower = residue_name.lower()
+    nmr_atoms_lower = "HCNQM".lower()
+    atom_starts_with_nmr_lower = False
+    atom_name_lower = atom_name.lower()
+    len_atom_name = len(atom_name)
+    if len_atom_name > 0 and atom_name_lower[0] in nmr_atoms_lower:
+        atom_starts_with_nmr_lower = True
+
+    if (
+        not atom_starts_with_nmr_lower
+        and residue_name != ""
+        and residue_lower in nmr_atoms_lower
+    ):
         atom_name = f"{residue_name}{residue_number}{atom_name}"
         residue_name = ""
         residue_number = ""

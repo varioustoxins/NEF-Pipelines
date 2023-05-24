@@ -56,6 +56,7 @@ def test_strip_characters_left_all():
         ("G16H8", "G", "16", "H8", "A", "11"),
         ('T17H2"', "T", "17", 'H2"', "A", "11"),
         ("H1'", "A", "11", "H1'", "A", "11"),
+        ("N25CA", "N", "25", "CA", None, None),
     ],
 )
 def test_split_assignment(
