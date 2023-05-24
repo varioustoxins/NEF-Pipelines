@@ -141,6 +141,7 @@ def parse_assignments(
     sequence: List[SequenceResidue],
     molecule_type: MoleculeType,
     line_info: LineInfo,
+    allow_pseudo_atoms=False,
 ) -> List[AtomLabel]:
 
     """
@@ -151,6 +152,7 @@ def parse_assignments(
     :param sequence: the sequence to get residue names from and to check the read residue names agains
     :param molecule_type: the type of the molecule DNA RNS protein etc.
     :param line_info: file and line  information for error reporting
+    :param allow_pseudo_atoms: if true ignore residue names which aren't in the molecule_type
     :return: a list of AtomLabels
     """
 
@@ -181,6 +183,8 @@ def parse_assignments(
 
             if residue_name in residue_name_translations:
                 translated_residue_name = residue_name_translations[residue_name]
+            elif allow_pseudo_atoms:
+                translated_residue_name = residue_name
             else:
                 msg = f"""
                     The residue name {residue_name} is not defined for the molecule type {molecule_type}
