@@ -1,6 +1,8 @@
 import string
+import sys
 from collections import namedtuple
-from typing import List, Tuple
+from itertools import zip_longest
+from typing import Dict, List, Tuple
 
 from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.sequence_lib import (
@@ -8,8 +10,16 @@ from nef_pipelines.lib.sequence_lib import (
     MoleculeType,
     residues_to_residue_name_lookup,
 )
-from nef_pipelines.lib.structures import AtomLabel, LineInfo, Residue, SequenceResidue
-from nef_pipelines.lib.util import exit_error, strip_characters_left
+from nef_pipelines.lib.structures import (
+    AtomLabel,
+    LineInfo,
+    NewPeak,
+    PeakFitMethod,
+    Residue,
+    SequenceResidue,
+    ShiftData,
+)
+from nef_pipelines.lib.util import exit_error, is_float, strip_characters_left
 
 #
 # sparky docs
@@ -236,3 +246,255 @@ def parse_assignments(
         last_residue_name = residue_name
 
     return result
+
+
+def parse_peaks(
+    lines, file_name, molecule_type, chain_code, sequence, allow_pseudo_atoms=False
+):
+
+    peaks = []
+
+    in_data = False
+
+    dimension_count = None
+
+    for line_number, line in enumerate(lines, start=1):
+
+        line = line.strip()
+
+        line_info = LineInfo(file_name, line_number, line)
+
+        if len(line) == 0:
+            continue
+
+        if line.startswith("#"):
+            continue
+
+        if line.strip()[: len("Assignment")] == "Assignment":
+            if in_data:
+                _exit_error_header_in_data(line_info)
+
+            column_headers_to_indices = parse_header_to_columns(line, file_name)
+
+            dimension_count = _count_dimensions(column_headers_to_indices)
+
+            _exit_error_no_dimensions(dimension_count, line_info)
+
+            in_data = True
+
+            continue
+        else:
+            if not in_data:
+                _exit_error_data_but_no_header(line_info)
+
+            fields = line.split()
+
+            column_count = len(fields)
+            if column_count < (dimension_count + 1):
+                _exit_error_not_enough_columns_in_data_row(
+                    dimension_count, column_count, line_info
+                )
+            values = {}
+            for column, index in column_headers_to_indices.items():
+                if index < len(fields):
+                    values[column] = fields[index]
+                else:
+                    values[column] = UNUSED
+
+            assignmnents_column = column_headers_to_indices["Assignment"]
+            raw_assignment = fields[assignmnents_column]
+
+            assignments = parse_assignments(
+                raw_assignment,
+                chain_code,
+                sequence,
+                molecule_type,
+                line_info,
+                allow_pseudo_atoms=allow_pseudo_atoms,
+            )
+
+            shifts = [
+                fields[column_headers_to_indices[f"w{index}"]]
+                for index in range(1, dimension_count + 1)
+            ]
+
+            converted_shifts = []
+            for shift in shifts:
+                shift = float(shift) if is_float(shift) else shift
+                converted_shifts.append(shift)
+
+            _exit_error_if_shift_not_float(shifts, line_info)
+
+            shifts = converted_shifts
+
+            peak_fit_method = None
+            volume = None
+            if "Volume" in column_headers_to_indices:
+
+                volume_index = column_headers_to_indices["Volume"]
+
+                volume = float(fields[volume_index])
+
+                line_fit_index = volume_index + 1
+                if line_fit_index < len(fields):
+                    if fields[line_fit_index] == "ga":
+                        peak_fit_method = PeakFitMethod.GAUSSIAN
+                        fields.remove("ga")
+
+            height = (
+                float(fields[column_headers_to_indices["Height"]])
+                if "Height" in column_headers_to_indices
+                else None
+            )
+
+            comment_fields = []
+            line_widths = []
+            for dimension in range(1, dimension_count + 1):
+                line_width_column = f"lw{dimension}"
+                if line_width_column in column_headers_to_indices:
+                    line_width_column_index = column_headers_to_indices[
+                        line_width_column
+                    ]
+                    if line_width_column_index < len(fields):
+                        possible_line_width = fields[line_width_column_index]
+                        if is_float(possible_line_width):
+                            line_widths.append(float(possible_line_width))
+                        else:
+                            comment_fields.append(possible_line_width)
+                            line_widths.append(None)
+                    else:
+                        line_widths.append(None)
+
+            shift_data = [
+                ShiftData(atom=atom, value=value, line_width=line_width)
+                for atom, value, line_width in zip_longest(
+                    assignments, shifts, line_widths, fillvalue=None
+                )
+            ]
+
+            max_column = max(column_headers_to_indices.values())
+            if len(fields) > max_column:
+                comment_fields = [*comment_fields, *fields[max_column + 1 :]]
+
+            comment = " ".join(comment_fields)
+
+            peak = NewPeak(
+                shifts=shift_data,
+                peak_fit_method=peak_fit_method,
+                height=height,
+                volume=volume,
+                comment=comment,
+            )
+
+            peaks.append(peak)
+
+    return peaks
+
+
+def parse_header_to_columns(header_line: str, file_name) -> Dict[str, int]:
+    headings_to_columns = {}
+    headings = header_line.split()
+
+    if "Data" in headings:
+        headings.remove("Data")
+
+    while ("(hz)") in headings:
+        headings.remove("(hz)")
+
+    for i, heading in enumerate(headings):
+        if heading in "Assignment Height Volume".split():
+            headings_to_columns[heading] = i
+            continue
+
+        if heading.startswith("w") or heading.startswith("lw"):
+            headings_to_columns[heading] = i
+            continue
+
+        # TODO add a warning function in the library
+        msg = f"""
+            WARNING: unexpected heading {heading} in the file {file_name}...
+                     this heading will be ignored, please send the heading and first
+                     few lines of this file to the developers of NEF-Pipelines if you
+                     believe this is a valid sparky peaks file
+        """
+
+        print(msg, file=sys.stderr)
+
+    assignment_column = headings_to_columns["Assignment"]
+    if assignment_column != 0:
+        msg = f"""
+            The file {file_name} doesn't look like a sparky file the Assignment column should be the first column
+            i got {assignment_column}
+            header was
+            {header_line}
+        """
+        exit(msg)
+
+    return headings_to_columns
+
+
+def _exit_error_if_shift_not_float(shifts, line_info):
+    for i, shift in enumerate(shifts, start=1):
+        if not is_float(shift):
+            msg = f"""
+                file {line_info.file_name} does not look like a sparky file
+                for shift w{i} at line {line_info.line_no} with the value {shift} couldn't be converted to a float
+                the full line was:
+                {line_info.line}
+            """
+            exit_error(msg)
+
+
+def _exit_error_data_but_no_header(line_info):
+    msg = f"""
+                    the file {line_info.file_name} doesn't look like a sparky file at line {line_info.line_no}
+                    there appears to be a data line but no header was detected a head should look like
+                    Assignment w1 w2 ... etc
+                    the current line data is
+                    {line_info.line}
+                """
+    exit_error(msg)
+
+
+def _exit_error_not_enough_columns_in_data_row(
+    dimension_count, column_count, line_info
+):
+    msg = f"""
+            In sparky peaks file {line_info.file_name} at line {line_info.line_no}
+            there were was not enough data [expected {1+ dimension_count} columns
+            (Assignment + shifts * {dimension_count})]
+            the line was:
+            {line_info.line}
+        """
+    exit_error(msg)
+
+
+def _exit_error_no_dimensions(dimension_count, line_info):
+    if dimension_count < 1:
+        msg = f"""
+                    sparky peak file {line_info.file_name} doesn't appear to have enough columns [minimum 1]
+                    at line {line_info.line_no}
+                    the header was:
+                    {line_info.line}
+                """
+        exit_error(msg)
+
+
+def _count_dimensions(column_headers_to_indices):
+    dimension_count = 0
+    for name in [f"w{i}" for i in range(1, 20)]:
+        if name in column_headers_to_indices:
+            dimension_count += 1
+        else:
+            break
+    return dimension_count
+
+
+def _exit_error_header_in_data(line_info):
+    msg = f"""
+        bad sparky peak file {line_info.file_name} at line no {line_info.line_number} there appears to be a
+        second header...
+        the line was:
+        {line_info.line}
+                """
+    exit_error(msg)
