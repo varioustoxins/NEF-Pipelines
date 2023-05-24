@@ -74,10 +74,10 @@ from nef_pipelines.lib.util import (
     exit_error,
     is_float,
     is_int,
+    remove_duplicates_stable,
     unused_to_empty_string,
     unused_to_none,
 )
-from nef_pipelines.transcoders.mars.exporters.fragments import remove_duplicates_stable
 
 
 class BadPositionException(Exception):

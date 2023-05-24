@@ -9,7 +9,18 @@ from enum import auto
 from math import floor
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Iterator, List, Optional, TextIO, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TextIO,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import click
 from cacheable_iter import iter_cache
@@ -892,3 +903,32 @@ def strip_line_comment(line: str, comment_character: str = "#") -> Tuple[str, st
         line = line[:index]
 
     return line, comment
+
+
+# https://stackoverflow.com/questions/480214/how-do-i-remove-duplicates-from-a-list-while-preserving-order
+def remove_duplicates_stable(seq: Iterable) -> List:
+
+    """
+    remove  duplicates from a list while preseving its order, so for example
+    [1 2 2 3 45 2 1 6] would yield 1 2 3 4 5 6
+    :param seq: the iteratble to remove duplicates from
+    :return: the original iterable without the duplicates
+
+    TODO: could this be recast as an iterable returning an iterable
+    """
+
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+
+# https://stackoverflow.com/questions/21303224/iterate-over-all-pairs-of-consecutive-items-in-a-list
+def iter_consecutive_pairs(seq: Iterator) -> Iterator[Tuple]:
+    """
+    iterate over consecutive pairs from a list, for example for the list [1, 7, 3, 5]
+    this will yield the items (1,7), (7,3), (3,5)
+    :param seq: the sequence to iterate pairs from
+    :return: an iteration over the consecutive pairs as tuples
+    """
+    for first, second in zip(seq, seq[1:]):
+        yield first, second
