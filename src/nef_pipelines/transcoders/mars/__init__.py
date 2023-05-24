@@ -23,4 +23,5 @@ if nef_app.app:
     import nef_pipelines.transcoders.mars.exporters.input  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.sequence  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.shifts  # noqa: F401
+    import nef_pipelines.transcoders.mars.importers.peaks  # noqa: F401
     import nef_pipelines.transcoders.mars.importers.shifts  # noqa: F401

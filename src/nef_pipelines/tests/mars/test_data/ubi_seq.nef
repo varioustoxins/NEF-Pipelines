@@ -1,0 +1,95 @@
+data_ubi
+
+   save_nef_molecular_system
+
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.index
+         _nef_sequence.chain_code
+         _nef_sequence.sequence_code
+         _nef_sequence.residue_name
+         _nef_sequence.linking
+         _nef_sequence.residue_variant
+         _nef_sequence.cis_peptide
+
+         1   A  1   MET  start   .  .
+         2   A  2   GLN  middle  .  .
+         3   A  3   ILE  middle  .  .
+         4   A  4   PHE  middle  .  .
+         5   A  5   VAL  middle  .  .
+         6   A  6   LYS  middle  .  .
+         7   A  7   THR  middle  .  .
+         8   A  8   LEU  middle  .  .
+         9   A  9   THR  middle  .  .
+         10  A  10  GLY  middle  .  .
+         11  A  11  LYS  middle  .  .
+         12  A  12  THR  middle  .  .
+         13  A  13  ILE  middle  .  .
+         14  A  14  THR  middle  .  .
+         15  A  15  LEU  middle  .  .
+         16  A  16  GLU  middle  .  .
+         17  A  17  VAL  middle  .  .
+         18  A  18  GLU  middle  .  .
+         19  A  19  PRO  middle  .  .
+         20  A  20  SER  middle  .  .
+         21  A  21  ASP  middle  .  .
+         22  A  22  THR  middle  .  .
+         23  A  23  ILE  middle  .  .
+         24  A  24  GLU  middle  .  .
+         25  A  25  ASN  middle  .  .
+         26  A  26  VAL  middle  .  .
+         27  A  27  LYS  middle  .  .
+         28  A  28  ALA  middle  .  .
+         29  A  29  LYS  middle  .  .
+         30  A  30  ILE  middle  .  .
+         31  A  31  GLN  middle  .  .
+         32  A  32  ASP  middle  .  .
+         33  A  33  LYS  middle  .  .
+         34  A  34  GLU  middle  .  .
+         35  A  35  GLY  middle  .  .
+         36  A  36  ILE  middle  .  .
+         37  A  37  PRO  middle  .  .
+         38  A  38  PRO  middle  .  .
+         39  A  39  ASP  middle  .  .
+         40  A  40  GLN  middle  .  .
+         41  A  41  GLN  middle  .  .
+         42  A  42  ARG  middle  .  .
+         43  A  43  LEU  middle  .  .
+         44  A  44  ILE  middle  .  .
+         45  A  45  PHE  middle  .  .
+         46  A  46  ALA  middle  .  .
+         47  A  47  GLY  middle  .  .
+         48  A  48  LYS  middle  .  .
+         49  A  49  GLN  middle  .  .
+         50  A  50  LEU  middle  .  .
+         51  A  51  GLU  middle  .  .
+         52  A  52  ASP  middle  .  .
+         53  A  53  GLY  middle  .  .
+         54  A  54  ARG  middle  .  .
+         55  A  55  THR  middle  .  .
+         56  A  56  LEU  middle  .  .
+         57  A  57  SER  middle  .  .
+         58  A  58  ASP  middle  .  .
+         59  A  59  TYR  middle  .  .
+         60  A  60  ASN  middle  .  .
+         61  A  61  ILE  middle  .  .
+         62  A  62  GLN  middle  .  .
+         63  A  63  LYS  middle  .  .
+         64  A  64  GLU  middle  .  .
+         65  A  65  SER  middle  .  .
+         66  A  66  THR  middle  .  .
+         67  A  67  LEU  middle  .  .
+         68  A  68  HIS  middle  .  .
+         69  A  69  LEU  middle  .  .
+         70  A  70  VAL  middle  .  .
+         71  A  71  LEU  middle  .  .
+         72  A  72  ARG  middle  .  .
+         73  A  73  LEU  middle  .  .
+         74  A  74  ARG  middle  .  .
+         75  A  75  GLY  middle  .  .
+         76  A  76  GLY  end     .  .
+
+      stop_
+   save_
