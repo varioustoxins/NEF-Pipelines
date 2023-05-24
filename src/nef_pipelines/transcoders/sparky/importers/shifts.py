@@ -73,7 +73,7 @@ def shifts(
     if not chain_codes:
         chain_codes = ["A"]
 
-    _exit_if_chain_codes_and_file_name_dont_match(chain_codes, file_names)
+    _exit_if_chain_codes_and_file_names_dont_match(chain_codes, file_names)
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
@@ -82,7 +82,7 @@ def shifts(
     pipe(entry, chain_codes, sequence, frame_name, file_names)
 
 
-def _exit_if_chain_codes_and_file_name_dont_match(chain_codes, file_names):
+def _exit_if_chain_codes_and_file_names_dont_match(chain_codes, file_names):
     if len(chain_codes) != len(file_names):
         msg = f"""\
             the number of chains [{len(chain_codes)}] doesn't match the number of files [{len(file_names)}]

@@ -26,7 +26,7 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.transcoders.sparky import import_app
 from nef_pipelines.transcoders.sparky.importers.shifts import (
-    _exit_if_chain_codes_and_file_name_dont_match,
+    _exit_if_chain_codes_and_file_names_dont_match,
 )
 from nef_pipelines.transcoders.sparky.sparky_lib import parse_assignments
 
@@ -100,7 +100,7 @@ def peaks(
         chain_codes = ["A"]
 
     # make this a library function
-    _exit_if_chain_codes_and_file_name_dont_match(chain_codes, file_names)
+    _exit_if_chain_codes_and_file_names_dont_match(chain_codes, file_names)
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 
