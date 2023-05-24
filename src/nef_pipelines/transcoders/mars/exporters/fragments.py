@@ -26,7 +26,7 @@ app = typer.Typer()
 
 # TODO: name translations
 # TODO: correct weights
-# TODO: move utuilities to lib
+# TODO: move utilities to lib
 # TODO: support multiple chains
 
 REMOVE_DIGITS = str.maketrans("", "", digits)
