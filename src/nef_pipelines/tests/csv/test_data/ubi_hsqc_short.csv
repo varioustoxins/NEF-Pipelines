@@ -1,0 +1,5 @@
+peak_id,chain_code_1,sequence_code_1,residue_name_1,atom_name_2,chain_code_2,sequence_code_2,residue_name_2,atom_name_1,position_2,position_1
+2,A,2,GLN ,H,A,2,GLN ,N,8.90000,123.22000
+3,A,3,ILE ,H,A,3,ILE ,N,8.32000,115.34000
+4,A,4,PHE ,H,A,4,PHE ,N,8.61000,118.11000
+5,A,5,VAL ,H,A,5,VAL ,N,9.30000,121.00000
