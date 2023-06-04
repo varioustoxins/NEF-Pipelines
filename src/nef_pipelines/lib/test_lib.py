@@ -125,7 +125,7 @@ def assert_lines_match(
         lines_reported = [line for line in lines_reported if len(line.strip()) != 0]
 
     zip_lines = zip_longest(lines_expected, lines_reported, fillvalue="")
-    for i, (expected_line, reported_line) in enumerate(zip_lines):
+    for i, (expected_line, reported_line) in enumerate(zip_lines, start=1):
 
         expected_line_stripped = expected_line.strip()
         reported_line_stripped = reported_line.strip()
@@ -136,19 +136,19 @@ def assert_lines_match(
 
         if reported_line_stripped != expected_line_stripped:
 
-            for line in lines_expected:
-                print(f"exp|{line}")
+            for line_no, line in enumerate(lines_expected, start=1):
+                print(f"exp|{line_no}|{line}")
             print()
 
-            for line in lines_reported:
-                print(f"rep|{line}")
+            for line_no, line in enumerate(lines_reported, start=1):
+                print(f"rep|{line_no}|{line}")
             print()
 
             print("line that caused the error:")
             print()
 
-            print(f"exp|{i}|  |{expected_line_stripped}|")
-            print(f"rep|{i}|  |{reported_line_stripped}|")
+            print(f"exp|{i}| {expected_line.strip()}|")
+            print(f"rep|{i}| {reported_line.strip()}|")
 
         assert reported_line_stripped == expected_line_stripped
 
