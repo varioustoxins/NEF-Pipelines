@@ -1,0 +1,157 @@
+data_unassign
+
+
+   save_nef_nmr_meta_data
+
+      _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+      _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+      _nef_nmr_meta_data.format_name      nmr_exchange_format
+      _nef_nmr_meta_data.format_version   1.1
+      _nef_nmr_meta_data.program_name     AnalysisAssign
+      _nef_nmr_meta_data.program_version  3.1.1
+      _nef_nmr_meta_data.creation_date    2023-03-07T19:53:20.040790
+      _nef_nmr_meta_data.uuid             AnalysisAssign-2023-03-07T19:53:20.040790-985977877
+      _nef_nmr_meta_data.coordinate_file_name  .
+
+      loop_
+         _nef_program_script.program_name
+         _nef_program_script.script_name
+         _nef_program_script.script
+
+         CcpNmr  exportProject  .
+      stop_
+   save_
+
+
+   save_nef_molecular_system
+
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.index
+         _nef_sequence.chain_code
+         _nef_sequence.sequence_code
+         _nef_sequence.residue_name
+         _nef_sequence.linking
+         _nef_sequence.residue_variant
+         _nef_sequence.cis_peptide
+         _nef_sequence.ccpn_comment
+         _nef_sequence.ccpn_chain_role
+         _nef_sequence.ccpn_compound_name
+         _nef_sequence.ccpn_chain_comment
+
+         1   A  1   MET  start   .  .  .  .  mySubstance  .
+         2   A  2   ILE  middle  .  .  .  .  mySubstance  .
+         3   A  3   ALA  middle  .  .  .  .  mySubstance  .
+         4   A  4   LYS  end     .  .  .  .  mySubstance  .
+      stop_
+   save_
+
+
+   save_nef_chemical_shift_list_default
+
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
+      _nef_chemical_shift_list.ccpn_serial   1
+      _nef_chemical_shift_list.ccpn_auto_update  true
+      _nef_chemical_shift_list.ccpn_is_simulated  false
+      _nef_chemical_shift_list.ccpn_comment  ''
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.value_uncertainty
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+
+         '#2 '  @1    .    C     174.078751  .               C  13
+         '#2 '  @1    .    H       8.507345  0.0031493880    H   1
+         '#2 '  @1-1  .    C     175.947447  0.08720577414   C  13
+         '#2 '  @1-1  .    CA     56.689055  0.0499432144    C  13
+         '#1'   @2    .    C      17.078751  .               C  13
+         '#1'   @2    .    H      18.507345  0.0031493880    H   1
+         '#1'   @2    .    N      23.365410  0.1052522259    N  15
+         '#1'   @2-1  .    C      75.947447  0.08720577414   C  13
+         '#1'   @2-1  .    CA      6.689055  0.0499432144    C  13
+         '#1'   @2-1  .    CB      1.543048  0.1003766534    C  13
+         A      2     Ile  C       7.090786  .               C  13
+         A      2     Ile  N      12.714456  0.1199761464    N  15
+         A      2-1   Ile  C      78.121295  0.3397487528    C  13
+         A      2-1   Ile  CB      6.570846  0.0514681685    C  13
+         A      3     Ala  H      88.111256  0.0019229051    H   1
+         A      3     Ala  N     112.453575  0.0925289285    N  15
+         A      3-1   Ala  C     167.261980  0.0133395288    C  13
+         A      3-1   Ala  CB    116.427729  0.1141368283    C  13
+      stop_
+   save_
+
+    save_nef_nmr_spectrum_simnoe
+       _nef_nmr_spectrum.sf_category          nef_nmr_spectrum
+       _nef_nmr_spectrum.sf_framecode         nef_nmr_spectrum_simnoe
+       _nef_nmr_spectrum.num_dimensions       3
+       _nef_nmr_spectrum.chemical_shift_list  .
+
+       loop_
+          _nef_spectrum_dimension.dimension_id
+          _nef_spectrum_dimension.axis_unit
+          _nef_spectrum_dimension.axis_code
+          _nef_spectrum_dimension.spectrometer_frequency
+          _nef_spectrum_dimension.spectral_width
+          _nef_spectrum_dimension.value_first_point
+          _nef_spectrum_dimension.folding
+          _nef_spectrum_dimension.absolute_peak_positions
+          _nef_spectrum_dimension.is_acquisition
+
+         1   ppm   1H    800.133   11.0113   .   circular   true   .
+         2   ppm   1H    800.133   11.0600   .   circular   true   .
+         3   ppm   15N   81.076    81.8927   .   circular   true   .
+
+       stop_
+
+       loop_
+          _nef_spectrum_dimension_transfer.dimension_1
+          _nef_spectrum_dimension_transfer.dimension_2
+          _nef_spectrum_dimension_transfer.transfer_type
+
+
+       stop_
+
+       loop_
+          _nef_peak.index
+          _nef_peak.peak_id
+          _nef_peak.volume
+          _nef_peak.volume_uncertainty
+          _nef_peak.height
+          _nef_peak.height_uncertainty
+          _nef_peak.position_1
+          _nef_peak.position_uncertainty_1
+          _nef_peak.position_2
+          _nef_peak.position_uncertainty_2
+          _nef_peak.position_3
+          _nef_peak.position_uncertainty_3
+          _nef_peak.chain_code_1
+          _nef_peak.sequence_code_1
+          _nef_peak.residue_name_1
+          _nef_peak.atom_name_1
+          _nef_peak.chain_code_2
+          _nef_peak.sequence_code_2
+          _nef_peak.residue_name_2
+          _nef_peak.atom_name_2
+          _nef_peak.chain_code_3
+          _nef_peak.sequence_code_3
+          _nef_peak.residue_name_3
+          _nef_peak.atom_name_3
+
+         1   0   0.38    .   0.38    .   10.405   .   8.796   .   132.49   .   A   1   ala   HE1   A   3   ala   HN   A   1   ala   N
+         2   1   1.298   .   1.298   .   10.408   .   7.139   .   132.49   .   .   .   .     .     .   .   .     .    .   .   .     .
+         3   3   0.319   .   0.319   .   10.408   .   5.542   .   132.49   .   A   2   ala   HE1   A   3   ala   HA   .   .   .     .
+
+       stop_
+
+    save_
+
+# End of data_unassign

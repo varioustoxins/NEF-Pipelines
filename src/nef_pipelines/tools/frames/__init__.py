@@ -19,3 +19,4 @@ if nef_app.app:
     import nef_pipelines.tools.frames.list  # noqa: F401
     import nef_pipelines.tools.frames.rename  # noqa: F401
     import nef_pipelines.tools.frames.tabulate  # noqa: F401
+    import nef_pipelines.tools.frames.unassign  # noqa: F401
