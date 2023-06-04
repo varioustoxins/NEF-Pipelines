@@ -157,3 +157,9 @@ fix a bug: make peaks faaled on generating empty peak lists
 
 add importers for xeasy [flya dialect] sequences, peaks and shifts
 a  number of bug fixes in the sparky and echidna tools
+
+## version 0.1.42
+
+add the ability to unassign frames in general with support for different sequence_code
+unassignment strategies and the ability to choose what is unassigned (chain_code, sequence_code
+residue_name atom_name)
