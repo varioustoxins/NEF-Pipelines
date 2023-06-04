@@ -4,7 +4,7 @@ from dataclasses import replace
 from enum import auto
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
@@ -21,6 +21,7 @@ from nef_pipelines.lib.util import (
     get_display_file_name,
     is_int,
     read_from_file_or_exit,
+    strip_characters_right,
 )
 
 
@@ -702,3 +703,73 @@ def sequence_to_residue_type_lookup(
     for residue in sequence:
         result[residue.chain_code, residue.sequence_code] = residue.residue_name
     return result
+
+
+def atom_sort_key(item: AtomLabel) -> Tuple[Any, ...]:
+    """
+
+    key based sorter for atom labels that enables them to be sorted in a sensible order including sequence codes
+    which are not numeric...
+
+    :param item: an atom label
+    :return: a tuple baed on the atom label which gives the correct sort order
+    """
+
+    try:
+        items = []
+        residue = item.residue
+        chain_code = residue.chain_code.strip()
+        prefix, numbers = strip_characters_right(chain_code, string.digits)
+
+        if numbers == "":
+            numbers = 0, ""
+        if is_int(numbers):
+            numbers = int(numbers), ""
+        else:
+            numbers = 0, numbers
+
+        if UNUSED in prefix:
+            order = 2
+        elif "@" in prefix or "#" in prefix:
+            order = 1
+        else:
+            order = 0
+
+        items.append([order, prefix, *numbers])
+
+        sequence_code = str(residue.sequence_code).strip()
+        prefix, numbers = strip_characters_right(sequence_code, (string.digits + "+-"))
+
+        if is_int(numbers):
+            numbers = [int(numbers), "", 0]
+        elif "+" in numbers or "-" in numbers:
+            for splitter in "+-":
+                if splitter in numbers:
+                    numbers = numbers.rsplit(splitter, maxsplit=1)
+                    numbers = [numbers[0], splitter, numbers[1]]
+                    break
+            if is_int(numbers[0]) and is_int(numbers[-1]):
+                numbers[0] = int(numbers[0])
+                numbers[-1] = int(numbers[-1])
+        else:
+            numbers = [0, numbers, 0]
+
+        if UNUSED in prefix:
+            order = 2
+        elif "@" in prefix or "#" in prefix:
+            order = 1
+        else:
+            order = 0
+
+        items.append([order, prefix, *numbers])
+
+        items.append(residue.residue_name.lower())
+        items.append(item.atom_name.lower())
+    except Exception as e:
+        msg = f"""
+            I can't sort {item} because it doesn't seem to be behaving like an AtomLabel...
+            [{e}]
+        """
+        raise ValueError(msg)
+
+    return items
