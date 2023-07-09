@@ -22,6 +22,7 @@ from pyparsing import (
     ZeroOrMore,
     alphanums,
     nums,
+    rest_of_line,
 )
 from pyparsing.common import pyparsing_common as ppc
 
@@ -133,6 +134,8 @@ WEIGHT = "weight"
 TARGET_VALUE = "target_value"
 LOWER_LIMIT = "lower_limit"
 UPPER_LIMIT = "upper_limit"
+EXTRA_INFO =  'extra_info'
+CCPN_COMMENT = 'ccpn_comment'
 
 DISTANCE_RESTRAINT_TAGS = [
     INDEX,
@@ -334,6 +337,7 @@ _distance_restraint = Group(
     + ppc.number.set_results_name(DISTANCE).setParseAction(ppc.convertToFloat)
     + ppc.number.set_results_name(DISTANCE_MINUS).setParseAction(ppc.convertToFloat)
     + ppc.number.set_results_name(DISTANCE_PLUS).setParseAction(ppc.convertToFloat)
+    + rest_of_line.set_results_name(EXTRA_INFO)
 )
 
 _distance_restraints = OneOrMore(_distance_restraint)
@@ -465,8 +469,17 @@ def distance_restraints_to_nef(
     """
     loop = Loop.from_scratch(category="nef_distance_restraint")
 
+    have_comments = False
+    for restraint in restraints:
+        if restraint.comment is not None:
+            have_comments = True
+            break
+
     for tag in DISTANCE_RESTRAINT_TAGS:
         loop.add_tag(tag)
+
+    if have_comments:
+        loop.add_tag(CCPN_COMMENT)
 
     for i, restraint in enumerate(restraints, start=1):
         selection_1 = restraint.atom_list_1[0]
@@ -474,7 +487,11 @@ def distance_restraints_to_nef(
         d = restraint.target_distance
         d_minus = restraint.distance_minus
         d_plus = restraint.distance_plus
-
+        comment = (
+            restraint.comment
+            if restraint.comment is not None or restraint.comment != ""
+            else UNUSED
+        )
         row = {
             INDEX: i,
             RESTRAINT_ID: i,
@@ -487,9 +504,12 @@ def distance_restraints_to_nef(
             ATOM_2: selection_2.atom_name,
             WEIGHT: 1.0,
             TARGET_VALUE: round(d, DEFAULT_PRECISION),
-            LOWER_LIMIT: round(d - d_minus, DEFAULT_PRECISION),
-            UPPER_LIMIT: round(d + d_plus, DEFAULT_PRECISION),
+            LOWER_LIMIT: round(d_minus, DEFAULT_PRECISION),
+            UPPER_LIMIT: round(d_plus, DEFAULT_PRECISION),
         }
+
+        if have_comments:
+            row[CCPN_COMMENT] = comment
 
         loop.add_data([row])
 
@@ -579,7 +599,8 @@ def _get_approximate_restraint_strings(text: str) -> List[str]:
 
     new_lines = "\n".join(new_lines)
 
-    restraints = new_lines.split(ASSIGN)
+
+    restraints = list(_expand_literal(ASSIGN).split(new_lines))
 
     if restraints[0] == "":
         restraints = restraints[1:]
@@ -769,6 +790,9 @@ def parse_distance_restraints(
         target_distance = restraint.get(DISTANCE)
         distance_minus = restraint.get(DISTANCE_MINUS)
         distance_plus = restraint.get(DISTANCE_PLUS)
+        comment = restraint.get(EXTRA_INFO).strip()
+        if comment == "":
+            comment = None
 
         atom_selections = [[atom_selection] for atom_selection in atom_selections]
         restraint = DistanceRestraint(
@@ -776,6 +800,7 @@ def parse_distance_restraints(
             target_distance=target_distance,
             distance_minus=target_distance - distance_minus,
             distance_plus=target_distance + distance_plus,
+            comment=comment,
         )
 
         restraints.append(restraint)
