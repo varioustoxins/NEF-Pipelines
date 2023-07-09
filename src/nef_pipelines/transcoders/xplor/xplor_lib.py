@@ -70,8 +70,8 @@ from nef_pipelines.lib.util import (
 LEFT_PARENTHESIS = "("
 RIGHT_PARENTHESIS = ")"
 
-SINGLE_QUOTE= "'"
-DOUBLE_QUOTE='"'
+SINGLE_QUOTE = "'"
+DOUBLE_QUOTE = '"'
 
 ASSIGN = "assign"
 NEF_DIHEDRAL_RESTRAINT = "nef_dihedral_restraint"
@@ -137,8 +137,8 @@ WEIGHT = "weight"
 TARGET_VALUE = "target_value"
 LOWER_LIMIT = "lower_limit"
 UPPER_LIMIT = "upper_limit"
-EXTRA_INFO =  'extra_info'
-CCPN_COMMENT = 'ccpn_comment'
+EXTRA_INFO = "extra_info"
+CCPN_COMMENT = "ccpn_comment"
 
 DISTANCE_RESTRAINT_TAGS = [
     INDEX,
@@ -282,9 +282,9 @@ _residue_factor.set_parse_action(_named_resid)
 
 # atom factor
 _atom_literal = Suppress(CaselessLiteral(ATOM_NAME_LITERAL))
-_atom_label = Word(alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE).set_results_name(
-    ATOM, list_all_matches=True
-)
+_atom_label = Word(
+    alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE
+).set_results_name(ATOM, list_all_matches=True)
 _atom_factor = (_atom_literal + _atom_label)(ATOM_FACTOR)
 
 _named_atom = partial(_as_named_single_token, ATOM)
@@ -414,7 +414,9 @@ def _get_single_atom_selection(
         else:
             valid = False
             residue_type = None
-            invalid_reason = f"the residue type for chain code: {chain_code} sequence code {sequence_code} is not known"
+            # TODO print out sequence...
+            invalid_reason = f"""the residue type for chain code: {chain_code} sequence code {sequence_code} is not
+                                 known, check this residue is present in you input sequence!"""
 
     if valid:
         residue = SequenceResidue(chain_code, sequence_code, residue_type)
@@ -422,7 +424,7 @@ def _get_single_atom_selection(
 
     if not valid:
         raise XPLORParseException(
-            f"Couldn't get a single restraint from {parsed} because {invalid_reason}"
+            f"Couldn't get a single restraint from {parsed} \n because {invalid_reason}"
         )
 
     return result
@@ -450,13 +452,16 @@ def read_distance_restraints_or_exit_error(
 
     file_path_display_name = get_display_file_name(file_path)
 
-    restraints = parse_distance_restraints(
-        restraint_text,
-        residue_name_lookup,
-        file_path_display_name,
-        chain_code,
-        use_chains,
-    )
+    try:
+        restraints = parse_distance_restraints(
+            restraint_text,
+            residue_name_lookup,
+            file_path_display_name,
+            chain_code,
+            use_chains,
+        )
+    except XPLORParseException as e:
+        exit_error("there was an error", e)
 
     return restraints
 
@@ -601,7 +606,6 @@ def _get_approximate_restraint_strings(text: str) -> List[str]:
             new_lines.append(line)
 
     new_lines = "\n".join(new_lines)
-
 
     restraints = list(_expand_literal(ASSIGN).split(new_lines))
 
