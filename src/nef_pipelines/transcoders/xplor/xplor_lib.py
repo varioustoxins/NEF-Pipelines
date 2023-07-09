@@ -70,6 +70,9 @@ from nef_pipelines.lib.util import (
 LEFT_PARENTHESIS = "("
 RIGHT_PARENTHESIS = ")"
 
+SINGLE_QUOTE= "'"
+DOUBLE_QUOTE='"'
+
 ASSIGN = "assign"
 NEF_DIHEDRAL_RESTRAINT = "nef_dihedral_restraint"
 XPLOR_COMMENT_TOKEN = "!"
@@ -279,7 +282,7 @@ _residue_factor.set_parse_action(_named_resid)
 
 # atom factor
 _atom_literal = Suppress(CaselessLiteral(ATOM_NAME_LITERAL))
-_atom_label = Word(alphanums + ATOM_WILDCARDS).set_results_name(
+_atom_label = Word(alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE).set_results_name(
     ATOM, list_all_matches=True
 )
 _atom_factor = (_atom_literal + _atom_label)(ATOM_FACTOR)
