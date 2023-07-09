@@ -52,6 +52,8 @@ class DistanceRestraint:
     distance_minus: float
     distance_plus: float
 
+    comment: str = None
+
 
 @dataclass
 class DihedralRestraint:
