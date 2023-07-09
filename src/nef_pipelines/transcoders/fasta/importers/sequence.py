@@ -7,6 +7,8 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from ordered_set import OrderedSet
 
 from nef_pipelines.lib.sequence_lib import (
+    MoleculeType,
+    MoleculeTypes,
     chain_code_iter,
     offset_chain_residues,
     sequence_3let_to_res,
@@ -60,6 +62,13 @@ def sequence(
         metavar="|PIPE|",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
+    molecule_types: List[MoleculeType] = typer.Option(
+        [
+            MoleculeType.PROTEIN,
+        ],
+        "--molecule-type",
+        help="molecule type",
+    ),
     file_names: List[Path] = typer.Argument(
         ..., help="the file to read", metavar="<FASTA-FILE>"
     ),
@@ -82,12 +91,19 @@ def sequence(
     if not starts:
         starts = [1]
 
+    molecule_types = parse_comma_separated_options(molecule_types)
+    if not molecule_types:
+        molecule_types = [
+            MoleculeType.PROTEIN,
+        ]
+
     args = get_args()
 
     args.chain_codes = chain_codes
     args.no_chain_starts = no_chain_starts
     args.no_chain_ends = no_chain_ends
     args.starts = starts
+    args.molecule_types = molecule_types
 
     process_sequences(args)
 
@@ -98,7 +114,9 @@ def process_sequences(args):
     chain_code_iterator = chain_code_iter(args.chain_codes)
     fasta_sequences = OrderedSet()
     for file_path in args.file_names:
-        fasta_sequences.update(read_sequences(file_path, chain_code_iterator))
+        fasta_sequences.update(
+            read_sequences(file_path, chain_code_iterator, args.molecule_types)
+        )
 
     read_chain_codes = residues_to_chain_codes(fasta_sequences)
 
@@ -137,7 +155,9 @@ def residues_to_chain_codes(residues: List[SequenceResidue]) -> List[str]:
 
 # could do with taking a list of offsets
 # noinspection PyUnusedLocal
-def read_sequences(path: Path, chain_codes: Iterable[str]) -> List[SequenceResidue]:
+def read_sequences(
+    path: Path, chain_codes: Iterable[str], molecule_types: List[MoleculeType]
+) -> List[SequenceResidue]:
 
     residues = OrderedSet()
     try:
@@ -155,11 +175,12 @@ def read_sequences(path: Path, chain_codes: Iterable[str]) -> List[SequenceResid
 
             chain_codes = list(islice(chain_codes, number_sequences))
 
-            for (meta_data, sequence), chain_code in zip_longest(
-                sequences, chain_codes
+            for (meta_data, sequence), chain_code, molecule_type in zip_longest(
+                sequences, chain_codes, molecule_types, fillvalue=None
             ):
-
-                sequence_3_let = translate_1_to_3(sequence)
+                if molecule_type is None:
+                    molecule_type = MoleculeTypes.PROTEIN
+                sequence_3_let = translate_1_to_3(sequence, molecule_type=molecule_type)
                 chain_residues = sequence_3let_to_res(sequence_3_let, chain_code)
 
                 residues.update(chain_residues)
