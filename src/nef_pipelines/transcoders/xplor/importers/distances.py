@@ -1,20 +1,20 @@
-from argparse import Namespace
 from itertools import zip_longest
 from pathlib import Path
 from typing import List
 
 import typer
 
-from nef_pipelines.lib.nef_lib import file_name_path_to_frame_name
+from nef_pipelines.lib.nef_lib import (
+    add_frames_to_entry,
+    file_name_path_to_frame_name,
+    read_entry_from_file_or_stdin_or_exit_error,
+)
 from nef_pipelines.lib.sequence_lib import (
     ANY_CHAIN,
-    get_sequence_or_exit,
     residues_to_residue_name_lookup,
+    sequence_from_entry_or_exit,
 )
-from nef_pipelines.lib.util import (
-    parse_comma_separated_options,
-    process_stream_and_add_frames,
-)
+from nef_pipelines.lib.util import parse_comma_separated_options
 from nef_pipelines.transcoders.xplor import import_app
 from nef_pipelines.transcoders.xplor.xplor_lib import (
     _exit_if_chains_and_filenames_dont_match,
@@ -52,9 +52,11 @@ def distances(
 ):
     """- read xplor distance restraints [note: currently limited to 'single' atom selections]"""
 
-    chains = parse_comma_separated_options(chains)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    sequence = get_sequence_or_exit(input)
+    sequence = sequence_from_entry_or_exit(entry)
+
+    chains = parse_comma_separated_options(chains)
 
     residue_name_lookup = residues_to_residue_name_lookup(sequence)
 
@@ -76,8 +78,6 @@ def distances(
     ):
         nef_restraints = distance_restraints_to_nef(restraint_list, frame_name)
 
-    entry = process_stream_and_add_frames(
-        [nef_restraints], Namespace(pipe=None, entry_name="xplor_distance_restraints")
-    )
+    entry = add_frames_to_entry(entry, [nef_restraints])
 
     print(entry)
