@@ -521,11 +521,12 @@ def distance_restraints_to_nef(
 
         loop.add_data([row])
 
-    save_frame_name = f"nef_distance_restraint_list_{frame_name}"
+    NEF_DISTANCE_RESTAINT_LIST = "nef_distance_restraint_list"
+    save_frame_name = f"{NEF_DISTANCE_RESTAINT_LIST}_{frame_name}"
 
-    save_frame = Saveframe.from_scratch(save_frame_name, "nef_distance_restraint")
+    save_frame = Saveframe.from_scratch(save_frame_name, NEF_DISTANCE_RESTAINT_LIST)
 
-    save_frame.add_tag("sf_category", "nef_distance_restraint_list")
+    save_frame.add_tag("sf_category", NEF_DISTANCE_RESTAINT_LIST)
     save_frame.add_tag("sf_framecode", save_frame_name)
     save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
 
