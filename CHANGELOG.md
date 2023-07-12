@@ -167,3 +167,6 @@ residue_name atom_name)
 ## version 0.1.43
 fasta input tool can read RNA/DNA sequences
 improvemenets to the xplor distance restraint reader to suppport CNS
+
+## version 0.1.44
+correct error in naming frames in restraint lists produced by xplor import distance
