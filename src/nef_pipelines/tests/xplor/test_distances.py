@@ -25,9 +25,9 @@ def test_2_distances():
 
     EXPECTED = """\
         save_nef_distance_restraint_list_test_2_distances                               # noqa: E501
-            _nef_distance_restraint.sf_category     nef_distance_restraint_list
-            _nef_distance_restraint.sf_framecode    nef_distance_restraint_list_test_2_distances
-            _nef_distance_restraint.potential_type  undefined
+            _nef_distance_restraint_list.sf_category     nef_distance_restraint_list
+            _nef_distance_restraint_list.sf_framecode    nef_distance_restraint_list_test_2_distances
+            _nef_distance_restraint_list.potential_type  undefined
 
             loop_
                 _nef_distance_restraint.index
@@ -45,8 +45,8 @@ def test_2_distances():
                 _nef_distance_restraint.target_value
                 _nef_distance_restraint.lower_limit
                 _nef_distance_restraint.upper_limit
-                1   1   .   AAAA   1   .   HN   AAAA   2   .   HDA#   1.0   2.6   2.0   8.2
-                2   2   .   AAAA   2   .   HN   AAAA   3   .   HD1#   1.0   4.5   3.0   10.7
+                1   1   .   AAAA   1   .   HN   AAAA   2   .   HDA#   1.0   2.6   0.6   5.6
+                2   2   .   AAAA   2   .   HN   AAAA   3   .   HD1#   1.0   4.5   1.5   6.2
 
            stop_
         save_
@@ -85,9 +85,9 @@ def test_2_dihstances_no_segids():
 
     EXPECTED = """\
         save_nef_distance_restraint_list_test_2_distances_no_segids                               # noqa: E501
-            _nef_distance_restraint.sf_category     nef_distance_restraint_list
-            _nef_distance_restraint.sf_framecode    nef_distance_restraint_list_test_2_distances_no_segids
-            _nef_distance_restraint.potential_type  undefined
+            _nef_distance_restraint_list.sf_category     nef_distance_restraint_list
+            _nef_distance_restraint_list.sf_framecode    nef_distance_restraint_list_test_2_distances_no_segids
+            _nef_distance_restraint_list.potential_type  undefined
 
             loop_
                 _nef_distance_restraint.index
@@ -105,8 +105,8 @@ def test_2_dihstances_no_segids():
                 _nef_distance_restraint.target_value
                 _nef_distance_restraint.lower_limit
                 _nef_distance_restraint.upper_limit
-                1   1   .   AAAA   1   .   HN   AAAA   2   .   HDA#   1.0   2.6   2.0   8.2
-                2   2   .   AAAA   2   .   HN   AAAA   3   .   HD1#   1.0   4.5   3.0   10.7
+                1   1   .   AAAA   1   .   HN   AAAA   2   .   HDA#   1.0   2.6   0.6   5.6
+                2   2   .   AAAA   2   .   HN   AAAA   3   .   HD1#   1.0   4.5   1.5   6.2
 
            stop_
         save_
@@ -132,9 +132,9 @@ def test_2_distances_overriding_segids():
 
     EXPECTED = """\
         save_nef_distance_restraint_list_test_2_distances                               # noqa: E501
-            _nef_distance_restraint.sf_category     nef_distance_restraint_list
-            _nef_distance_restraint.sf_framecode    nef_distance_restraint_list_test_2_distances
-            _nef_distance_restraint.potential_type  undefined
+            _nef_distance_restraint_list.sf_category     nef_distance_restraint_list
+            _nef_distance_restraint_list.sf_framecode    nef_distance_restraint_list_test_2_distances
+            _nef_distance_restraint_list.potential_type  undefined
 
             loop_
                 _nef_distance_restraint.index
@@ -152,8 +152,8 @@ def test_2_distances_overriding_segids():
                 _nef_distance_restraint.target_value
                 _nef_distance_restraint.lower_limit
                 _nef_distance_restraint.upper_limit
-                1   1   .   BBBB   1   .   HN   BBBB   2   .   HDA#   1.0   2.6   2.0   8.2
-                2   2   .   BBBB   2   .   HN   BBBB   3   .   HD1#   1.0   4.5   3.0   10.7
+                1   1   .   BBBB   1   .   HN   BBBB   2   .   HDA#   1.0   2.6   0.6   5.6
+                2   2   .   BBBB   2   .   HN   BBBB   3   .   HD1#   1.0   4.5   1.5   6.2
 
            stop_
         save_

@@ -241,6 +241,7 @@ def test_read_multiple_noe_restraints():
         3.6,
         3.0,
         2.4,
+        "",
     ]
     assert result[1].as_list() == [
         [
@@ -260,6 +261,7 @@ def test_read_multiple_noe_restraints():
         4.0,
         3.3,
         2.7,
+        "",
     ]
 
 
