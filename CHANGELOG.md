@@ -163,3 +163,7 @@ a  number of bug fixes in the sparky and echidna tools
 add the ability to unassign frames in general with support for different sequence_code
 unassignment strategies and the ability to choose what is unassigned (chain_code, sequence_code
 residue_name atom_name)
+
+## version 0.1.43
+fasta input tool can read RNA/DNA sequences
+improvemenets to the xplor distance restraint reader to suppport CNS
