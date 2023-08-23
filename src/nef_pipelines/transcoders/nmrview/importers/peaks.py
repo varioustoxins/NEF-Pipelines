@@ -19,10 +19,14 @@ from typing import Dict, List, Tuple
 
 import typer
 from ordered_set import OrderedSet
-from pynmrstar import Entry, Loop, Saveframe
+from pynmrstar import Loop, Saveframe
 
 from nef_pipelines.lib import constants
 from nef_pipelines.lib.constants import NEF_UNKNOWN
+from nef_pipelines.lib.sequence_lib import (
+    get_residue_name_from_lookup,
+    get_sequence_or_exit,
+)
 from nef_pipelines.lib.structures import (
     AtomLabel,
     PeakAxis,
@@ -32,15 +36,10 @@ from nef_pipelines.lib.structures import (
     SequenceResidue,
 )
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import (
-    exit_error,
-    get_pipe_file,
-    process_stream_and_add_frames,
-)
+from nef_pipelines.lib.util import STDIN, exit_error, process_stream_and_add_frames
 from nef_pipelines.transcoders.nmrview import import_app
 
 from ..nmrview_lib import parse_float_list, parse_tcl
-from .sequence import read_sequence
 
 app = typer.Typer()
 
@@ -57,8 +56,8 @@ def peaks(
     chain_code: str = typer.Option(
         "A", "--chain", help="chain code", metavar="<chain-code>"
     ),
-    sequence: str = typer.Option(
-        None,
+    sequence: Path = typer.Option(
+        STDIN,
         "-s",
         "--sequence",
         metavar="<nmrview>.seq)",
@@ -78,21 +77,22 @@ def peaks(
     """convert nmrview peak file <nmrview>.xpk files to NEF"""
     args = get_args()
 
-    raw_sequence = _get_sequence_or_exit(args)
-    sequence = _sequence_to_residue_type_lookup(raw_sequence)
+    raw_sequence = get_sequence_or_exit(sequence)
+
+    sequence_lookup = _sequence_to_residue_type_lookup(raw_sequence)
 
     frames = [
-        read_xpk_file(args, sequence),
+        read_xpk_file(args, sequence_lookup),
     ]
 
     entry = process_stream_and_add_frames(frames, args)
     print(entry)
 
 
-def read_xpk_file(args, sequence, entry_name=None):
+def read_xpk_file(args, sequence_lookup, entry_name=None):
 
     with open(args.file_names[0], "r") as lines:
-        peaks_list = read_raw_peaks(lines, args.chain_code, sequence)
+        peaks_list = read_raw_peaks(lines, args.chain_code, sequence_lookup)
 
     if not entry_name:
         entry_name = make_peak_list_entry_name(peaks_list)
@@ -100,7 +100,7 @@ def read_xpk_file(args, sequence, entry_name=None):
     return create_spectrum_frame(args, entry_name, peaks_list)
 
 
-def read_raw_peaks(lines, chain_code, sequence):
+def read_raw_peaks(lines, chain_code, sequence_lookup):
 
     header = get_header_or_exit(lines)
 
@@ -108,12 +108,14 @@ def read_raw_peaks(lines, chain_code, sequence):
 
     column_indices = read_peak_columns(lines, header_data)
 
-    raw_peaks = read_peak_data(lines, header_data, column_indices, chain_code, sequence)
+    raw_peaks = read_peak_data(
+        lines, header_data, column_indices, chain_code, sequence_lookup
+    )
 
     return PeakList(header_data, raw_peaks)
 
 
-def read_peak_data(lines, header_data, column_indices, chain_code, sequence):
+def read_peak_data(lines, header_data, column_indices, chain_code, sequence_lookup):
     raw_peaks = []
     field = None
     axis_index = None
@@ -128,7 +130,7 @@ def read_peak_data(lines, header_data, column_indices, chain_code, sequence):
 
             for axis_index, axis in enumerate(header_data.axis_labels):
                 axis_values = read_axis_for_peak(
-                    line, axis, column_indices, chain_code, sequence
+                    line, axis, column_indices, chain_code, sequence_lookup
                 )
 
                 peak[axis_index] = PeakAxis(*axis_values)
@@ -240,7 +242,7 @@ def get_header_or_exit(lines):
     return headers
 
 
-def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence):
+def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence_lookup):
     axis_values = []
     for axis_field in list("LPWBEJU"):
         header = f"{axis}.{axis_field}"
@@ -257,9 +259,16 @@ def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence):
                 residue_number = int(residue_number)
 
             if residue_number:
-                residue_type = sequence.setdefault((chain_code, residue_number), None)
+                residue_type = get_residue_name_from_lookup(
+                    chain_code, residue_number, sequence_lookup
+                )
             else:
-                residue_type = ""
+                residue_type = NEF_UNKNOWN
+
+            if residue_type is None:
+                exit_error(
+                    f"residue type not defined for chain: {chain_code} and residue number: {residue_number}"
+                )
 
             if residue_number:
                 atom = AtomLabel(
@@ -342,27 +351,6 @@ def sequence_from_frames(frames: Saveframe):
                 residues.append(residue)
 
     return list(residues)
-
-
-def _get_sequence_or_exit(args):
-    sequence_file = None
-    if "sequence" in args:
-        sequence_file = args.sequence
-
-    if not sequence_file:
-        try:
-            stream = get_pipe_file(args)
-            entry = Entry.from_file(stream)
-            frames = entry.get_saveframes_by_category("nef_molecular_system")
-            sequence = sequence_from_frames(frames)
-
-        except Exception as e:
-            exit_error(f"failed to read sequence from input stream because {e}", e)
-
-    else:
-        with open(sequence_file, "r") as lines:
-            sequence = read_sequence(lines, chain_code=args.chain_code)
-    return sequence
 
 
 def create_spectrum_frame(args, entry_name, peaks_list):
