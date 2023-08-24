@@ -55,9 +55,9 @@ save_nef_nmr_spectrum_simnoe
       _nef_peak.residue_name_3
       _nef_peak.atom_name_3
 
-     1   0   0.38    .   0.38    .   10.405   .   8.796   .   132.49   .   A   1   ala   HE1   A   3   ala   HN   .   .   .   .
+     1   0   0.38    .   0.38    .   10.405   .   8.796   .   132.49   .   A   1   ALA   HE1   A   3   ALA   HN   .   .   .   .
      2   1   1.298   .   1.298   .   10.408   .   7.139   .   132.49   .   .   .   .     .     .   .   .     .    .   .   .   .
-     4   3   0.319   .   0.319   .   10.408   .   5.542   .   132.49   .   A   2   ala   HE1   A   3   ala   HA   .   .   .   .
+     4   3   0.319   .   0.319   .   10.408   .   5.542   .   132.49   .   A   2   ALA   HE1   A   3   ALA   HA   .   .   .   .
 
    stop_
 

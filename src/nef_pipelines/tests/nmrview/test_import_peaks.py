@@ -17,12 +17,12 @@ EXPECTED_4AA = open(path_in_test_data(__file__, "nmrview_expected_4aa.txt")).rea
 
 
 # noinspection PyUnusedLocal
-def test_3peaks(clear_cache):
+def test_4_peaks(clear_cache):
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-    sequence_path = path_in_test_data(__file__, "4peaks.seq")
+    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
 
-    args = ["--sequence", sequence_path, "--axis", "1H.1H.15N", peaks_path]
-    result = run_and_report(app, args)
+    args = ["--axis", "1H.1H.15N", peaks_path]
+    result = run_and_report(app, args, input=sequence_stream)
 
     result = isolate_frame(result.stdout, "nef_nmr_spectrum_simnoe")
 
@@ -33,15 +33,14 @@ def test_3peaks_bad_axis_codes(clear_cache):
     # reading stdin doesn't work in pytest so for a clean header
     # TODO move to conftest.py
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-    sequence_path = path_in_test_data(__file__, "4peaks.seq")
+    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
+
     args = [
-        "--sequence",
-        sequence_path,
         "--axis",
         "1H,15N",
         peaks_path,
     ]
-    result = run_and_report(app, args, expected_exit_code=1)
+    result = run_and_report(app, args, expected_exit_code=1, input=sequence_stream)
 
     EXPECTED = [
         "can't find isotope code for axis 2 got axis codes 1H,15N",
@@ -103,7 +102,7 @@ EXPECTED_JOE_CLIC = """\
             _nef_peak.residue_name_2
             _nef_peak.atom_name_2
 
-            1   0   0.254054695368   .   0.0368   .   8.15968   .   126.97411   .   A   2   ala   H   A   2   ala   N
+            1   0   0.254054695368   .   0.0368   .   8.15968   .   126.97411   .   A   2   ALA   H   A   2   ALA   N
 
         stop_
 
@@ -114,16 +113,14 @@ EXPECTED_JOE_CLIC = """\
 # noinspection PyUnusedLocal
 def test_joe_bad_sweep_widths():
     peaks_path = path_in_test_data(__file__, "joe_clic.xpk")
-    sequence_path = path_in_test_data(__file__, "4peaks.seq")
+    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
 
     command = [
-        "--sequence",
-        sequence_path,
         "--axis",
         "1H.1H.15N",
         peaks_path,
     ]
-    result = run_and_report(app, command)
+    result = run_and_report(app, command, input=sequence_stream)
 
     result = isolate_frame(result.stdout, "nef_nmr_spectrum_trosyrdcjoe")
 
