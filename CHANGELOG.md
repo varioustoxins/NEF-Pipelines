@@ -170,3 +170,6 @@ improvemenets to the xplor distance restraint reader to suppport CNS
 
 ## version 0.1.44
 correct error in naming frames in restraint lists produced by xplor import distance
+
+## version 0.1.45
+removed bug in reading input streams in nmrview peak reader and updated tests
