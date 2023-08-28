@@ -96,6 +96,7 @@ def main():
             "nef_pipelines.transcoders.rpf",
             "nef_pipelines.transcoders.shifty",
             "nef_pipelines.transcoders.sparky",
+            "nef_pipelines.transcoders.talos",
             "nef_pipelines.transcoders.xcamshift",
             "nef_pipelines.transcoders.xeasy",
             "nef_pipelines.transcoders.xplor",

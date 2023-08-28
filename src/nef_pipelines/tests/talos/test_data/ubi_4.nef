@@ -1,0 +1,89 @@
+data_nmrpipe
+
+save_nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+   _nef_nmr_meta_data.format_name      nmr_exchange_format
+   _nef_nmr_meta_data.format_version   1.1
+   _nef_nmr_meta_data.program_name     NEFPipelines
+   _nef_nmr_meta_data.script_name      nmrpipe/import/shifts.py
+   _nef_nmr_meta_data.program_version  0.1.45
+   _nef_nmr_meta_data.creation_date    2023-08-27T12:11:33.808424
+   _nef_nmr_meta_data.uuid             NEFPipelines-2023-08-27T12:11:33.930553-9145925061
+   _nef_nmr_meta_data.creation_time    2023-08-27T12:11:33.930553
+
+   loop_
+      _nef_run_history.run_number
+      _nef_run_history.program_name
+      _nef_run_history.program_version
+      _nef_run_history.script_name
+
+     1   NEFPipelines   0.1.45   nmrpipe/import/sequence.py
+
+   stop_
+
+save_
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1    A   1    MET   start    .   .
+     2    A   2    GLN   middle   .   .
+     3    A   3    ILE   middle   .   .
+     4    A   4    PHE   end      .   .
+
+
+   stop_
+
+save_
+
+save_nef_chemical_shift_list_nmrpipe
+   _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_nmrpipe
+
+   loop_
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+      _nef_chemical_shift.value_uncertainty
+      _nef_chemical_shift.element
+      _nef_chemical_shift.isotope_number
+
+     A   1    MET   CB    33.27    .   .   .
+     A   1    MET   CA    54.45    .   .   .
+     A   1    MET   C     170.54   .   .   .
+     A   1    MET   HA    4.23     .   .   .
+     A   2    GLN   HN    8.9      .   .   .
+     A   2    GLN   CA    55.08    .   .   .
+     A   2    GLN   CB    30.76    .   .   .
+     A   2    GLN   C     175.92   .   .   .
+     A   2    GLN   HA    5.249    .   .   .
+     A   2    GLN   N     123.22   .   .   .
+     A   3    ILE   HA    4.213    .   .   .
+     A   3    ILE   C     172.45   .   .   .
+     A   3    ILE   CA    59.57    .   .   .
+     A   3    ILE   N     115.34   .   .   .
+     A   3    ILE   HN    8.32     .   .   .
+     A   3    ILE   CB    42.21    .   .   .
+     A   4    PHE   HA    5.63     .   .   .
+     A   4    PHE   C     175.32   .   .   .
+     A   4    PHE   CB    41.48    .   .   .
+     A   4    PHE   CA    55.21    .   .   .
+     A   4    PHE   N     118.11   .   .   .
+     A   4    PHE   HN    8.61     .   .   .
+
+   stop_
+
+save_
