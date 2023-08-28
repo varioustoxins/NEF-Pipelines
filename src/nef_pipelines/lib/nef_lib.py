@@ -134,6 +134,24 @@ POTENTIAL_TYPES_LOWER = ", ".join(
 #     return loop
 
 
+def get_frame_id(frame: Saveframe) -> str:
+    """
+    given a frame get its id (the characters after the category and a separating _ charctacter)
+    :param frame: the frame to get the name of
+    :return: the id of the frame
+    """
+    return frame.name[len(frame.category) + 1 :]
+
+
+def get_frame_ids(frames: List[Saveframe]) -> List[str]:
+    """
+    given a list of frames get theirs id (the characters after the category and a separating _ charctacter)
+    :param frames: a list of frames
+    :return: a list of ids in the same order
+    """
+    return list([get_frame_id(frame) for frame in frames])
+
+
 def select_frames_by_name(
     frames: Union[List[Saveframe], Entry],
     name_selectors: Union[List[str], str],
