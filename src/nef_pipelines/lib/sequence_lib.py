@@ -616,11 +616,11 @@ def make_chunked_sequence_1let(
     :return: a list of formatted strings one per line
     """
 
-    rows = chunks(sequence_1_let, 100)
+    rows = chunks(sequence_1_let, line_length)
 
     row_strings = []
     for row in rows:
-        row_chunks = list(chunks(row, 10))
+        row_chunks = list(chunks(row, sub_chunk))
         row_string = ["".join(chunk) for chunk in row_chunks]
         row_strings.append(" ".join(row_string))
 
