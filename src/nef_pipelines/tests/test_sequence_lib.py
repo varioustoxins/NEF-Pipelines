@@ -255,11 +255,11 @@ def test_sequence_from_frame():
     EXPECTED = [
         SequenceResidue(
             chain_code="B",
-            sequence_code="5",
+            sequence_code=5,
             residue_name="ARG",
         ),
-        SequenceResidue(chain_code="B", sequence_code="6", residue_name="GLN"),
-        SequenceResidue(chain_code="C", sequence_code="7", residue_name="PRO"),
+        SequenceResidue(chain_code="B", sequence_code=6, residue_name="GLN"),
+        SequenceResidue(chain_code="C", sequence_code=7, residue_name="PRO"),
     ]
 
     assert sequence == EXPECTED
@@ -273,11 +273,11 @@ def test_sequence_from_frame_all():
     sequence = sequence_from_frame(frames[0])
 
     EXPECTED = [
-        SequenceResidue(chain_code="A", sequence_code="3", residue_name="HIS"),
-        SequenceResidue(chain_code="A", sequence_code="4", residue_name="MET"),
-        SequenceResidue(chain_code="B", sequence_code="5", residue_name="ARG"),
-        SequenceResidue(chain_code="B", sequence_code="6", residue_name="GLN"),
-        SequenceResidue(chain_code="C", sequence_code="7", residue_name="PRO"),
+        SequenceResidue(chain_code="A", sequence_code=3, residue_name="HIS"),
+        SequenceResidue(chain_code="A", sequence_code=4, residue_name="MET"),
+        SequenceResidue(chain_code="B", sequence_code=5, residue_name="ARG"),
+        SequenceResidue(chain_code="B", sequence_code=6, residue_name="GLN"),
+        SequenceResidue(chain_code="C", sequence_code=7, residue_name="PRO"),
     ]
 
     assert sequence == EXPECTED
