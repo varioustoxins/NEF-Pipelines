@@ -554,7 +554,7 @@ def dihedral_restraints_to_nef(
         selection_2 = restraint.atom_2
         selection_3 = restraint.atom_3
         selection_4 = restraint.atom_4
-        target = restraint.target_angle
+        target = restraint.target_value
         lower_limit = restraint.lower_limit
         upper_limit = restraint.upper_limit
 
@@ -721,7 +721,7 @@ def parse_dihedral_restraints(
 
         restraint = DihedralRestraint(
             *atom_selections,
-            target_angle=target_angle,
+            target_value=target_angle,
             lower_limit=lower_limit,
             upper_limit=upper_limit,
         )
