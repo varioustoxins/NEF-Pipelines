@@ -726,15 +726,18 @@ class DataBeforeFormat(BadNmrPipeFile):
     pass
 
 
-def print_pipe_sequence(sequence_1_let: List[str]) -> str:
+def format_pipe_sequence(sequence_1_let: List[str]) -> str:
 
     """
     convert a set of 1 letter amino acid codes to an nmr pipe DATA SEQUENCE record
-    :param sequence_1_let:  1 letter aino acid codes as a list of  strings
-    :return: nmrpipe data sequence string nicely formatted
+    :param sequence_1_let:  1 letter amino acid codes as a list of strings
+    :return: nmrpipe data sequence string nicely formatted as a list of data record strings
     """
 
     row_strings = make_chunked_sequence_1let(sequence_1_let)
 
+    result = []
     for row_string in row_strings:
-        print(f"DATA SEQUENCE {row_string}")
+        result.append(f"DATA SEQUENCE {row_string}")
+
+    return result
