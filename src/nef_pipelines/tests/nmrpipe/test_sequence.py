@@ -123,7 +123,7 @@ def test_pipe_header(fixed_seed):
 
     path = path_in_test_data(__file__, "3aa.tab")
     path_header = path_in_test_data(__file__, "test_header_entry.txt")
-    result = run_and_report(app, ["--pipe", path_header, path])
+    result = run_and_report(app, ["--input", path_header, path])
 
     assert result.exit_code == 0
 
