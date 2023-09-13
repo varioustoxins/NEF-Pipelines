@@ -1,8 +1,8 @@
 from nef_pipelines.lib.test_lib import assert_lines_match
-from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import print_pipe_sequence
+from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import format_pipe_sequence
 
 
-def test_print_pipe_sequence(capsys):
+def test_format_pipe_sequence():
     TEST_DATA = ["A"] * 110
 
     BLOCK = "AAAAAAAAAA"
@@ -11,6 +11,7 @@ def test_print_pipe_sequence(capsys):
         DATA SEQUENCE {BLOCK}
     """
 
-    print_pipe_sequence(TEST_DATA)
+    lines = format_pipe_sequence(TEST_DATA)
+    result = "\n".join(lines)
 
-    assert_lines_match(capsys.readouterr().out, EXPECTED)
+    assert_lines_match(result, EXPECTED)
