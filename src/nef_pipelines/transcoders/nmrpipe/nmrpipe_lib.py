@@ -388,6 +388,23 @@ def gdb_to_3let_sequence(
     return translate_1_to_3(sequence_string, molecule_type=molecule_type)
 
 
+def gdb_to_chain_start(gdb_file: DbFile) -> int:
+    """
+    Find a first resid record in a GbdFile and return it or return 1
+    :param gdb_file: a GBD file
+    :return: a chain start
+    """
+
+    chain_start_records = select_data_records(gdb_file, "FIRST_RESID")
+
+    if len(chain_start_records) == 0:
+        chain_start = 1
+    else:
+        chain_start = int(chain_start_records[-1].values[1])
+
+    return chain_start
+
+
 def _assignments_to_atom_labels(assignments, dimensions, chain_code="A"):
     result = []
 
