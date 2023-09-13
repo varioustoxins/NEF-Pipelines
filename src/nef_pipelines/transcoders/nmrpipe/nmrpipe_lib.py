@@ -354,6 +354,17 @@ def select_records(
     return result
 
 
+def select_data_records(gdb: DbFile, type: str) -> List[DbRecord]:
+    """
+    Select data records from the db file that have the specific type
+
+    :param gdb:  a parsed GBD files
+    :param type: the type of data record to select
+    :return: a list of matching DbRecords
+    """
+    return select_records(gdb, "DATA", predicate=lambda rec: rec.values[0] == type)
+
+
 def gdb_to_3let_sequence(
     gdb: DbFile, molecule_type: MoleculeTypes = MoleculeTypes.PROTEIN
 ) -> List[SequenceResidue]:
@@ -367,9 +378,7 @@ def gdb_to_3let_sequence(
     Returns List[SequenceResidue]:
         a list of sequence residues
     """
-    sequence_records = select_records(
-        gdb, "DATA", predicate=lambda rec: rec.values[0] == "SEQUENCE"
-    )
+    sequence_records = select_data_records(gdb, "SEQUENCE")
 
     sequence = [record.values[1:] for record in sequence_records]
 
