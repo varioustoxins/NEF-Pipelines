@@ -11,11 +11,27 @@ class Linking(StrEnum):
     END = auto()
 
 
+class SequenceResidue:
+    ...
+
+
+class Residue:
+    ...
+
+
 @dataclass(frozen=True, order=True)
 class Residue:
     chain_code: str
     sequence_code: Union[int, str]
     residue_name: str
+
+    @staticmethod
+    def from_sequence_residue(sequence_residue: SequenceResidue) -> Residue:
+        return Residue(
+            sequence_residue.chain_code,
+            sequence_residue.sequence_code,
+            sequence_residue.residue_name,
+        )
 
 
 @dataclass(frozen=True, order=True)
