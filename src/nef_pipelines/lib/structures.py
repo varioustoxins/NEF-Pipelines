@@ -78,9 +78,15 @@ class DihedralRestraint:
     atom_3: AtomLabel
     atom_4: AtomLabel
 
-    target_angle: float
-    lower_limit: float
-    upper_limit: float
+    merit: float = None
+    name: str = None
+    remark: str = None
+
+    target_value: float = None  # use one or the  of target_value and error
+    target_value_error: float = None
+
+    lower_limit: float = None  # or upper and lower limits
+    upper_limit: float = None
 
 
 @dataclass
