@@ -12,6 +12,8 @@ from tabulate import tabulate
 from nef_pipelines.lib.sequence_lib import (
     MoleculeTypes,
     make_chunked_sequence_1let,
+    offset_chain_residues,
+    sequence_3let_to_sequence_residues,
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import (
@@ -403,6 +405,30 @@ def gdb_to_chain_start(gdb_file: DbFile) -> int:
         chain_start = int(chain_start_records[-1].values[1])
 
     return chain_start
+
+
+def gdb_to_sequence(gdb_file: DbFile, chain_code: str) -> List[SequenceResidue]:
+
+    """
+    Read the sequence from a GDB file, note if a FIRST_RESID record is found the sequence
+    is offset correctly...
+    :param gdb_file:  a GDB file
+    :param chain_code: the chain code to give the sequence
+    :return: a List of sequence residues
+    """
+    chain_start = gdb_to_chain_start(gdb_file)
+
+    sequence_3let = gdb_to_3let_sequence(gdb_file)
+
+    sequence_residues = sequence_3let_to_sequence_residues(
+        sequence_3let, chain_code=chain_code
+    )
+
+    sequence_residues = offset_chain_residues(
+        sequence_residues, {chain_code: chain_start - 1}
+    )
+
+    return sequence_residues
 
 
 def _assignments_to_atom_labels(assignments, dimensions, chain_code="A"):
