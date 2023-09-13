@@ -503,6 +503,9 @@ def sequence_from_frame(
         chain_code = line[chain_code_index]
         if chain_codes_to_select is ANY_CHAIN or chain_code in chain_codes_to_select:
             sequence_code = line[sequence_code_index]
+            sequence_code = (
+                int(sequence_code) if is_int(sequence_code) else sequence_code
+            )
             residue_name = line[residue_name_index]
             linking = (
                 Linking[line[linking_index].upper()]
