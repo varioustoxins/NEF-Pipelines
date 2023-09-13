@@ -1,0 +1,45 @@
+REMARK TALOS-N Protein Backbone Torsion Angle Prediction Table
+REMARK  Prediction Summary for Chemical Shift Input ubiq.tab
+REMARK
+REMARK  PHI is the predicted torsion angle C(i-1) N(i)  CA(i) C(i)   (degrees).
+REMARK  PSI is the predicted torsion angle N(i)   CA(i) C(i)  N(i+1) (degrees).
+REMARK
+REMARK  DPHI and DPSI are the estimated standard deviations of the
+REMARK  prediction errors in PHI and PSI (degrees).
+REMARK
+REMARK  DIST is the TALOS-N database matching score.
+REMARK
+REMARK  S2 is the Wishart RCI chemical shift order parameter,
+REMARK  JACS, 127(43), 14970-14971.
+REMARK
+REMARK  COUNT is the number of database triplets used to form
+REMARK  the torsion angle predictions.
+REMARK
+REMARK  CLASS is the classification of the prediction result:
+REMARK    None: no torsion prediction was made.
+REMARK
+REMARK    Strong/Generous: majority consensus in database matches;
+REMARK    prediction is likely to be good.
+REMARK
+REMARK    Warn: no consensus in database matches, do not use prediction.
+REMARK
+REMARK    Dyn:  RCI-S2 value indicates that residue has dynamic conformation.
+REMARK
+REMARK Reference:
+REMARK  Y. Shen, and A. Bax:
+REMARK  Protein backbone and sidechain torsion angles predicted from
+REMARK  NMR chemical shifts using artificial neural networks
+REMARK  J. Biomol. NMR, 56, 227-241(2013).
+REMARK
+REMARK  TALOS-N Version 4.12 Rev 2023.083.11.36 TALOSN_INFO
+
+DATA FIRST_RESID 1
+DATA SEQUENCE MQIFV
+
+VARS   RESID RESNAME PHI PSI DPHI DPSI DIST S2 COUNT CS_COUNT CLASS
+FORMAT %4d %s %8.3f %8.3f %8.3f %8.3f %8.3f %5.3f %2d %2d %s
+
+   1 M 9999.000 9999.000    0.000    0.000    0.000 0.000  0 10 None
+   2 Q -101.524  139.087   15.070   15.435    0.809 0.892 25 16 Dyn
+   3 I -145.993  159.239   11.455    9.155    0.452 0.903 25 18 Strong
+   4 F -118.216  137.017    7.883    9.702    0.352 0.911 25 18 Generous
