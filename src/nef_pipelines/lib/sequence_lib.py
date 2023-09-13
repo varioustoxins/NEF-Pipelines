@@ -607,6 +607,30 @@ def offset_chain_residues(
     return result
 
 
+def sequence_3let_list_from_sequence(
+    sequence: List[SequenceResidue], count: int = 10, chain_code="A"
+) -> List[str]:
+    """
+    convert a list of Residues to a set of lines containing space separated residue names
+    [default 10] per line
+
+    :param sequence: a sequence
+    :param count: number of residues names to display per line
+    :return: a list of lines as strings
+    """
+
+    residue_names = [
+        residue.residue_name for residue in sequence if residue.chain_code == chain_code
+    ]
+    rows = chunks(residue_names, count)
+
+    row_strings = []
+    for row in rows:
+        row_strings.append(" ".join(row))
+
+    return row_strings
+
+
 def make_chunked_sequence_1let(
     sequence_1_let: List[str], sub_chunk: int = 10, line_length: int = 100
 ) -> List[str]:
