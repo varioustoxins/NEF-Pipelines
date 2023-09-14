@@ -176,3 +176,7 @@ removed bug in reading input streams in nmrview peak reader and updated tests
 
 ## version 0.1.46
 initial support for talos [export of shifts]
+
+## version 0.1.47
+
+support for reading talos PHI PSI restraints into NEF
