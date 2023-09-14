@@ -54,7 +54,8 @@ CLASS_TO_MERIT = {"none": 0.0, "strong": 1.0, "generous": 0.6, "warn": 0.3, "dyn
 CLASS_HELP = ",".join([f"{class_},{merit}" for class_, merit in CLASS_TO_MERIT.items()])
 MERIT_HELP = f"""
 a comma separated list of merit pairs of class (one of Dyn, Strong, Generous Warn or None) and value (a floating point
-number) e.g dyn,0.0,strong,7.0 [default is {CLASS_HELP}] values can also be added by mutiple calls to the option
+number) e.g dyn,0.0,strong,7.0 [default is {CLASS_HELP}] multiple values can also be added by multiple uses of the
+option
 """
 
 
