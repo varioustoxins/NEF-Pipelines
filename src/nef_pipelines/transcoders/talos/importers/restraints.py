@@ -5,12 +5,14 @@
 # TODO: support unassigned
 
 import sys
+from enum import auto
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
 from fyeah import f
 from pynmrstar import Loop, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
@@ -28,7 +30,12 @@ from nef_pipelines.lib.sequence_lib import (
     sequence_from_entry,
     sequence_to_chains,
 )
-from nef_pipelines.lib.structures import AtomLabel, DihedralRestraint, Residue
+from nef_pipelines.lib.structures import (
+    AtomLabel,
+    DihedralRestraint,
+    Residue,
+    SequenceResidue,
+)
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
@@ -37,6 +44,7 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     VALUES,
+    DbFile,
     DbRecord,
     gdb_to_3let_sequence,
     get_column_indices,
@@ -49,7 +57,7 @@ from nef_pipelines.transcoders.talos import import_app
 
 app = typer.Typer()
 
-CLASS_TO_MERIT = {"none": 0.0, "strong": 1.0, "generous": 0.6, "warn": 0.3, "dyn": 0.0}
+CLASS_TO_MERIT = {"None": 0.0, "Strong": 1.0, "Generous": 0.6, "Warn": 0.3, "Dyn": 0.0}
 
 CLASS_HELP = ",".join([f"{class_},{merit}" for class_, merit in CLASS_TO_MERIT.items()])
 MERIT_HELP = f"""
@@ -76,7 +84,7 @@ def restraints(
         help="input to read NEF data from [- is stdin]",
     ),
     frame_name: str = typer.Option(
-        "talos_restraints::chain_{chain_code}",
+        "talos_restraints::{chain_code}_{angle}",
         "-f",
         "--frame",
         help="name for the frame that will be created default is talos_restraints_<CHAIN-CODE>",
@@ -89,8 +97,6 @@ def restraints(
     class_to_merit = _parse_merits_and_merge(merits)
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
-
-    frame_name = f(frame_name)
 
     lines = read_file_or_exit(file_name)
 
@@ -175,7 +181,7 @@ DIHEDRAL_RESTRAINT_TAGS = """index restraint_id restraint_combination_id name
                                 ccpn_comment np_merit""".split()
 
 
-def _dihedral_restraints_to_frame(dihedral_restraints, frame_code, file_name):
+def _dihedral_restraints_to_frame(dihedral_restraints, frame_code, comment):
 
     frame_code = f"{DIHEDRAL_FRAME_CATEGORY}_{frame_code}"
 
@@ -183,7 +189,7 @@ def _dihedral_restraints_to_frame(dihedral_restraints, frame_code, file_name):
     frame.add_tag("sf_category", DIHEDRAL_FRAME_CATEGORY)
     frame.add_tag("sf_framecode", frame_code)
     frame.add_tag("potential_type", "square-well-parabolic")
-    frame.add_tag("ccpn_comment", f"file: {file_name}")
+    frame.add_tag("ccpn_comment", comment)
 
     loop = Loop.from_scratch("nef_dihedral_restraint")
 
@@ -229,6 +235,34 @@ def _dihedral_restraints_to_frame(dihedral_restraints, frame_code, file_name):
     return frame
 
 
+def _get_source_file(gdb_records: DbFile):
+    def predicate(x):
+        return "Prediction Summary for Chemical Shift Input" in x.values
+
+    records = select_records(gdb_records, "REMARK", predicate)
+
+    file = "unknown"
+
+    if len(records) == 1:
+        file = records[0].values.split()[-1]
+
+    return file
+
+
+def _get_talos_version(gdb_records: DbFile):
+    def predicate(x):
+        return "Version" in x.values and "INFO" in x.values
+
+    records = select_records(gdb_records, "REMARK", predicate)
+
+    version = "unknown"
+
+    if len(records) == 1:
+        version = " ".join(records[0].values.split()[3:-1])
+
+    return version
+
+
 def pipe(entry, lines, file_name, chain_code, frame_name, class_to_merit=None):
 
     class_to_merit = CLASS_TO_MERIT if class_to_merit is None else class_to_merit
@@ -239,25 +273,30 @@ def pipe(entry, lines, file_name, chain_code, frame_name, class_to_merit=None):
 
     gdb_records = read_db_file_records(lines)
 
-    talos_restraints, talos_sequence = _read_dihedral_restraints(
+    talos_restraints, talos_sequence, angle = _read_dihedral_restraints(
         gdb_records,
         chain_code=chain_code,
         file_name=file_name,
         class_to_merit=class_to_merit,
+        nef_sequence=nef_sequence,
     )
+
+    frame_name = f(frame_name)
 
     if chain_code in nef_chain_codes:
         _check_sequences_match_or_exit(chain_code, nef_sequence, talos_sequence)
     else:
-        args = " ".join(sys.argv[1:])
-        msg = f"""
-            There is no sequence defined for the chain {chain_code}, please import a sequence! You may want to do
-            nef talos import sequence {file_name} | nef {args}
-        """
-        exit_error(msg)
+        _exit_error_no_chain_code(chain_code, file_name)
+
+    source_file = _get_source_file(gdb_records)
+    talos_version = _get_talos_version(gdb_records)
+
+    comment = (
+        f"file: {file_name}, source file: {source_file}, talos version: {talos_version}"
+    )
 
     dihedral_restraint_frame = _dihedral_restraints_to_frame(
-        talos_restraints, frame_name, file_name
+        talos_restraints, frame_name, comment
     )
 
     add_frames_to_entry(
@@ -268,6 +307,15 @@ def pipe(entry, lines, file_name, chain_code, frame_name, class_to_merit=None):
     )
 
     return entry
+
+
+def _exit_error_no_chain_code(chain_code, file_name):
+    args = " ".join(sys.argv[1:])
+    msg = f"""
+            There is no sequence defined for the chain {chain_code}, please import a sequence! You may want to do
+            nef talos import sequence {file_name} | nef {args}
+        """
+    exit_error(msg)
 
 
 def _check_sequences_match_or_exit(chain_code, nef_sequence, talos_sequence):
@@ -313,7 +361,24 @@ def _check_sequences_match_or_exit(chain_code, nef_sequence, talos_sequence):
         exit_error(msg)
 
 
-REQUIRED_COLUMNS = "RESID RESNAME PHI PSI DPHI DPSI CLASS".split()
+REQUIRED_COLUMNS_PHI_PSI = "RESID RESNAME PHI PSI DPHI DPSI CLASS".split()
+REQUIRED_COLUMNS_CHI = "RESID RESNAME CHI1 DCHI1".split()
+
+
+class Angles(StrEnum):
+    PHI_PSI = auto()
+    CHI1 = auto()
+
+
+def _check_if_phi_psi_or_chi(columns):
+    if "PHI" in columns and "PSI" in columns:
+        result = Angles.PHI_PSI
+    elif "CHI1" in columns:
+        result = Angles.CHI1
+    else:
+        result = None
+
+    return result
 
 
 def _read_dihedral_restraints(
@@ -321,34 +386,85 @@ def _read_dihedral_restraints(
     chain_code: str,
     file_name: str,
     class_to_merit: Dict[str, float],
+    nef_sequence: List[SequenceResidue],
 ) -> List[DihedralRestraint]:
 
     columns = get_gdb_columns(gdb_records)
 
-    _exit_if_required_columns_missing(columns, REQUIRED_COLUMNS, file_name)
+    angle_type = _check_if_phi_psi_or_chi(columns)
+
+    _exit_if_no_phi_psi_or_chi_detected(angle_type, columns, file_name)
+
+    if angle_type is Angles.PHI_PSI:
+        required_columns = REQUIRED_COLUMNS_PHI_PSI
+    elif angle_type is Angles.CHI1:
+        required_columns = REQUIRED_COLUMNS_CHI
+
+    _exit_if_required_columns_missing(columns, required_columns, file_name)
 
     sequence_3let = gdb_to_3let_sequence(gdb_records)
 
-    chain_start = _first_residue_number(gdb_records)
+    if len(sequence_3let) > 0:
 
-    sequence = sequence_3let_to_sequence_residues(sequence_3let, chain_code)
+        chain_start = _first_residue_number(gdb_records)
 
-    sequence = offset_chain_residues(sequence, {chain_code: chain_start - 1})
+        sequence = sequence_3let_to_sequence_residues(sequence_3let, chain_code)
+
+        sequence = offset_chain_residues(sequence, {chain_code: chain_start - 1})
+    else:
+        sequence = nef_sequence
 
     return (
         _gdb_records_to_torsion_restraints(
-            gdb_records, sequence, chain_code, class_to_merit
+            gdb_records, sequence, chain_code, class_to_merit, angle_type
         ),
         sequence,
+        angle_type,
     )
+
+
+def _exit_if_no_phi_psi_or_chi_detected(angle_type, columns, file_name):
+    if angle_type is None:
+        column_string = ", ".join(columns)
+        msg = f"""
+            in the file {file_name}
+            columns found don't match those for phi/psi or chi1, columns were
+
+            {column_string}
+        """
+        exit_error(msg)
 
 
 TALOS_MISSING_VALUE_FLOAT = 9999.0
 PHI = "PHI"
 PSI = "PSI"
+CHI1 = "CHI1"
 TORSION_ATOMS = {
     PHI: (("C", 1), ("N", 0), ("CA", 0), ("C", 0)),
     PSI: (("N", 0), ("CA", 0), ("C", 0), ("N", 1)),
+    CHI1: (("N", 0), ("CA", 0), ("CB", 0), ("*G", 0)),
+}
+
+# these should be looked up in chem comps
+CHI1_ATOMS = {
+    "ARG": "CG",
+    "ASN": "CG",
+    "ASP": "CG",
+    "CYS": "SG",
+    "GLN": "CG",
+    "GLU": "CG",
+    "HIS": "CG",
+    "ILE": "CG1",
+    "LEU": "CG",
+    "LYS": "CG",
+    "MET": "CG",
+    "PHE": "CG",
+    "PRO": "CG",
+    "SER": "OG",
+    "THR": "OG1",
+    "TRP": "CG1",
+    "TYR": "CG",
+    "VAL": "CG1",
 }
 
 
@@ -362,10 +478,16 @@ def _residue_to_torsion_atoms(
     labels = []
 
     for atom_name, offset in TORSION_ATOMS[angle_name]:
+
         offset_sequence_code = sequence_code + offset
+
         residue_name = get_residue_name_from_lookup(
             chain_code, offset_sequence_code, residue_lookup
         )
+
+        if atom_name == "*G":
+            atom_name = CHI1_ATOMS[residue_name]
+
         residue = Residue(chain_code, offset_sequence_code, residue_name)
 
         labels.append(AtomLabel(residue, atom_name))
@@ -374,7 +496,7 @@ def _residue_to_torsion_atoms(
 
 
 def _gdb_records_to_torsion_restraints(
-    gdb_records, sequence, chain_code, class_to_merit
+    gdb_records, sequence, chain_code, class_to_merit, angle_type
 ):
 
     residue_lookup = residues_to_residue_name_lookup(sequence)
@@ -384,53 +506,88 @@ def _gdb_records_to_torsion_restraints(
     restraints = []
     for record in select_records(gdb_records, VALUES):
 
-        sequence_code = record.values[column_indices["RESID"]]
         class_ = record.values[column_indices["CLASS"]]
-        phi = record.values[column_indices["PHI"]]
-        psi = record.values[column_indices["PSI"]]
-        delta_phi = record.values[column_indices["DPHI"]]
-        delta_psi = record.values[column_indices["DPSI"]]
 
-        if (
-            class_ == "None"
-            and phi >= TALOS_MISSING_VALUE_FLOAT
-            and psi >= TALOS_MISSING_VALUE_FLOAT
-        ):
+        if class_ in ("None", "na"):
             continue
 
-        phi_atoms = _residue_to_torsion_atoms(
-            chain_code, sequence_code, residue_lookup, PHI
-        )
-        psi_atoms = _residue_to_torsion_atoms(
-            chain_code, sequence_code, residue_lookup, PSI
-        )
+        if angle_type == Angles.PHI_PSI:
 
-        restraints.append(
-            DihedralRestraint(
-                *phi_atoms,
-                target_value=phi,
-                target_value_error=delta_phi,
-                name=PHI,
-                remark=f"class: {class_}",
-                merit=class_to_merit[class_.lower()],
+            phi = _build_restraint(
+                record,
+                "PHI",
+                column_indices,
+                chain_code,
+                residue_lookup,
+                class_to_merit,
             )
-        )
-        restraints.append(
-            DihedralRestraint(
-                *psi_atoms,
-                target_value=psi,
-                target_value_error=delta_psi,
-                name=PSI,
-                remark=f"class: {class_}",
-                merit=class_to_merit[class_.lower()],
+            psi = _build_restraint(
+                record,
+                "PSI",
+                column_indices,
+                chain_code,
+                residue_lookup,
+                class_to_merit,
             )
-        )
+
+            restraints.append(phi)
+            restraints.append(psi)
+        elif angle_type == Angles.CHI1:
+            chi1 = _build_restraint(
+                record,
+                "CHI1",
+                column_indices,
+                chain_code,
+                residue_lookup,
+                class_to_merit,
+            )
+            restraints.append(chi1)
 
     return restraints
 
 
+def _build_restraint(
+    record, type, column_indices, chain_code, residue_lookup, class_to_merit
+):
+
+    sequence_code = record.values[column_indices["RESID"]]
+    class_ = record.values[column_indices["CLASS"]]
+
+    angle = record.values[column_indices[type]]
+    delta_angle = record.values[column_indices[f"D{type}"]]
+    atoms = _residue_to_torsion_atoms(chain_code, sequence_code, residue_lookup, type)
+
+    merit = 0.0
+    remark = ""
+    if type in ["PHI", "PSI"]:
+        merit = class_to_merit[class_]
+        remark = f"class: {class_}"
+    elif type == "CHI1":
+        merit = 1.0
+        Q_Gm = record.values[column_indices["Q_Gm"]]
+        Q_Gp = record.values[column_indices["Q_Gp"]]
+        Q_T = record.values[column_indices["Q_T"]]
+
+        remark = f"Q_Gm: {Q_Gm}, Q_Gt: {Q_Gp}, Q_T: {Q_T}"
+
+    restraint = DihedralRestraint(
+        *atoms,
+        target_value=angle,
+        target_value_error=delta_angle,
+        name=type,
+        remark=remark,
+        merit=merit,
+    )
+
+    return restraint
+
+
 def _first_residue_number(gdb_records):
-    return int(select_data_records(gdb_records, "FIRST_RESID")[0].values[1])
+    first_residue_records = select_data_records(gdb_records, "FIRST_RESID")
+    first_residue = 1
+    if len(first_residue_records) == 1:
+        first_residue = int(first_residue_records[0].values[1])
+    return first_residue
 
 
 def _exit_if_required_columns_missing(columns, required_columns, file_name):
