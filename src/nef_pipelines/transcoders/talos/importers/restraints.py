@@ -57,7 +57,14 @@ from nef_pipelines.transcoders.talos import import_app
 
 app = typer.Typer()
 
-CLASS_TO_MERIT = {"None": 0.0, "Strong": 1.0, "Generous": 0.6, "Warn": 0.3, "Dyn": 0.0}
+CLASS_TO_MERIT = {
+    "None": 0.0,
+    "Strong": 1.0,
+    "Generous": 0.6,
+    "Warn": 0.3,
+    "Dyn": 0.0,
+    "Bad": 0.0,
+}
 
 CLASS_HELP = ",".join([f"{class_},{merit}" for class_, merit in CLASS_TO_MERIT.items()])
 MERIT_HELP = f"""
