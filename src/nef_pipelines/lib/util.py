@@ -1011,3 +1011,21 @@ def deprecated(reason):
 
     else:
         raise TypeError(repr(type(reason)))
+
+
+def convert_to_float_or_exit(putative_float: str, line_info: LineInfo) -> float:
+    """
+    convert input string to a float or call exit_error with a reasonable error message
+    :param putative_float: the string that could be a float
+    :param line_info: line info of where the string came from for error message
+    :return: the string converted to a float
+    """
+    if not is_float(putative_float):
+        msg = f"""
+                the text {putative_float} could not be converted to a float, at
+                line: {line_info.line_no} in
+                file: {line_info.file_name} the line was
+                line: {line_info.line}
+            """
+        exit_error(msg)
+    return float(putative_float)
