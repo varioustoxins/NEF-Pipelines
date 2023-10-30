@@ -25,9 +25,9 @@ def test_2_dihedrals():
 
     EXPECTED = """\
         save_nef_dihedral_restraint_list_test_2_dihedrals                               # noqa: E501
-            _nef_dihedral_restraint.sf_category     nef_dihedral_restraint_list
-            _nef_dihedral_restraint.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals
-            _nef_dihedral_restraint.potential_type  undefined
+            _nef_dihedral_restraint_list.sf_category     nef_dihedral_restraint_list
+            _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals
+            _nef_dihedral_restraint_list.potential_type  undefined
 
             loop_
                 _nef_dihedral_restraint.index
@@ -94,9 +94,9 @@ def test_2_dihedrals_no_segids():
 
     EXPECTED = """\
         save_nef_dihedral_restraint_list_test_2_dihedrals_no_segids                              # noqa: E501
-            _nef_dihedral_restraint.sf_category     nef_dihedral_restraint_list
-            _nef_dihedral_restraint.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals_no_segids
-            _nef_dihedral_restraint.potential_type  undefined
+            _nef_dihedral_restraint_list.sf_category     nef_dihedral_restraint_list
+            _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals_no_segids
+            _nef_dihedral_restraint_list.potential_type  undefined
 
             loop_
                 _nef_dihedral_restraint.index
@@ -150,9 +150,9 @@ def test_2_dihedrals_overriding_segids():
 
     EXPECTED = """\
         save_nef_dihedral_restraint_list_test_2_dihedrals                                     # noqa: E501
-            _nef_dihedral_restraint.sf_category     nef_dihedral_restraint_list
-            _nef_dihedral_restraint.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals
-            _nef_dihedral_restraint.potential_type  undefined
+            _nef_dihedral_restraint_list.sf_category     nef_dihedral_restraint_list
+            _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_test_2_dihedrals
+            _nef_dihedral_restraint_list.potential_type  undefined
 
             loop_
                 _nef_dihedral_restraint.index
