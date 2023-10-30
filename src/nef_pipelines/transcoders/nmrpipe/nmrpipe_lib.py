@@ -27,7 +27,7 @@ from nef_pipelines.lib.structures import (
     ShiftData,
     ShiftList,
 )
-from nef_pipelines.lib.util import is_int
+from nef_pipelines.lib.util import exit_error, is_int
 
 
 class PEAK_TYPES(IntEnum):
@@ -741,3 +741,29 @@ def format_pipe_sequence(sequence_1_let: List[str]) -> str:
         result.append(f"DATA SEQUENCE {row_string}")
 
     return result
+
+
+def exit_if_required_columns_missing(
+    gdb_records: DbFile, required_columns: List[str], file_name: str
+):
+    gdb_columns = get_gdb_columns(gdb_records)
+    column_set = set(gdb_columns)
+
+    required_column_set = set(required_columns)
+
+    if not required_column_set.issubset(column_set):
+        msg = f"""
+            the required column in the file {file_name} are:
+
+            {', '.join(required_columns)}
+
+            found columns are
+
+            {', '.join(gdb_columns)}
+
+            missing columns are
+
+            {', '.join(required_column_set - column_set)}
+        """
+
+        exit_error(msg)
