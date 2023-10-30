@@ -1,6 +1,6 @@
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable
 
 import typer
 
@@ -9,10 +9,10 @@ from nef_pipelines.lib.nef_lib import (
     read_file_or_exit,
     read_or_create_entry_exit_error_on_bad_file,
 )
-from nef_pipelines.lib.sequence_lib import chain_code_iter, translate_1_to_3
+from nef_pipelines.lib.sequence_lib import translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
-from nef_pipelines.lib.util import STDIN, parse_comma_separated_options
+from nef_pipelines.lib.util import STDIN
 from nef_pipelines.transcoders.nmrpipe import import_app
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     read_db_file_records,
@@ -25,8 +25,8 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command()
 def shifts(
-    chain_codes: List[str] = typer.Option(
-        None,
+    chain_code: str = typer.Option(
+        "A",
         "--chains",
         help="chain codes, can be called multiple times and or be a comma separated list [no spaces!]",
         metavar="<CHAIN-CODES>",
@@ -40,7 +40,7 @@ def shifts(
         metavar="|PIPE|",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
-    file_names: List[Path] = typer.Argument(
+    file_name: Path = typer.Argument(
         ..., help="input files of type nmrpipe.tab", metavar="<TAB-FILE>"
     ),
 ):
@@ -48,32 +48,27 @@ def shifts(
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name)
 
-    chain_codes = parse_comma_separated_options(chain_codes)
+    lines = read_file_or_exit(file_name)
 
-    if not chain_codes:
-        chain_codes = ["A"]
+    entry = pipe(entry, lines, chain_code, frame_name, file_name)
 
-    pipe(entry, chain_codes, file_names, frame_name)
+    print(entry)
 
 
-def pipe(entry, chain_codes, file_names, frame_name):
+def pipe(entry, lines, chain_code, frame_name, file_name):
     nmrpipe_frames = []
 
-    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
+    nmrpipe_shifts = read_shifts(lines, chain_code, file_name)
 
-        lines = read_file_or_exit(file_name)
+    nmrpipe_shifts = _convert_1let_3let_if_needed(nmrpipe_shifts)
 
-        nmrpipe_shifts = read_shifts(lines, chain_code=chain_code)
+    frame = shifts_to_nef_frame(nmrpipe_shifts, frame_name)
 
-        nmrpipe_shifts = _convert_1let_3let_if_needed(nmrpipe_shifts)
-
-        frame = shifts_to_nef_frame(nmrpipe_shifts, frame_name)
-
-        nmrpipe_frames.append(frame)
+    nmrpipe_frames.append(frame)
 
     entry = add_frames_to_entry(entry, nmrpipe_frames)
 
-    print(entry)
+    return entry
 
 
 def _convert_1let_3let_if_needed(shifts: ShiftList) -> ShiftList:
@@ -101,9 +96,9 @@ def _convert_1let_3let_if_needed(shifts: ShiftList) -> ShiftList:
 def read_shifts(
     shift_lines: Iterable[str],
     chain_code: str = "A",
-    sequence_file_name: str = "unknown",
+    file_name: str = "unknown",
 ) -> ShiftList:
 
-    gdb_file = read_db_file_records(shift_lines, sequence_file_name)
+    gdb_file = read_db_file_records(shift_lines, file_name)
 
     return read_shift_file(gdb_file, chain_code)
