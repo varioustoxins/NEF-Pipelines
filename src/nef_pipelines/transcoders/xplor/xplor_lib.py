@@ -26,7 +26,7 @@ from pyparsing import (
 )
 from pyparsing.common import pyparsing_common as ppc
 
-from nef_pipelines.lib.nef_lib import UNUSED, PotentialTypes
+from nef_pipelines.lib.nef_lib import UNUSED, PotentialTypes, create_nef_save_frame
 from nef_pipelines.lib.sequence_lib import ANY_CHAIN, replace_chain_in_atom_labels
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -525,12 +525,7 @@ def distance_restraints_to_nef(
         loop.add_data([row])
 
     NEF_DISTANCE_RESTRAINT_LIST = "nef_distance_restraint_list"
-    save_frame_name = f"{NEF_DISTANCE_RESTRAINT_LIST}_{frame_name}"
-
-    save_frame = Saveframe.from_scratch(save_frame_name, NEF_DISTANCE_RESTRAINT_LIST)
-
-    save_frame.add_tag("sf_category", NEF_DISTANCE_RESTRAINT_LIST)
-    save_frame.add_tag("sf_framecode", save_frame_name)
+    save_frame = create_nef_save_frame(NEF_DISTANCE_RESTRAINT_LIST, frame_name)
     save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
 
     save_frame.add_loop(loop)
@@ -585,12 +580,8 @@ def dihedral_restraints_to_nef(
 
         loop.add_data([row])
 
-    save_frame_name = f"nef_dihedral_restraint_list_{frame_name}"
-
-    save_frame = Saveframe.from_scratch(save_frame_name, "nef_dihedral_restraint")
-
-    save_frame.add_tag("sf_category", "nef_dihedral_restraint_list")
-    save_frame.add_tag("sf_framecode", save_frame_name)
+    NEF_DIHEDRAL_RESTRAINT_LIST = "nef_dihedral_restraint_list"
+    save_frame = create_nef_save_frame(NEF_DIHEDRAL_RESTRAINT_LIST, frame_name)
     save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
 
     save_frame.add_loop(loop)
