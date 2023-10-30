@@ -518,7 +518,7 @@ def _get_axis_labels(gdb_file):
     return result
 
 
-def get_gdb_columns(gdb_file):
+def get_gdb_columns(gdb_file: DbFile) -> List[str]:
     return select_records(gdb_file, VARS)[0].values
 
 
