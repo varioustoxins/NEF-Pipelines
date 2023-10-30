@@ -102,7 +102,7 @@ RESIDUE_FACTOR = "residue-factor"
 ATOM_FACTOR = "atom-factor"
 
 RESIDUE_LITERAL = "residue"
-SEGIMENT_IDENTIFIER_LITERAL = "segidentifier"
+SEGMENT_IDENTIFIER_LITERAL = "segidentifier"
 ATOM_NAME_LITERAL = "name"
 
 ATOM_WILDCARDS = "*%#+"
@@ -196,10 +196,12 @@ _l_paren = Suppress(LEFT_PARENTHESIS)
 _r_paren = Suppress(RIGHT_PARENTHESIS)
 
 
-def _expand_literal(literal, min_length=4, case_insenitive=True):
+def _expand_literal(literal, min_length=4, case_insensitive=True):
     result = []
     for i in range(min_length, len(literal) + 1):
-        elem = CaselessLiteral(literal[:i]) if case_insenitive else Literal(literal[:i])
+        elem = (
+            CaselessLiteral(literal[:i]) if case_insensitive else Literal(literal[:i])
+        )
         result.append(elem)
 
     result.reverse()
@@ -291,7 +293,7 @@ _named_atom = partial(_as_named_single_token, ATOM)
 _atom_factor.set_parse_action(_named_atom)
 
 # segment factor
-_segid_literal = Suppress(_expand_literal(SEGIMENT_IDENTIFIER_LITERAL))
+_segid_literal = Suppress(_expand_literal(SEGMENT_IDENTIFIER_LITERAL))
 _segid_label = Word(alphanums, max=4)
 _segid_factor = (_segid_literal + _segid_label)(SEGMENT_FACTOR)
 
@@ -440,7 +442,7 @@ def read_distance_restraints_or_exit_error(
     read a list of dihedral restraints from a file or stream or exit
 
     :param file_path: the path of the file Path('-') indicates stdin
-    :param residue_name_lookup:  a dictionary of residue names keyes on chain_code, residue_code
+    :param residue_name_lookup:  a dictionary of residue names keys on chain_code, residue_code
     :param chain_code: a chain code to use if no chain code is specified or use_chains is True
     :param use_chains: use the passed in chain_code rather than any read segids
     :return: a list of dihedral restraints
@@ -521,12 +523,12 @@ def distance_restraints_to_nef(
 
         loop.add_data([row])
 
-    NEF_DISTANCE_RESTAINT_LIST = "nef_distance_restraint_list"
-    save_frame_name = f"{NEF_DISTANCE_RESTAINT_LIST}_{frame_name}"
+    NEF_DISTANCE_RESTRAINT_LIST = "nef_distance_restraint_list"
+    save_frame_name = f"{NEF_DISTANCE_RESTRAINT_LIST}_{frame_name}"
 
-    save_frame = Saveframe.from_scratch(save_frame_name, NEF_DISTANCE_RESTAINT_LIST)
+    save_frame = Saveframe.from_scratch(save_frame_name, NEF_DISTANCE_RESTRAINT_LIST)
 
-    save_frame.add_tag("sf_category", NEF_DISTANCE_RESTAINT_LIST)
+    save_frame.add_tag("sf_category", NEF_DISTANCE_RESTRAINT_LIST)
     save_frame.add_tag("sf_framecode", save_frame_name)
     save_frame.add_tag("potential_type", PotentialTypes.UNDEFINED)
 
