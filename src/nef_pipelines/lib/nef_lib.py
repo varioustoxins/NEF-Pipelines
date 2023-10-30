@@ -24,6 +24,9 @@ from nef_pipelines.lib.util import (
     script_name,
 )
 
+DEFAULT_INCREMENT_SEPARATOR = "::"
+DEFAULT_INCREMENT_END = ""
+
 NEF_TRUE = "true"
 NEF_FALSE = "false"
 NEF_NONE = "none"
@@ -625,3 +628,34 @@ def extract_column(loop: Loop, column: Union[str, int]) -> Loop:
     for row in loop:
         values.append(row[column])
     return values
+
+
+def create_nef_save_frame(
+    frame_category: str,
+    frame_id: str = None,
+    increment: str = "",
+    separator: str = DEFAULT_INCREMENT_SEPARATOR,
+    end: str = DEFAULT_INCREMENT_END,
+) -> Saveframe:
+
+    """
+    Create a NEF save frame from a category and a frame name, including the tags sf_category and sf_framecode
+
+    :param category: the category including an organisation prefix
+    :param frame_id: the id of the frame  (can be None for singletons)
+    :param separator: separator between the category and the frame_id (default ::)
+    :param end: text after the frame_id (can be used to create a fence  default is the empty string
+    :return: a NEF style saveframe
+    """
+
+    if frame_id and increment:
+        frame_name = f"{frame_category}_{frame_id}{separator}{increment}{end}"
+    elif frame_id:
+        frame_name = f"{frame_category}_{frame_id}"
+    else:
+        frame_name = f"{frame_category}"
+
+    frame = Saveframe.from_scratch(frame_name, f"{frame_category}")
+    frame.add_tag("sf_category", frame_category)
+    frame.add_tag("sf_framecode", frame_name)
+    return frame
