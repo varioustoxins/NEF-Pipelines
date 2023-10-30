@@ -767,3 +767,11 @@ def exit_if_required_columns_missing(
         """
 
         exit_error(msg)
+
+
+def dbfile_to_first_residue_number(gdb_records: DbFile) -> int:
+    first_residue_records = select_data_records(gdb_records, "FIRST_RESID")
+    first_residue = 1
+    if len(first_residue_records) == 1:
+        first_residue = int(first_residue_records[0].values[1])
+    return first_residue
