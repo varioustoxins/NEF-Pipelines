@@ -303,3 +303,48 @@ class RelaxationData:
     tensor_frame: TensorFrame = None
     tensor_frame_error: TensorFrame = None
     structure_name: str = None
+
+
+# fmt: off
+# TODO: this is an initial attempt some more work needed on turn types and other analysis programs
+class SecondaryStructureType(LowercaseStrEnum):
+    #                                         DSSP |  SST |  comment
+    ALPHA_HELIX = auto()                    # H    |  H   |  right-handed
+    ALPHA_HELIX_LEFT_HANDED = auto()        # .    |  h
+    THREE_TEN_HELIX = auto()                # G    |  G   |  right-handed
+    THREE_TEN_HELIX_LEFT_HANDED = auto()    # .    |  g
+    BETA_SHEET = auto()                     # E    |  E
+    BETA_BRIDGE = auto()                    # B    |
+    PI_HELIX = auto()                       # I    |  I   |  right-handed, aka a 5 helix
+    PI_HELIX_LEFT_HANDED = auto()           # .    |  i
+    TURN = auto()                           # T    |  T   |  hydrogen bonded turn, subclasses listed below
+    ALPHA_TURN = auto()                     # .    |  4   |  4 bonds, ALPHA-like TURN (right/left-handed)
+    BETA_TURN = auto()                      # .    |  3   |  3 bonds sub classes are listed below
+    #                                              |      |  3_10-like  TURN (right/left-handed)
+    BETA_I_TURN = auto()
+    BETA_II_TURN = auto()
+    BETA_I_PRIME_TURN = auto()
+    BETA_II_PRIME_TURN = auto()
+    BETA_IV_TURN = auto()
+    BETA_VIA1_TURN = auto()
+    BETA_VIA2_TURN = auto()
+    BETA_VIB_TURN = auto()
+    BETA_VII_TURN = auto()
+    GAMMA_TURN = auto()                     # .    |      |  2 bonds
+    DELTA_TURN = auto()                     # .    |      |  1 bond - sterically unlikley
+    PI_TURN = auto()                        # .    |   5  |  5 bonds
+    BEND = auto()                           # S    |      |
+    COIL = auto()                           # .    |      |  either disordered or a loop but unknown which
+    LOOP = auto()                           # .    |      |  well-defined structure but not one of the
+    #                                              |      |  standard dssp types also called an omega loop
+    DISORDERED = auto()                     # .    |      |  a region without ordered secondary structure
+    UNKNOWN = auto()                        # .    |   -  |  the program wasn't able to determine secondary
+    #                                              |      |  structure type (None?)
+# fmt: on
+
+
+@dataclass
+class SecondaryStructure:
+    residue: Residue
+    secondary_structure: SecondaryStructureType
+    merit: float  # typically between 0 and 1
