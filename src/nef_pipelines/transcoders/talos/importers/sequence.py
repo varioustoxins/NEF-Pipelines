@@ -32,7 +32,7 @@ def sequence(
         "--no-chain-end/",
         help="don't include an end of chain link type for the last residue",
     ),
-    entry_name: str = typer.Option("nmrpipe", help="a name for the entry"),
+    entry_name: str = typer.Option("talos", help="a name for the entry"),
     input: Path = typer.Option(
         None,
         "-i",
@@ -46,7 +46,7 @@ def sequence(
 ):
     """convert sequence from a talos pred file to NEF"""
 
-    entry = read_or_create_entry_exit_error_on_bad_file(input)
+    entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name=entry_name)
 
     lines = read_file_or_exit(file_name)
 
