@@ -800,3 +800,19 @@ def atom_sort_key(item: AtomLabel) -> Tuple[Any, ...]:
         raise ValueError(msg)
 
     return items
+
+
+def exit_if_chain_not_in_sequence(chain_code: str, entry: Entry, file_name: str):
+
+    nef_sequence = sequence_from_entry(entry)
+
+    nef_chain_codes = sequence_to_chains(nef_sequence)
+
+    if chain_code not in nef_chain_codes:
+        msg = f"""
+            The chain code {chain_code} was not found in the input chain codes in the nef stream
+            with entry name {entry.entry_id}  in file {file_name}
+            the chain codes found were {','.join(nef_chain_codes)}
+        """
+
+        exit_error(msg)
