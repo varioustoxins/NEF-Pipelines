@@ -21,11 +21,9 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
-    get_chain_starts,
     get_residue_name_from_lookup,
     offset_chain_residues,
     residues_to_residue_name_lookup,
-    sequence_3let_list_from_sequence,
     sequence_3let_to_sequence_residues,
     sequence_from_entry,
     sequence_to_chains,
@@ -54,6 +52,7 @@ from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     select_records,
 )
 from nef_pipelines.transcoders.talos import import_app
+from nef_pipelines.transcoders.talos.talos_lib import _exit_if_sequences_dont_match
 
 app = typer.Typer()
 
@@ -68,8 +67,8 @@ CLASS_TO_MERIT = {
 
 CLASS_HELP = ",".join([f"{class_},{merit}" for class_, merit in CLASS_TO_MERIT.items()])
 MERIT_HELP = f"""
-a comma separated list of merit pairs of class (one of Dyn, Strong, Generous Warn or None) and value (a floating point
-number) e.g dyn,0.0,strong,7.0 [default is {CLASS_HELP}] multiple values can also be added by multiple uses of the
+a comma separated list of merit pairs of class (one of Dyn, Strong, Generous Warn Bad or None) and value (a floating
+point number) e.g dyn,0.0,strong,7.0 [default is {CLASS_HELP}] multiple values can also be added by multiple uses of the
 option
 """
 
@@ -291,7 +290,7 @@ def pipe(entry, lines, file_name, chain_code, frame_name, class_to_merit=None):
     frame_name = f(frame_name)
 
     if chain_code in nef_chain_codes:
-        _check_sequences_match_or_exit(chain_code, nef_sequence, talos_sequence)
+        _exit_if_sequences_dont_match(chain_code, nef_sequence, talos_sequence)
     else:
         _exit_error_no_chain_code(chain_code, file_name)
 
@@ -323,49 +322,6 @@ def _exit_error_no_chain_code(chain_code, file_name):
             nef talos import sequence {file_name} | nef {args}
         """
     exit_error(msg)
-
-
-def _check_sequences_match_or_exit(chain_code, nef_sequence, talos_sequence):
-
-    nef_sequence_set = set(
-        [Residue.from_sequence_residue(residue) for residue in nef_sequence]
-    )
-    talos_sequence_set = set(
-        [Residue.from_sequence_residue(residue) for residue in talos_sequence]
-    )
-
-    if not talos_sequence_set.issubset(nef_sequence_set):
-        nef_sequence_start = get_chain_starts(nef_sequence)[chain_code]
-        nef_sequence_for_chain = [
-            residue for residue in nef_sequence if residue.chain_code == chain_code
-        ]
-        nef_sequence_list = "\n".join(
-            sequence_3let_list_from_sequence(
-                nef_sequence_for_chain, chain_code=chain_code
-            )
-        )
-
-        talos_sequence_start = get_chain_starts(talos_sequence)[chain_code]
-        talos_sequence_for_chain = [
-            residue for residue in talos_sequence if residue.chain_code == chain_code
-        ]
-        talos_sequence_list = "\n".join(
-            sequence_3let_list_from_sequence(
-                talos_sequence_for_chain, chain_code=chain_code
-            )
-        )
-
-        msg = f"""
-                nef and talos sequences don't agree...
-
-                talos sequence for chain {chain_code} starts at {talos_sequence_start} and has the sequence
-                {talos_sequence_list}
-
-                nef sequence for chain {chain_code} starts at {nef_sequence_start} and has the sequence
-                {nef_sequence_list}
-            """
-
-        exit_error(msg)
 
 
 REQUIRED_COLUMNS_PHI_PSI = "RESID RESNAME PHI PSI DPHI DPSI CLASS".split()

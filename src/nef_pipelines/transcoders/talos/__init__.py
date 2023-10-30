@@ -23,6 +23,6 @@ if nef_app.app:
     )
 
     # import of specific importers must be after app creation to avoid circular imports
+    import nef_pipelines.transcoders.talos.exporters.restraints  # noqa: F401
     import nef_pipelines.transcoders.talos.exporters.shifts  # noqa: F401
-    import nef_pipelines.transcoders.talos.importers.restraints  # noqa: F401
     import nef_pipelines.transcoders.talos.importers.sequence  # noqa: F401
