@@ -266,7 +266,7 @@ class _NamedTokens(UserList):
         return f"{self.name} {tok_strings}"
 
 
-def _as_named_single_token(name, s, loc, toks):
+def _as_named_single_token(name, _, _1, toks):
     return _NamedToken(name, toks[0])
 
 
@@ -302,7 +302,7 @@ _named_segid = partial(_as_named_single_token, SEGID)
 _segid_factor.setParseAction(_named_segid)
 
 
-def _as_named_tokens(name, s, loc, toks):
+def _as_named_tokens(name, _, _1, toks):
     return _NamedTokens(name, toks)
 
 
@@ -371,6 +371,7 @@ def _get_single_atom_selection(
 
     selections = _parse_result_to_atom_selections(parsed)
 
+    selection = None
     if len(selections) != 1:
         valid = False
         invalid_reason = f"there should only be one selection i got {selections}"
@@ -627,8 +628,8 @@ def read_dihedral_restraints_or_exit_error(
     """
     read a list of dihedral restraints from a file or stream or exit
 
-    :param file_path: the poth of the file Path('-') indicates stdin
-    :param residue_name_lookup:  a dictionary of residue names keyes on chain_code, residue_code
+    :param file_path: the path of the file Path('-') indicates stdin
+    :param residue_name_lookup:  a dictionary of residue names keys on chain_code, residue_code
     :param chain_code: a chain code to use if no chain code is specified or use_chains is True
     :param use_chains: use the passed in chain_code rather than any read segids
     :return: a list of dihedral restraints
@@ -703,7 +704,7 @@ def parse_dihedral_restraints(
                 msg = f"""\
                     got a multi atom selection for the {atom_number} atom in restraint number {i}
                     in {file_path_display_name}
-                    dihedral restrainst require single atom selections...
+                    dihedral restraints require single atom selections...
                     the restraint text is most probably:
                 """
                 msg = dedent(msg)
@@ -738,7 +739,7 @@ def parse_distance_restraints(
     file_path_display_name: str,
     chain_code: str,
     use_chains: bool = False,
-) -> List[DihedralRestraint]:
+) -> List[DistanceRestraint]:
     """
     parse xplor distance restraints into DistanceRestraint structures
 
@@ -784,7 +785,7 @@ def parse_distance_restraints(
                 msg = f"""\
                     got a multi atom selection for the {atom_number} atom in restraint number {i}
                     in {file_path_display_name}
-                    dihedral restrainst require single atom selections...
+                    dihedral restraints require single atom selections...
                     the restraint text is most probably:
                 """
                 msg = dedent(msg)
