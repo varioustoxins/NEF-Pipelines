@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import auto
 from typing import Dict, List, Optional, Union
 
@@ -213,3 +213,93 @@ class DimensionInfo:
     axis_code: str  # this is the isotope code for us...
     axis_name: str = None
     axis_unit: Optional[str] = "ppm"
+
+
+class RelaxationModelParameter(StrEnum):
+    S2 = auto()
+    S2_FAST = auto()
+    S2_SLOW = auto()
+    TAU_E = auto()
+    TAU_FAST = auto()
+    TAU_SLOW = auto()
+    R_EXCHANGE = auto()
+    J_0 = auto()
+    J_OMEGA_1 = auto()
+    J_OMEGA_2 = auto()
+    J_OMEGA_1_87 = auto()
+    J_OMEGA_2_87 = auto()
+    RHO_1 = auto()
+    RHO_2 = auto()
+
+
+class RelaxationModelType(StrEnum):
+    MODEL_FREE = auto()
+    REDUCED_SPECTRAL_DENSITY = auto()
+
+
+class RelaxationUnit(StrEnum):
+    UNITLESS = auto()
+    PICO_SECOND = auto()
+    NANO_SECOND = auto()
+    MICRO_SECOND = auto()
+    MILLI_SECOND = auto()
+    PER_SECOND = auto()
+    SECOND = auto()
+
+
+class RelaxationDataSource(StrEnum):
+    SIMULATION = auto()
+    ESTIMATE = auto()
+    EXPERIMENTAL = auto()
+
+
+@dataclass(frozen=True, order=True)
+class RelaxationValue:
+    atom: AtomLabel
+    value: float
+    value_type: RelaxationModelParameter
+    value_error: float = None
+    unit: RelaxationUnit = None
+    dipole_atom: AtomLabel = None
+
+
+class DiffusionModel(StrEnum):
+    SPHERE = auto()
+    SPHEROID_PROLATE = auto()
+    SPHEROID_OBLATE = auto()
+    ELLIPSOID = auto()
+
+
+@dataclass(frozen=True)
+class TensorFrame:
+    d_iso: float = None
+
+    d_x: float = None
+    d_y: float = None
+    d_z: float = None
+
+    d_anisotropic: float = None
+    d_rhombic: float = None
+
+    alpha: float = None
+    beta: float = None
+    gamma: float = None
+
+    theta: float = None
+    phi: float = None
+
+
+@dataclass(frozen=True)
+class RelaxationData:
+    model_type: RelaxationModelType
+    data_source: RelaxationDataSource
+    values: List[RelaxationValue] = field(default_factory=list)
+    tauM: float = None
+    tauM_error: float = None
+
+    field_strengths: List[float] = None
+
+    diffusion_model: DiffusionModel = None
+    tensor_frame: TensorFrame = None
+    tensor_frame_error: TensorFrame = None
+    structure_name: str = None
