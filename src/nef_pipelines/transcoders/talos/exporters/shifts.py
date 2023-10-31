@@ -64,7 +64,7 @@ def shifts(
         help="selector for the chemical shift list frame to use",
     ),
 ):
-    """- convert nef shifts and sequence to talos input [alpha]"""
+    """- convert nef shifts (and sequence) to talos input [alpha]"""
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 

@@ -8,7 +8,7 @@ from nef_pipelines.lib.test_lib import (
     path_in_test_data,
     run_and_report,
 )
-from nef_pipelines.transcoders.talos.exporters.restraints import restraints
+from nef_pipelines.transcoders.talos.importers.restraints import restraints
 
 app = typer.Typer()
 app.command()(restraints)

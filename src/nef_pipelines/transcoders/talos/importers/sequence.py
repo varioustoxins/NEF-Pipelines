@@ -63,9 +63,7 @@ def pipe(
     no_chain_end: bool,
     file_name: Path,
 ):
-    ...
 
     return nmrpipe_pipe(
         entry, lines, chain_code, no_chain_start, no_chain_end, 1, file_name
     )
-    # transcoders.nmrpipe
