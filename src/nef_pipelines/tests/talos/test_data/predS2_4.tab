@@ -1,0 +1,10 @@
+REMARK  Predicted order parameter (S2) from backbone chemical shifts for ubiq.tab
+REMARK    from David Wishart's RCI method, JACS, 127(43), 14970-14971
+
+VARS RESID RESNAME CS_CNT CS_CNT_R2 S2
+FORMAT %4d %1s %2d %2d %8.3f
+
+    1 M 10  4    0.884
+    2 Q 16  6    0.892
+    3 I 18  6    0.903
+    4 F 18  6    0.911
