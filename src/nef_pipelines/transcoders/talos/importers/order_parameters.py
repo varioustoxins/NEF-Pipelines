@@ -14,7 +14,6 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     exit_if_chain_not_in_sequence,
     sequence_from_entry,
-    sequence_to_chains,
 )
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import read_db_file_records
 from nef_pipelines.transcoders.talos import import_app
@@ -72,13 +71,9 @@ def order_parameters(
 def pipe(
     entry: Entry, lines: List[str], chain_code: str, frame_name: str, file_name: Path
 ):
-    ...
+    exit_if_chain_not_in_sequence(chain_code, entry, file_name)
 
     nef_sequence = sequence_from_entry(entry)
-
-    nef_chain_codes = sequence_to_chains(nef_sequence)
-
-    exit_if_chain_not_in_sequence(chain_code, nef_chain_codes, entry.entry_id)
 
     gdb_records = read_db_file_records(lines)
 
