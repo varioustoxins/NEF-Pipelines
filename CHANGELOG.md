@@ -180,3 +180,15 @@ initial support for talos [export of shifts]
 ## version 0.1.47
 
 support for reading talos PHI PSI restraints into NEF
+
+## version 0.1.48
+
+complete support for talos including
+- sequences that don't start at residue 1
+- support for oxidised cys and protonated his variants
+- import of secondary structure to nef
+- import of S2 values to nef
+- support of chi restraints
+
+improved testing to cover all new features
+bug fixes for talos
