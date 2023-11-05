@@ -14,9 +14,9 @@ app = typer.Typer()
 app.command()(restraints)
 
 EXPECTED = """
-save_nef_dihedral_restraint_list_talos_restraints::A_PHI_PSI                                                # noqa: E501
+save_nef_dihedral_restraint_list_talos_restraints_A_PHI_PSI                                                # noqa: E501
    _nef_dihedral_restraint_list.sf_category     nef_dihedral_restraint_list
-   _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_talos_restraints::A_PHI_PSI
+   _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_talos_restraints_A_PHI_PSI
    _nef_dihedral_restraint_list.potential_type  square-well-parabolic
    _nef_dihedral_restraint_list.ccpn_comment    'file: {pred_4_path}, source file: ubiq.tab, talos version: 4.12 Rev 2023.083.11.36'
 
@@ -77,7 +77,7 @@ def test_pred4tab(clear_cache):
     )
 
     phi_psi = isolate_frame(
-        result.stdout, "nef_dihedral_restraint_list_talos_restraints::A_PHI_PSI"
+        result.stdout, "nef_dihedral_restraint_list_talos_restraints_A_PHI_PSI"
     )
 
     PATCHED_EXPECTED = f(EXPECTED)
@@ -85,9 +85,9 @@ def test_pred4tab(clear_cache):
 
 
 EXPECTED_CHI1 = """
-save_nef_dihedral_restraint_list_talos_restraints::A_CHI1                                                   # noqa: E501
+save_nef_dihedral_restraint_list_talos_restraints_A_CHI1                                                   # noqa: E501
    _nef_dihedral_restraint_list.sf_category     nef_dihedral_restraint_list
-   _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_talos_restraints::A_CHI1
+   _nef_dihedral_restraint_list.sf_framecode    nef_dihedral_restraint_list_talos_restraints_A_CHI1
    _nef_dihedral_restraint_list.potential_type  square-well-parabolic
    _nef_dihedral_restraint_list.ccpn_comment    'file: {pred_4_path}, source file: ubiq.tab, talos version: 4.12 Rev 2023.083.11.36'
 
@@ -145,7 +145,7 @@ def test_pred4tab_chi1(clear_cache):
     )
 
     phi_psi = isolate_frame(
-        result.stdout, "nef_dihedral_restraint_list_talos_restraints::A_CHI1"
+        result.stdout, "nef_dihedral_restraint_list_talos_restraints_A_CHI1"
     )
 
     PATCHED_EXPECTED = f(EXPECTED_CHI1)

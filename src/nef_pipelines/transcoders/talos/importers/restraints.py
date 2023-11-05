@@ -90,7 +90,7 @@ def restraints(
         help="input to read NEF data from [- is stdin]",
     ),
     frame_name: str = typer.Option(
-        "talos_restraints::{chain_code}_{angle}",
+        "talos_restraints_{chain_code}_{angle}",
         "-f",
         "--frame",
         help="name for the frame that will be created default is talos_restraints_<CHAIN-CODE>",
