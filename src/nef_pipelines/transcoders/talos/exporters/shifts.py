@@ -91,6 +91,10 @@ def pipe(entry: Entry, target_chain_code: str, frame_selector: str) -> List[str]
         sequence_residues_to_sequence_3let(target_sequence)
     )
 
+    for i, residue in enumerate(target_sequence):
+        if _is_talos_variant(residue.variants, residue.residue_name):
+            sequence_1let[i] = sequence_1let[i].lower()
+
     chunked_sequence = make_chunked_sequence_1let(sequence_1let, line_length=50)
 
     shifts = nef_frames_to_shifts(
@@ -114,7 +118,7 @@ def pipe(entry: Entry, target_chain_code: str, frame_selector: str) -> List[str]
         if shift.atom.residue.residue_name in TRANSLATIONS_3_1[MoleculeTypes.PROTEIN]
     ]
 
-    with redirect_stdout(StringIO()) as capture:
+    with (redirect_stdout(StringIO()) as capture):
         print(f"REMARK Chemical shift table for {entry.entry_id}")
         print()
         print(f"DATA CHAIN {target_chain_code}")
@@ -133,15 +137,22 @@ def pipe(entry: Entry, target_chain_code: str, frame_selector: str) -> List[str]
 
         table = []
 
-        for shift in shifts:
+        for j, shift in enumerate(shifts):
+            sequence_offset = shift.atom.residue.sequence_code - start_residue
+            residue_name_3let = shift.atom.residue.residue_name
+            residue_name_1let = translate_3_to_1(
+                [
+                    residue_name_3let,
+                ]
+            )[0]
+
+            if _is_talos_variant(sequence[sequence_offset].variants, residue_name_3let):
+                residue_name_1let = residue_name_1let.lower()
+
             table.append(
                 [
                     int(shift.atom.residue.sequence_code),
-                    translate_3_to_1(
-                        [
-                            shift.atom.residue.residue_name,
-                        ]
-                    )[0],
+                    residue_name_1let,
                     shift.atom.atom_name,
                     float(shift.value),
                 ]
@@ -157,6 +168,15 @@ def pipe(entry: Entry, target_chain_code: str, frame_selector: str) -> List[str]
         )
 
     return str(capture.getvalue()).split("\n")
+
+
+def _is_talos_variant(variants, residue_name):
+    return (
+        "+HE2" in variants
+        and residue_name == "HIS"
+        or "-HG" in variants
+        and residue_name == "CYS"
+    )
 
 
 def _select_shift_frame_or_exit(entry, frame_selector):

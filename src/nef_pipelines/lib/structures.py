@@ -39,7 +39,7 @@ class SequenceResidue(Residue):
 
     is_cis: bool = False
     linking: Optional[Linking] = None
-    variant: Optional[str] = None
+    variants: List[str] = ()
 
 
 # should contain a residue and have constructors?

@@ -498,6 +498,7 @@ def sequence_from_frame(
     sequence_code_index = loop.tag_index("sequence_code")
     residue_name_index = loop.tag_index("residue_name")
     linking_index = loop.tag_index("linking")
+    residue_variant_index = loop.tag_index("residue_variant")
 
     for line in loop:
         chain_code = line[chain_code_index]
@@ -512,11 +513,22 @@ def sequence_from_frame(
                 if line[linking_index] != NEF_UNKNOWN
                 else None
             )
+            residue_variants = line[residue_variant_index].split(",")
+            residue_variants = (
+                ()
+                if residue_variants
+                == [
+                    UNUSED,
+                ]
+                else tuple(residue_variants)
+            )
+
             residue = SequenceResidue(
                 chain_code=chain_code,
                 sequence_code=sequence_code,
                 residue_name=residue_name,
                 linking=linking,
+                variants=residue_variants,
             )
             residues.append(residue)
 
