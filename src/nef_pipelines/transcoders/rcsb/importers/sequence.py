@@ -13,7 +13,7 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
     process_stream_and_add_frames,
 )
-from nef_pipelines.transcoders.pdbx import import_app
+from nef_pipelines.transcoders.rcsb import import_app
 
 app = typer.Typer()
 

@@ -92,7 +92,7 @@ def main():
             "nef_pipelines.transcoders.nmrpipe",
             "nef_pipelines.transcoders.nmrview",
             "nef_pipelines.transcoders.pales",
-            "nef_pipelines.transcoders.pdbx",
+            "nef_pipelines.transcoders.rcsb",
             "nef_pipelines.transcoders.rpf",
             "nef_pipelines.transcoders.shifty",
             "nef_pipelines.transcoders.sparky",

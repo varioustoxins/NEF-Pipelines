@@ -12,4 +12,4 @@ if nef_app.app:
     app.add_typer(import_app, name="import", help="-  import pdb [sequences]")
 
     # import of specific importers must be after app creation to avoid circular imports
-    import nef_pipelines.transcoders.pdbx.importers.sequence  # noqa: F401
+    import nef_pipelines.transcoders.rcsb.importers.sequence  # noqa: F401
