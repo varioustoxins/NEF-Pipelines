@@ -1,0 +1,597 @@
+data_1L2Y
+#
+_entry.id   1L2Y
+#
+_audit_conform.dict_name       mmcif_pdbx.dic
+_audit_conform.dict_version    5.371
+_audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx.dic
+#
+loop_
+_database_2.database_id
+_database_2.database_code
+_database_2.pdbx_database_accession
+_database_2.pdbx_DOI
+PDB   1L2Y         pdb_00001l2y 10.2210/pdb1l2y/pdb
+RCSB  RCSB015598   ?            ?
+WWPDB D_1000015598 ?            ?
+BMRB  5292         ?            ?
+#
+loop_
+_pdbx_database_related.db_name
+_pdbx_database_related.db_id
+_pdbx_database_related.details
+_pdbx_database_related.content_type
+BMRB 5292 'BMRB 5292 IS Chemical shifts for TC5b in buffer and buffer containing 30 vol-% TFE.' unspecified
+PDB  1jrj '1JRJ IS AN Analagous C-terminal structure.'                                          unspecified
+#
+_pdbx_database_status.status_code                     REL
+_pdbx_database_status.entry_id                        1L2Y
+_pdbx_database_status.recvd_initial_deposition_date   2002-02-25
+_pdbx_database_status.deposit_site                    RCSB
+_pdbx_database_status.process_site                    RCSB
+_pdbx_database_status.status_code_mr                  REL
+_pdbx_database_status.SG_entry                        .
+_pdbx_database_status.pdb_format_compatible           Y
+_pdbx_database_status.status_code_sf                  ?
+_pdbx_database_status.status_code_cs                  REL
+_pdbx_database_status.methods_development_category    ?
+_pdbx_database_status.status_code_nmr_data            REL
+#
+loop_
+_audit_author.name
+_audit_author.pdbx_ordinal
+'Neidigh, J.W.'    1
+'Fesinmeyer, R.M.' 2
+'Andersen, N.H.'   3
+#
+_citation.id                        primary
+_citation.title                     'Designing a 20-residue protein.'
+_citation.journal_abbrev            Nat.Struct.Biol.
+_citation.journal_volume            9
+_citation.page_first                425
+_citation.page_last                 430
+_citation.year                      2002
+_citation.journal_id_ASTM           NSBIEW
+_citation.country                   US
+_citation.journal_id_ISSN           1072-8368
+_citation.journal_id_CSD            2024
+_citation.book_publisher            ?
+_citation.pdbx_database_id_PubMed   11979279
+_citation.pdbx_database_id_DOI      10.1038/nsb798
+#
+loop_
+_citation_author.citation_id
+_citation_author.name
+_citation_author.ordinal
+_citation_author.identifier_ORCID
+primary 'Neidigh, J.W.'    1 ?
+primary 'Fesinmeyer, R.M.' 2 ?
+primary 'Andersen, N.H.'   3 ?
+#
+_entity.id                         1
+_entity.type                       polymer
+_entity.src_method                 syn
+_entity.pdbx_description           TC5b
+_entity.formula_weight             2171.413
+_entity.pdbx_number_of_molecules   1
+_entity.pdbx_ec                    ?
+_entity.pdbx_mutation              ?
+_entity.pdbx_fragment              ?
+_entity.details                    ?
+#
+_entity_poly.entity_id                      1
+_entity_poly.type                           'polypeptide(L)'
+_entity_poly.nstd_linkage                   no
+_entity_poly.nstd_monomer                   no
+_entity_poly.pdbx_seq_one_letter_code       NLYI
+_entity_poly.pdbx_seq_one_letter_code_can   NLYI
+_entity_poly.pdbx_strand_id                 A
+_entity_poly.pdbx_target_identifier         ?
+#
+loop_
+_entity_poly_seq.entity_id
+_entity_poly_seq.num
+_entity_poly_seq.mon_id
+_entity_poly_seq.hetero
+1 1  ASN n
+1 2  LEU n
+1 3  TYR n
+1 4  ILE n
+#
+_pdbx_entity_src_syn.entity_id              1
+_pdbx_entity_src_syn.pdbx_src_id            1
+_pdbx_entity_src_syn.pdbx_alt_source_flag   sample
+_pdbx_entity_src_syn.pdbx_beg_seq_num       ?
+_pdbx_entity_src_syn.pdbx_end_seq_num       ?
+_pdbx_entity_src_syn.organism_scientific    ?
+_pdbx_entity_src_syn.organism_common_name   ?
+_pdbx_entity_src_syn.ncbi_taxonomy_id       ?
+_pdbx_entity_src_syn.details
+'THE PROTEIN was synthesized using standard FMOC solid-phase synthesis methods on an Applied Biosystems 433A peptide synthesizer.'
+#
+_struct_ref.id                         1
+_struct_ref.entity_id                  1
+_struct_ref.db_name                    PDB
+_struct_ref.db_code                    1L2Y
+_struct_ref.pdbx_db_accession          1L2Y
+_struct_ref.pdbx_db_isoform            ?
+_struct_ref.pdbx_seq_one_letter_code   ?
+_struct_ref.pdbx_align_begin           ?
+#
+_struct_ref_seq.align_id                      1
+_struct_ref_seq.ref_id                        1
+_struct_ref_seq.pdbx_PDB_id_code              1L2Y
+_struct_ref_seq.pdbx_strand_id                A
+_struct_ref_seq.seq_align_beg                 1
+_struct_ref_seq.pdbx_seq_align_beg_ins_code   ?
+_struct_ref_seq.seq_align_end                 4
+_struct_ref_seq.pdbx_seq_align_end_ins_code   ?
+_struct_ref_seq.pdbx_db_accession             1L2Y
+_struct_ref_seq.db_align_beg                  1
+_struct_ref_seq.pdbx_db_align_beg_ins_code    ?
+_struct_ref_seq.db_align_end                  4
+_struct_ref_seq.pdbx_db_align_end_ins_code    ?
+_struct_ref_seq.pdbx_auth_seq_align_beg       1
+_struct_ref_seq.pdbx_auth_seq_align_end       4
+#
+loop_
+_chem_comp.id
+_chem_comp.type
+_chem_comp.mon_nstd_flag
+_chem_comp.name
+_chem_comp.pdbx_synonyms
+_chem_comp.formula
+_chem_comp.formula_weight
+ARG 'L-peptide linking' y ARGININE        ? 'C6 H15 N4 O2 1' 175.209
+ASN 'L-peptide linking' y ASPARAGINE      ? 'C4 H8 N2 O3'    132.118
+ASP 'L-peptide linking' y 'ASPARTIC ACID' ? 'C4 H7 N O4'     133.103
+GLN 'L-peptide linking' y GLUTAMINE       ? 'C5 H10 N2 O3'   146.144
+GLY 'peptide linking'   y GLYCINE         ? 'C2 H5 N O2'     75.067
+ILE 'L-peptide linking' y ISOLEUCINE      ? 'C6 H13 N O2'    131.173
+LEU 'L-peptide linking' y LEUCINE         ? 'C6 H13 N O2'    131.173
+LYS 'L-peptide linking' y LYSINE          ? 'C6 H15 N2 O2 1' 147.195
+PRO 'L-peptide linking' y PROLINE         ? 'C5 H9 N O2'     115.130
+SER 'L-peptide linking' y SERINE          ? 'C3 H7 N O3'     105.093
+TRP 'L-peptide linking' y TRYPTOPHAN      ? 'C11 H12 N2 O2'  204.225
+TYR 'L-peptide linking' y TYROSINE        ? 'C9 H11 N O3'    181.189
+#
+_pdbx_nmr_exptl.experiment_id   1
+_pdbx_nmr_exptl.solution_id     1
+_pdbx_nmr_exptl.conditions_id   1
+_pdbx_nmr_exptl.type            '2D NOESY'
+#
+_pdbx_nmr_exptl_sample_conditions.conditions_id       1
+_pdbx_nmr_exptl_sample_conditions.temperature         282
+_pdbx_nmr_exptl_sample_conditions.pressure            ambient
+_pdbx_nmr_exptl_sample_conditions.pH                  7
+_pdbx_nmr_exptl_sample_conditions.ionic_strength      ?
+_pdbx_nmr_exptl_sample_conditions.pressure_units      ?
+_pdbx_nmr_exptl_sample_conditions.temperature_units   K
+#
+_pdbx_nmr_sample_details.solution_id      1
+_pdbx_nmr_sample_details.contents         '1.0-1.8 mM TC5b'
+_pdbx_nmr_sample_details.solvent_system   '90% H2O/10% D2O'
+#
+_pdbx_nmr_spectrometer.spectrometer_id   1
+_pdbx_nmr_spectrometer.type              ?
+_pdbx_nmr_spectrometer.manufacturer      Bruker
+_pdbx_nmr_spectrometer.model             DRX
+_pdbx_nmr_spectrometer.field_strength    500
+#
+_pdbx_nmr_refine.entry_id           1L2Y
+_pdbx_nmr_refine.method             'Simulated annealing from random structures followed by steepest descent minimization'
+_pdbx_nmr_refine.details
+'169 NOE distance constraints were employed.  CNS was employed for S.A., followed by minimization using the SANDER module of AMBER.'
+_pdbx_nmr_refine.software_ordinal   1
+#
+_pdbx_nmr_details.entry_id   1L2Y
+_pdbx_nmr_details.text       'This structure was determined using standard 2D homonuclear techniques.'
+#
+_pdbx_nmr_ensemble.entry_id                                      1L2Y
+_pdbx_nmr_ensemble.conformers_calculated_total_number            50
+_pdbx_nmr_ensemble.conformers_submitted_total_number             38
+_pdbx_nmr_ensemble.conformer_selection_criteria
+'structures with acceptable covalent geometry, structures with the least restraint violations'
+_pdbx_nmr_ensemble.average_constraints_per_residue               ?
+_pdbx_nmr_ensemble.average_constraint_violations_per_residue     ?
+_pdbx_nmr_ensemble.maximum_distance_constraint_violation         ?
+_pdbx_nmr_ensemble.average_distance_constraint_violation         ?
+_pdbx_nmr_ensemble.maximum_upper_distance_constraint_violation   ?
+_pdbx_nmr_ensemble.maximum_lower_distance_constraint_violation   ?
+_pdbx_nmr_ensemble.distance_constraint_violation_method          ?
+_pdbx_nmr_ensemble.maximum_torsion_angle_constraint_violation    ?
+_pdbx_nmr_ensemble.average_torsion_angle_constraint_violation    ?
+_pdbx_nmr_ensemble.torsion_angle_constraint_violation_method     ?
+#
+loop_
+_pdbx_nmr_software.name
+_pdbx_nmr_software.version
+_pdbx_nmr_software.classification
+_pdbx_nmr_software.authors
+_pdbx_nmr_software.ordinal
+XwinNMR 2.6 collection           Bruker  1
+Felix   95  processing           MSI     2
+CNS     1.0 'structure solution' Brunger 3
+Amber   6.0 'structure solution' Kollman 4
+Amber   6.0 refinement           Kollman 5
+#
+_exptl.entry_id          1L2Y
+_exptl.method            'SOLUTION NMR'
+_exptl.crystals_number   ?
+#
+_exptl_crystal.id                    1
+_exptl_crystal.density_meas          ?
+_exptl_crystal.density_Matthews      ?
+_exptl_crystal.density_percent_sol   ?
+_exptl_crystal.description           ?
+#
+_diffrn.id                     1
+_diffrn.ambient_temp           ?
+_diffrn.ambient_temp_details   ?
+_diffrn.crystal_id             1
+#
+_diffrn_radiation.diffrn_id                        1
+_diffrn_radiation.wavelength_id                    1
+_diffrn_radiation.pdbx_monochromatic_or_laue_m_l   M
+_diffrn_radiation.monochromator                    ?
+_diffrn_radiation.pdbx_diffrn_protocol             'SINGLE WAVELENGTH'
+_diffrn_radiation.pdbx_scattering_type             ?
+#
+_diffrn_radiation_wavelength.id           1
+_diffrn_radiation_wavelength.wavelength   .
+_diffrn_radiation_wavelength.wt           1.0
+#
+_struct.entry_id                  1L2Y
+_struct.title                     'NMR Structure of Trp-Cage Miniprotein Construct TC5b'
+_struct.pdbx_model_details        ?
+_struct.pdbx_CASP_flag            ?
+_struct.pdbx_model_type_details   ?
+#
+_struct_keywords.entry_id        1L2Y
+_struct_keywords.pdbx_keywords   'DE NOVO PROTEIN'
+_struct_keywords.text            'miniprotein, two-state folding, Trp-cage, DE NOVO PROTEIN'
+#
+_struct_asym.id                            A
+_struct_asym.pdbx_blank_PDB_chainid_flag   N
+_struct_asym.pdbx_modified                 N
+_struct_asym.entity_id                     1
+_struct_asym.details                       ?
+#
+loop_
+_struct_conf.conf_type_id
+_struct_conf.id
+_struct_conf.pdbx_PDB_helix_id
+_struct_conf.beg_label_comp_id
+_struct_conf.beg_label_asym_id
+_struct_conf.beg_label_seq_id
+_struct_conf.pdbx_beg_PDB_ins_code
+_struct_conf.end_label_comp_id
+_struct_conf.end_label_asym_id
+_struct_conf.end_label_seq_id
+_struct_conf.pdbx_end_PDB_ins_code
+_struct_conf.beg_auth_comp_id
+_struct_conf.beg_auth_asym_id
+_struct_conf.beg_auth_seq_id
+_struct_conf.end_auth_comp_id
+_struct_conf.end_auth_asym_id
+_struct_conf.end_auth_seq_id
+_struct_conf.pdbx_PDB_helix_class
+_struct_conf.details
+_struct_conf.pdbx_PDB_helix_length
+HELX_P HELX_P1 1 ASN A 1  ? ASP A 4  ? ASN A 1  ASP A 4  1 ? 9
+#
+_struct_conf_type.id          HELX_P
+_struct_conf_type.criteria    ?
+_struct_conf_type.reference   ?
+#
+_database_PDB_matrix.entry_id          1L2Y
+_database_PDB_matrix.origx[1][1]       1.000000
+_database_PDB_matrix.origx[1][2]       0.000000
+_database_PDB_matrix.origx[1][3]       0.000000
+_database_PDB_matrix.origx[2][1]       0.000000
+_database_PDB_matrix.origx[2][2]       1.000000
+_database_PDB_matrix.origx[2][3]       0.000000
+_database_PDB_matrix.origx[3][1]       0.000000
+_database_PDB_matrix.origx[3][2]       0.000000
+_database_PDB_matrix.origx[3][3]       1.000000
+_database_PDB_matrix.origx_vector[1]   0.00000
+_database_PDB_matrix.origx_vector[2]   0.00000
+_database_PDB_matrix.origx_vector[3]   0.00000
+#
+_atom_sites.entry_id                    1L2Y
+_atom_sites.fract_transf_matrix[1][1]   1.000000
+_atom_sites.fract_transf_matrix[1][2]   0.000000
+_atom_sites.fract_transf_matrix[1][3]   0.000000
+_atom_sites.fract_transf_matrix[2][1]   0.000000
+_atom_sites.fract_transf_matrix[2][2]   1.000000
+_atom_sites.fract_transf_matrix[2][3]   0.000000
+_atom_sites.fract_transf_matrix[3][1]   0.000000
+_atom_sites.fract_transf_matrix[3][2]   0.000000
+_atom_sites.fract_transf_matrix[3][3]   1.000000
+_atom_sites.fract_transf_vector[1]      0.00000
+_atom_sites.fract_transf_vector[2]      0.00000
+_atom_sites.fract_transf_vector[3]      0.00000
+#
+loop_
+_atom_type.symbol
+C
+H
+N
+O
+#
+loop_
+_atom_site.group_PDB
+_atom_site.id
+_atom_site.type_symbol
+_atom_site.label_atom_id
+_atom_site.label_alt_id
+_atom_site.label_comp_id
+_atom_site.label_asym_id
+_atom_site.label_entity_id
+_atom_site.label_seq_id
+_atom_site.pdbx_PDB_ins_code
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.occupancy
+_atom_site.B_iso_or_equiv
+_atom_site.pdbx_formal_charge
+_atom_site.auth_seq_id
+_atom_site.auth_comp_id
+_atom_site.auth_asym_id
+_atom_site.auth_atom_id
+_atom_site.pdbx_PDB_model_num
+ATOM 1     N N    . ASN A 1 1  ? -8.901  4.127   -0.555 1.00 0.00 ? 1  ASN A N    1
+ATOM 2     C CA   . ASN A 1 1  ? -8.608  3.135   -1.618 1.00 0.00 ? 1  ASN A CA   1
+ATOM 3     C C    . ASN A 1 1  ? -7.117  2.964   -1.897 1.00 0.00 ? 1  ASN A C    1
+ATOM 4     O O    . ASN A 1 1  ? -6.634  1.849   -1.758 1.00 0.00 ? 1  ASN A O    1
+ATOM 5     C CB   . ASN A 1 1  ? -9.437  3.396   -2.889 1.00 0.00 ? 1  ASN A CB   1
+ATOM 6     C CG   . ASN A 1 1  ? -10.915 3.130   -2.611 1.00 0.00 ? 1  ASN A CG   1
+ATOM 7     O OD1  . ASN A 1 1  ? -11.269 2.700   -1.524 1.00 0.00 ? 1  ASN A OD1  1
+ATOM 8     N ND2  . ASN A 1 1  ? -11.806 3.406   -3.543 1.00 0.00 ? 1  ASN A ND2  1
+ATOM 9     H H1   . ASN A 1 1  ? -8.330  3.957   0.261  1.00 0.00 ? 1  ASN A H1   1
+ATOM 10    H H2   . ASN A 1 1  ? -8.740  5.068   -0.889 1.00 0.00 ? 1  ASN A H2   1
+ATOM 11    H H3   . ASN A 1 1  ? -9.877  4.041   -0.293 1.00 0.00 ? 1  ASN A H3   1
+ATOM 12    H HA   . ASN A 1 1  ? -8.930  2.162   -1.239 1.00 0.00 ? 1  ASN A HA   1
+ATOM 13    H HB2  . ASN A 1 1  ? -9.310  4.417   -3.193 1.00 0.00 ? 1  ASN A HB2  1
+ATOM 14    H HB3  . ASN A 1 1  ? -9.108  2.719   -3.679 1.00 0.00 ? 1  ASN A HB3  1
+ATOM 15    H HD21 . ASN A 1 1  ? -11.572 3.791   -4.444 1.00 0.00 ? 1  ASN A HD21 1
+ATOM 16    H HD22 . ASN A 1 1  ? -12.757 3.183   -3.294 1.00 0.00 ? 1  ASN A HD22 1
+ATOM 17    N N    . LEU A 1 2  ? -6.379  4.031   -2.228 1.00 0.00 ? 2  LEU A N    1
+ATOM 18    C CA   . LEU A 1 2  ? -4.923  4.002   -2.452 1.00 0.00 ? 2  LEU A CA   1
+ATOM 19    C C    . LEU A 1 2  ? -4.136  3.187   -1.404 1.00 0.00 ? 2  LEU A C    1
+ATOM 20    O O    . LEU A 1 2  ? -3.391  2.274   -1.760 1.00 0.00 ? 2  LEU A O    1
+ATOM 21    C CB   . LEU A 1 2  ? -4.411  5.450   -2.619 1.00 0.00 ? 2  LEU A CB   1
+ATOM 22    C CG   . LEU A 1 2  ? -4.795  6.450   -1.495 1.00 0.00 ? 2  LEU A CG   1
+ATOM 23    C CD1  . LEU A 1 2  ? -3.612  6.803   -0.599 1.00 0.00 ? 2  LEU A CD1  1
+ATOM 24    C CD2  . LEU A 1 2  ? -5.351  7.748   -2.084 1.00 0.00 ? 2  LEU A CD2  1
+ATOM 25    H H    . LEU A 1 2  ? -6.821  4.923   -2.394 1.00 0.00 ? 2  LEU A H    1
+ATOM 26    H HA   . LEU A 1 2  ? -4.750  3.494   -3.403 1.00 0.00 ? 2  LEU A HA   1
+ATOM 27    H HB2  . LEU A 1 2  ? -3.340  5.414   -2.672 1.00 0.00 ? 2  LEU A HB2  1
+ATOM 28    H HB3  . LEU A 1 2  ? -4.813  5.817   -3.564 1.00 0.00 ? 2  LEU A HB3  1
+ATOM 29    H HG   . LEU A 1 2  ? -5.568  6.022   -0.858 1.00 0.00 ? 2  LEU A HG   1
+ATOM 30    H HD11 . LEU A 1 2  ? -3.207  5.905   -0.146 1.00 0.00 ? 2  LEU A HD11 1
+ATOM 31    H HD12 . LEU A 1 2  ? -2.841  7.304   -1.183 1.00 0.00 ? 2  LEU A HD12 1
+ATOM 32    H HD13 . LEU A 1 2  ? -3.929  7.477   0.197  1.00 0.00 ? 2  LEU A HD13 1
+ATOM 33    H HD21 . LEU A 1 2  ? -4.607  8.209   -2.736 1.00 0.00 ? 2  LEU A HD21 1
+ATOM 34    H HD22 . LEU A 1 2  ? -6.255  7.544   -2.657 1.00 0.00 ? 2  LEU A HD22 1
+ATOM 35    H HD23 . LEU A 1 2  ? -5.592  8.445   -1.281 1.00 0.00 ? 2  LEU A HD23 1
+ATOM 36    N N    . TYR A 1 3  ? -4.354  3.455   -0.111 1.00 0.00 ? 3  TYR A N    1
+ATOM 37    C CA   . TYR A 1 3  ? -3.690  2.738   0.981  1.00 0.00 ? 3  TYR A CA   1
+ATOM 38    C C    . TYR A 1 3  ? -4.102  1.256   1.074  1.00 0.00 ? 3  TYR A C    1
+ATOM 39    O O    . TYR A 1 3  ? -3.291  0.409   1.442  1.00 0.00 ? 3  TYR A O    1
+ATOM 40    C CB   . TYR A 1 3  ? -3.964  3.472   2.302  1.00 0.00 ? 3  TYR A CB   1
+ATOM 41    C CG   . TYR A 1 3  ? -2.824  3.339   3.290  1.00 0.00 ? 3  TYR A CG   1
+ATOM 42    C CD1  . TYR A 1 3  ? -2.746  2.217   4.138  1.00 0.00 ? 3  TYR A CD1  1
+ATOM 43    C CD2  . TYR A 1 3  ? -1.820  4.326   3.332  1.00 0.00 ? 3  TYR A CD2  1
+ATOM 44    C CE1  . TYR A 1 3  ? -1.657  2.076   5.018  1.00 0.00 ? 3  TYR A CE1  1
+ATOM 45    C CE2  . TYR A 1 3  ? -0.725  4.185   4.205  1.00 0.00 ? 3  TYR A CE2  1
+ATOM 46    C CZ   . TYR A 1 3  ? -0.639  3.053   5.043  1.00 0.00 ? 3  TYR A CZ   1
+ATOM 47    O OH   . TYR A 1 3  ? 0.433   2.881   5.861  1.00 0.00 ? 3  TYR A OH   1
+ATOM 48    H H    . TYR A 1 3  ? -4.934  4.245   0.120  1.00 0.00 ? 3  TYR A H    1
+ATOM 49    H HA   . TYR A 1 3  ? -2.615  2.768   0.796  1.00 0.00 ? 3  TYR A HA   1
+ATOM 50    H HB2  . TYR A 1 3  ? -4.117  4.513   2.091  1.00 0.00 ? 3  TYR A HB2  1
+ATOM 51    H HB3  . TYR A 1 3  ? -4.886  3.096   2.750  1.00 0.00 ? 3  TYR A HB3  1
+ATOM 52    H HD1  . TYR A 1 3  ? -3.513  1.456   4.101  1.00 0.00 ? 3  TYR A HD1  1
+ATOM 53    H HD2  . TYR A 1 3  ? -1.877  5.200   2.695  1.00 0.00 ? 3  TYR A HD2  1
+ATOM 54    H HE1  . TYR A 1 3  ? -1.576  1.221   5.669  1.00 0.00 ? 3  TYR A HE1  1
+ATOM 55    H HE2  . TYR A 1 3  ? 0.033   4.952   4.233  1.00 0.00 ? 3  TYR A HE2  1
+ATOM 56    H HH   . TYR A 1 3  ? 1.187   3.395   5.567  1.00 0.00 ? 3  TYR A HH   1
+ATOM 57    N N    . ILE A 1 4  ? -5.342  0.925   0.689  1.00 0.00 ? 4  ILE A N    1
+ATOM 58    C CA   . ILE A 1 4  ? -5.857  -0.449  0.613  1.00 0.00 ? 4  ILE A CA   1
+ATOM 59    C C    . ILE A 1 4  ? -5.089  -1.221  -0.470 1.00 0.00 ? 4  ILE A C    1
+ATOM 60    O O    . ILE A 1 4  ? -4.621  -2.334  -0.226 1.00 0.00 ? 4  ILE A O    1
+ATOM 61    C CB   . ILE A 1 4  ? -7.386  -0.466  0.343  1.00 0.00 ? 4  ILE A CB   1
+ATOM 62    C CG1  . ILE A 1 4  ? -8.197  0.540   1.197  1.00 0.00 ? 4  ILE A CG1  1
+ATOM 63    C CG2  . ILE A 1 4  ? -7.959  -1.884  0.501  1.00 0.00 ? 4  ILE A CG2  1
+ATOM 64    C CD1  . ILE A 1 4  ? -8.019  0.412   2.715  1.00 0.00 ? 4  ILE A CD1  1
+ATOM 65    H H    . ILE A 1 4  ? -5.906  1.656   0.283  1.00 0.00 ? 4  ILE A H    1
+ATOM 66    H HA   . ILE A 1 4  ? -5.670  -0.941  1.568  1.00 0.00 ? 4  ILE A HA   1
+ATOM 67    H HB   . ILE A 1 4  ? -7.554  -0.192  -0.697 1.00 0.00 ? 4  ILE A HB   1
+ATOM 68    H HG12 . ILE A 1 4  ? -7.900  1.531   0.912  1.00 0.00 ? 4  ILE A HG12 1
+ATOM 69    H HG13 . ILE A 1 4  ? -9.257  0.424   0.964  1.00 0.00 ? 4  ILE A HG13 1
+ATOM 70    H HG21 . ILE A 1 4  ? -7.509  -2.555  -0.232 1.00 0.00 ? 4  ILE A HG21 1
+ATOM 71    H HG22 . ILE A 1 4  ? -7.759  -2.271  1.501  1.00 0.00 ? 4  ILE A HG22 1
+ATOM 72    H HG23 . ILE A 1 4  ? -9.036  -1.871  0.332  1.00 0.00 ? 4  ILE A HG23 1
+ATOM 73    H HD11 . ILE A 1 4  ? -8.306  -0.585  3.049  1.00 0.00 ? 4  ILE A HD11 1
+ATOM 74    H HD12 . ILE A 1 4  ? -6.983  0.606   2.995  1.00 0.00 ? 4  ILE A HD12 1
+ATOM 75    H HD13 . ILE A 1 4  ? -8.656  1.144   3.213  1.00 0.00 ? 4  ILE A HD13 1
+ATOM 305   N N    . ASN A 1 1  ? -6.919  6.901   0.917  1.00 0.00 ? 1  ASN A N    2
+ATOM 306   C CA   . ASN A 1 1  ? -7.682  6.025   -0.010 1.00 0.00 ? 1  ASN A CA   2
+ATOM 307   C C    . ASN A 1 1  ? -6.840  4.889   -0.589 1.00 0.00 ? 1  ASN A C    2
+ATOM 308   O O    . ASN A 1 1  ? -7.106  3.741   -0.253 1.00 0.00 ? 1  ASN A O    2
+ATOM 309   C CB   . ASN A 1 1  ? -8.428  6.847   -1.072 1.00 0.00 ? 1  ASN A CB   2
+ATOM 310   C CG   . ASN A 1 1  ? -9.504  7.659   -0.362 1.00 0.00 ? 1  ASN A CG   2
+ATOM 311   O OD1  . ASN A 1 1  ? -9.180  8.568   0.382  1.00 0.00 ? 1  ASN A OD1  2
+ATOM 312   N ND2  . ASN A 1 1  ? -10.768 7.290   -0.468 1.00 0.00 ? 1  ASN A ND2  2
+ATOM 313   H H1   . ASN A 1 1  ? -6.513  6.358   1.667  1.00 0.00 ? 1  ASN A H1   2
+ATOM 314   H H2   . ASN A 1 1  ? -6.191  7.398   0.422  1.00 0.00 ? 1  ASN A H2   2
+ATOM 315   H H3   . ASN A 1 1  ? -7.553  7.592   1.308  1.00 0.00 ? 1  ASN A H3   2
+ATOM 316   H HA   . ASN A 1 1  ? -8.451  5.523   0.581  1.00 0.00 ? 1  ASN A HA   2
+ATOM 317   H HB2  . ASN A 1 1  ? -7.743  7.506   -1.571 1.00 0.00 ? 1  ASN A HB2  2
+ATOM 318   H HB3  . ASN A 1 1  ? -8.886  6.189   -1.811 1.00 0.00 ? 1  ASN A HB3  2
+ATOM 319   H HD21 . ASN A 1 1  ? -11.078 6.519   -1.037 1.00 0.00 ? 1  ASN A HD21 2
+ATOM 320   H HD22 . ASN A 1 1  ? -11.417 7.848   0.064  1.00 0.00 ? 1  ASN A HD22 2
+ATOM 321   N N    . LEU A 1 2  ? -5.819  5.175   -1.412 1.00 0.00 ? 2  LEU A N    2
+ATOM 322   C CA   . LEU A 1 2  ? -5.020  4.162   -2.130 1.00 0.00 ? 2  LEU A CA   2
+ATOM 323   C C    . LEU A 1 2  ? -4.244  3.179   -1.224 1.00 0.00 ? 2  LEU A C    2
+ATOM 324   O O    . LEU A 1 2  ? -3.761  2.148   -1.693 1.00 0.00 ? 2  LEU A O    2
+ATOM 325   C CB   . LEU A 1 2  ? -4.073  4.863   -3.128 1.00 0.00 ? 2  LEU A CB   2
+ATOM 326   C CG   . LEU A 1 2  ? -4.831  5.608   -4.250 1.00 0.00 ? 2  LEU A CG   2
+ATOM 327   C CD1  . LEU A 1 2  ? -5.010  7.109   -3.963 1.00 0.00 ? 2  LEU A CD1  2
+ATOM 328   C CD2  . LEU A 1 2  ? -4.110  5.465   -5.592 1.00 0.00 ? 2  LEU A CD2  2
+ATOM 329   H H    . LEU A 1 2  ? -5.631  6.133   -1.665 1.00 0.00 ? 2  LEU A H    2
+ATOM 330   H HA   . LEU A 1 2  ? -5.709  3.545   -2.710 1.00 0.00 ? 2  LEU A HA   2
+ATOM 331   H HB2  . LEU A 1 2  ? -3.472  5.572   -2.591 1.00 0.00 ? 2  LEU A HB2  2
+ATOM 332   H HB3  . LEU A 1 2  ? -3.451  4.089   -3.583 1.00 0.00 ? 2  LEU A HB3  2
+ATOM 333   H HG   . LEU A 1 2  ? -5.820  5.160   -4.359 1.00 0.00 ? 2  LEU A HG   2
+ATOM 334   H HD11 . LEU A 1 2  ? -5.173  7.303   -2.907 1.00 0.00 ? 2  LEU A HD11 2
+ATOM 335   H HD12 . LEU A 1 2  ? -4.124  7.663   -4.273 1.00 0.00 ? 2  LEU A HD12 2
+ATOM 336   H HD13 . LEU A 1 2  ? -5.867  7.480   -4.526 1.00 0.00 ? 2  LEU A HD13 2
+ATOM 337   H HD21 . LEU A 1 2  ? -3.114  5.904   -5.535 1.00 0.00 ? 2  LEU A HD21 2
+ATOM 338   H HD22 . LEU A 1 2  ? -4.023  4.410   -5.855 1.00 0.00 ? 2  LEU A HD22 2
+ATOM 339   H HD23 . LEU A 1 2  ? -4.683  5.969   -6.371 1.00 0.00 ? 2  LEU A HD23 2
+ATOM 340   N N    . TYR A 1 3  ? -4.181  3.456   0.082  1.00 0.00 ? 3  TYR A N    2
+ATOM 341   C CA   . TYR A 1 3  ? -3.537  2.636   1.105  1.00 0.00 ? 3  TYR A CA   2
+ATOM 342   C C    . TYR A 1 3  ? -4.038  1.181   1.139  1.00 0.00 ? 3  TYR A C    2
+ATOM 343   O O    . TYR A 1 3  ? -3.259  0.273   1.413  1.00 0.00 ? 3  TYR A O    2
+ATOM 344   C CB   . TYR A 1 3  ? -3.727  3.313   2.471  1.00 0.00 ? 3  TYR A CB   2
+ATOM 345   C CG   . TYR A 1 3  ? -2.520  3.154   3.365  1.00 0.00 ? 3  TYR A CG   2
+ATOM 346   C CD1  . TYR A 1 3  ? -2.382  2.007   4.169  1.00 0.00 ? 3  TYR A CD1  2
+ATOM 347   C CD2  . TYR A 1 3  ? -1.514  4.139   3.357  1.00 0.00 ? 3  TYR A CD2  2
+ATOM 348   C CE1  . TYR A 1 3  ? -1.233  1.840   4.963  1.00 0.00 ? 3  TYR A CE1  2
+ATOM 349   C CE2  . TYR A 1 3  ? -0.365  3.977   4.149  1.00 0.00 ? 3  TYR A CE2  2
+ATOM 350   C CZ   . TYR A 1 3  ? -0.218  2.820   4.947  1.00 0.00 ? 3  TYR A CZ   2
+ATOM 351   O OH   . TYR A 1 3  ? 0.909   2.639   5.687  1.00 0.00 ? 3  TYR A OH   2
+ATOM 352   H H    . TYR A 1 3  ? -4.618  4.309   0.378  1.00 0.00 ? 3  TYR A H    2
+ATOM 353   H HA   . TYR A 1 3  ? -2.470  2.610   0.881  1.00 0.00 ? 3  TYR A HA   2
+ATOM 354   H HB2  . TYR A 1 3  ? -3.905  4.360   2.315  1.00 0.00 ? 3  TYR A HB2  2
+ATOM 355   H HB3  . TYR A 1 3  ? -4.610  2.907   2.968  1.00 0.00 ? 3  TYR A HB3  2
+ATOM 356   H HD1  . TYR A 1 3  ? -3.154  1.253   4.165  1.00 0.00 ? 3  TYR A HD1  2
+ATOM 357   H HD2  . TYR A 1 3  ? -1.614  5.025   2.743  1.00 0.00 ? 3  TYR A HD2  2
+ATOM 358   H HE1  . TYR A 1 3  ? -1.110  0.964   5.579  1.00 0.00 ? 3  TYR A HE1  2
+ATOM 359   H HE2  . TYR A 1 3  ? 0.390   4.746   4.148  1.00 0.00 ? 3  TYR A HE2  2
+ATOM 360   H HH   . TYR A 1 3  ? 1.602   3.248   5.433  1.00 0.00 ? 3  TYR A HH   2
+ATOM 361   N N    . ILE A 1 4  ? -5.316  0.947   0.804  1.00 0.00 ? 4  ILE A N    2
+ATOM 362   C CA   . ILE A 1 4  ? -5.914  -0.393  0.686  1.00 0.00 ? 4  ILE A CA   2
+ATOM 363   C C    . ILE A 1 4  ? -5.157  -1.200  -0.382 1.00 0.00 ? 4  ILE A C    2
+ATOM 364   O O    . ILE A 1 4  ? -4.755  -2.338  -0.140 1.00 0.00 ? 4  ILE A O    2
+ATOM 365   C CB   . ILE A 1 4  ? -7.421  -0.283  0.330  1.00 0.00 ? 4  ILE A CB   2
+ATOM 366   C CG1  . ILE A 1 4  ? -8.214  0.632   1.300  1.00 0.00 ? 4  ILE A CG1  2
+ATOM 367   C CG2  . ILE A 1 4  ? -8.099  -1.670  0.270  1.00 0.00 ? 4  ILE A CG2  2
+ATOM 368   C CD1  . ILE A 1 4  ? -9.489  1.191   0.662  1.00 0.00 ? 4  ILE A CD1  2
+ATOM 369   H H    . ILE A 1 4  ? -5.889  1.753   0.580  1.00 0.00 ? 4  ILE A H    2
+ATOM 370   H HA   . ILE A 1 4  ? -5.814  -0.911  1.639  1.00 0.00 ? 4  ILE A HA   2
+ATOM 371   H HB   . ILE A 1 4  ? -7.477  0.157   -0.667 1.00 0.00 ? 4  ILE A HB   2
+ATOM 372   H HG12 . ILE A 1 4  ? -8.484  0.062   2.168  1.00 0.00 ? 4  ILE A HG12 2
+ATOM 373   H HG13 . ILE A 1 4  ? -7.616  1.489   1.603  1.00 0.00 ? 4  ILE A HG13 2
+ATOM 374   H HG21 . ILE A 1 4  ? -7.421  -2.428  -0.112 1.00 0.00 ? 4  ILE A HG21 2
+ATOM 375   H HG22 . ILE A 1 4  ? -8.432  -1.979  1.263  1.00 0.00 ? 4  ILE A HG22 2
+ATOM 376   H HG23 . ILE A 1 4  ? -8.967  -1.620  -0.389 1.00 0.00 ? 4  ILE A HG23 2
+ATOM 377   H HD11 . ILE A 1 4  ? -9.235  1.742   -0.245 1.00 0.00 ? 4  ILE A HD11 2
+ATOM 378   H HD12 . ILE A 1 4  ? -10.180 0.385   0.416  1.00 0.00 ? 4  ILE A HD12 2
+ATOM 379   H HD13 . ILE A 1 4  ? -9.973  1.875   1.360  1.00 0.00 ? 4  ILE A HD13 2
+#
+loop_
+_pdbx_poly_seq_scheme.asym_id
+_pdbx_poly_seq_scheme.entity_id
+_pdbx_poly_seq_scheme.seq_id
+_pdbx_poly_seq_scheme.mon_id
+_pdbx_poly_seq_scheme.ndb_seq_num
+_pdbx_poly_seq_scheme.pdb_seq_num
+_pdbx_poly_seq_scheme.auth_seq_num
+_pdbx_poly_seq_scheme.pdb_mon_id
+_pdbx_poly_seq_scheme.auth_mon_id
+_pdbx_poly_seq_scheme.pdb_strand_id
+_pdbx_poly_seq_scheme.pdb_ins_code
+_pdbx_poly_seq_scheme.hetero
+A 1 1  ASN 1  1  1  ASN ASN A . n
+A 1 2  LEU 2  2  2  LEU LEU A . n
+A 1 3  TYR 3  3  3  TYR TYR A . n
+A 1 4  ILE 4  4  4  ILE ILE A . n
+#
+_pdbx_struct_assembly.id                   1
+_pdbx_struct_assembly.details              author_defined_assembly
+_pdbx_struct_assembly.method_details       ?
+_pdbx_struct_assembly.oligomeric_details   monomeric
+_pdbx_struct_assembly.oligomeric_count     1
+#
+_pdbx_struct_assembly_gen.assembly_id       1
+_pdbx_struct_assembly_gen.oper_expression   1
+_pdbx_struct_assembly_gen.asym_id_list      A
+#
+_pdbx_struct_oper_list.id                   1
+_pdbx_struct_oper_list.type                 'identity operation'
+_pdbx_struct_oper_list.name                 1_555
+_pdbx_struct_oper_list.symmetry_operation   ?
+_pdbx_struct_oper_list.matrix[1][1]         1.0000000000
+_pdbx_struct_oper_list.matrix[1][2]         0.0000000000
+_pdbx_struct_oper_list.matrix[1][3]         0.0000000000
+_pdbx_struct_oper_list.vector[1]            0.0000000000
+_pdbx_struct_oper_list.matrix[2][1]         0.0000000000
+_pdbx_struct_oper_list.matrix[2][2]         1.0000000000
+_pdbx_struct_oper_list.matrix[2][3]         0.0000000000
+_pdbx_struct_oper_list.vector[2]            0.0000000000
+_pdbx_struct_oper_list.matrix[3][1]         0.0000000000
+_pdbx_struct_oper_list.matrix[3][2]         0.0000000000
+_pdbx_struct_oper_list.matrix[3][3]         1.0000000000
+_pdbx_struct_oper_list.vector[3]            0.0000000000
+#
+loop_
+_pdbx_audit_revision_history.ordinal
+_pdbx_audit_revision_history.data_content_type
+_pdbx_audit_revision_history.major_revision
+_pdbx_audit_revision_history.minor_revision
+_pdbx_audit_revision_history.revision_date
+1 'Structure model' 1 0 2002-05-29
+2 'Structure model' 1 1 2008-04-28
+3 'Structure model' 1 2 2011-07-13
+4 'Structure model' 1 3 2020-02-05
+5 'Structure model' 1 4 2023-06-14
+#
+_pdbx_audit_revision_details.ordinal             1
+_pdbx_audit_revision_details.revision_ordinal    1
+_pdbx_audit_revision_details.data_content_type   'Structure model'
+_pdbx_audit_revision_details.provider            repository
+_pdbx_audit_revision_details.type                'Initial release'
+_pdbx_audit_revision_details.description         ?
+_pdbx_audit_revision_details.details             ?
+#
+loop_
+_pdbx_audit_revision_group.ordinal
+_pdbx_audit_revision_group.revision_ordinal
+_pdbx_audit_revision_group.data_content_type
+_pdbx_audit_revision_group.group
+1 2 'Structure model' 'Version format compliance'
+2 3 'Structure model' 'Version format compliance'
+3 4 'Structure model' 'Data collection'
+4 4 'Structure model' 'Database references'
+5 4 'Structure model' 'Derived calculations'
+6 4 'Structure model' Other
+7 5 'Structure model' 'Database references'
+8 5 'Structure model' Other
+#
+loop_
+_pdbx_audit_revision_category.ordinal
+_pdbx_audit_revision_category.revision_ordinal
+_pdbx_audit_revision_category.data_content_type
+_pdbx_audit_revision_category.category
+1 4 'Structure model' database_2
+2 4 'Structure model' pdbx_database_status
+3 4 'Structure model' pdbx_nmr_software
+4 4 'Structure model' pdbx_struct_assembly
+5 4 'Structure model' pdbx_struct_oper_list
+6 5 'Structure model' database_2
+7 5 'Structure model' pdbx_database_status
+#
+loop_
+_pdbx_audit_revision_item.ordinal
+_pdbx_audit_revision_item.revision_ordinal
+_pdbx_audit_revision_item.data_content_type
+_pdbx_audit_revision_item.item
+1 4 'Structure model' '_pdbx_database_status.status_code_cs'
+2 4 'Structure model' '_pdbx_nmr_software.name'
+3 5 'Structure model' '_database_2.pdbx_DOI'
+4 5 'Structure model' '_database_2.pdbx_database_accession'
+5 5 'Structure model' '_pdbx_database_status.status_code_nmr_data'
+#
