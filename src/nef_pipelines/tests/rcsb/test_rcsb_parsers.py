@@ -1,8 +1,12 @@
 import pytest
 from frozendict import frozendict
 
-from nef_pipelines.lib.pdb_parser import PdbSecondaryStructureType, parse_cif, parse_pdb
 from nef_pipelines.lib.test_lib import path_in_test_data
+from nef_pipelines.transcoders.rcsb.rcsb_lib import (
+    PdbSecondaryStructureType,
+    parse_cif,
+    parse_pdb,
+)
 
 # # test=PdbxReader()
 #
@@ -142,7 +146,7 @@ def test_short(file_name, reader_function):
                 "atom_number": 0,
             }
         ): {
-            "name": "N",
+            "atom_name": "N",
             "x": -8.901,
             "y": 4.127,
             "z": -0.555,
@@ -157,7 +161,7 @@ def test_short(file_name, reader_function):
                 "atom_number": 19,
             }
         ): {
-            "name": "HE2",
+            "atom_name": "HE2",
             "x": 0.033,
             "y": 4.952,
             "z": 4.233,
@@ -172,7 +176,7 @@ def test_short(file_name, reader_function):
                 "atom_number": 4,
             }
         ): {
-            "name": "CB",
+            "atom_name": "CB",
             "x": -4.073,
             "y": 4.863,
             "z": -3.128,
@@ -187,7 +191,7 @@ def test_short(file_name, reader_function):
                 "atom_number": 18,
             }
         ): {
-            "name": "HD13",
+            "atom_name": "HD13",
             "x": -9.973,
             "y": 1.875,
             "z": 1.360,
@@ -204,6 +208,6 @@ def test_short(file_name, reader_function):
         assert model.serial == key_values["model"]
         assert chain.chain_code == key_values["chain_code"]
         assert residue.chain.chain_code == key_values["chain_code"]
-        assert atom.residue.name == key_values["residue_name"]
+        assert atom.residue.residue_name == key_values["residue_name"]
         for key, value in data_values.items():
             assert getattr(atom, key) == value

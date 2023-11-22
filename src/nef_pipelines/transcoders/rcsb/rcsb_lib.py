@@ -1,8 +1,10 @@
+import random
 import string
 from collections import Counter
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from enum import IntEnum, auto
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 from pdbx import DataContainer
@@ -39,7 +41,7 @@ class Sequence:
 @dataclass
 class Atom:  # noqa: F811
     serial: int
-    name: str
+    atom_name: str
 
     x: float
     y: float
@@ -58,7 +60,7 @@ class Atom:  # noqa: F811
 @dataclass
 class Residue:
     sequence_code: int
-    name: str
+    residue_name: str
     atoms: List[Atom] = field(default_factory=list)
     chain: Optional[Chain] = None
 
@@ -279,7 +281,7 @@ def _parse_atom(line, line_info):
 
     current_atom = Atom(
         serial=serial,
-        name=name,
+        atom_name=name,
         alternative_location=alternative_location,
         x=x,
         y=y,
@@ -310,7 +312,7 @@ def _parse_atom(line, line_info):
 
     if not current_residue:
         current_residue = Residue(
-            sequence_code=sequence_code, name=residue_name, chain=current_chain
+            sequence_code=sequence_code, residue_name=residue_name, chain=current_chain
         )
         current_chain.residues.append(current_residue)
 
@@ -951,7 +953,7 @@ def _match_sequences_and_set_offsets(structure):
             chain_starts[chain_code.chain_code] = chain_code.residues[0].sequence_code
 
             for residue in chain_code.residues:
-                chain_residues[residue.sequence_code] = residue.name
+                chain_residues[residue.sequence_code] = residue.residue_name
 
             min_residue = min(chain_residues.keys())
             max_residue = max(chain_residues.keys())
@@ -1014,18 +1016,30 @@ def _parse_cif_sequence(data, line_info):
 
 
 if __name__ == "__main__":
-    fh = open(
-        "/Users/garythompson/Dropbox/nef_pipelines/nef_pipelines/src/nef_pipelines/tests/pdbx/test_data/2mzw.cif"
+    root = Path(
+        "/Users/garythompson/Dropbox/nef_pipelines/nef_pipelines/src/nef_pipelines/tests/rcsb/test_data/"
     )
-    structure = parse_cif(fh, "2mzw.cif")
-    # structure = parse_cif(fh, "2mzw.pdb")
+    file_name = random.choice(
+        [
+            root / Path("1l2y_short.cif"),
+            root / Path("1l2y_short.pdb"),
+        ]
+    )
+    file_path = Path(file_name)
+    fh = open(file_path)
+
+    file_name = file_path.parts[-1]
+    if file_path.suffix == ".cif":
+        structure = parse_cif(fh, file_name)
+    else:
+        structure = parse_pdb(fh, file_name)
 
     print(structure.sequences)
     print(structure.secondary_structure)
     for model in structure.models:
         print(len(model.chains))
-        for chain in model:
-            for residue in chain:
+        for chain in model.chains.values():
+            for residue in chain.residues:
                 for atom in residue:
                     print(
                         model.serial,
@@ -1037,7 +1051,7 @@ if __name__ == "__main__":
                         residue.residue_name,
                         "|",
                         atom.serial,
-                        atom.name,
+                        atom.atom_name,
                         atom.alternative_location,
                         atom.x,
                         atom.y,
