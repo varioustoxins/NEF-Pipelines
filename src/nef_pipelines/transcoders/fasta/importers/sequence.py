@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Iterable, List
 
 import typer
-from Bio.SeqIO.FastaIO import SimpleFastaParser
+from fastaparser import Reader
 from ordered_set import OrderedSet
 
 from nef_pipelines.lib.sequence_lib import (
@@ -163,7 +163,8 @@ def read_sequences(
     try:
         with open(path) as handle:
             try:
-                sequences = list(SimpleFastaParser(handle))
+                reader = Reader(handle)
+                sequences = [sequence for sequence in reader]
             except Exception as e:
                 # check if relative to os.getcwd
                 exit_error(f"Error reading fasta file {str(path)}", e)
@@ -175,11 +176,13 @@ def read_sequences(
 
             chain_codes = list(islice(chain_codes, number_sequences))
 
-            for (meta_data, sequence), chain_code, molecule_type in zip_longest(
+            for sequence, chain_code, molecule_type in zip_longest(
                 sequences, chain_codes, molecule_types, fillvalue=None
             ):
                 if molecule_type is None:
                     molecule_type = MoleculeTypes.PROTEIN
+
+                sequence = [letter_code.letter_code for letter_code in sequence]
                 sequence_3_let = translate_1_to_3(sequence, molecule_type=molecule_type)
                 chain_residues = sequence_3let_to_res(sequence_3_let, chain_code)
 
