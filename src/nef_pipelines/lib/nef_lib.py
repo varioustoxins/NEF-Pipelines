@@ -238,7 +238,8 @@ def read_file_or_exit(file_path: Path) -> List[str]:
     :return: a list of strings from the file
     """
     try:
-        result = open(file_path).readlines()
+        with open(file_path) as fh:
+            result = fh.readlines()
     except IOError as e:
         msg = f"""\
             failed to read from {file_path} because {e}
