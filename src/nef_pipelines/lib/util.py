@@ -88,9 +88,14 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
     if entry is not None and NEF_META_DATA in entry.category_list:
         meta_frame = entry[NEF_META_DATA]
 
-        last_program = meta_frame.get_tag("program_name")[0]
-        last_program_version = meta_frame.get_tag("program_version")[0]
-        last_script_name = meta_frame.get_tag("script_name")[0]
+        last_program = meta_frame.get_tag("program_name")
+        last_program = last_program[0] if last_program else "."
+
+        last_program_version = meta_frame.get_tag("program_version")
+        last_program_version = last_program_version[0] if last_program_version else "."
+
+        last_script_name = meta_frame.get_tag("script_name")
+        last_script_name = last_script_name[0] if last_script_name else "."
 
         meta_frame.add_tag("program_name", name, update=True)
         meta_frame.add_tag("program_version", version, update=True)
