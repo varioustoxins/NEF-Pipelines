@@ -348,3 +348,4 @@ class SecondaryStructure:
     residue: Residue
     secondary_structure: SecondaryStructureType
     merit: float  # typically between 0 and 1
+    comment: str = ""

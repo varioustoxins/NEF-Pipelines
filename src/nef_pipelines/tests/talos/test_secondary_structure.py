@@ -29,11 +29,12 @@ save_nefpls_secondary_structure_A_talos                                         
       _nefpls_secondary_structure.residue_name
       _nefpls_secondary_structure.secondary_structure
       _nefpls_secondary_structure.merit
+      _nefpls_secondary_structure.comment
 
-     1   A   1   MET   coil         0.0
-     2   A   2   GLN   beta_sheet   0.5
-     3   A   3   ILE   beta_sheet   0.94
-     4   A   4   PHE   beta_sheet   0.94
+     1   A   1   MET   coil         0.0     .
+     2   A   2   GLN   beta_sheet   0.5     .
+     3   A   3   ILE   beta_sheet   0.94    .
+     4   A   4   PHE   beta_sheet   0.94    .
 
    stop_
 
@@ -78,11 +79,12 @@ save_nefpls_secondary_structure_A_talos                                         
       _nefpls_secondary_structure.residue_name
       _nefpls_secondary_structure.secondary_structure
       _nefpls_secondary_structure.merit
+      _nefpls_secondary_structure.comment
 
-     1   A   2   MET   coil         0.0
-     2   A   3   GLN   beta_sheet   0.5
-     3   A   4   ILE   beta_sheet   0.94
-     4   A   5   PHE   beta_sheet   0.94
+     1   A   2   MET   coil         0.0     .
+     2   A   3   GLN   beta_sheet   0.5     .
+     3   A   4   ILE   beta_sheet   0.94    .
+     4   A   5   PHE   beta_sheet   0.94    .
 
    stop_
 

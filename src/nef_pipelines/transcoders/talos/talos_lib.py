@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 
+from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.sequence_lib import (
     get_chain_starts,
     get_residue_name_from_lookup,
@@ -34,10 +35,16 @@ from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     select_records,
 )
 
+SECONDARY_PREDICTION_TRANSLATIONS = {"h": "H", "e": "E", "c": "L"}
+
+
 SECONDARY_STUCTURE_TRANSLATION = {
     "H": SecondaryStructureType.ALPHA_HELIX,
     "E": SecondaryStructureType.BETA_SHEET,
     "L": SecondaryStructureType.COIL,
+    "h": SecondaryStructureType.UNKNOWN,
+    "e": SecondaryStructureType.UNKNOWN,
+    "c": SecondaryStructureType.UNKNOWN,
 }
 
 
@@ -85,7 +92,11 @@ def _exit_if_sequences_dont_match(chain_code, nef_sequence, talos_sequence):
 
 
 def read_talos_secondary_structure(
-    gdb_records: DbFile, chain_code: str, file_name: str, nef_sequence: List[Residue]
+    gdb_records: DbFile,
+    chain_code: str,
+    file_name: str,
+    nef_sequence: List[Residue],
+    include_predictions: bool,
 ) -> List[SecondaryStructure]:
     columns = get_gdb_columns(gdb_records)
 
@@ -109,11 +120,16 @@ def read_talos_secondary_structure(
 
     exit_error_if_no_sequence(sequence, file_name)
 
-    return gdb_records_to_secondary_structure(gdb_records, sequence, chain_code)
+    return gdb_records_to_secondary_structure(
+        gdb_records, sequence, chain_code, include_predictions
+    )
 
 
 def gdb_records_to_secondary_structure(
-    gdb_records: DbFile, sequence: List[Residue], chain_code: str
+    gdb_records: DbFile,
+    sequence: List[Residue],
+    chain_code: str,
+    include_predictions: bool = False,
 ) -> List[SecondaryStructure]:
 
     residue_lookup = residues_to_residue_name_lookup(sequence)
@@ -130,6 +146,17 @@ def gdb_records_to_secondary_structure(
         )
 
         talos_secondary_structure = record.values[column_indices["SS_CLASS"]]
+
+        is_prediction = False
+        if (
+            include_predictions
+            and talos_secondary_structure in SECONDARY_PREDICTION_TRANSLATIONS
+        ):
+            talos_secondary_structure = SECONDARY_PREDICTION_TRANSLATIONS[
+                talos_secondary_structure
+            ]
+            is_prediction = True
+
         if talos_secondary_structure in SECONDARY_STUCTURE_TRANSLATION:
             secondary_structure = SECONDARY_STUCTURE_TRANSLATION[
                 talos_secondary_structure
@@ -137,22 +164,30 @@ def gdb_records_to_secondary_structure(
         else:
             line_info = record.line_info
             msg = f"""
-                    the secondary structure type {secondary_structure} is unrecognised at
+                    the secondary structure type {talos_secondary_structure} is unrecognised at
                     line: {line_info.line_no} in
                     file: {line_info.file_name} the line was
                     line: {line_info.line}
                 """
             exit_error(msg)
 
-        merit = record.values[column_indices["CONFIDENCE"]]
-        merit = convert_to_float_or_exit(merit, record.line_info)
+        if secondary_structure != SecondaryStructureType.UNKNOWN:
+            merit = record.values[column_indices["CONFIDENCE"]]
+            merit = convert_to_float_or_exit(merit, record.line_info)
+        else:
+            merit = UNUSED
 
         residue = Residue(
             chain_code=chain_code,
             sequence_code=sequence_code,
             residue_name=residue_name_3let_talos,
         )
-        value = SecondaryStructure(residue, secondary_structure, merit)
+
+        comment = ""
+
+        if is_prediction:
+            comment = "*PREDICTION*"
+        value = SecondaryStructure(residue, secondary_structure, merit, comment=comment)
         result.append(value)
 
     return result

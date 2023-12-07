@@ -53,6 +53,7 @@ def secondary_structure(
         metavar="|INPUT|",
         help="file to read NEF data from",
     ),
+    include_predictions: bool = typer.Option(False, help="include predictions"),
     file_name: Path = typer.Argument(
         ..., help="input files of type <TALOS-FILE>.pred", metavar="<PRED-FILE>"
     ),
@@ -63,13 +64,18 @@ def secondary_structure(
 
     lines = read_file_or_exit(file_name)
 
-    entry = pipe(entry, lines, chain_code, frame_name, file_name)
+    entry = pipe(entry, lines, chain_code, frame_name, file_name, include_predictions)
 
     print(entry)
 
 
 def pipe(
-    entry: Entry, lines: List[str], chain_code: str, frame_name: str, file_name: Path
+    entry: Entry,
+    lines: List[str],
+    chain_code: str,
+    frame_name: str,
+    file_name: Path,
+    include_predictions: bool,
 ):
 
     exit_if_chain_not_in_sequence(chain_code, entry, file_name)
@@ -83,6 +89,7 @@ def pipe(
         chain_code=chain_code,
         file_name=file_name,
         nef_sequence=nef_sequence,
+        include_predictions=include_predictions,
     )
 
     frame_name = f(frame_name)
@@ -99,7 +106,7 @@ def pipe(
     tags = """
         index
         chain_code sequence_code residue_name
-        secondary_structure merit
+        secondary_structure merit comment
         """.lower().split()
 
     for tag in tags:
@@ -117,6 +124,7 @@ def pipe(
             "residue_name": residue.residue_name,
             "secondary_structure": secondary_structure.secondary_structure,
             "merit": secondary_structure.merit,
+            "comment": secondary_structure.comment,  # TODO: lose whole column if there are none...
         }
 
         data_loop.add_data(
