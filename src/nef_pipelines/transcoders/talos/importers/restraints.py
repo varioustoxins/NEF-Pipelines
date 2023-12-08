@@ -1,4 +1,3 @@
-# TODO: support NMRPipe his and cis variants
 # TODO: what do unassigned nmrpipe shifts look like?
 # TODO: support general nmrpipe shift input
 # TODO: support the HA2|HA3 syntax
@@ -223,7 +222,7 @@ def _dihedral_restraints_to_frame(dihedral_restraints, frame_code, comment):
             "chain_code_4": dihedral_restraint.atom_4.residue.chain_code,
             "sequence_code_4": dihedral_restraint.atom_4.residue.sequence_code,
             "residue_name_4": dihedral_restraint.atom_4.residue.residue_name,
-            "atom_name_4": dihedral_restraint.atom_3.atom_name,
+            "atom_name_4": dihedral_restraint.atom_4.atom_name,
             "target_value": round(dihedral_restraint.target_value, 3),
             "target_value_error": round(dihedral_restraint.target_value_error, 3),
             "np_merit": dihedral_restraint.merit,
@@ -574,6 +573,3 @@ def _exit_if_required_columns_missing(columns, required_columns, file_name):
         """
 
         exit_error(msg)
-
-
-#

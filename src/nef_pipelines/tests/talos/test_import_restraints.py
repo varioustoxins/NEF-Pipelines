@@ -46,12 +46,12 @@ save_nef_dihedral_restraint_list_talos_restraints_A_PHI_PSI                     
       _nef_dihedral_restraint.ccpn_comment
       _nef_dihedral_restraint.np_merit
 
-     1   1   .   PHI   A   3   ILE   C   A   2   GLN   N    A   2   GLN   CA   A   2   GLN   CA   -101.524   15.07    'class: Dyn'        0.0
-     2   2   .   PSI   A   2   GLN   N   A   2   GLN   CA   A   2   GLN   C    A   3   ILE   C    139.087    15.435   'class: Dyn'        0.0
-     3   3   .   PHI   A   4   PHE   C   A   3   ILE   N    A   3   ILE   CA   A   3   ILE   CA   -145.993   11.455   'class: Strong'     1.0
-     4   4   .   PSI   A   3   ILE   N   A   3   ILE   CA   A   3   ILE   C    A   4   PHE   C    159.239    9.155    'class: Strong'     1.0
-     5   5   .   PHI   A   5   VAL   C   A   4   PHE   N    A   4   PHE   CA   A   4   PHE   CA   -118.216   7.883    'class: Generous'   0.6
-     6   6   .   PSI   A   4   PHE   N   A   4   PHE   CA   A   4   PHE   C    A   5   VAL   C    137.017    9.702    'class: Generous'   0.6
+     1   1   .   PHI   A   3   ILE   C   A   2   GLN   N    A   2   GLN   CA   A   2   GLN   C   -101.524   15.07    'class: Dyn'        0.0
+     2   2   .   PSI   A   2   GLN   N   A   2   GLN   CA   A   2   GLN   C    A   3   ILE   N    139.087    15.435   'class: Dyn'        0.0
+     3   3   .   PHI   A   4   PHE   C   A   3   ILE   N    A   3   ILE   CA   A   3   ILE   C   -145.993   11.455   'class: Strong'     1.0
+     4   4   .   PSI   A   3   ILE   N   A   3   ILE   CA   A   3   ILE   C    A   4   PHE   N    159.239    9.155    'class: Strong'     1.0
+     5   5   .   PHI   A   5   VAL   C   A   4   PHE   N    A   4   PHE   CA   A   4   PHE   C   -118.216   7.883    'class: Generous'   0.6
+     6   6   .   PSI   A   4   PHE   N   A   4   PHE   CA   A   4   PHE   C    A   5   VAL   N    137.017    9.702    'class: Generous'   0.6
 
    stop_
 
@@ -117,8 +117,8 @@ save_nef_dihedral_restraint_list_talos_restraints_A_CHI1                        
       _nef_dihedral_restraint.ccpn_comment
       _nef_dihedral_restraint.np_merit
 
-     1   1   .   CHI1   A   3   ILE   N   A   3   ILE   CA   A   3   ILE   CB   A   3   ILE   CB   61.9    6.8    'Q_Gm: 0.087, Q_Gt: 0.768, Q_T: 0.145'   1.0
-     2   2   .   CHI1   A   4   PHE   N   A   4   PHE   CA   A   4   PHE   CB   A   4   PHE   CB   -61.1   10.8   'Q_Gm: 0.644, Q_Gt: 0.307, Q_T: 0.049'   1.0
+     1   1   .   CHI1   A   3   ILE   N   A   3   ILE   CA   A   3   ILE   CB   A   3   ILE   CG1   61.9    6.8    'Q_Gm: 0.087, Q_Gt: 0.768, Q_T: 0.145'   1.0
+     2   2   .   CHI1   A   4   PHE   N   A   4   PHE   CA   A   4   PHE   CB   A   4   PHE   CG   -61.1   10.8   'Q_Gm: 0.644, Q_Gt: 0.307, Q_T: 0.049'   1.0
 
    stop_
 
