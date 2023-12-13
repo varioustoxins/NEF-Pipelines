@@ -61,8 +61,9 @@ ABBREVIATED_HEADINGS = {
 # noinspection PyUnusedLocal
 @frames_app.command(no_args_is_help=True)
 def tabulate(
-    pipe: Path = typer.Option(
+    in_file: Path = typer.Option(
         None,
+        "--in",
         metavar="|PIPE|",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),

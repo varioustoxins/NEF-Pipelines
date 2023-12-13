@@ -18,7 +18,7 @@ def test_frame_basic(clear_cache):
 
     path = path_in_test_data(__file__, "tailin_seq_short.nef")
 
-    result = run_and_report(app, ["--pipe", path])
+    result = run_and_report(app, ["--in", path])
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
