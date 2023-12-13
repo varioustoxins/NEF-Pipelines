@@ -76,10 +76,12 @@ def test_frame_basic_verbose():
         1. nef_nmr_meta_data
             category: nef_nmr_meta_data
             loops: 1 [lengths: 19]
+            loop names: nef_program_script
             is nef frame: True
         2. nef_molecular_system
             category: nef_molecular_system
             loops: 1 [lengths: 13]
+            loop names: nef_sequence
             is nef frame: True
 
     """

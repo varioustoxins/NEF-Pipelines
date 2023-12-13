@@ -156,6 +156,10 @@ def list(
 
                     print(f"    loops: {len(frame.loop_dict)}{loops}")
 
+                    loop_names = [name.lstrip("_") for name in frame.loop_dict.keys()]
+                    comma = ", "
+                    print(f"    loop names: {comma.join(loop_names)}")
+
                     frame_standard = frame.name[: len("nef")]
                     is_standard_frame = frame_standard == "nef"
                     print(f"    is nef frame: {is_standard_frame}")
