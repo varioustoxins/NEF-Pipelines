@@ -26,6 +26,9 @@ def test_frame_basic(clear_cache):
     assert result.exit_code == 0
 
     EXPECTED = """\
+      nef_sequence
+      ------------
+
       ind   chain       seq   resn     link
          1  A             10  GLU      start
          2  A             11  TYR      middle

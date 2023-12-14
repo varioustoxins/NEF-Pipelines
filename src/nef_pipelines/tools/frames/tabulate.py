@@ -102,6 +102,9 @@ def tabulate(
         "--exact",
         help="when matching frames and categories do it exactly",
     ),
+    no_title: bool = typer.Option(
+        False, "--no-title", help="don't display the frame name as a title"
+    ),
     exclude: List[str] = typer.Option([], help=EXCLUDE_HELP),
     include: List[str] = typer.Option([], help=INCLUDE_HELP),
     no_abbreviations: bool = typer.Option(
@@ -111,10 +114,10 @@ def tabulate(
         None, help=FRAMES_HELP, metavar="<loop-selector>..."
     ),
 ):
-    """- tabulate loops from frames in a NEF file [some features alpha; include, exclude]. notes: 1. using the name of
-    a frame will tabulate all loops, using frame.loop_index [e.g. moleculecular_system.1] will tabulate a specific loop.
-    2. wild cards can be use for frame names e.g. mol would select molecular_system" and anything other frame whose name
-    contains mol 3. by default empty columns are ignored"""
+    """- tabulate loops from frames in a NEF file. notes: 1. using the name of a frame will tabulate all loops,
+    using frame.loop_index [e.g. molecular_system.1] or frame.loop_name [e.g. shift_frame_HN.peaks] will tabulate a
+    specific loop. 2. wild cards can be used for frame names e.g. mol would select molecular_system and anything other
+    frame whose name contains mol 3. by default empty columns are ignored"""
 
     args = get_args()
 
@@ -250,8 +253,14 @@ def _output_loop(loop_data, frame_id, category, args):
     if not args.full:
         table, used_headers = _remove_empty_columns(table, used_headers)
 
+    frame_category = loop_data.category.lstrip("_")
     if not args.no_abbreviations:
         used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
+
+    if not args.no_title:
+        print(frame_category)
+        print("-" * len(frame_category))
+        print()
 
     print(tabulate_formatter(table, headers=used_headers, tablefmt=args.out_format))
 
