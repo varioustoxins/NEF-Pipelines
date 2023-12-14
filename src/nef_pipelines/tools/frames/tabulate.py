@@ -61,13 +61,13 @@ ABBREVIATED_HEADINGS = {
 # noinspection PyUnusedLocal
 @frames_app.command(no_args_is_help=True)
 def tabulate(
-    in_file: Path = typer.Option(
+    pipe: Path = typer.Option(
         None,
         "--in",
         metavar="|PIPE|",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
-    format: str = typer.Option(
+    out_format: str = typer.Option(
         "plain", "-f", "--format", help=FORMAT_HELP, metavar="format"
     ),
     verbose: bool = typer.Option(
@@ -90,7 +90,7 @@ def tabulate(
 
     args = get_args()
 
-    entry = read_or_create_entry_exit_error_on_bad_file(pipe)
+    entry = read_or_create_entry_exit_error_on_bad_file(args.pipe)
 
     tabulate_frames(entry, args)
 
@@ -189,7 +189,7 @@ def _output_loop(loop, frame_id, category, args):
     if not args.no_abbreviations:
         headers = _abbreviate_headers(headers, ABBREVIATED_HEADINGS)
 
-    print(tabulate_formatter(table, headers=headers, tablefmt=args.format))
+    print(tabulate_formatter(table, headers=headers, tablefmt=args.out_format))
 
 
 def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> List[str]:
