@@ -14,10 +14,14 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import exit_error, read_integer_or_exit
+from nef_pipelines.lib.util import (
+    exit_error,
+    parse_comma_separated_options,
+    read_integer_or_exit,
+)
 from nef_pipelines.tools.frames import frames_app
 
-ALL_LOOPS = "ALL"
+ALL_LOOPS = "*"
 
 UNDERSCORE = "_"
 
@@ -56,6 +60,23 @@ ABBREVIATED_HEADINGS = {
     "ccpn_peak_list_serial": "ccpn-serial",
     "atom-name": "atom",
 }
+EXCLUDE_HELP = """
+    a list of columns to exclude from the output, to specify multiple columns specify
+    the option multiple times or use a comma separated list. Wildcards are uses if the --exact
+    option is not specified. Exclusions are made before inclusions.
+"""
+
+INCLUDE_HELP = """
+    a list of columns to include in the output, to specify multiple columns specify
+    the option multiple times or use a comma separated list. Wildcards are uses if the --exact
+    option is not specified. Exclusions are made before inclusions.
+"""
+
+OUT_HELP = """
+    file or files to write to including templates, the place holders {entry} {frame} and {loop} will get replaced the
+    current entry id frame name and loop category, if multiple frame names and loop names apply multiple files maybe
+    output
+"""
 
 
 # noinspection PyUnusedLocal
@@ -76,6 +97,13 @@ def tabulate(
     full: bool = typer.Option(
         False, "--full", help="don't suppress empty columns [default: False]"
     ),
+    exact: bool = typer.Option(
+        False,
+        "--exact",
+        help="when matching frames and categories do it exactly",
+    ),
+    exclude: List[str] = typer.Option([], help=EXCLUDE_HELP),
+    include: List[str] = typer.Option([], help=INCLUDE_HELP),
     no_abbreviations: bool = typer.Option(
         False, "--no-abbreviations", help="dont' abbreviate column headings"
     ),
@@ -83,12 +111,20 @@ def tabulate(
         None, help=FRAMES_HELP, metavar="<loop-selector>..."
     ),
 ):
-    """- tabulate loops from frames in a NEF file.     notes: 1. using the name of a frame will tabulate all loops,
-    using frame.loop_index [e.g. moleculecular_system.1] will tabulate a specific loop. 2. wild cards can be use for
-    frame names e.g. mol would select molecular_system" and anything other frame whose name contains mol 3. by default
-    empty columns are ignored"""
+    """- tabulate loops from frames in a NEF file [some features alpha; include, exclude]. notes: 1. using the name of
+    a frame will tabulate all loops, using frame.loop_index [e.g. moleculecular_system.1] will tabulate a specific loop.
+    2. wild cards can be use for frame names e.g. mol would select molecular_system" and anything other frame whose name
+    contains mol 3. by default empty columns are ignored"""
 
     args = get_args()
+
+    args.exclude = parse_comma_separated_options(args.exclude)
+    args.include = parse_comma_separated_options(args.include)
+
+    if len(args.exclude) == 0 and len(args.include) == 0:
+        args.include = [
+            "*",
+        ]
 
     entry = read_or_create_entry_exit_error_on_bad_file(args.pipe)
 
@@ -168,28 +204,56 @@ def _remove_empty_columns(tabulation, headers):
     return tabulation, headers
 
 
-def _output_loop(loop, frame_id, category, args):
+def _output_loop(loop_data, frame_id, category, args):
 
     if args.verbose:
         print()
         if frame_id:
-            print(f"{frame_id}: {category}/{loop.category[1:]}")
+            print(f"{frame_id}: {category}/{loop_data.category[1:]}")
         else:
-            print(f"{category}/{loop.category[1:]}")
+            print(f"{category}/{loop_data.category[1:]}")
         print()
     table = []
-    headers = loop.tags
-    for line in loop.data:
+    headers = loop_data.tags
+    used_headers = []
+    for header in headers:
+        include_column = True
+        if args.exact:
+            if header in args.exclude:
+                include_column = False
+        else:
+            column_exclusions = [
+                fnmatch.fnmatch(header, f"*{exclusion}*") for exclusion in args.exclude
+            ]
+            include_column = not any(column_exclusions)
+
+        if args.exact:
+            if header in args.include:
+                include_column = True
+        else:
+            column_exclusions = [
+                fnmatch.fnmatch(header, f"*{inclusion}*") for inclusion in args.include
+            ]
+            include_column = any(column_exclusions)
+
+        if include_column:
+            used_headers.append(header)
+
+    for line in loop_data.data:
         row = list(line)
-        table.append(row)
+        out_row = []
+        for column_index, (column, header) in enumerate(zip(row, headers)):
+            if header in used_headers:
+                out_row.append(column)
+        table.append(out_row)
 
     if not args.full:
-        table, headers = _remove_empty_columns(table, headers)
+        table, used_headers = _remove_empty_columns(table, used_headers)
 
     if not args.no_abbreviations:
-        headers = _abbreviate_headers(headers, ABBREVIATED_HEADINGS)
+        used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
 
-    print(tabulate_formatter(table, headers=headers, tablefmt=args.out_format))
+    print(tabulate_formatter(table, headers=used_headers, tablefmt=args.out_format))
 
 
 def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> List[str]:
