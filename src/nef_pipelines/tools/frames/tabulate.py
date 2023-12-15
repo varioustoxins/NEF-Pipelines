@@ -82,7 +82,7 @@ OUT_HELP = """
 # noinspection PyUnusedLocal
 @frames_app.command(no_args_is_help=True)
 def tabulate(
-    pipe: Path = typer.Option(
+    input_file: Path = typer.Option(
         None,
         "--in",
         metavar="|PIPE|",
@@ -129,7 +129,7 @@ def tabulate(
             "*",
         ]
 
-    entry = read_or_create_entry_exit_error_on_bad_file(args.pipe)
+    entry = read_or_create_entry_exit_error_on_bad_file(args.input_file)
 
     tabulate_frames(entry, args)
 
