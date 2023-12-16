@@ -1,4 +1,4 @@
-import fnmatch
+import wcmatch.fnmatch as fnmatch
 import sys
 from collections import Counter
 from pathlib import Path
@@ -17,10 +17,11 @@ from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     exit_error,
     parse_comma_separated_options,
-    read_integer_or_exit,
+    is_int
 )
 from nef_pipelines.tools.frames import frames_app
 
+NO_FLAGS = 0x0000
 ALL_LOOPS = "*"
 
 UNDERSCORE = "_"
@@ -30,10 +31,14 @@ parser = None
 EXIT_ERROR = 1
 
 FORMAT_HELP = f'format for the table, [possible formats are: {", ".join(tabulate_formats)}: those provided by tabulate]'
-FRAMES_HELP = (
-    "selectors for loops to tabulate. note: wild cards are allowed and specific loops can be chosen"
-    " (see above)"
-)
+FRAME_AND_LOOP_SELECTOR_HELP = \
+'''
+Selectors for frames and loops to tabulate. Multiple frames and loops can be selected. Frame names and loop categories /
+indices are separated by a dot [e.g. frame-name.loop-category or frame-name.loop-index]. Wild cards are allowed and are 
+attached to the start and end of the frame-names and loop-categories by defualt when searching. Specific loops can be 
+chosen by index or loop category. Exact matching of frame names and loop categories can be made using the --exact 
+option. Details of frames in a file loops can be listed using 'nef frame list -vvv'   
+'''
 
 ABBREVIATED_HEADINGS = {
     "index": "ind",
@@ -110,16 +115,22 @@ def tabulate(
     no_abbreviations: bool = typer.Option(
         False, "--no-abbreviations", help="dont' abbreviate column headings"
     ),
-    frame_selectors: List[str] = typer.Argument(
-        None, help=FRAMES_HELP, metavar="<loop-selector>..."
+    frame_loop_selectors: List[str] = typer.Argument(
+        None, help=FRAME_AND_LOOP_SELECTOR_HELP, metavar="<frame-and-loop-selectors>..."
     ),
 ):
-    """- tabulate loops from frames in a NEF file. notes: 1. using the name of a frame will tabulate all loops,
-    using frame.loop_index [e.g. molecular_system.1] or frame.loop_name [e.g. shift_frame_HN.peaks] will tabulate a
-    specific loop. 2. wild cards can be used for frame names e.g. mol would select molecular_system and anything other
-    frame whose name contains mol 3. by default empty columns are ignored"""
+    """
+    - tabulate loops from frames in a NEF file. notes: 1. using the name of a frame as a selector will tabulate all
+    in the frame while using frame.loop_index [e.g. molecular_system.1] or frame.loop_name [e.g. shift_frame_HN.peaks]
+    will tabulate a specific loop. 2. wild cards can be used for frame names e.g. mol*tem would select molecular_system
+    and any other frame whose name contains mol followed by sys and is case-insensitive 3. all loop and frame selector
+    components are surrounded by *'s before use unless the --exact option is used 3. by default empty columns are
+    ignored unless the option --full is used    """
 
     args = get_args()
+
+    if not args.frame_loop_selectors:
+        args.frame_loop_selectors = [ALL_LOOPS,]
 
     args.exclude = parse_comma_separated_options(args.exclude)
     args.include = parse_comma_separated_options(args.include)
@@ -135,21 +146,22 @@ def tabulate(
 
 
 def tabulate_frames(entry, args):
-    frames_to_tabulate = _get_frames_to_tabulate(entry, args.frame_selectors)
-    frame_indices = _select_loop_indices(args.frame_selectors)
+    frames_to_tabulate = _get_frames_to_tabulate(entry, args.frame_loop_selectors, args.exact)
+    frame_indices = _select_loop_indices(args.frame_loop_selectors)
 
     for frame_name, frame_data in frames_to_tabulate.items():
-        category = frame_data.category
 
-        category_length = len(category)
+        frame_category = frame_data.category
+
+        category_length = len(frame_category)
 
         frame_id = frame_data.name[category_length:].lstrip("_")
         frame_id = frame_id.strip()
         frame_id = frame_id if len(frame_id) > 0 else ""
 
         for i, loop in enumerate(frame_data.loops, start=1):
-            if _should_output_loop(i, frame_name, frame_indices):
-                _output_loop(loop, frame_id, category, args)
+            if _should_output_loop(i, frame_name, frame_indices, loop.category, args.exact):
+                _output_loop(loop, frame_id, loop.category, args)
 
 
 def _select_loop_indices(frames):
@@ -161,9 +173,8 @@ def _select_loop_indices(frames):
             frame_indices.setdefault(frame_name_selector, set()).add(ALL_LOOPS)
         elif len(frame_selector_index) == 2:
             frame_name_selector = frame_selector_index[0]
-            index_string = frame_selector_index[1]
-            message = f"[frames tabulate] expected an index got '{index_string}' from {'.'.join(frame_selector_index)}"
-            index = read_integer_or_exit(index_string, message=message)
+            index = frame_selector_index[1]
+            index = int(index) if is_int(index) else index
             frame_indices.setdefault(frame_name_selector, set()).add(index)
         else:
             exit_error(
@@ -219,6 +230,8 @@ def _output_loop(loop_data, frame_id, category, args):
     table = []
     headers = loop_data.tags
     used_headers = []
+
+    match_flags = fnmatch.IGNORECASE if not  args.exact else NO_FLAGS
     for header in headers:
         include_column = True
         if args.exact:
@@ -226,7 +239,7 @@ def _output_loop(loop_data, frame_id, category, args):
                 include_column = False
         else:
             column_exclusions = [
-                fnmatch.fnmatch(header, f"*{exclusion}*") for exclusion in args.exclude
+                fnmatch.fnmatch(header, f"*{exclusion}*", flags=match_flags) for exclusion in args.exclude
             ]
             include_column = not any(column_exclusions)
 
@@ -235,7 +248,7 @@ def _output_loop(loop_data, frame_id, category, args):
                 include_column = True
         else:
             column_exclusions = [
-                fnmatch.fnmatch(header, f"*{inclusion}*") for inclusion in args.include
+                fnmatch.fnmatch(header, f"*{inclusion}*", flags=match_flags) for inclusion in args.include
             ]
             include_column = any(column_exclusions)
 
@@ -281,13 +294,37 @@ def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> Li
     return result
 
 
-def _should_output_loop(index, frame_name, frame_indices):
-    do_output = True
+def _should_output_loop(index, frame_name, frame_indices, loop_category, exact):
+
+    do_output = False
+    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
     for frame_selector in frame_indices:
-        if fnmatch.fnmatch(frame_name, f"*{frame_selector}*"):
+        if exact:
+            matched = frame_name == frame_selector
+        else:
+            matched = fnmatch.fnmatch(frame_name.lstrip('_'), f"*{frame_selector}*", flags=match_flags)
+
+        if matched:
             indices = frame_indices[frame_selector]
-            if index not in indices and ALL_LOOPS not in indices:
-                do_output = False
+
+            if index in indices:
+                do_output = True
+
+            if ALL_LOOPS in indices:
+                do_output = True
+
+            if exact:
+                output_tests = [loop_category.lstrip('_') == target_index for target_index in indices]
+            else:
+                output_tests = [fnmatch.fnmatch(loop_category, f"*{target_index}*", flags=match_flags)
+                for target_index in indices]
+
+            if any(output_tests):
+                do_output = True
+
+            if do_output:
+                break
+
     return do_output
 
 
@@ -299,11 +336,11 @@ def _count_loop_rows(save_frame: Saveframe) -> int:
     return count
 
 
-def _get_frames_to_tabulate(entry, frame_selectors):
+def _get_frames_to_tabulate(entry, frame_selectors, exact):
 
     frames_with_empty_loops = _get_loops_with_empty_frames_and_errors(entry)
 
-    frames_to_tabulate = _select_chosen_frames(entry, frame_selectors)
+    frames_to_tabulate = _select_chosen_frames(entry, frame_selectors, exact)
 
     _remove_empty_frames_and_warn(frames_to_tabulate, frames_with_empty_loops)
 
@@ -319,14 +356,15 @@ def _remove_empty_frames_and_warn(frames_to_tabulate, frames_with_empty_loops):
             del frames_to_tabulate[frame_name]
 
 
-def _select_chosen_frames(entry, frame_selectors):
+def _select_chosen_frames(entry, frame_selectors, exact):
     frames_to_tabulate = {}
+    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
     for frame_name, data in entry.frame_dict.items():
         if len(frame_selectors) > 0:
             for frame_selector in frame_selectors:
                 frame_selector = frame_selector.split(".")[0]
 
-                if fnmatch.fnmatch(frame_name, f"*{frame_selector}*"):
+                if fnmatch.fnmatch(frame_name, f"*{frame_selector}*", flags=match_flags):
                     frames_to_tabulate[frame_name] = data
         else:
 

@@ -25,9 +25,10 @@ def test_frame_basic(clear_cache):
 
     assert result.exit_code == 0
 
-    EXPECTED = """\
-      nef_sequence
-      ------------
+    EXPECTED = \
+        """
+          nef_sequence
+          ------------
 
       ind   chain       seq   resn     link
          1  A             10  GLU      start
@@ -47,3 +48,52 @@ def test_frame_basic(clear_cache):
     """
 
     assert_lines_match(EXPECTED, result.stdout)
+
+
+# ubiquitin_short_unassign_single_chain.nef
+
+def test_frame_selection(clear_cache):
+
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(app, ["--in", path, 'nef_molecular_system'])
+
+    if result.exit_code != 0:
+        print("INFO: stdout from failed read:\n", result.stdout)
+
+    assert result.exit_code == 0
+
+    assert 'nef_sequence' in result.stdout
+    assert 'nef_chemical_shift_list_default' not in result.stdout
+
+
+def test_frame_and_loop_selection_text(clear_cache):
+
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(app, ["--in", path, 'nef_nmr_spectrum_simnoe.nef_spectrum_dimension'])
+
+    if result.exit_code != 0:
+        print("INFO: stdout from failed read:\n", result.stdout)
+
+    assert result.exit_code == 0
+
+    assert 'nef_molecular_system'  not in result.stdout
+    assert 'nef_spectrum_dimension'  in result.stdout
+    assert 'nef_peak' not in result.stdout
+
+
+def test_frame_and_loop_selection_index(clear_cache):
+
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(app, ["--in", path, 'nef_nmr_spectrum_simnoe.2'])
+
+    if result.exit_code != 0:
+        print("INFO: stdout from failed read:\n", result.stdout)
+
+    assert result.exit_code == 0
+
+    assert 'nef_molecular_system'  not in result.stdout
+    assert 'nef_spectrum_dimension'  in result.stdout
+    assert 'nef_peak' not in result.stdout
