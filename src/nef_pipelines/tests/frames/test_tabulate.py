@@ -14,7 +14,7 @@ app.command()(tabulate)
 
 
 # noinspection PyUnusedLocal
-def test_frame_basic(clear_cache):
+def test_frame_basic():
 
     path = path_in_test_data(__file__, "tailin_seq_short.nef")
 
@@ -25,8 +25,7 @@ def test_frame_basic(clear_cache):
 
     assert result.exit_code == 0
 
-    EXPECTED = \
-        """
+    EXPECTED = """
           nef_sequence
           ------------
 
@@ -50,50 +49,68 @@ def test_frame_basic(clear_cache):
     assert_lines_match(EXPECTED, result.stdout)
 
 
-# ubiquitin_short_unassign_single_chain.nef
-
-def test_frame_selection(clear_cache):
+def test_frame_selection():
 
     path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
 
-    result = run_and_report(app, ["--in", path, 'nef_molecular_system'])
+    result = run_and_report(app, ["--in", path, "nef_molecular_system"])
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
 
     assert result.exit_code == 0
 
-    assert 'nef_sequence' in result.stdout
-    assert 'nef_chemical_shift_list_default' not in result.stdout
+    assert "nef_sequence" in result.stdout
+    assert "nef_chemical_shift_list_default" not in result.stdout
 
 
-def test_frame_and_loop_selection_text(clear_cache):
+def test_frame_and_loop_selection_text():
 
     path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
 
-    result = run_and_report(app, ["--in", path, 'nef_nmr_spectrum_simnoe.nef_spectrum_dimension'])
+    result = run_and_report(
+        app, ["--in", path, "nef_nmr_Spectrum_simnoe.nef_spectrum_Dimension"]
+    )
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
 
     assert result.exit_code == 0
 
-    assert 'nef_molecular_system'  not in result.stdout
-    assert 'nef_spectrum_dimension'  in result.stdout
-    assert 'nef_peak' not in result.stdout
+    assert "nef_molecular_system" not in result.stdout
+    assert "nef_spectrum_dimension" in result.stdout
+    assert "nef_peak" not in result.stdout
 
 
-def test_frame_and_loop_selection_index(clear_cache):
+def test_frame_and_loop_selection_index():
 
     path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
 
-    result = run_and_report(app, ["--in", path, 'nef_nmr_spectrum_simnoe.2'])
+    result = run_and_report(app, ["--in", path, "nef_nmr_spectrum_simnoe.2"])
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
 
     assert result.exit_code == 0
 
-    assert 'nef_molecular_system'  not in result.stdout
-    assert 'nef_spectrum_dimension'  in result.stdout
-    assert 'nef_peak' not in result.stdout
+    assert "nef_molecular_system" not in result.stdout
+    assert "nef_spectrum_dimension" in result.stdout
+    assert "nef_peak" not in result.stdout
+
+
+def test_frame_and_loop_selection_text_exact():
+
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(
+        app, ["--in", path, "nef_nmr_spectrum_simnoe.nef_spectrum_dimension", "--exact"]
+    )
+
+    if result.exit_code != 0:
+        print("INFO: stdout from failed read:\n", result.stdout)
+
+    assert result.exit_code == 0
+
+    assert "nef_molecular_system" not in result.stdout
+    assert "nef_spectrum_dimension" in result.stdout
+    assert "nef_peak" not in result.stdout
