@@ -36,6 +36,7 @@ NEF_MOLECULAR_SYSTEM = "nef_molecular_system"
 NEF_METADATA = "nef_nmr_meta_data"
 
 UNUSED = "."
+UNDERSCORE = "_"
 
 # this stops pynmrstar failing on empty strings
 STR_CONVERSION_DICT[""] = UNUSED
