@@ -1,5 +1,6 @@
 import sys
 from collections import Counter
+from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, List
 
@@ -25,7 +26,7 @@ FORMAT_HELP = f'format for the table, [possible formats are: {", ".join(tabulate
 FRAME_AND_LOOP_SELECTOR_HELP = """
 Selectors for frames and loops to tabulate. Multiple frames and loops can be selected. Frame names and loop categories /
 indices are separated by a dot [e.g. frame-name.loop-category or frame-name.loop-index]. Wild cards are allowed and are
-attached to the start and end of the frame-names and loop-categories by defualt when searching. Specific loops can be
+attached to the start and end of the frame-names and loop-categories by default when searching. Specific loops can be
 chosen by index or loop category. Exact matching of frame names and loop categories can be made using the --exact
 option. Details of frames in a file loops can be listed using 'nef frame list -vvv'
 """
@@ -55,16 +56,11 @@ ABBREVIATED_HEADINGS = {
     "ccpn_peak_list_serial": "ccpn-serial",
     "atom-name": "atom",
 }
-EXCLUDE_HELP = """
-    a list of columns to exclude from the output, to specify multiple columns specify
-    the option multiple times or use a comma separated list. Wildcards are uses if the --exact
-    option is not specified. Exclusions are made before inclusions.
-"""
-
-INCLUDE_HELP = """
-    a list of columns to include in the output, to specify multiple columns specify
-    the option multiple times or use a comma separated list. Wildcards are uses if the --exact
-    option is not specified. Exclusions are made before inclusions.
+SELECT_HELP = """
+    a list of columns to select for output, to specify multiple columns specify the option multiple times or use a comma
+    separated list. Prepend columns to exclude with - and columns to include with a +. If neither a + or - is prepended
+    to a column a + is assumed, a -- at the start of a column name is treated as an escape for a - at the start of a
+    columns name. Wildcards are applied before and after the selections if the --exact option is not specified.
 """
 
 OUT_HELP = """
@@ -72,6 +68,11 @@ OUT_HELP = """
     current entry id frame name and loop category, if multiple frame names and loop names apply multiple files maybe
     output
 """
+
+
+class ColumnSelectionType(Enum):
+    INCLUDE = auto()
+    EXCLUDE = auto()
 
 
 # noinspection PyUnusedLocal
@@ -100,8 +101,7 @@ def tabulate(
     no_title: bool = typer.Option(
         False, "--no-title", help="don't display the frame name as a title"
     ),
-    exclude: List[str] = typer.Option([], help=EXCLUDE_HELP),
-    include: List[str] = typer.Option([], help=INCLUDE_HELP),
+    select_columns: List[str] = typer.Option(["+*"], help=SELECT_HELP),
     no_abbreviations: bool = typer.Option(
         False, "--no-abbreviations", help="dont' abbreviate column headings"
     ),
@@ -111,11 +111,11 @@ def tabulate(
 ):
     """
     - tabulate loops from frames in a NEF file. notes: 1. using the name of a frame as a selector will tabulate all
-    in the frame while using frame.loop_index [e.g. molecular_system.1] or frame.loop_name [e.g. shift_frame_HN.peaks]
-    will tabulate a specific loop. 2. wild cards can be used for frame names e.g. mol*tem would select molecular_system
-    and any other frame whose name contains mol followed by sys and is case-insensitive 3. all loop and frame selector
-    components are surrounded by *'s before use unless the --exact option is used 3. by default empty columns are
-    ignored unless the option --full is used"""
+      in the frame while using frame.loop_index [e.g. molecular_system.1] or frame.loop_name [e.g. shift_frame_HN.peaks]
+      will tabulate a specific loop. 2. wild cards can be used for frame names e.g. mol*tem would select
+      molecular_system and any other frame whose name contains mol followed by sys and is case-insensitive 3. all loop
+      and frame selector components are surrounded by *'s before use unless the --exact option is used 3. by default
+      empty columns are ignored unless the option --full is used"""
 
     args = get_args()
 
@@ -124,17 +124,62 @@ def tabulate(
             ALL_LOOPS,
         ]
 
-    args.exclude = parse_comma_separated_options(args.exclude)
-    args.include = parse_comma_separated_options(args.include)
-
-    if len(args.exclude) == 0 and len(args.include) == 0:
-        args.include = [
-            "*",
-        ]
+    args.select_columns = _build_column_selections(args.select_columns, args.exact)
 
     entry = read_or_create_entry_exit_error_on_bad_file(args.input_file)
 
     tabulate_frames(entry, args)
+
+
+def _build_column_selections(column_selections, exact):
+    column_selections = parse_comma_separated_options(column_selections)
+
+    curated_column_selections = []
+
+    SIMPLE_SELECTIONS = {
+        "": (ColumnSelectionType.INCLUDE, "*"),
+        "*": (ColumnSelectionType.INCLUDE, "*"),
+        "-": (ColumnSelectionType.EXCLUDE, "*"),
+        "+": (ColumnSelectionType.INCLUDE, "*"),
+        "-*": (ColumnSelectionType.EXCLUDE, "*"),
+        "+*": (ColumnSelectionType.INCLUDE, "*"),
+    }
+    for column_selection in column_selections:
+        if column_selection in SIMPLE_SELECTIONS:
+            curated_column_selections.append(SIMPLE_SELECTIONS[column_selection])
+            continue
+        if column_selection.startswith("--"):
+            curated_column_selections.append(
+                (ColumnSelectionType.INCLUDE, column_selection)
+            )
+            continue
+        if column_selection.startswith("+"):
+            curated_column_selections.append(
+                (ColumnSelectionType.INCLUDE, column_selection[1:])
+            )
+            continue
+        if column_selection.startswith("-"):
+            curated_column_selections.append(
+                (ColumnSelectionType.EXCLUDE, column_selection[1:])
+            )
+            continue
+        if not column_selection[0] in ("-", "+"):
+            curated_column_selections.append(
+                (ColumnSelectionType.INCLUDE, column_selection)
+            )
+            continue
+
+    expanded_curated_selections = []
+    if not exact:
+        for action, selection in curated_column_selections:
+            if len(selection) > 1 and not selection.endswith("*"):
+                selection = f"{selection}*"
+            if len(selection) > 1 and not selection.startswith("*"):
+                selection = f"*{selection}"
+            expanded_curated_selections.append((action, selection))
+        curated_column_selections = expanded_curated_selections
+
+    return curated_column_selections
 
 
 def tabulate_frames(entry, args):
@@ -225,56 +270,60 @@ def _output_loop(loop_data, frame_id, category, args):
             print(f"{category}/{loop_data.category[1:]}")
         print()
     table = []
+
     headers = loop_data.tags
-    used_headers = []
+    used_headers = _get_selected_columns(headers, args.select_columns, args.exact)
 
-    match_flags = fnmatch.IGNORECASE if not args.exact else NO_FLAGS
+    if used_headers and loop_data.data:
+        for line in loop_data.data:
+            row = list(line)
+            out_row = []
+            for column_index, (column, header) in enumerate(zip(row, headers)):
+                if header in used_headers:
+                    out_row.append(column)
+            table.append(out_row)
+
+        if not args.full:
+            table, used_headers = _remove_empty_columns(table, used_headers)
+
+        frame_category = loop_data.category.lstrip("_")
+        if not args.no_abbreviations:
+            used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
+
+        if not args.no_title:
+            print(frame_category)
+            print("-" * len(frame_category))
+            print()
+
+        print(tabulate_formatter(table, headers=used_headers, tablefmt=args.out_format))
+
+
+def _get_selected_columns(headers, columns_selections, exact):
+
+    selected_columns = set(headers)
+    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
+
+    for selection_type, selection_string in columns_selections:
+        current_selections = set(
+            [
+                header
+                for header in headers
+                if fnmatch.fnmatch(header, selection_string, flags=match_flags)
+            ]
+        )
+
+        if selection_type == ColumnSelectionType.INCLUDE:
+            selected_columns.update(current_selections)
+        else:
+            selected_columns.difference_update(current_selections)
+
+    # this ensures the columns are in the order in the file
+    result = []
     for header in headers:
-        include_column = True
-        if args.exact:
-            if header in args.exclude:
-                include_column = False
-        else:
-            column_exclusions = [
-                fnmatch.fnmatch(header, f"*{exclusion}*", flags=match_flags)
-                for exclusion in args.exclude
-            ]
-            include_column = not any(column_exclusions)
+        if header in selected_columns:
+            result.append(header)
 
-        if args.exact:
-            if header in args.include:
-                include_column = True
-        else:
-            column_exclusions = [
-                fnmatch.fnmatch(header, f"*{inclusion}*", flags=match_flags)
-                for inclusion in args.include
-            ]
-            include_column = any(column_exclusions)
-
-        if include_column:
-            used_headers.append(header)
-
-    for line in loop_data.data:
-        row = list(line)
-        out_row = []
-        for column_index, (column, header) in enumerate(zip(row, headers)):
-            if header in used_headers:
-                out_row.append(column)
-        table.append(out_row)
-
-    if not args.full:
-        table, used_headers = _remove_empty_columns(table, used_headers)
-
-    frame_category = loop_data.category.lstrip("_")
-    if not args.no_abbreviations:
-        used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
-
-    if not args.no_title:
-        print(frame_category)
-        print("-" * len(frame_category))
-        print()
-
-    print(tabulate_formatter(table, headers=used_headers, tablefmt=args.out_format))
+    return result
 
 
 def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> List[str]:

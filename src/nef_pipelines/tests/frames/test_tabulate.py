@@ -1,7 +1,9 @@
+import pytest
 import typer
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
+    NOQA_E501,
     assert_lines_match,
     path_in_test_data,
     run_and_report,
@@ -19,11 +21,6 @@ def test_frame_basic():
     path = path_in_test_data(__file__, "tailin_seq_short.nef")
 
     result = run_and_report(app, ["--in", path])
-
-    if result.exit_code != 0:
-        print("INFO: stdout from failed read:\n", result.stdout)
-
-    assert result.exit_code == 0
 
     EXPECTED = """
           nef_sequence
@@ -55,11 +52,6 @@ def test_frame_selection():
 
     result = run_and_report(app, ["--in", path, "nef_molecular_system"])
 
-    if result.exit_code != 0:
-        print("INFO: stdout from failed read:\n", result.stdout)
-
-    assert result.exit_code == 0
-
     assert "nef_sequence" in result.stdout
     assert "nef_chemical_shift_list_default" not in result.stdout
 
@@ -72,11 +64,6 @@ def test_frame_and_loop_selection_text():
         app, ["--in", path, "nef_nmr_Spectrum_simnoe.nef_spectrum_Dimension"]
     )
 
-    if result.exit_code != 0:
-        print("INFO: stdout from failed read:\n", result.stdout)
-
-    assert result.exit_code == 0
-
     assert "nef_molecular_system" not in result.stdout
     assert "nef_spectrum_dimension" in result.stdout
     assert "nef_peak" not in result.stdout
@@ -86,16 +73,11 @@ def test_frame_and_loop_selection_index():
 
     path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
 
-    result = run_and_report(app, ["--in", path, "nef_nmr_spectrum_simnoe.2"])
-
-    if result.exit_code != 0:
-        print("INFO: stdout from failed read:\n", result.stdout)
-
-    assert result.exit_code == 0
+    result = run_and_report(app, ["--in", path, "nef_nmr_spectrum_simnoe.3"])
 
     assert "nef_molecular_system" not in result.stdout
-    assert "nef_spectrum_dimension" in result.stdout
-    assert "nef_peak" not in result.stdout
+    assert "nef_spectrum_dimension" not in result.stdout
+    assert "nef_peak" in result.stdout
 
 
 def test_frame_and_loop_selection_text_exact():
@@ -106,11 +88,87 @@ def test_frame_and_loop_selection_text_exact():
         app, ["--in", path, "nef_nmr_spectrum_simnoe.nef_spectrum_dimension", "--exact"]
     )
 
-    if result.exit_code != 0:
-        print("INFO: stdout from failed read:\n", result.stdout)
-
-    assert result.exit_code == 0
-
     assert "nef_molecular_system" not in result.stdout
     assert "nef_spectrum_dimension" in result.stdout
     assert "nef_peak" not in result.stdout
+
+
+EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY = """
+    nef_spectrum_dimension
+    ----------------------
+
+    dimension-id
+               1
+               2
+               3
+    """
+
+EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH = """
+    nef_spectrum_dimension
+    ----------------------
+      dimension-id    spectral-width
+                 1          11.0113
+                 2          11.06
+                 3          81.8927
+    """
+
+EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH = """
+    nef_spectrum_dimension
+    ----------------------
+      axis-unit    axis-code      spectrometer-frequency    folding    absolute-peak-positions
+      ppm          1H                            800.133    circular   true
+      ppm          1H                            800.133    circular   true
+      ppm          15N                            81.076    circular   true
+
+    """
+EXPECTED_DATA_ALL = """ # noqa E501
+    nef_spectrum_dimension
+    ----------------------
+      dimension-id  axis-unit    axis-code      spectrometer-frequency    spectral-width  folding    absolute-peak-positions
+                 1  ppm          1H                            800.133           11.0113  circular   true
+                 2  ppm          1H                            800.133           11.06    circular   true
+                 3  ppm          15N                            81.076           81.8927  circular   true
+    """.replace(
+    NOQA_E501, ""
+)
+
+EXPECTED_DATA_LOOKUP = {
+    "EXPECTED_DATA_EMPTY": "",
+    "EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY": EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY,
+    "EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH": EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH,
+    "EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH": EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH,
+    "EXPECTED_DATA_ALL": EXPECTED_DATA_ALL,
+}
+
+
+@pytest.mark.parametrize(
+    "column_selections,expected_lookup",
+    [
+        ("-", "EXPECTED_DATA_EMPTY"),
+        ("-*", "EXPECTED_DATA_EMPTY"),
+        ("-,+dim", "EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY"),
+        ("-,dimension_id,spectral_width", "EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH"),
+        (
+            "-dimension_id,-spectral_width",
+            "EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH",
+        ),
+        ("+", "EXPECTED_DATA_ALL"),
+        ("+dimension_id,+spectral_width", "EXPECTED_DATA_ALL"),
+    ],
+)
+def test_exclude_columns(column_selections, expected_lookup):
+
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(
+        app,
+        [
+            "--in",
+            path,
+            "--select-columns",
+            column_selections,
+            "nef_nmr_spectrum_simnoe.nef_spectrum_dimension",
+        ],
+    )
+
+    assert_lines_match(EXPECTED_DATA_LOOKUP[expected_lookup], result.stdout)
