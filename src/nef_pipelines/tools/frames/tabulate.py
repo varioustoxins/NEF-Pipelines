@@ -180,10 +180,11 @@ def _select_loop_indices(frames):
         if ALL_LOOPS in indices and len(indices) > 1:
             indices.remove(ALL_LOOPS)
             index_strings = ", ".join([str(index) for index in indices])
-            message = (
-                "[frames tabulate] incompatible selections, you selected all loops and a specific index for "
-                + +f"frame: {frame_selector} indices were: {index_strings}"
-            )
+            message = f"""
+                [frames tabulate] incompatible selections, you selected all loops and a specific index for
+                frame: {frame_selector} indices were: {index_strings}
+                """
+
             exit_error(message)
 
     return frame_indices
