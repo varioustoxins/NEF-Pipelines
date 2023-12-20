@@ -184,3 +184,14 @@ def test_full():
     )
 
     assert "value-first-point" in result.stdout
+
+
+def test_no_header():
+    path = path_in_test_data(
+        __file__,
+        "tailin_seq_short.nef",
+    )
+
+    result = run_and_report(app, ["--in", path, "--no-title"])
+
+    assert_lines_match("\n".join(EXPECTED_BASIC.split("\n")[3:]), result.stdout)
