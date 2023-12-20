@@ -123,7 +123,7 @@ EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH = """
       ppm          15N                            81.076    circular   true
 
     """
-EXPECTED_DATA_ALL = """ # noqa E501
+EXPECTED_DATA_ALL = """  # noqa: E501
     nef_spectrum_dimension
     ----------------------
       dimension-id  axis-unit    axis-code      spectrometer-frequency    spectral-width  folding    absolute-peak-positions
@@ -174,3 +174,13 @@ def test_exclude_columns(column_selections, expected_lookup):
     )
 
     assert_lines_match(EXPECTED_DATA_LOOKUP[expected_lookup], result.stdout)
+
+
+def test_full():
+    path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
+
+    result = run_and_report(
+        app, ["--in", path, "nef_nmr_spectrum_simnoe.nef_spectrum_dimension", "--full"]
+    )
+
+    assert "value-first-point" in result.stdout
