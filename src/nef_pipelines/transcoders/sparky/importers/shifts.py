@@ -26,7 +26,6 @@ from nef_pipelines.lib.structures import (
 )
 from nef_pipelines.lib.util import (
     STDIN,
-    cached_file_stream,
     exit_error,
     is_int,
     parse_comma_separated_options,
@@ -98,7 +97,7 @@ def pipe(entry, chain_codes, sequence, entry_name, file_names):
 
     for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
 
-        with cached_file_stream(file_name) as lines:
+        with open(file_name) as lines:
 
             chain_seqid_to_type = sequence_to_residue_type_lookup(sequence)
 

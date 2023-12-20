@@ -5,11 +5,7 @@ from typing import List
 import typer
 
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import (
-    cached_file_stream,
-    exit_error,
-    process_stream_and_add_frames,
-)
+from nef_pipelines.lib.util import exit_error, process_stream_and_add_frames
 from nef_pipelines.transcoders.nmrpipe import import_app
 
 from ...nmrview.importers.peaks import create_spectrum_frame
@@ -60,8 +56,8 @@ def peaks(
 def _read_nmrpipe_peaks(args):
     results = []
     for file_name in args.file_names:
-        file_h = cached_file_stream(file_name)
-        gdb_file = read_db_file_records(file_h, file_name=file_name)
+        with open(file_name) as file_h:
+            gdb_file = read_db_file_records(file_h, file_name=file_name)
 
         _check_is_peak_file_or_exit(gdb_file)
 

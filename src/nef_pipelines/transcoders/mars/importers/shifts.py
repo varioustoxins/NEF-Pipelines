@@ -26,7 +26,6 @@ from nef_pipelines.lib.structures import (
 )
 from nef_pipelines.lib.util import (
     STDIN,
-    cached_file_stream,
     exit_error,
     is_float,
     is_int,
@@ -128,7 +127,7 @@ def pipe(
 
     for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
 
-        with cached_file_stream(file_name) as lines:
+        with open(file_name) as lines:
 
             sparky_shifts = _parse_shifts(
                 lines,

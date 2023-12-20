@@ -11,7 +11,6 @@ from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import (
     STDIN,
-    cached_file_stream,
     exit_error,
     fixup_metadata,
     get_pipe_file_text_or_exit,
@@ -71,7 +70,7 @@ def pipe(entry, chain_codes, sequence, entry_name, file_names):
 
     for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
 
-        with cached_file_stream(file_name) as lines:
+        with open(file_name) as lines:
 
             chain_seqid_to_type = _sequence_to_residue_type_lookup(sequence)
 

@@ -25,7 +25,6 @@ from typing import (
 )
 
 import click
-from cacheable_iter import iter_cache
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
 from tabulate import tabulate
@@ -248,7 +247,9 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
 
     result = None
     if "pipe" in args and args.pipe:
-        result = iter(cached_file_stream(args.pipe))
+        with open(args.pipe) as fh:
+            pipe_lines = fh.read()
+        result = io.StringIO(pipe_lines)
     # pycharm doesn't treat stdstreams correcly and hangs
     elif not sys.stdin.isatty() and not running_in_pycharm():
         result = iter(sys.stdin.read().split("\n"))
@@ -310,36 +311,6 @@ def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
     if result is None:
         exit_error("couldn't read from stdin and no -pipe in command line arguments")
 
-    return result
-
-
-@iter_cache
-def cached_stdin():
-    # TODO: this doesn't work!'
-    return sys.stdin
-
-
-class cached_file_stream:
-    def __init__(self, file_name):
-        self._file_name = file_name
-
-    def __enter__(self):
-        return _cached_file_stream(self._file_name)
-
-    def __exit__(self, *args):
-        pass
-
-    def __iter__(self):
-        return _cached_file_stream(self._file_name)
-
-
-@iter_cache
-def _cached_file_stream(file_name):
-    try:
-        with open(file_name, "r") as lines:
-            result = lines.readlines()
-    except IOError as e:
-        exit_error(f"couldn't open stream {file_name} because {e}")
     return result
 
 

@@ -10,7 +10,6 @@ from pynmrstar import Entry
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.util import (
-    cached_stdin,
     exit_error,
     parse_comma_separated_options,
     running_in_pycharm,
@@ -117,7 +116,7 @@ def _create_entry_from_stdin_or_exit(command_name: str):
         if running_in_pycharm():
             exit_error("you can't build read fron stdin in pycharm...")
 
-        result = cached_stdin()
+        result = sys.stdin.readlines()
 
         # result is an iterable as well as an iter, but may have been read already making the iter empty?
         # hence the need to call iter?

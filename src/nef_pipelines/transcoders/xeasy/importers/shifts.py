@@ -13,7 +13,7 @@ from nef_pipelines.lib.sequence_lib import (
 )
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
-from nef_pipelines.lib.util import STDIN, cached_file_stream
+from nef_pipelines.lib.util import STDIN
 from nef_pipelines.transcoders.xeasy import import_app
 from nef_pipelines.transcoders.xeasy.xeasy_lib import parse_shifts
 
@@ -52,7 +52,7 @@ def pipe(entry, sequence, entry_name, file_names):
 
     for file_name in file_names:
 
-        with cached_file_stream(file_name) as lines:
+        with open(file_name) as lines:
 
             chain_seqid_to_type = sequence_to_residue_type_lookup(sequence)
 
