@@ -5,7 +5,7 @@ from nef_pipelines.lib.test_lib import path_in_test_data
 from nef_pipelines.transcoders.rcsb.rcsb_lib import (
     PdbSecondaryStructureType,
     parse_cif,
-    parse_pdb,
+    parse_pdb, guess_cif_or_pdb, RCSBFileType,
 )
 
 # # test=PdbxReader()
@@ -91,19 +91,26 @@ from nef_pipelines.transcoders.rcsb.rcsb_lib import (
 #             assert getattr(atom, key) == value
 
 
+FILE_TYPE_TO_READER  =  {
+    'cif': parse_cif,
+    'pdb': parse_pdb
+}
 @pytest.mark.parametrize(
-    "file_name, reader_function",
+    "file_name",
     [
-        ("1l2y_short.pdb", parse_pdb),
-        ("1l2y_short.cif", parse_cif),
+        ("1l2y_short.pdb"),
+        ("1l2y_short.cif"),
     ],
 )
-def test_short(file_name, reader_function):
+def test_short(file_name):
+
 
     file_path = path_in_test_data(__file__, file_name)
     lines = open(file_path)
 
-    structure = reader_function(lines, file_name)
+    file_type = file_name.split('.')[-1]
+    reader = FILE_TYPE_TO_READER[file_type]
+    structure = reader(lines, file_name)
     assert len(structure.sequences) == 1
     assert len(structure.secondary_structure) == 1
     assert len(structure.models) == 2
@@ -211,3 +218,24 @@ def test_short(file_name, reader_function):
         assert atom.residue.residue_name == key_values["residue_name"]
         for key, value in data_values.items():
             assert getattr(atom, key) == value
+
+def test_file_type_from_extension():
+    assert guess_cif_or_pdb('', 'test.mmcif') == RCSBFileType.CIF
+    assert guess_cif_or_pdb('', 'test.pdb') == RCSBFileType.PDB
+
+
+@pytest.mark.parametrize(
+    'file_name',
+    [
+        ("1l2y_short.pdb"),
+        ("1l2y_short.cif"),
+    ],
+)
+def test_file_type_from_data(file_name):
+
+    file_type_str = file_name.split('.')[-1]
+
+    file_path = path_in_test_data(__file__, file_name)
+    file_data = open(file_path).readlines()
+    assert guess_cif_or_pdb(file_data) == RCSBFileType[file_type_str.upper()]
+

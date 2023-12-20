@@ -9,6 +9,7 @@ from typing import Dict, Iterable, List, Optional
 
 from pdbx import DataContainer
 from pdbx.reader import PdbxReader
+from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.structures import LineInfo
 from nef_pipelines.lib.util import exit_error
@@ -79,7 +80,6 @@ class Chain:
     def __iter__(self):
         return self.residues.__iter__()
 
-
 @dataclass
 class Model:
     serial: int
@@ -87,7 +87,7 @@ class Model:
     structure: Optional[Structure] = None
 
     def __iter__(self):
-        return self.chains.__iter__()
+        return iter(self.chains.values())
 
 
 class PdbSecondaryStructureType(IntEnum):
@@ -136,6 +136,10 @@ class Structure:
 
     def __iter__(self):
         return self.models.__iter__()
+
+
+    def __getitem__(self, index):
+        return self.models[0]
 
 
 current_structure: Optional[Structure] = None
@@ -297,15 +301,20 @@ def _parse_atom(line, line_info):
     _exit_if_no_chain_code_and_no_segment_id(chain_code, segment_id, line_info)
 
     if current_chain:
-        if (
-            current_chain.chain_code != chain_code
-            and current_chain.segment_id != segment_id
-        ):
+        new_chain = False
+        if (current_chain.chain_code and chain_code) and current_chain.chain_code != chain_code:
+            new_chain = True
+
+        if current_chain.segment_id and segment_id and current_chain.segment_id != segment_id:
+            new_chain = True
+
+        if new_chain:
             current_chain = None
 
     if not current_chain:
+        chain_segment_key = chain_code if chain_code else segment_id
         current_chain = Chain(chain_code=chain_code, segment_id=segment_id)
-        current_model.chains[chain_code] = current_chain
+        current_model.chains[chain_segment_key] = current_chain
 
     if current_residue and current_residue.sequence_code != sequence_code:
         current_residue = None
@@ -948,12 +957,14 @@ def _match_sequences_and_set_offsets(structure):
         matcher = SequenceMatcher()
         chain_matches = {}
         chain_starts = {}
-        for chain_code in structure.models[0].chains.values():
+        for chain in structure.models[0].chains.values():
+            chain_segment_id_key = chain.chain_code if chain.chain_code else chain.segment_id
             chain_residues = {}
-            chain_starts[chain_code.chain_code] = chain_code.residues[0].sequence_code
+            chain_starts[chain_segment_id_key] = chain.residues[0].sequence_code
 
-            for residue in chain_code.residues:
+            for residue in chain.residues:
                 chain_residues[residue.sequence_code] = residue.residue_name
+
 
             min_residue = min(chain_residues.keys())
             max_residue = max(chain_residues.keys())
@@ -965,28 +976,29 @@ def _match_sequences_and_set_offsets(structure):
 
             for index, sequence in structure.sequences.items():
                 matcher.set_seqs(match_residues, sequence.residues)
-                chain_matches.setdefault(chain_code.chain_code, {})[matcher.ratio()] = (
+                chain_segment_key = chain.chain_code if chain.chain_code else  chain.segment_id
+                chain_matches.setdefault(chain_segment_key, {})[matcher.ratio()] = (
                     index,
                     matcher.get_opcodes(),
                 )
 
         chain_offsets = {}
-        for chain_code, matches in chain_matches.items():
+        for chain, matches in chain_matches.items():
             best = max(matches)
             best_matches = matches[best]
             for item in best_matches[1]:
                 if item[0] == "equal":
 
-                    chain_offsets[chain_code] = best_matches[0], item[3]
+                    chain_offsets[chain] = best_matches[0], item[3]
                     break
 
         seen_sequences = set()
 
-        for chain_code, (sequence_id, offset) in chain_offsets.items():
+        for chain, (sequence_id, offset) in chain_offsets.items():
             if sequence_id not in seen_sequences:
                 seen_sequences.add(sequence_id)
                 chain_first_residue = (
-                    structure.models[0].chains[chain_code].residues[0].sequence_code
+                    structure.models[0].chains[chain].residues[0].sequence_code
                 )
                 structure.sequences[sequence_id].start_sequence_code = (
                     int(chain_first_residue) - offset
@@ -1014,6 +1026,53 @@ def _parse_cif_sequence(data, line_info):
 
         current_structure.sequences[entity_id].residues.append(monomer_id)
 
+PDB_RECORD_IDS = set([
+
+    'HEADER', 'OBSLTE', 'TITLE', 'SPLT',
+    'CAVEAT', 'COMPND', 'SOURCE','KEYWDS',
+    'EXPDTA','NUMMDL','MDLTYP','AUTHOR',
+    'REVDAT','SPRSDE','JRNL', 'REMARKS',
+    'DBREF', 'DBREF1', 'DBREF2', 'SEQADV',
+    'SEQRES', 'MODRES', 'HET','FORMUL',
+    'HETNAM','HETSYN', 'HELIX', 'SHEET',
+    'SSBOND', 'LINK', 'CISPEP', 'SITE'
+    'CRYST1', 'MTRIXn', 'ORIGXn', 'SCALEn',
+    'MODEL', 'ANISOU', 'TER', 'ENDMDL',
+    'CONECT', 'MASTER', 'END'
+])
+
+class RCSBFileType(LowercaseStrEnum):
+    PDB= auto(),
+    CIF = auto(),
+    UNKNOWN =  auto()
+
+def guess_cif_or_pdb(lines: Iterable[str], file_name: str = '', test_length: int =100):
+
+    pdb = 0
+    cif = 0
+
+    file_path = Path(file_name)
+
+    if file_path.suffix.lower() in ('.cif', '.mmcif', '.pdbx'):
+        cif = 1
+    elif file_path.suffix.lower() == '.pdb':
+        pdb = 1
+    else:
+        for line in lines[:test_length]:
+            fields = line.strip().split()
+            if fields[0] in PDB_RECORD_IDS:
+                pdb+=1
+            if fields[0].startswith('data_') or fields[0][0] in ('_', ';') or fields[0] == 'loop_':
+                cif+=1
+
+    if pdb > cif:
+        result = RCSBFileType.PDB
+    elif cif > pdb:
+        result = RCSBFileType.CIF
+    else:
+        result = RCSBFileType.UNKNOWN
+
+    return result
 
 if __name__ == "__main__":
     root = Path(
@@ -1038,7 +1097,7 @@ if __name__ == "__main__":
     print(structure.secondary_structure)
     for model in structure.models:
         print(len(model.chains))
-        for chain in model.chains.values():
+        for chain in model.chains:
             for residue in chain.residues:
                 for atom in residue:
                     print(

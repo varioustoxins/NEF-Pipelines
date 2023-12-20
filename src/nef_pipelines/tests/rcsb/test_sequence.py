@@ -149,4 +149,5 @@ def test_3a_test_no_chain_segid():
     assert result.exit_code == 1
 
     assert "ERROR" in result.stdout
-    assert "residue with no chain code" in result.stdout
+    assert "both the chain code and segment id" in result.stdout
+    assert "not present on an ATOM record" in result.stdout

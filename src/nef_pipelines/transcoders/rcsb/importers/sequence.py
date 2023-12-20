@@ -1,4 +1,3 @@
-import warnings
 from argparse import Namespace
 from pathlib import Path
 from typing import List
@@ -13,6 +12,8 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
     process_stream_and_add_frames,
 )
+from nef_pipelines.transcoders.rcsb.rcsb_lib import parse_pdb, parse_cif, guess_cif_or_pdb, RCSBFileType
+
 from nef_pipelines.transcoders.rcsb import import_app
 
 app = typer.Typer()
@@ -86,50 +87,57 @@ def process_sequence(args: Namespace):
 
 def read_sequences(path, target_chain_codes, use_segids=False):
 
-    from Bio.PDB.PDBExceptions import PDBConstructionWarning
+    file_lines =  list(open(path).readlines())
+    file_type = guess_cif_or_pdb(file_lines, str(path))
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", PDBConstructionWarning)
+    if file_type is RCSBFileType.PDB:
+        model = parse_pdb(file_lines)[0]
+    elif file_type is RCSBFileType.CIF:
+        model = parse_cif(file_lines)[0]
+    else:
+        msg  =  \
+        f'''
+            Couldn't determine if the file {path} was a cif or pdb file...
+            are you sure the file has the right format?
+        '''
+        exit_error(msg)
 
-        from Bio.PDB.PDBParser import PDBParser
+    sequences = []
 
-        parser = PDBParser(PERMISSIVE=1)
-        structure = parser.get_structure("pdb", path)
-        model = structure[0]
 
-        sequences = []
-
-        if not use_segids:
-            for chain in model:
-                id = chain.id.strip()
-                if len(id) == 0:
-                    use_segids = True
-
-        all_chains = len(target_chain_codes) == 0
+    if not use_segids:
 
         for chain in model:
-            for residue in chain:
-                chain_code = residue.segid if use_segids else chain.id
-                chain_code = chain_code.strip()
+            id = chain.chain_code
+            if not id or len(id) == 0:
+                use_segids = True
 
-                if not all_chains and chain_code not in target_chain_codes:
-                    continue
+    all_chains = len(target_chain_codes) == 0
 
-                hetero_atom_flag, sequence_code, _ = residue.get_id()
 
-                if len(hetero_atom_flag.strip()) != 0:
-                    continue
+    for chain in model:
+        for residue in chain:
+            chain_code = chain.segment_id if use_segids else chain.chain_code
+            chain_code = chain_code.strip()
 
-                if chain_code == "":
-                    exit_error(
-                        f"residue with no chain code found for file {path} sequence_code is {sequence_code} \
-                        residue_name is {residue.get_resname()}"
-                    )
-                residue = SequenceResidue(
-                    chain_code=chain_code,
-                    sequence_code=sequence_code,
-                    residue_name=residue.get_resname(),
+            if not all_chains and chain_code not in target_chain_codes:
+                continue
+
+            sequence_code =  residue.sequence_code
+            #TODO support a hetero atom flag
+            # if len(hetero_atom_flag.strip()) != 0:
+            #     continue
+
+            if chain_code == "":
+                exit_error(
+                    f"residue with no chain code found for file {path} sequence_code is {sequence_code} \
+                    residue_name is {residue.get_resname()}"
                 )
-                sequences.append(residue)
+            residue = SequenceResidue(
+                chain_code=chain_code,
+                sequence_code=sequence_code,
+                residue_name=residue.residue_name,
+            )
+            sequences.append(residue)
 
     return sequences
