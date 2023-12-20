@@ -15,14 +15,7 @@ app = typer.Typer()
 app.command()(tabulate)
 
 
-# noinspection PyUnusedLocal
-def test_frame_basic():
-
-    path = path_in_test_data(__file__, "tailin_seq_short.nef")
-
-    result = run_and_report(app, ["--in", path])
-
-    EXPECTED = """
+EXPECTED_BASIC = """
           nef_sequence
           ------------
 
@@ -43,7 +36,16 @@ def test_frame_basic():
 
     """
 
-    assert_lines_match(EXPECTED, result.stdout)
+# noinspection PyUnusedLocal
+
+
+def test_frame_basic():
+
+    path = path_in_test_data(__file__, "tailin_seq_short.nef")
+
+    result = run_and_report(app, ["--in", path])
+
+    assert_lines_match(EXPECTED_BASIC, result.stdout)
 
 
 def test_frame_selection():
