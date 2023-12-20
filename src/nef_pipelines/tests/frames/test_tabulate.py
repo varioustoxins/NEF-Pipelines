@@ -196,3 +196,32 @@ def test_no_header():
     result = run_and_report(app, ["--in", path, "--no-title"])
 
     assert_lines_match("\n".join(EXPECTED_BASIC.split("\n")[3:]), result.stdout)
+
+
+EXPECTED_CSV = """
+index,chain_code,sequence_code,residue_name,linking
+1,A,10,GLU,start
+2,A,11,TYR,middle
+3,A,12,ALA,middle
+4,A,13,GLN,middle
+5,A,14,PRO,middle
+6,A,15,ARG,middle
+7,A,16,LEU,middle
+8,A,17,ARG,middle
+9,A,18,LEU,middle
+10,A,19,GLY,middle
+11,A,20,PHE,middle
+12,A,21,GLU,middle
+13,A,22,ASP,end
+"""
+
+
+def test_csv():
+    path = path_in_test_data(
+        __file__,
+        "tailin_seq_short.nef",
+    )
+
+    result = run_and_report(app, ["--in", path, "--no-title", "--format", "csv"])
+
+    assert_lines_match(EXPECTED_CSV, result.stdout)

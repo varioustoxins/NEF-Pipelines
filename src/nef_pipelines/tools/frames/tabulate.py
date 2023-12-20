@@ -1,3 +1,9 @@
+# TODO: tests on output to multiple files
+#       better default formatting of headings for table formats that can support spaces
+#       headers/dividers if mutiple frames are to be output into the same file / stream
+
+import csv
+import re
 import sys
 from collections import Counter
 from enum import Enum, auto
@@ -6,23 +12,63 @@ from typing import Dict, List
 
 import typer
 import wcmatch.fnmatch as fnmatch
+from fyeah import f
 from pynmrstar import Saveframe
 from tabulate import tabulate as tabulate_formatter
-from tabulate import tabulate_formats
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import exit_error, is_int, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    STDOUT,
+    exit_error,
+    is_int,
+    parse_comma_separated_options,
+)
 from nef_pipelines.tools.frames import frames_app
 
 NO_FLAGS = 0x0000
 ALL_LOOPS = "*"
 
+UNDERSCORE = "_"
 
-FORMAT_HELP = f'format for the table, [possible formats are: {", ".join(tabulate_formats)}: those provided by tabulate]'
+parser = None
+
+EXIT_ERROR = 1
+
+FORMAT_TO_EXTENSION = {
+    "csv": "csv",
+    "fancy_grid": "txt",
+    "fancy_outline": "txt",
+    "github": "md",
+    "grid": "txt",
+    "html": "html",
+    "latex": "tex",
+    "latex_booktabs": "tex",
+    "latex_longtable": "tex",
+    "latex_raw": "tex",
+    "mediawiki": "txt",
+    "moinmoin": "txt",
+    "orgtbl": "org",
+    "pipe": "txt",
+    "plain": "txt",
+    "presto": "presto",
+    "pretty": "txt",
+    "psql": "mkd",
+    "rst": "rst",
+    "simple": "txt",
+    "textile": "textile",
+    "tsv": "tsv",
+    "unsafehtml": "html",
+}
+
+formats = list(FORMAT_TO_EXTENSION)
+FORMAT_HELP = f"""
+    format for the table, [possible formats are: {", ".join(formats)}: most of those provided by tabulate, if you
+    require other formats provided by tabulate contact the authors]
+"""
 FRAME_AND_LOOP_SELECTOR_HELP = """
 Selectors for frames and loops to tabulate. Multiple frames and loops can be selected. Frame names and loop categories /
 indices are separated by a dot [e.g. frame-name.loop-category or frame-name.loop-index]. Wild cards are allowed and are
@@ -106,6 +152,7 @@ def tabulate(
         False, "--no-title", help="don't display the frame name as a title"
     ),
     select_columns: List[str] = typer.Option(["+*"], help=SELECT_HELP),
+    out: str = typer.Option(str(STDOUT), help=OUT_HELP),
     abbreviate: bool = typer.Option(False, "--abbreviate", help=ABBREVIATE_HELP),
     frame_loop_selectors: List[str] = typer.Argument(
         None, help=FRAME_AND_LOOP_SELECTOR_HELP, metavar="<frame-and-loop-selectors>..."
@@ -190,6 +237,7 @@ def tabulate_frames(entry, args):
     )
     frame_indices = _select_loop_indices(args.frame_loop_selectors)
 
+    seen_files = set()
     for frame_name, frame_data in frames_to_tabulate.items():
 
         frame_category = frame_data.category
@@ -204,7 +252,9 @@ def tabulate_frames(entry, args):
             if _should_output_loop(
                 i, frame_name, frame_indices, loop.category, args.exact
             ):
-                _output_loop(loop, frame_id, loop.category, args)
+                _output_loop(
+                    loop, frame_id, frame_category, entry.entry_id, args, seen_files
+                )
 
 
 def _select_loop_indices(frames):
@@ -262,14 +312,46 @@ def _remove_empty_columns(tabulation, headers):
     return tabulation, headers
 
 
-def _output_loop(loop_data, frame_id, category, args):
+class OutputFormat(Enum):
+    PER_ENTRY = auto()
+    PER_FRAME = auto()
+    PER_LOOP = auto()
+    STDOUT = auto()
+
+
+# from bing chatgpt
+def _replace_quoted_string(string):
+    return re.sub(r"`([^`]+)`", r"::\1", string)
+
+
+def _output_loop(loop_data, frame_id, frame_category, entry_id, args, seen_files):
+
+    out_type = _get_out_type_or_exit_error(args.out)
+
+    entry = entry_id  # noqa F841
+    frame = f"{frame_category}_{frame_id}"  # noqa F841
+    loop = loop_data.category.lstrip("_")  # noqa F841
+    file_extension = FORMAT_TO_EXTENSION[args.out_format]
+    expanded_file_name = f(args.out)
+    out_name = f"{expanded_file_name}.{file_extension}"
+    out_name = _replace_quoted_string(out_name)
+
+    if out_type == OutputFormat.STDOUT:
+        out_file = sys.stdout
+    else:
+        append = out_name in seen_files
+        if not append:
+            out_file = open(out_name, "wt")
+            seen_files.add(out_name)
+        else:
+            out_file = open(out_name, "at")
 
     if args.verbose:
         print()
         if frame_id:
-            print(f"{frame_id}: {category}/{loop_data.category[1:]}")
+            print(f"{frame_id}: {frame_category}/{loop_data.category[1:]}")
         else:
-            print(f"{category}/{loop_data.category[1:]}")
+            print(f"{frame_category}/{loop_data.category[1:]}")
         print()
     table = []
 
@@ -297,7 +379,22 @@ def _output_loop(loop_data, frame_id, category, args):
             print("-" * len(frame_category))
             print()
 
-        print(tabulate_formatter(table, headers=used_headers, tablefmt=args.out_format))
+        if args.out_format in ["csv", ""]:
+            writer = csv.writer(out_file, lineterminator="\n")
+            used_headers = [header.strip() for header in used_headers]
+            writer.writerow(used_headers)
+            for row in table:
+                writer.writerow(row)
+        else:
+            print(
+                tabulate_formatter(
+                    table, headers=used_headers, tablefmt=args.out_format
+                ),
+                file=out_file,
+            )
+
+        if out_type != OutputFormat.STDOUT:
+            out_file.close()
 
 
 def _get_selected_columns(headers, columns_selections, exact):
@@ -326,6 +423,48 @@ def _get_selected_columns(headers, columns_selections, exact):
             result.append(header)
 
     return result
+
+
+def _get_out_type_or_exit_error(out_string):
+
+    out_string = str(out_string)
+    have_entry = "{entry}" in out_string
+    have_frame = "{frame}" in out_string
+    have_frame_id = "{frame_id}" in out_string
+    have_frame_category = "{frame_category}" in out_string
+    if have_frame_id and have_frame_id:
+        have_frame = True
+    have_loop = "{loop}" in out_string
+
+    if have_loop and not have_frame:
+        msg = f"""
+            if template contains {{loop}} it must also contain either {{frame}}...
+            the output template was {out_string}
+        """
+        exit_error(msg)
+
+    if (have_frame_id and not have_frame_category) or (
+        have_frame_category and not have_frame_id
+    ):
+        msg = f"""
+            if you have frame_id you must have frame_category and vice versa
+            the output template was {out_string}
+        """
+        exit_error(msg)
+
+    output_type = OutputFormat.PER_ENTRY
+
+    if have_frame:
+        output_type = OutputFormat.PER_FRAME
+    if have_loop:
+        output_type = OutputFormat.PER_LOOP
+    if have_entry:
+        output_type = OutputFormat.PER_ENTRY
+
+    if out_string == "-":
+        output_type = OutputFormat.STDOUT
+
+    return output_type
 
 
 def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> List[str]:
