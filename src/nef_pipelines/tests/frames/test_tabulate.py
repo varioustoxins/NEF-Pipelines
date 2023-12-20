@@ -19,20 +19,20 @@ EXPECTED_BASIC = """
           nef_sequence
           ------------
 
-      ind   chain       seq   resn     link
-         1  A             10  GLU      start
-         2  A             11  TYR      middle
-         3  A             12  ALA      middle
-         4  A             13  GLN      middle
-         5  A             14  PRO      middle
-         6  A             15  ARG      middle
-         7  A             16  LEU      middle
-         8  A             17  ARG      middle
-         9  A             18  LEU      middle
-        10  A             19  GLY      middle
-        11  A             20  PHE      middle
-        12  A             21  GLU      middle
-        13  A             22  ASP      end
+      index  chain_code      sequence_code  residue_name    linking
+         1            A             10               GLU    start
+         2            A             11               TYR    middle
+         3            A             12               ALA    middle
+         4            A             13               GLN    middle
+         5            A             14               PRO    middle
+         6            A             15               ARG    middle
+         7            A             16               LEU    middle
+         8            A             17               ARG    middle
+         9            A             18               LEU    middle
+        10            A             19               GLY    middle
+        11            A             20               PHE    middle
+        12            A             21               GLU    middle
+        13            A             22               ASP    end
 
     """
 
@@ -167,6 +167,7 @@ def test_exclude_columns(column_selections, expected_lookup):
         [
             "--in",
             path,
+            "--abbreviate",
             "--select-columns",
             column_selections,
             "nef_nmr_spectrum_simnoe.nef_spectrum_dimension",
@@ -183,7 +184,7 @@ def test_full():
         app, ["--in", path, "nef_nmr_spectrum_simnoe.nef_spectrum_dimension", "--full"]
     )
 
-    assert "value-first-point" in result.stdout
+    assert "value_first_point" in result.stdout
 
 
 def test_no_header():

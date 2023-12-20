@@ -69,6 +69,10 @@ OUT_HELP = """
     output
 """
 
+ABBREVIATE_HELP = """
+    abbreviate column headings. Also convert _ to - in  formats wich require single word headings such as csv and tsv
+"""
+
 
 class ColumnSelectionType(Enum):
     INCLUDE = auto()
@@ -102,9 +106,7 @@ def tabulate(
         False, "--no-title", help="don't display the frame name as a title"
     ),
     select_columns: List[str] = typer.Option(["+*"], help=SELECT_HELP),
-    no_abbreviations: bool = typer.Option(
-        False, "--no-abbreviations", help="dont' abbreviate column headings"
-    ),
+    abbreviate: bool = typer.Option(False, "--abbreviate", help=ABBREVIATE_HELP),
     frame_loop_selectors: List[str] = typer.Argument(
         None, help=FRAME_AND_LOOP_SELECTOR_HELP, metavar="<frame-and-loop-selectors>..."
     ),
@@ -287,7 +289,7 @@ def _output_loop(loop_data, frame_id, category, args):
             table, used_headers = _remove_empty_columns(table, used_headers)
 
         frame_category = loop_data.category.lstrip("_")
-        if not args.no_abbreviations:
+        if args.abbreviate:
             used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
 
         if not args.no_title:
