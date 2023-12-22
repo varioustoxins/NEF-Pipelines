@@ -15,6 +15,7 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.tools.frames.delete  # noqa: F401
+    import nef_pipelines.tools.frames.filter  # noqa: F401
     import nef_pipelines.tools.frames.insert  # noqa: F401
     import nef_pipelines.tools.frames.list  # noqa: F401
     import nef_pipelines.tools.frames.rename  # noqa: F401

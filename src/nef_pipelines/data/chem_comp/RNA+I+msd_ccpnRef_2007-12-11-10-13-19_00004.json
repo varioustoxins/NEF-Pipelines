@@ -1,0 +1,3847 @@
+{
+    "ID": 1,
+    "baseGlycoCode": null,
+    "beilsteinCode": null,
+    "caseRegCode": null,
+    "ccpCode": "I",
+    "code1Letter": "I",
+    "code3Letter": "I",
+    "commonNames": null,
+    "details": null,
+    "hasStdChirality": null,
+    "keywords": null,
+    "merckCode": null,
+    "molType": "RNA",
+    "name": "INOSINIC ACID",
+    "sigmaAldrichCode": null,
+    "stdChemCompCode": "I",
+    "guid": "msd_ccpnRef_2007-12-11-10-13-19_00004",
+    "createdBy": "ccpnRef",
+    "chemAngles": null,
+    "chemAtomSets": [
+        {
+            "ID": 2,
+            "distCorr": 0.0,
+            "isEquivalent": null,
+            "isProchiral": true,
+            "name": "H5'*",
+            "subType": 1,
+            "chemAtomSet": null,
+            "chemAtomSets": null,
+            "chemAtoms": [
+                3,
+                4
+            ],
+            "chemComp": null,
+            "parent": null
+        }
+    ],
+    "chemAtoms": [
+        {
+            "ID": 5,
+            "name": "C1'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                6,
+                7,
+                8,
+                9
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 22,
+            "name": "C2",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                23,
+                24,
+                25
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 26,
+            "name": "C2'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                6,
+                27,
+                28,
+                29
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 30,
+            "name": "C3'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                31,
+                32,
+                33,
+                29
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                34
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": [
+                35
+            ]
+        },
+        {
+            "ID": 36,
+            "name": "C4",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                37,
+                38,
+                39
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 40,
+            "name": "C4'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                41,
+                42,
+                33,
+                43
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                34
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 44,
+            "name": "C5",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                45,
+                46,
+                39
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 47,
+            "name": "C5'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                48,
+                49,
+                43,
+                50
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                51
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 52,
+            "name": "C6",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                45,
+                53,
+                54
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 55,
+            "name": "C8",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                56,
+                57,
+                58
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "C",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 59,
+            "name": "H1",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                60
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                13,
+                14,
+                15,
+                16,
+                18,
+                19,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 61,
+            "name": "H1'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                7
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 62,
+            "name": "H2",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                25
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 63,
+            "name": "H2'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                28
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 64,
+            "name": "H3'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                32
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 65,
+            "name": "H4'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                41
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 4,
+            "name": "H5'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                50
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": 2,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 3,
+            "name": "H5''",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                49
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": 2,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 66,
+            "name": "H7",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                67
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                18,
+                16,
+                14,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 68,
+            "name": "H8",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                58
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 69,
+            "name": "HO2'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                70
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 71,
+            "name": "HO3'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                72
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                21,
+                13,
+                20
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 73,
+            "name": "HO5'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                74
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                18,
+                10,
+                12
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 75,
+            "name": "HOP2",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                76
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                16,
+                15,
+                11
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 77,
+            "name": "HOP3",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                78
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                15,
+                16,
+                18
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "H",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 79,
+            "name": "N1",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                60,
+                24,
+                53
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "N",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 80,
+            "name": "N3",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                37,
+                23
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "N",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 81,
+            "name": "N7",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                67,
+                56,
+                46
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "N",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 82,
+            "name": "N9",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                57,
+                38,
+                9
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "N",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 83,
+            "name": "O2'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                70,
+                27
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 84,
+            "name": "O3'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                31,
+                85,
+                72
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                34
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": [
+                35
+            ],
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 86,
+            "name": "O4'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                42,
+                8
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 87,
+            "name": "O5'",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                48,
+                74,
+                88
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                89,
+                51
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": [
+                90
+            ]
+        },
+        {
+            "ID": 91,
+            "name": "O6",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                54
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 92,
+            "name": "OP1",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                93
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 94,
+            "name": "OP2",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                76,
+                95
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 96,
+            "name": "OP3",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                78,
+                97
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                15,
+                16,
+                18
+            ],
+            "chemTorsions": null,
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "O",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": null,
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 98,
+            "name": "P",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                97,
+                99,
+                95,
+                93,
+                88
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21
+            ],
+            "chemTorsions": [
+                89,
+                51
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "ChemAtom",
+            "chirality": null,
+            "elementSymbol": "P",
+            "nuclGroupType": null,
+            "shortVegaType": null,
+            "waterExcangeable": false,
+            "boundLinkEnds": [
+                90
+            ],
+            "chemAtomSet": null,
+            "remoteLinkEnds": null
+        },
+        {
+            "ID": 100,
+            "name": "next_1",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                85
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                10,
+                12,
+                14,
+                17,
+                18,
+                19
+            ],
+            "chemTorsions": [
+                34
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "LinkAtom",
+            "elementSymbol": null,
+            "boundLinkEnd": 35,
+            "remoteLinkEnd": null
+        },
+        {
+            "ID": 101,
+            "name": "prev_1",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": [
+                99
+            ],
+            "chemComp": null,
+            "chemCompVars": [
+                19,
+                20,
+                17,
+                14,
+                13,
+                21
+            ],
+            "chemTorsions": [
+                89,
+                51
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "LinkAtom",
+            "elementSymbol": null,
+            "boundLinkEnd": 90,
+            "remoteLinkEnd": null
+        },
+        {
+            "ID": 102,
+            "name": "prev_2",
+            "subType": 1,
+            "chemAngles": null,
+            "chemBonds": null,
+            "chemComp": null,
+            "chemCompVars": [
+                19,
+                20,
+                17,
+                14,
+                13,
+                21
+            ],
+            "chemTorsions": [
+                89
+            ],
+            "coreStereochemistries": null,
+            "parent": null,
+            "stereochemistries": null,
+            "type": "LinkAtom",
+            "elementSymbol": null,
+            "boundLinkEnd": null,
+            "remoteLinkEnd": 90
+        }
+    ],
+    "chemBonds": [
+        {
+            "ID": 45,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                44,
+                52
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 28,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                63,
+                26
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 57,
+            "bondType": "aromatic",
+            "stereochem": null,
+            "chemAtoms": [
+                55,
+                82
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 29,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                30,
+                26
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 88,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                98,
+                87
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 32,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                64,
+                30
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 85,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                84,
+                100
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 93,
+            "bondType": "double",
+            "stereochem": null,
+            "chemAtoms": [
+                92,
+                98
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 33,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                40,
+                30
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 42,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                86,
+                40
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 54,
+            "bondType": "double",
+            "stereochem": null,
+            "chemAtoms": [
+                52,
+                91
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 9,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                5,
+                82
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 31,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                30,
+                84
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 23,
+            "bondType": "double",
+            "stereochem": null,
+            "chemAtoms": [
+                80,
+                22
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 53,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                52,
+                79
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 27,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                83,
+                26
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 49,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                47,
+                3
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 37,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                80,
+                36
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 58,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                68,
+                55
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 46,
+            "bondType": "aromatic",
+            "stereochem": null,
+            "chemAtoms": [
+                44,
+                81
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 99,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                101,
+                98
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 60,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                59,
+                79
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 7,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                5,
+                61
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 43,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                40,
+                47
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 41,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                40,
+                65
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 6,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                5,
+                26
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 95,
+            "bondType": "double",
+            "stereochem": null,
+            "chemAtoms": [
+                94,
+                98
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 70,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                83,
+                69
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 39,
+            "bondType": "aromatic",
+            "stereochem": null,
+            "chemAtoms": [
+                44,
+                36
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 25,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                62,
+                22
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 72,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                71,
+                84
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 48,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                47,
+                87
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 76,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                94,
+                75
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 74,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                73,
+                87
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 8,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                86,
+                5
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 50,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                47,
+                4
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 67,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                81,
+                66
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 38,
+            "bondType": "aromatic",
+            "stereochem": null,
+            "chemAtoms": [
+                36,
+                82
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 56,
+            "bondType": "aromatic",
+            "stereochem": null,
+            "chemAtoms": [
+                81,
+                55
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 24,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                79,
+                22
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 97,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                96,
+                98
+            ],
+            "chemComp": null,
+            "parent": null
+        },
+        {
+            "ID": 78,
+            "bondType": "single",
+            "stereochem": null,
+            "chemAtoms": [
+                96,
+                77
+            ],
+            "chemComp": null,
+            "parent": null
+        }
+    ],
+    "chemCompVars": [
+        {
+            "ID": 20,
+            "descriptor": "deprot:H1,H7",
+            "formalCharge": -1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "end",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                101,
+                102,
+                52,
+                64,
+                47,
+                92,
+                44,
+                79,
+                94,
+                82,
+                98,
+                86,
+                71,
+                22,
+                83,
+                55,
+                63,
+                65,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                40,
+                80,
+                30,
+                61,
+                84,
+                26
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 13,
+            "descriptor": "prot:H1;deprot:H7",
+            "formalCharge": null,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": true,
+            "isParamagnetic": false,
+            "linking": "end",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                65,
+                102,
+                52,
+                64,
+                47,
+                92,
+                44,
+                79,
+                94,
+                30,
+                98,
+                86,
+                71,
+                22,
+                83,
+                82,
+                63,
+                55,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                40,
+                80,
+                26,
+                101,
+                61,
+                84,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 21,
+            "descriptor": "prot:H7,H1",
+            "formalCharge": 1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "end",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                65,
+                102,
+                52,
+                64,
+                47,
+                44,
+                98,
+                86,
+                94,
+                30,
+                92,
+                71,
+                22,
+                83,
+                82,
+                63,
+                55,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                40,
+                80,
+                26,
+                101,
+                79,
+                61,
+                84,
+                66,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 17,
+            "descriptor": "deprot:H1,H7",
+            "formalCharge": -1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "middle",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                101,
+                102,
+                52,
+                64,
+                47,
+                92,
+                44,
+                79,
+                94,
+                82,
+                98,
+                86,
+                22,
+                83,
+                55,
+                63,
+                65,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                40,
+                80,
+                30,
+                61,
+                84,
+                26
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 19,
+            "descriptor": "prot:H1;deprot:H7",
+            "formalCharge": null,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": true,
+            "isParamagnetic": false,
+            "linking": "middle",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                101,
+                102,
+                52,
+                64,
+                47,
+                92,
+                44,
+                79,
+                94,
+                82,
+                98,
+                86,
+                22,
+                83,
+                55,
+                63,
+                65,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                40,
+                80,
+                59,
+                30,
+                61,
+                84,
+                26
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 14,
+            "descriptor": "prot:H7,H1",
+            "formalCharge": 1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "middle",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                65,
+                102,
+                52,
+                64,
+                47,
+                44,
+                98,
+                86,
+                94,
+                30,
+                92,
+                22,
+                83,
+                82,
+                63,
+                55,
+                36,
+                5,
+                91,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                40,
+                80,
+                26,
+                101,
+                79,
+                61,
+                84,
+                66,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 11,
+            "descriptor": "deprot:H1,H7",
+            "formalCharge": -1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "none",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                30,
+                52,
+                64,
+                47,
+                92,
+                44,
+                79,
+                77,
+                40,
+                86,
+                22,
+                98,
+                55,
+                63,
+                65,
+                36,
+                5,
+                83,
+                91,
+                96,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                94,
+                80,
+                75,
+                61,
+                84,
+                26
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 15,
+            "descriptor": "prot:H1;deprot:H7",
+            "formalCharge": null,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": true,
+            "isParamagnetic": false,
+            "linking": "none",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                30,
+                52,
+                64,
+                47,
+                44,
+                86,
+                94,
+                77,
+                40,
+                92,
+                98,
+                55,
+                63,
+                65,
+                36,
+                5,
+                83,
+                91,
+                96,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                22,
+                80,
+                26,
+                75,
+                79,
+                61,
+                84,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 16,
+            "descriptor": "prot:H7,H1",
+            "formalCharge": 1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "none",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                30,
+                52,
+                64,
+                47,
+                44,
+                86,
+                94,
+                77,
+                40,
+                92,
+                98,
+                55,
+                63,
+                65,
+                36,
+                5,
+                83,
+                91,
+                96,
+                81,
+                68,
+                69,
+                4,
+                87,
+                3,
+                22,
+                80,
+                26,
+                75,
+                79,
+                61,
+                84,
+                66,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 12,
+            "descriptor": "deprot:H1,H7",
+            "formalCharge": -1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "start",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                52,
+                64,
+                47,
+                44,
+                86,
+                94,
+                77,
+                40,
+                92,
+                98,
+                55,
+                63,
+                65,
+                36,
+                5,
+                83,
+                91,
+                96,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                22,
+                80,
+                26,
+                30,
+                79,
+                61,
+                84,
+                73
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 10,
+            "descriptor": "prot:H1;deprot:H7",
+            "formalCharge": null,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": true,
+            "isParamagnetic": false,
+            "linking": "start",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                65,
+                52,
+                64,
+                47,
+                44,
+                86,
+                94,
+                26,
+                40,
+                92,
+                22,
+                98,
+                77,
+                63,
+                55,
+                36,
+                5,
+                83,
+                91,
+                96,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                80,
+                73,
+                30,
+                79,
+                61,
+                84,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        },
+        {
+            "ID": 18,
+            "descriptor": "prot:H7,H1",
+            "formalCharge": 1,
+            "glycoCtCode": null,
+            "isAromatic": true,
+            "isDefaultVar": false,
+            "isParamagnetic": false,
+            "linking": "start",
+            "nonStereoSmiles": null,
+            "stereoSmiles": null,
+            "varName": null,
+            "chemAtoms": [
+                62,
+                82,
+                52,
+                64,
+                47,
+                44,
+                98,
+                79,
+                94,
+                77,
+                40,
+                86,
+                83,
+                55,
+                73,
+                65,
+                36,
+                5,
+                91,
+                96,
+                81,
+                68,
+                69,
+                100,
+                4,
+                87,
+                3,
+                22,
+                80,
+                26,
+                63,
+                30,
+                61,
+                92,
+                84,
+                66,
+                59
+            ],
+            "chemComp": null,
+            "parent": null,
+            "specificSysNames": null
+        }
+    ],
+    "chemTorsions": [
+        {
+            "ID": 34,
+            "name": "EPSI",
+            "chemAtoms": [
+                40,
+                30,
+                84,
+                100
+            ],
+            "chemComp": null,
+            "parent": null,
+            "sysNames": null
+        },
+        {
+            "ID": 51,
+            "name": "ALPHA",
+            "chemAtoms": [
+                101,
+                98,
+                87,
+                47
+            ],
+            "chemComp": null,
+            "parent": null,
+            "sysNames": null
+        },
+        {
+            "ID": 89,
+            "name": "ZETA",
+            "chemAtoms": [
+                102,
+                101,
+                98,
+                87
+            ],
+            "chemComp": null,
+            "parent": null,
+            "sysNames": null
+        }
+    ],
+    "memopsRoot": null,
+    "linkEnds": [
+        {
+            "ID": 35,
+            "linkCode": "next",
+            "boundChemAtom": 84,
+            "boundLinkAtom": 100,
+            "chemComp": null,
+            "parent": null,
+            "remoteChemAtom": 30,
+            "remoteLinkAtom": null
+        },
+        {
+            "ID": 90,
+            "linkCode": "prev",
+            "boundChemAtom": 98,
+            "boundLinkAtom": 101,
+            "chemComp": null,
+            "parent": null,
+            "remoteChemAtom": 87,
+            "remoteLinkAtom": 102
+        }
+    ],
+    "namingSystems": [
+        {
+            "ID": 103,
+            "name": "AQUA",
+            "atomReference": 104,
+            "atomSetReference": null,
+            "atomSetVariantSystems": [
+                105,
+                106,
+                107
+            ],
+            "atomSysNames": [
+                {
+                    "ID": 108,
+                    "altSysName": null,
+                    "atomName": "H5'*",
+                    "atomSubType": 1,
+                    "sysName": "Q5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 109,
+                    "altSysName": null,
+                    "atomName": "HO5'",
+                    "atomSubType": 1,
+                    "sysName": "HO5'",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 107,
+            "name": "BMRB",
+            "atomReference": 104,
+            "atomSetReference": 103,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 110,
+            "name": "CIF",
+            "atomReference": null,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": [
+                {
+                    "ID": 111,
+                    "sysName": "I",
+                    "namingSystem": null,
+                    "specificChemCompvars": null,
+                    "parent": null
+                }
+            ],
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 112,
+            "name": "CING",
+            "atomReference": null,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 113,
+            "name": "CYANA2.1",
+            "atomReference": 104,
+            "atomSetReference": null,
+            "atomSetVariantSystems": [
+                114
+            ],
+            "atomSysNames": [
+                {
+                    "ID": 115,
+                    "altSysName": null,
+                    "atomName": "H5'*",
+                    "atomSubType": 1,
+                    "sysName": "Q5'",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": [
+                114
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 114,
+            "name": "DIANA",
+            "atomReference": 113,
+            "atomSetReference": 113,
+            "atomSetVariantSystems": [
+                116
+            ],
+            "atomSysNames": null,
+            "atomVariantSystems": [
+                116
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 117,
+            "name": "DISGEO",
+            "atomReference": 104,
+            "atomSetReference": 116,
+            "atomSetVariantSystems": [
+                118
+            ],
+            "atomSysNames": null,
+            "atomVariantSystems": [
+                118
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 118,
+            "name": "DISMAN",
+            "atomReference": 117,
+            "atomSetReference": 117,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 119,
+            "name": "GROMOS",
+            "atomReference": null,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 104,
+            "name": "IUPAC",
+            "atomReference": null,
+            "atomSetReference": null,
+            "atomSetVariantSystems": [
+                120
+            ],
+            "atomSysNames": [
+                {
+                    "ID": 124,
+                    "altSysName": null,
+                    "atomName": "C1'",
+                    "atomSubType": 1,
+                    "sysName": "C1'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 125,
+                    "altSysName": null,
+                    "atomName": "C2",
+                    "atomSubType": 1,
+                    "sysName": "C2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 126,
+                    "altSysName": null,
+                    "atomName": "C2'",
+                    "atomSubType": 1,
+                    "sysName": "C2'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 127,
+                    "altSysName": null,
+                    "atomName": "C3'",
+                    "atomSubType": 1,
+                    "sysName": "C3'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 128,
+                    "altSysName": null,
+                    "atomName": "C4",
+                    "atomSubType": 1,
+                    "sysName": "C4",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 129,
+                    "altSysName": null,
+                    "atomName": "C4'",
+                    "atomSubType": 1,
+                    "sysName": "C4'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 130,
+                    "altSysName": null,
+                    "atomName": "C5",
+                    "atomSubType": 1,
+                    "sysName": "C5",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 131,
+                    "altSysName": null,
+                    "atomName": "C5'",
+                    "atomSubType": 1,
+                    "sysName": "C5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 132,
+                    "altSysName": null,
+                    "atomName": "C6",
+                    "atomSubType": 1,
+                    "sysName": "C6",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 133,
+                    "altSysName": null,
+                    "atomName": "C8",
+                    "atomSubType": 1,
+                    "sysName": "C8",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 134,
+                    "altSysName": null,
+                    "atomName": "H1",
+                    "atomSubType": 1,
+                    "sysName": "H1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 135,
+                    "altSysName": null,
+                    "atomName": "H1'",
+                    "atomSubType": 1,
+                    "sysName": "H1'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 136,
+                    "altSysName": null,
+                    "atomName": "H2",
+                    "atomSubType": 1,
+                    "sysName": "H2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 137,
+                    "altSysName": null,
+                    "atomName": "H2'",
+                    "atomSubType": 1,
+                    "sysName": "H2'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 138,
+                    "altSysName": null,
+                    "atomName": "H3'",
+                    "atomSubType": 1,
+                    "sysName": "H3'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 139,
+                    "altSysName": null,
+                    "atomName": "H4'",
+                    "atomSubType": 1,
+                    "sysName": "H4'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 140,
+                    "altSysName": null,
+                    "atomName": "H5'",
+                    "atomSubType": 1,
+                    "sysName": "H5'1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 141,
+                    "altSysName": null,
+                    "atomName": "H5''",
+                    "atomSubType": 1,
+                    "sysName": "H5'2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 142,
+                    "altSysName": null,
+                    "atomName": "H5'*",
+                    "atomSubType": 1,
+                    "sysName": "H5'*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 143,
+                    "altSysName": null,
+                    "atomName": "H7",
+                    "atomSubType": 1,
+                    "sysName": "H7",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 144,
+                    "altSysName": null,
+                    "atomName": "H8",
+                    "atomSubType": 1,
+                    "sysName": "H8",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 145,
+                    "altSysName": null,
+                    "atomName": "HO2'",
+                    "atomSubType": 1,
+                    "sysName": "O2'H",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 146,
+                    "altSysName": null,
+                    "atomName": "HO3'",
+                    "atomSubType": 1,
+                    "sysName": "HO3'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 147,
+                    "altSysName": null,
+                    "atomName": "HO5'",
+                    "atomSubType": 1,
+                    "sysName": "HO5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 148,
+                    "altSysName": null,
+                    "atomName": "HOP2",
+                    "atomSubType": 1,
+                    "sysName": "OPA2H",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 149,
+                    "altSysName": null,
+                    "atomName": "HOP3",
+                    "atomSubType": 1,
+                    "sysName": "OPA3H",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 150,
+                    "altSysName": null,
+                    "atomName": "N1",
+                    "atomSubType": 1,
+                    "sysName": "N1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 151,
+                    "altSysName": null,
+                    "atomName": "N3",
+                    "atomSubType": 1,
+                    "sysName": "N3",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 152,
+                    "altSysName": null,
+                    "atomName": "N7",
+                    "atomSubType": 1,
+                    "sysName": "N7",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 153,
+                    "altSysName": null,
+                    "atomName": "N9",
+                    "atomSubType": 1,
+                    "sysName": "N9",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 154,
+                    "altSysName": null,
+                    "atomName": "O2'",
+                    "atomSubType": 1,
+                    "sysName": "O2'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 155,
+                    "altSysName": null,
+                    "atomName": "O3'",
+                    "atomSubType": 1,
+                    "sysName": "O3'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 156,
+                    "altSysName": null,
+                    "atomName": "O4'",
+                    "atomSubType": 1,
+                    "sysName": "O4'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 157,
+                    "altSysName": null,
+                    "atomName": "O5'",
+                    "atomSubType": 1,
+                    "sysName": "O5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 158,
+                    "altSysName": null,
+                    "atomName": "O6",
+                    "atomSubType": 1,
+                    "sysName": "O6",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 159,
+                    "altSysName": null,
+                    "atomName": "OP1",
+                    "atomSubType": 1,
+                    "sysName": "OPA1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 160,
+                    "altSysName": null,
+                    "atomName": "OP2",
+                    "atomSubType": 1,
+                    "sysName": "OPA2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 161,
+                    "altSysName": null,
+                    "atomName": "OP3",
+                    "atomSubType": 1,
+                    "sysName": "OPA3",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 162,
+                    "altSysName": null,
+                    "atomName": "P",
+                    "atomSubType": 1,
+                    "sysName": "PA",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": [
+                121,
+                113,
+                117,
+                103,
+                122,
+                123,
+                107,
+                106
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 116,
+            "name": "MOLMOL",
+            "atomReference": 114,
+            "atomSetReference": 114,
+            "atomSetVariantSystems": [
+                117
+            ],
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 121,
+            "name": "MSD",
+            "atomReference": 104,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": [
+                {
+                    "ID": 163,
+                    "altSysName": null,
+                    "atomName": "HO3'",
+                    "atomSubType": 1,
+                    "sysName": "O3'H",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 164,
+                    "altSysName": null,
+                    "atomName": "HO5'",
+                    "atomSubType": 1,
+                    "sysName": "O5'H",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 120,
+            "name": "MSI",
+            "atomReference": 122,
+            "atomSetReference": 104,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": [
+                105
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 165,
+            "name": "PDB",
+            "atomReference": null,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": [
+                {
+                    "ID": 166,
+                    "altSysName": null,
+                    "atomName": "C1'",
+                    "atomSubType": 1,
+                    "sysName": "C1*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 167,
+                    "altSysName": null,
+                    "atomName": "C2",
+                    "atomSubType": 1,
+                    "sysName": "C2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 168,
+                    "altSysName": null,
+                    "atomName": "C2'",
+                    "atomSubType": 1,
+                    "sysName": "C2*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 169,
+                    "altSysName": null,
+                    "atomName": "C3'",
+                    "atomSubType": 1,
+                    "sysName": "C3*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 170,
+                    "altSysName": null,
+                    "atomName": "C4",
+                    "atomSubType": 1,
+                    "sysName": "C4",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 171,
+                    "altSysName": null,
+                    "atomName": "C4'",
+                    "atomSubType": 1,
+                    "sysName": "C4*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 172,
+                    "altSysName": null,
+                    "atomName": "C5",
+                    "atomSubType": 1,
+                    "sysName": "C5",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 173,
+                    "altSysName": null,
+                    "atomName": "C5'",
+                    "atomSubType": 1,
+                    "sysName": "C5*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 174,
+                    "altSysName": null,
+                    "atomName": "C6",
+                    "atomSubType": 1,
+                    "sysName": "C6",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 175,
+                    "altSysName": null,
+                    "atomName": "C8",
+                    "atomSubType": 1,
+                    "sysName": "C8",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 176,
+                    "altSysName": null,
+                    "atomName": "H1",
+                    "atomSubType": 1,
+                    "sysName": "H1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 177,
+                    "altSysName": null,
+                    "atomName": "H1'",
+                    "atomSubType": 1,
+                    "sysName": "H1*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 178,
+                    "altSysName": null,
+                    "atomName": "H2",
+                    "atomSubType": 1,
+                    "sysName": "H2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 179,
+                    "altSysName": null,
+                    "atomName": "H2'",
+                    "atomSubType": 1,
+                    "sysName": "H2*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 180,
+                    "altSysName": null,
+                    "atomName": "H3'",
+                    "atomSubType": 1,
+                    "sysName": "H3*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 181,
+                    "altSysName": null,
+                    "atomName": "H4'",
+                    "atomSubType": 1,
+                    "sysName": "H4*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 182,
+                    "altSysName": null,
+                    "atomName": "H5'",
+                    "atomSubType": 1,
+                    "sysName": "1H5*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 183,
+                    "altSysName": null,
+                    "atomName": "H5''",
+                    "atomSubType": 1,
+                    "sysName": "2H5*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 184,
+                    "altSysName": null,
+                    "atomName": "H5'*",
+                    "atomSubType": 1,
+                    "sysName": "Q5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 185,
+                    "altSysName": null,
+                    "atomName": "H7",
+                    "atomSubType": 1,
+                    "sysName": "H7",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 186,
+                    "altSysName": null,
+                    "atomName": "H8",
+                    "atomSubType": 1,
+                    "sysName": "H8",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 187,
+                    "altSysName": null,
+                    "atomName": "HO2'",
+                    "atomSubType": 1,
+                    "sysName": "2HO*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 188,
+                    "altSysName": null,
+                    "atomName": "HO3'",
+                    "atomSubType": 1,
+                    "sysName": "H3T",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 189,
+                    "altSysName": null,
+                    "atomName": "HO5'",
+                    "atomSubType": 1,
+                    "sysName": "H5T",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 190,
+                    "altSysName": null,
+                    "atomName": "HOP2",
+                    "atomSubType": 1,
+                    "sysName": "2HOP",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 191,
+                    "altSysName": null,
+                    "atomName": "HOP3",
+                    "atomSubType": 1,
+                    "sysName": "3HOP",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 192,
+                    "altSysName": null,
+                    "atomName": "N1",
+                    "atomSubType": 1,
+                    "sysName": "N1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 193,
+                    "altSysName": null,
+                    "atomName": "N3",
+                    "atomSubType": 1,
+                    "sysName": "N3",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 194,
+                    "altSysName": null,
+                    "atomName": "N7",
+                    "atomSubType": 1,
+                    "sysName": "N7",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 195,
+                    "altSysName": null,
+                    "atomName": "N9",
+                    "atomSubType": 1,
+                    "sysName": "N9",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 196,
+                    "altSysName": null,
+                    "atomName": "O2'",
+                    "atomSubType": 1,
+                    "sysName": "O2*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 197,
+                    "altSysName": null,
+                    "atomName": "O3'",
+                    "atomSubType": 1,
+                    "sysName": "O3*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 198,
+                    "altSysName": null,
+                    "atomName": "O4'",
+                    "atomSubType": 1,
+                    "sysName": "O4*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 199,
+                    "altSysName": null,
+                    "atomName": "O5'",
+                    "atomSubType": 1,
+                    "sysName": "O5*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 200,
+                    "altSysName": null,
+                    "atomName": "O6",
+                    "atomSubType": 1,
+                    "sysName": "O6",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 201,
+                    "altSysName": null,
+                    "atomName": "OP1",
+                    "atomSubType": 1,
+                    "sysName": "O1P",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 202,
+                    "altSysName": null,
+                    "atomName": "OP2",
+                    "atomSubType": 1,
+                    "sysName": "O2P",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 203,
+                    "altSysName": null,
+                    "atomName": "OP3",
+                    "atomSubType": 1,
+                    "sysName": "O3P",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 204,
+                    "altSysName": null,
+                    "atomName": "P",
+                    "atomSubType": 1,
+                    "sysName": "P",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 106,
+            "name": "PDB_REMED",
+            "atomReference": 104,
+            "atomSetReference": 103,
+            "atomSetVariantSystems": null,
+            "atomSysNames": [
+                {
+                    "ID": 205,
+                    "altSysName": null,
+                    "atomName": "H5'",
+                    "atomSubType": 1,
+                    "sysName": "H5'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 206,
+                    "altSysName": null,
+                    "atomName": "H5''",
+                    "atomSubType": 1,
+                    "sysName": "H5''",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 207,
+                    "altSysName": null,
+                    "atomName": "HO2'",
+                    "atomSubType": 1,
+                    "sysName": "HO2'",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 208,
+                    "altSysName": null,
+                    "atomName": "HOP2",
+                    "atomSubType": 1,
+                    "sysName": "HOP2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 209,
+                    "altSysName": null,
+                    "atomName": "HOP3",
+                    "atomSubType": 1,
+                    "sysName": "HOP3",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 210,
+                    "altSysName": null,
+                    "atomName": "OP1",
+                    "atomSubType": 1,
+                    "sysName": "OP1",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 211,
+                    "altSysName": null,
+                    "atomName": "OP2",
+                    "atomSubType": 1,
+                    "sysName": "OP2",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 212,
+                    "altSysName": null,
+                    "atomName": "OP3",
+                    "atomSubType": 1,
+                    "sysName": "OP3",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 213,
+                    "altSysName": null,
+                    "atomName": "P",
+                    "atomSubType": 1,
+                    "sysName": "P",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 122,
+            "name": "SYBYL",
+            "atomReference": 104,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": [
+                120
+            ],
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 105,
+            "name": "UCSF",
+            "atomReference": 120,
+            "atomSetReference": 103,
+            "atomSetVariantSystems": null,
+            "atomSysNames": null,
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        },
+        {
+            "ID": 123,
+            "name": "XPLOR",
+            "atomReference": 104,
+            "atomSetReference": null,
+            "atomSetVariantSystems": null,
+            "atomSysNames": [
+                {
+                    "ID": 214,
+                    "altSysName": null,
+                    "atomName": "H5'*",
+                    "atomSubType": 1,
+                    "sysName": "H5'*",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "ID": 215,
+                    "altSysName": null,
+                    "atomName": "HO3'",
+                    "atomSubType": 1,
+                    "sysName": "H3T",
+                    "namingSystem": null,
+                    "parent": null
+                }
+            ],
+            "atomVariantSystems": null,
+            "chemComp": null,
+            "chemCompSysNames": null,
+            "chemTorsionSysNames": null,
+            "parent": null
+        }
+    ],
+    "parent": null,
+    "stereochemistries": null,
+    "applicationData": null
+}
