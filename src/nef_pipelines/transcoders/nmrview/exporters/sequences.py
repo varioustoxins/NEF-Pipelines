@@ -1,11 +1,12 @@
-from itertools import zip_longest
 from pathlib import Path
 from sys import stdout
 from typing import Dict, List
 
 import typer
+from fyeah import f
 
 from nef_pipelines.lib.nef_lib import (
+    is_save_frame_name_in_entry,
     molecular_system_from_entry,
     molecular_system_from_entry_or_exit,
     read_entry_from_file_or_stdin_or_exit_error,
@@ -16,40 +17,29 @@ from nef_pipelines.lib.sequence_lib import (
     sequence_from_frame,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import (
-    STDIN,
-    exit_error,
-    parse_comma_separated_options,
-    smart_open,
-)
+from nef_pipelines.lib.util import STDIN, exit_error, in_pytest, smart_open
 from nef_pipelines.transcoders.fasta.exporters.sequence import STDOUT
 from nef_pipelines.transcoders.nmrview import export_app
 
 app = typer.Typer()
 
+OUTPUT_HELP = """\
+Where to write the output to. The default is a set of files with each file is named by a template of the form
+"{chain_code}.seq" where {chain_code} is replaced by the chain name. If set to a string containing {chain_code} the
+string will be used as a template for the filenames If set to - output will be written to stdout and individual chains
+will be written as virtual files with a banner of the form ------------- chain_code.seq ------------- separating them.
+A template starting with - will still output to stdout but will use the rest of the string as a template for the
+filename
+"""
+
 
 @export_app.command()
 def sequences(
-    file_name_template: str = typer.Option(
-        "%s.seq",
-        "-t",
-        "--template",
-        help="the template for the filename to export to %s will get replaced by the name of the chain or a filename if"
-        "set with the sequence_text-names option",
-        metavar="<sequence-sequence_text.seq>",
-    ),
     input: Path = typer.Option(
         STDIN, "-i", "--in", help="sequence_text to read input from [- is stdin]"
     ),
-    output_to_stdout: bool = typer.Option(
-        False, "-o", "--out", help="write the files to stdout for debugging"
-    ),
-    file_names: List[str] = typer.Option(
-        None,
-        "--file-names",
-        help="alternative filenames to export to, can be a comma "
-        "separated list of filenames. Repeated calls add "
-        "more filenames.",
+    output_destination: str = typer.Option(
+        "{chain_code}.seq", "-o", "--out", help=OUTPUT_HELP
     ),
     chain_selectors: List[str] = typer.Argument(
         None,
@@ -60,11 +50,15 @@ def sequences(
     ),
 ):
 
-    chain_selectors = parse_comma_separated_options(chain_selectors)
-
-    file_names = parse_comma_separated_options(file_names)
-
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
+
+    _exit_if_no_molecular_system_in_entry(entry)
+
+    molecular_system_frame = entry.get_saveframes_by_category("nef_molecular_system")[0]
+
+    chain_selectors = (
+        chain_selectors if chain_selectors else frame_to_chains(molecular_system_frame)
+    )
 
     molecular_system_frame = molecular_system_from_entry_or_exit(entry)
 
@@ -72,40 +66,57 @@ def sequences(
 
     _exit_if_chain_selector_not_in_chain_codes(chain_codes, chain_selectors)
 
-    chain_selectors = chain_selectors or chain_codes
+    if output_destination == str(STDOUT):
+        output_to_stdout = True
+        file_name_template = "{chain_code}.seq"
+    elif output_destination.startswith("-"):
+        output_to_stdout = True
+        file_name_template = output_destination[1:]
+    else:
+        output_to_stdout = False
+        file_name_template = output_destination
 
-    _exit_if_more_file_names_than_chains(chain_selectors, file_names)
+    if "{chain_code}" not in file_name_template and file_name_template != str(STDOUT):
+        msg = f"the file name template {file_name_template} does not contain the string {{chain_code}}"
+        exit_error(msg)
 
-    pipe(entry, output_to_stdout, file_name_template, file_names, chain_selectors)
+    pipe(entry, output_to_stdout, file_name_template, chain_selectors)
 
 
-def pipe(entry, output_to_stdout, file_name_template, file_names, chain_selectors):
+def _exit_if_no_molecular_system_in_entry(entry):
+    if not is_save_frame_name_in_entry(entry, "nef_molecular_system"):
+        msg = f"the entry does not contain a nef_molecular_system saveframe"
+        exit_error(msg)
+
+
+def pipe(entry, output_to_stdout, file_name_template, chain_selectors):
 
     chains_to_filenames = _build_chains_to_filenames(
-        chain_selectors, file_names, file_name_template
+        chain_selectors, file_name_template
     )
 
     chain_sequences = _nmrview_sequences_from_entry(entry, chain_selectors)
-
-    chains_to_output_file_names = _chains_to_output_filenames(
-        chains_to_filenames, output_to_stdout
-    )
 
     file_banners, final_banner = _make_file_name_banners(chains_to_filenames)
 
     for chain_code, sequence_text in chain_sequences.items():
 
-        output_file_name = chains_to_output_file_names[chain_code]
+        output_file_name = (
+            str(STDOUT) if output_to_stdout else chains_to_filenames[chain_code]
+        )
 
         with smart_open(output_file_name) as file_pointer:
 
-            if output_to_stdout:
+            if output_to_stdout and len(file_banners) > 1:
                 print(file_banners[chain_code], file=file_pointer)
 
             print(sequence_text, file=file_pointer)
-    if output_to_stdout:
-        print(final_banner)
-    elif not stdout.isatty():
+
+    if output_to_stdout and len(file_banners) > 1:
+        print(final_banner, file=file_pointer)
+
+    stdout_is_atty = stdout.isatty() if not in_pytest() else True
+    if not output_to_stdout and not stdout_is_atty:
         print(entry)
 
 
@@ -124,13 +135,6 @@ def _make_file_name_banners(chains_to_filenames):
     return file_banners, final_banner
 
 
-def _chains_to_output_filenames(chains_to_filenames, output_to_stdout):
-    return {
-        chain: STDOUT if output_to_stdout else file_name
-        for chain, file_name in chains_to_filenames.items()
-    }
-
-
 def _exit_if_chain_selector_not_in_chain_codes(chain_codes, chain_selectors):
     for chain_selector in chain_selectors:
         if chain_selector not in chain_codes:
@@ -139,19 +143,7 @@ def _exit_if_chain_selector_not_in_chain_codes(chain_codes, chain_selectors):
                 chain selectors:  {', '.join(chain_selectors)}
                 chain codes: {', '.join(chain_codes)}
             """
-        exit_error(msg)
-
-
-def _exit_if_more_file_names_than_chains(chain_selectors, file_names):
-    if len(file_names) > len(chain_selectors):
-        msg = f"""\
-            there are more file names than chains !
-
-            chains = {','.join(chain_selectors)} [{len(chain_selectors)}]
-            file names: {''.join(file_names)} [{len(file_names)}]
-        """
-
-        exit_error(msg)
+            exit_error(msg)
 
 
 def _nef_to_nmrview_sequences(
@@ -182,6 +174,8 @@ def _nef_to_nmrview_sequences(
             if i == 0:
                 if chain_start != 1:
                     line = f"{residue} {chain_start}"
+                else:
+                    line = residue
             else:
                 line = residue
 
@@ -204,10 +198,12 @@ def _nmrview_sequences_from_entry(entry, chain_codes):
 def _make_chain_code_to_names_same_width_names(names: Dict[str, str]) -> Dict[str, str]:
     max_length = -1
     for name in names.values():
-        name_len = len(name)
+        name_len = len(str(name))
         max_length = max(name_len, max_length)
 
-    return {chain_code: name.center(max_length) for chain_code, name in names.items()}
+    return {
+        chain_code: str(name).center(max_length) for chain_code, name in names.items()
+    }
 
 
 def _open_for_writing_or_exit(file_name):
@@ -222,10 +218,7 @@ def _open_for_writing_or_exit(file_name):
 
 
 def _build_chains_to_filenames(
-    chain_selectors: str, file_names: str, file_name_template: str
+    chain_codes: List[str], file_name_template: str
 ) -> Dict[str, str]:
 
-    return {
-        chain_selector: file_name or file_name_template % chain_selector
-        for chain_selector, file_name in zip_longest(chain_selectors, file_names)
-    }
+    return {chain_code: f(file_name_template) for chain_code in chain_codes}
