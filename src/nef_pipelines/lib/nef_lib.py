@@ -432,7 +432,8 @@ def read_or_create_entry_exit_error_on_bad_file(
             entry = create_entry_from_stdin()
         else:
             try:
-                entry = Entry.from_file(file.open())
+                with open(file) as fh:
+                    entry = Entry.from_file(fh)
 
             except IOError as e:
                 msg = f"""
