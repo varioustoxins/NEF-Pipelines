@@ -205,7 +205,6 @@ def select_frames_by_name(
 
 # refactor to two functions one of which gets a TextIO
 def create_entry_from_stdin() -> Optional[Entry]:
-
     """
     read a star file entry from stdin or return None
 
@@ -252,7 +251,6 @@ def read_file_or_exit(file_path: Path) -> List[str]:
 
 # refactor to two functions one of which gets a TextIO
 def read_entry_from_stdin_or_exit() -> Entry:
-
     """
     read a star file entry from stdin or exit with an error message
     :return: a star file entry
@@ -557,7 +555,7 @@ def is_save_frame_name_in_entry(entry: Entry, frame_name: str) -> bool:
     :param frame_name: the frame name
     :return: if a savefame with the name is present
     """
-    frame_in_entry = False
+    frame_in_entry = True
     try:
         entry.get_saveframe_by_name(frame_name)
     except KeyError:
@@ -639,7 +637,6 @@ def create_nef_save_frame(
     separator: str = DEFAULT_INCREMENT_SEPARATOR,
     end: str = DEFAULT_INCREMENT_END,
 ) -> Saveframe:
-
     """
     Create a NEF save frame from a category and a frame name, including the tags sf_category and sf_framecode
 
