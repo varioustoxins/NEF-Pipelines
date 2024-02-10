@@ -314,6 +314,10 @@ def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
     return result
 
 
+def in_pytest():
+    return "pytest" in sys.modules
+
+
 def script_name(file: str) -> Path:
     """
     get the name of the script
@@ -330,8 +334,7 @@ def script_name(file: str) -> Path:
 
         current_context = Namespace(command_path="unknown unknown")
 
-    in_pytest = "pytest" in sys.modules
-    if in_pytest:
+    if in_pytest():
         command = current_context.command_path.split()
     else:
         command = current_context.command_path.split()[1:]
@@ -836,7 +839,6 @@ def strings_to_tabulated_terminal_sensitive(
 
 
 def strip_characters_left(target: str, letters: str) -> Tuple[str, str]:
-
     """
      strip the characters from letters from the left of the target and return a tuple containing
         1. the string without the stripped letters
@@ -885,7 +887,6 @@ def strip_line_comment(line: str, comment_character: str = "#") -> Tuple[str, st
 
 # https://stackoverflow.com/questions/480214/how-do-i-remove-duplicates-from-a-list-while-preserving-order
 def remove_duplicates_stable(seq: Iterable) -> List:
-
     """
     remove  duplicates from a list while preseving its order, so for example
     [1 2 2 3 45 2 1 6] would yield 1 2 3 4 5 6
