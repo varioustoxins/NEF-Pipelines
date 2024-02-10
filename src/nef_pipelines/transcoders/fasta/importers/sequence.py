@@ -18,6 +18,7 @@ from nef_pipelines.lib.sequence_lib import (
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
+    STDIN,
     exit_error,
     parse_comma_separated_options,
     process_stream_and_add_frames,
@@ -56,10 +57,12 @@ def sequence(
     no_chain_ends: List[str] = typer.Option(
         [], "--no-chain-end", help=NO_CHAIN_END_HELP
     ),
+    # TODO: unused inputs!
     entry_name: str = typer.Option("fasta", help="a name for the entry if required"),
-    pipe: List[Path] = typer.Option(
-        None,
-        metavar="|PIPE|",
+    input: Path = typer.Option(
+        STDIN,
+        "-i",
+        "--in",
         help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
     molecule_types: List[MoleculeType] = typer.Option(
@@ -105,6 +108,7 @@ def sequence(
     args.starts = starts
     args.molecule_types = molecule_types
 
+    # TODO: doesn't provide a pipe command
     process_sequences(args)
 
 

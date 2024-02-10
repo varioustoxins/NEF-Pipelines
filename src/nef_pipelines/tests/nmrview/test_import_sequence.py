@@ -116,7 +116,7 @@ def test_pipe_header(fixed_seed):
 
     path = path_in_test_data(__file__, "3aa10.seq")
     path_header = path_in_test_data(__file__, "test_header_entry.txt")
-    result = run_and_report(app, ["--pipe", path_header, path])
+    result = run_and_report(app, ["--in", path_header, path])
 
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
     meta_data_result = isolate_frame(result.stdout, "%s" % NEF_METADATA)

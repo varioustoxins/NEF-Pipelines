@@ -5,6 +5,7 @@ from typer import Option
 
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
 from nef_pipelines.lib.sequence_lib import frame_to_chains
+from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.chains import chains_app
 
 app = typer.Typer()
@@ -15,10 +16,11 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @chains_app.command()
 def list(
-    pipe: Path = typer.Option(
-        None,
-        metavar="|PIPE|",
-        help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
+    input: Path = typer.Option(
+        STDIN,
+        "-i",
+        "--in",
+        help="input to read NEF data from, for testing [overrides stdin !use stdin instead!]",
     ),
     comment: bool = Option(False, "-c", "--comment", help="prepend comment to chains"),
     verbose: bool = Option(False, "-v", "--verbose", help="print verbose info"),
@@ -26,7 +28,7 @@ def list(
 ):
     """- list the chains in the molecular systems"""
 
-    entry = read_or_create_entry_exit_error_on_bad_file(pipe)
+    entry = read_or_create_entry_exit_error_on_bad_file(input)
 
     sequence_frames = entry.get_saveframes_by_category("nef_molecular_system")
 

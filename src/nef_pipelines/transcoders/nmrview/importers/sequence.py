@@ -7,6 +7,7 @@ import typer
 from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_to_nef_frame
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
+    STDIN,
     exit_error,
     parse_comma_separated_options,
     process_stream_and_add_frames,
@@ -37,10 +38,11 @@ def sequence(
         help="don't include an end of chain link type for the last residue",
     ),
     entry_name: str = typer.Option("nmrview", help="a name for the entry"),
-    pipe: Path = typer.Option(
-        None,
-        metavar="|PIPE|",
-        help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
+    input: Path = typer.Option(
+        STDIN,
+        "-i",
+        "--in",
+        help="pipe to read NEF data from other than stdin",
     ),
     file_names: List[Path] = typer.Argument(
         ..., help="input files of type nmrview.seq", metavar="<SEQ-FILE>"

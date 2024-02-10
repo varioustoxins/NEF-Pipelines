@@ -15,7 +15,11 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import count_residues, frame_to_chains
 from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import exit_error, strings_to_table_terminal_sensitive
+from nef_pipelines.lib.util import (
+    STDIN,
+    exit_error,
+    strings_to_table_terminal_sensitive,
+)
 from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
@@ -36,11 +40,10 @@ def _if_is_nef_file_load_as_entry(file_path):
 # noinspection PyUnusedLocal
 @frames_app.command()
 def list(
-    pipe: Path = typer.Option(
-        None,
+    input: Path = typer.Option(
+        STDIN,
         "-i",
         "--in",
-        metavar="NEF-FILE",
         help="read NEF data from a file instead of stdin",
     ),
     selector_type: SelectionType = typer.Option(
@@ -67,15 +70,15 @@ def list(
     if len(filters) > 0:
         entry = _if_is_nef_file_load_as_entry(filters[0])
         if entry is not None:
-            if pipe:
+            if input != STDIN:
                 msg = f"""\
                    two nef file paths supplied...
-                       path 1: {pipe} [from --in]
+                       path 1: {input} [from --in]
                        path 2: {filters[0]} [from args]"""
                 msg = dedent(msg)
                 exit_error(msg)
             else:
-                pipe = filters[0]
+                input = filters[0]
                 filters = filters[1:]
     if not filters:
         filters = [
@@ -87,7 +90,7 @@ def list(
     if entry is None:
 
         try:
-            entry = read_entry_from_file_or_stdin_or_exit_error(pipe)
+            entry = read_entry_from_file_or_stdin_or_exit_error(input)
         except Exception as e:
             exit_error(f"failed to read nef file {args.pipe} because", e)
         lines = str(entry)
