@@ -99,9 +99,9 @@ def fixup_metadata(entry: Entry, name: str, version: str, script: str):
         meta_frame.add_tag("program_name", name, update=True)
         meta_frame.add_tag("program_version", version, update=True)
         meta_frame.add_tag("script_name", script, update=True)
-        creation_time = get_creation_time()
-        meta_frame.add_tag("creation_time", creation_time, update=True)
-        uuid = get_uuid(NEF_PIPELINES, creation_time)
+        creation_date = get_creation_time()
+        meta_frame.add_tag("creation_date", creation_date, update=True)
+        uuid = get_uuid(NEF_PIPELINES, creation_date)
         meta_frame.add_tag("uuid", uuid, update=True)
 
         run_history_loop = _get_loop_by_category_or_none(meta_frame, "nef_run_history")
@@ -246,8 +246,8 @@ def get_pipe_file(args: Namespace) -> Optional[TextIO]:
     """
 
     result = None
-    if "pipe" in args and args.pipe:
-        with open(args.pipe) as fh:
+    if "input" in args and args.input and args.input != STDIN:
+        with open(args.input) as fh:
             pipe_lines = fh.read()
         result = io.StringIO(pipe_lines)
     # pycharm doesn't treat stdstreams correcly and hangs
@@ -437,7 +437,7 @@ def process_stream_and_add_frames(
         exit_error(f"failed to load pipe file because {e}")
 
     if stream is not None:
-        lines = "\n".join(stream.readlines())
+        lines = stream.read()
     else:
         lines = ""
 

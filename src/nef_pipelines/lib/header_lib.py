@@ -26,9 +26,9 @@ def create_header_frame(program_name, program_version, script_name):
     frame.add_tag("script_name", script_name)
     frame.add_tag("program_version", program_version)
 
-    creation_time = get_creation_time()
-    uuid = get_uuid(NEF_PIPELINES, creation_time)
-    frame.add_tag("creation_date", creation_time)
+    creation_date = get_creation_time()
+    uuid = get_uuid(NEF_PIPELINES, creation_date)
+    frame.add_tag("creation_date", creation_date)
     frame.add_tag("uuid", uuid)
 
     loop = Loop.from_scratch("nef_run_history")

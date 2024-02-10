@@ -10,7 +10,6 @@ save_nef_nmr_meta_data
    _nef_nmr_meta_data.program_version  0.1.45
    _nef_nmr_meta_data.creation_date    2023-08-27T12:11:33.808424
    _nef_nmr_meta_data.uuid             NEFPipelines-2023-08-27T12:11:33.930553-9145925061
-   _nef_nmr_meta_data.creation_time    2023-08-27T12:11:33.930553
 
    loop_
       _nef_run_history.run_number

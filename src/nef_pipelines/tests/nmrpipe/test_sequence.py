@@ -101,7 +101,6 @@ save_nef_nmr_meta_data
    _nef_nmr_meta_data.program_version  {get_version()}
    _nef_nmr_meta_data.creation_date    2012-01-14T12:00:01.123456
    _nef_nmr_meta_data.uuid             NEFPipelines-2012-01-14T12:00:01.123456-1043321819
-   _nef_nmr_meta_data.creation_time    2012-01-14T12:00:01.123456
 
    loop_
       _nef_run_history.run_number
