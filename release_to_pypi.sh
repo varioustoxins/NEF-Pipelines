@@ -1,3 +1,4 @@
+#this script uses versionner and tox
 # add check for uncommitted or auto stash
 git update-index --refresh >/dev/null
 git diff-index --quiet HEAD --
