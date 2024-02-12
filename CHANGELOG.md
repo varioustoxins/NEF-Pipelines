@@ -192,3 +192,12 @@ complete support for talos including
 
 improved testing to cover all new features
 bug fixes for talos
+
+## version 0.1.49
+
+- rename can now edit frame names
+- --pipe is now --in
+- output to csv files is supported using tabulate
+- the pdbx subcommand is now rcsb and supports mmcif
+- remove use of biopython
+- use new lighter weight mmcif pdb and fasta parsers
