@@ -93,6 +93,9 @@ def peaks(
     if not chain_codes:
         chain_codes = ["A"]
 
+    if len(chain_codes) == 1 and len(file_names) > 1:
+        chain_codes = chain_codes * len(file_names)
+
     # make this a library function
     _exit_if_chain_codes_and_file_names_dont_match(chain_codes, file_names)
 
