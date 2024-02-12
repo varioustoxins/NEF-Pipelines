@@ -65,7 +65,6 @@ def parse_single_assignment(
     previous_residue_name: str = None,
     previous_residue_number: str = None,
 ) -> Tuple[str, str, str]:
-
     """
     Parse a single sparky assignment of the form ?, G16H4', H8, T17H6, G16H8 into a tuple of residue_number,
     residue_name and atom_name. To allow for processing of abbreviated assignments of the form G16H4'-H8 a previous
@@ -153,7 +152,6 @@ def parse_assignments(
     line_info: LineInfo,
     allow_pseudo_atoms=False,
 ) -> List[AtomLabel]:
-
     """
     take a sparky assignment of the form ?, G16H4'-H8 or T17H6-G16H8 into atom labels
 
@@ -220,7 +218,11 @@ def parse_assignments(
             ):
                 translated_residue_name = residue_name_lookup[residue_name_key]
 
-        if len(sequence) > 0 and (residue_name_key not in residue_name_lookup):
+        if (
+            len(sequence) > 0
+            and (residue_name_key not in residue_name_lookup)
+            and residue_name_key[1] != UNUSED
+        ):
             msg = f"""
                 the chain code {chain_code} and sequence_code {sequence_code} from
                 line {line_info.line_no} in file {line_info.file_name} were not found
@@ -232,6 +234,9 @@ def parse_assignments(
                 --no-validate option of sparky import peaks
             """
             exit_error(msg)
+
+        if residue_name_key[1] == UNUSED:
+            translated_residue_name = UNUSED
 
         residue = Residue(
             chain_code=chain_code,
