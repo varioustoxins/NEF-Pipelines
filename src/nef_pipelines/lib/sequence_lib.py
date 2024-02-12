@@ -72,7 +72,6 @@ def get_linking(
     no_chain_start=List[str],
     no_chain_end=List[str],
 ) -> List[SequenceResidue]:
-
     """
     get the correct linking for residue in a standard sequenced chain
 
@@ -150,13 +149,18 @@ def sequence_to_nef_frame(
 
     for index, (sequence_residue, linking) in enumerate(residue_and_linkages):
 
-        nef_loop.add_data_by_tag("index", index + 1)
-        nef_loop.add_data_by_tag("chain_code", sequence_residue.chain_code)
-        nef_loop.add_data_by_tag("sequence_code", sequence_residue.sequence_code)
-        nef_loop.add_data_by_tag("residue_name", sequence_residue.residue_name.upper())
-        nef_loop.add_data_by_tag("linking", linking)
-        nef_loop.add_data_by_tag("residue_variant", NEF_UNKNOWN)
-        nef_loop.add_data_by_tag("cis_peptide", NEF_UNKNOWN)
+        data = [
+            {
+                "index": index + 1,
+                "chain_code": sequence_residue.chain_code,
+                "sequence_code": sequence_residue.sequence_code,
+                "residue_name": sequence_residue.residue_name.upper(),
+                "linking": linking,
+                "residue_variant": NEF_UNKNOWN,
+                "cis_peptide": NEF_UNKNOWN,
+            }
+        ]
+        nef_loop.add_data(data)
 
     return nef_frame
 
@@ -462,7 +466,6 @@ def sequence_from_entry(entry) -> List[SequenceResidue]:
 def sequence_from_frame(
     frame: Saveframe, chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN
 ) -> List[SequenceResidue]:
-
     """
     read sequences from a nef molecular system save frame
     can raise Exceptions
@@ -732,7 +735,6 @@ def get_residue_name_from_lookup(
 def sequence_to_residue_type_lookup(
     sequence: List[SequenceResidue],
 ) -> Dict[Tuple[str, int], str]:
-
     """
     build a lookup table from sequence_code, chain_code to residue_type from a list of sequence residues
     :param sequence: a list of sequence residues
