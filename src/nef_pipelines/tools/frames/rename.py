@@ -25,13 +25,19 @@ from nef_pipelines.tools.frames import frames_app
 
 # TODO: add mmv like semantics as an option [https://manpages.ubuntu.com/manpages/bionic/man1/mmv.1.html]
 
+REPLACE_HELP = """replace part of the frame name selected with the replacement string, rather than the whole name"""
+
 
 @frames_app.command()
 def rename(
     input: Path = typer.Option(
-        STDIN, "-i", "--in", help="sequence_text to read input from [- is stdin]"
+        STDIN, "-i", "--in", help="file to read input from [- is stdin]"
     ),
     exact: bool = typer.Option(False),
+    replace: bool = typer.Option(False, help=REPLACE_HELP),
+    delete: bool = typer.Option(
+        False, help="delete the text rather than replacing it if replace is specified"
+    ),
     category: str = typer.Option(
         "*", help="category to match as well as the frame name"
     ),
@@ -47,7 +53,17 @@ def rename(
 ):
     """- rename frames in the current input"""
 
+    if delete and not replace:
+        exit_error("you can't use --delete without --replace")
+
     old_new_names = parse_comma_separated_options(old_new_names)
+
+    if delete:
+        new_new_old_names = []
+        for name in old_new_names:
+            new_new_old_names.append(name)
+            new_new_old_names.append("")
+        old_new_names = new_new_old_names
 
     _exit_renames_not_pairs(old_new_names)
 
@@ -78,7 +94,7 @@ def rename(
         if len(target_frames) == 0:
             _exit_no_frames_selected(old_name, category, entry, exact)
 
-        if len(target_frames) > 1:
+        if len(target_frames) > 1 and not replace:
             _exit_error_mutiple_frames_selected(
                 old_name, category, exact, entry, target_frames
             )
@@ -87,30 +103,36 @@ def rename(
 
         # TODO: check for accceptable characters [33-126] though maybe we allow unicode
         # TODO: tests
+        for target_frame in target_frames:
+            if len(new_name.split()) > 1:
+                _exit_spaces_in_new_name(new_name)
 
-        if len(new_name.split()) > 1:
-            _exit_spaces_in_new_name(new_name)
+            if not rename_category:
+                category = target_frame.category
+                if replace:
+                    frame_name = target_frame.name[len(category) :].lstrip("_")
+                    new_name_part = frame_name.replace(old_name, new_name)
+                    if new_name_part.startswith("_"):
+                        new_name_part = new_name_part[1:]
 
-        if not rename_category:
-            category = target_frame.category
-            new_full_name = f"{category}_{new_name}"
+                new_full_name = f"{category}_{new_name_part}"
 
-            if new_full_name in entry.frame_dict.keys() and not force:
-                _exit_clashing_frame_name(new_full_name, entry)
+                if new_full_name in entry.frame_dict.keys() and not force:
+                    _exit_clashing_frame_name(new_full_name, entry)
 
-            if new_full_name in entry.frame_dict.keys() and force:
-                frame_to_remove = entry.get_saveframe_by_name(new_full_name)
-                entry.remove_saveframe(frame_to_remove)
+                if new_full_name in entry.frame_dict.keys() and force:
+                    frame_to_remove = entry.get_saveframe_by_name(new_full_name)
+                    entry.remove_saveframe(frame_to_remove)
 
-            target_frame.name = new_full_name
+                target_frame.name = new_full_name
 
-        else:
+            else:
 
-            name_part = target_frame.name[len(target_frame.category) :].lstrip("_")
-            new_full_name = f"{new_name}_{name_part}"
+                name_part = target_frame.name[len(target_frame.category) :].lstrip("_")
+                new_full_name = f"{new_name}_{name_part}"
 
-            target_frame.category = new_name
-            target_frame.name = new_full_name
+                target_frame.category = new_name
+                target_frame.name = new_full_name
 
     print(entry)
 
