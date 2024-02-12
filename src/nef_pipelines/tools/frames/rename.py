@@ -109,6 +109,7 @@ def rename(
 
             if not rename_category:
                 category = target_frame.category
+                new_name_part = new_name
                 if replace:
                     frame_name = target_frame.name[len(category) :].lstrip("_")
                     new_name_part = frame_name.replace(old_name, new_name)
