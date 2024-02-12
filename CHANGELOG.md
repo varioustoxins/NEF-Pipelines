@@ -203,4 +203,4 @@ bug fixes for talos
 - use new lighter weight mmcif pdb and fasta parsers
 
 ## version 0.1.50
-- added missing packages fequired for installation
+- added missing packages required for installation
