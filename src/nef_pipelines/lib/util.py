@@ -503,6 +503,16 @@ def is_float(value: str) -> bool:
 T = TypeVar("T")
 
 
+def nef_pipelines_root():
+    """
+    get the root of the nef pipelines installation
+
+    Returns:
+        the root of the nef pipelines installation
+    """
+    return Path(__file__).parent.parent.parent
+
+
 # https://stackoverflow.com/questions/312443/how-do-i-split-a-list-into-equally-sized-chunks
 def chunks(input: Iterator[T], n: int) -> Iterator[List[T]]:
     """Yield successive n-sized chunks from lst.
