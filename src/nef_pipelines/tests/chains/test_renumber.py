@@ -281,3 +281,49 @@ def test_renumber_shifts_chain_a_only():
     )
 
     assert_lines_match(EXPECTED, result.stdout)
+
+
+def test_renumber_chain_in_first_column():
+    test_data = """
+        data_chain
+
+        save_chain_test
+           _nef_molecular_system.sf_category   chain_test
+           _nef_molecular_system.sf_framecode  chain_test
+
+           loop_
+              _nef_sequence.chain_code
+              _nef_sequence.sequence_code
+
+
+             A   1
+             A   2
+             A   3
+
+           stop_
+        save_
+    """
+
+    result = run_and_report(app, [*OFFSET_CHAINS_A_10], input=test_data)
+
+    EXPECTED = """
+        data_chain
+
+        save_chain_test
+           _nef_molecular_system.sf_category   chain_test
+           _nef_molecular_system.sf_framecode  chain_test
+
+           loop_
+              _nef_sequence.chain_code
+              _nef_sequence.sequence_code
+
+
+             A   11
+             A   12
+             A   13
+
+           stop_
+        save_
+    """
+
+    assert_lines_match(EXPECTED, result.stdout)

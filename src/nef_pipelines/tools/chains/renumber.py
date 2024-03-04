@@ -203,7 +203,7 @@ def offset_residue_numbers(frame, chain, offset, starts=False):
                 chain_code_tag = tag_based_on(tag, SEQUENCE_CODE, CHAIN_CODE)
                 chain_code_index = loop_data.tag_index(chain_code_tag)
                 for line in loop_data:
-                    if chain_code_index and line[chain_code_index] == chain:
+                    if chain_code_index is not None and line[chain_code_index] == chain:
                         sequence = line[sequence_index]
                         if is_int(sequence):
                             sequence = int(sequence)
