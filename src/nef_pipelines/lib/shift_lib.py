@@ -84,25 +84,31 @@ def shifts_to_nef_frame(shift_list: ShiftList, frame_name: str):
     loop.add_tag(tags)
 
     for shift in shift_list.shifts:
-
-        loop.add_data_by_tag("chain_code", shift.atom.residue.chain_code)
-        loop.add_data_by_tag("sequence_code", shift.atom.residue.sequence_code)
-        loop.add_data_by_tag("residue_name", shift.atom.residue.residue_name)
-        loop.add_data_by_tag("atom_name", shift.atom.atom_name)
-        loop.add_data_by_tag("value", shift.value)
-
         value_uncertainty = (
             shift.value_uncertainty if shift.value_uncertainty else UNUSED
         )
-        loop.add_data_by_tag("value_uncertainty", value_uncertainty)
 
         element = shift.atom.element if shift.atom.element else UNUSED
-        loop.add_data_by_tag("element", element)
 
         isotope_number = (
             shift.atom.isotope_number if shift.atom.isotope_number else UNUSED
         )
-        loop.add_data_by_tag("isotope_number", isotope_number)
+
+        row_data = {
+            "chain_code": shift.atom.residue.chain_code,
+            "sequence_code": shift.atom.residue.sequence_code,
+            "residue_name": shift.atom.residue.residue_name,
+            "atom_name": shift.atom.atom_name,
+            "value": shift.value,
+            "value_uncertainty": value_uncertainty,
+            "element": element,
+            "isotope_number": isotope_number,
+        }
+        loop.add_data(
+            [
+                row_data,
+            ]
+        )
 
     return frame
 
