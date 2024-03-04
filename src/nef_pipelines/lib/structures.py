@@ -9,6 +9,7 @@ class Linking(StrEnum):
     START = (auto(),)
     MIDDLE = auto()
     END = auto()
+    FREE = auto()
 
 
 class SequenceResidue:
