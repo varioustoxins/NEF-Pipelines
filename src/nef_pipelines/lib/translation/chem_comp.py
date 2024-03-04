@@ -165,9 +165,9 @@ CrossPackageLink = Annotated[
 
 class PCBaseModel(BaseModel, metaclass=PCMeta):
 
-    ID: Implementation[
-        Optional[int]
-    ] = None  # not required by appdata maybe we need further level of base model
+    ID: Implementation[Optional[int]] = (
+        None  # not required by appdata maybe we need further level of base model
+    )
 
     @classmethod
     def _get_field_annotations(cls, field_name):
@@ -209,72 +209,55 @@ class PCBaseModel(BaseModel, metaclass=PCMeta):
 
 
 # forward references for type system
-class ChemAtom(PCBaseModel):
-    ...
+class ChemAtom(PCBaseModel): ...
 
 
-class ChemBond(PCBaseModel):
-    ...
+class ChemBond(PCBaseModel): ...
 
 
-class ChemCompVar(PCBaseModel):
-    ...
+class ChemCompVar(PCBaseModel): ...
 
 
-class ChemTorsion(PCBaseModel):
-    ...
+class ChemTorsion(PCBaseModel): ...
 
 
-class LinkEnd(PCBaseModel):
-    ...
+class LinkEnd(PCBaseModel): ...
 
 
-class ChemTorsionSysName(PCBaseModel):
-    ...
+class ChemTorsionSysName(PCBaseModel): ...
 
 
-class ChemAtomSet(PCBaseModel):
-    ...
+class ChemAtomSet(PCBaseModel): ...
 
 
-class ChemCompSysName(PCBaseModel):
-    ...
+class ChemCompSysName(PCBaseModel): ...
 
 
-class NamingSystem(PCBaseModel):
-    ...
+class NamingSystem(PCBaseModel): ...
 
 
-class ChemAngle(PCBaseModel):
-    ...
+class ChemAngle(PCBaseModel): ...
 
 
-class AbstractChemAtom(PCBaseModel):
-    ...
+class AbstractChemAtom(PCBaseModel): ...
 
 
-class LinkAtom(PCBaseModel):
-    ...
+class LinkAtom(PCBaseModel): ...
 
 
-class ChemComp(PCBaseModel):
-    ...
+class ChemComp(PCBaseModel): ...
 
 
-class AppDataString(PCBaseModel):
-    ...
+class AppDataString(PCBaseModel): ...
 
 
-class AppDataInt(PCBaseModel):
-    ...
+class AppDataInt(PCBaseModel): ...
 
 
-class AppDataBoolean(PCBaseModel):
-    ...
+class AppDataBoolean(PCBaseModel): ...
 
 
-class InverseName(str):
-    ...
+class InverseName(str): ...
 
 
 def name_annotation(name):
@@ -444,6 +427,7 @@ class ChemCompLinking(StrEnum):
     start = auto()
     middle = auto()
     end = auto()
+    free = auto()
     none = auto()
     any = auto()
 
@@ -1026,7 +1010,6 @@ class ChemComp(PCBaseModel):
 
         if need_list or need_tuple:
 
-            print("had to change opposite type")
             new_opposite_value = []
             if opposite_value is not None:
                 new_opposite_value.append(opposite_value)
@@ -1084,5 +1067,5 @@ class ChemComp(PCBaseModel):
                     if isinstance(elem, PCBaseModel):
                         value[i] = elem.ID
 
-        for object in self.__class__.__opposites__:
-            print(object)
+        # for object in self.__class__.__opposites__:
+        #     print(object)

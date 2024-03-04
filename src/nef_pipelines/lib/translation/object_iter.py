@@ -56,11 +56,11 @@ def item_only(iter, item):
 def object_children(target, parent):
     result = ()
 
-    if hasattr(target, "__fields__"):
+    if hasattr(target, "model_fields"):
         result = tuple(
             [
                 ObjectIter.Entry(target, field_name, getattr(target, field_name))
-                for field_name in target.__fields__.keys()
+                for field_name in target.model_fields.keys()
             ]
         )
 

@@ -5,9 +5,10 @@ from typing import List
 
 import xmltodict
 
+from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.translation.chem_comp import ChemComp
 from nef_pipelines.lib.translation.object_iter import ObjectIter
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.util import exit_error, nef_pipelines_root
 
 
 def _items_in(target):
@@ -574,23 +575,18 @@ def _convert_xml_chem_comp(chem_comp_path: Path, out_dir: Path = None, force=Fal
                     print(f"Error: loading {file_path} failed")
 
 
-def _nef_pipelines_root():
-    return Path(__file__).parent.parent.parent
-
-
-CHEM_COMP_REL_PATH = ["data", "chem_comp"]
+CHEM_COMP_REL_PATH = ["nef_pipelines", "data", "chem_comp"]
 JSON_CHEM_COMP_SUB_PATH = (".",)
 XML_CHEM_COMP_SUB_PATH = ("xml",)
 
 
 def _chem_comp_root_dir():
-    return Path(_nef_pipelines_root(), *CHEM_COMP_REL_PATH)
+    return Path(nef_pipelines_root(), *CHEM_COMP_REL_PATH)
 
 
 def find_chem_comps(rel_path=JSON_CHEM_COMP_SUB_PATH, extension="json") -> List[Path]:
 
     result = []
-    print("root:", _chem_comp_root_dir())
     for file_path in Path(_chem_comp_root_dir(), *rel_path).iterdir():
         if file_path.suffix == f".{extension}":
             result.append(file_path)
@@ -610,15 +606,16 @@ def load_chem_comps():
     chem_comp_paths = find_chem_comps()
 
     for chem_comp_path in chem_comp_paths:
-        print(chem_comp_path)
         with open(chem_comp_path, "r") as f:
             chemcomp_data = json.load(f)
             chem_comp = ChemComp(**chemcomp_data)
-            print(chem_comp)
             mol_type = chem_comp.molType
             MOL_TYPES.add(mol_type.upper())
-            ccpn_code = chem_comp.ccpCode
-            key = mol_type.upper(), ccpn_code.upper()
+            key = (
+                chem_comp.code3Letter
+                if chem_comp.code3Letter != UNUSED
+                else chem_comp.ccpCode
+            )
             CHEM_COMPS[key] = chem_comp
 
 
