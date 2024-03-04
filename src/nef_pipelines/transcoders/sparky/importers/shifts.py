@@ -65,14 +65,16 @@ def shifts(
         ..., help="input files of type shifts.txt", metavar="<SPARKY-shifts>.txt"
     ),
 ):
-    """convert sparky shift file <sparky-shifts>.txt to NEF"""
+    """- convert sparky shift file <sparky-shifts>.txt to NEF"""
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
     if not chain_codes:
         chain_codes = ["A"]
-
-    _exit_if_number_chain_codes_and_file_names_dont_match(chain_codes, file_names)
+    elif len(chain_codes) == 1 and len(file_names) > 1:
+        chain_codes = chain_codes * len(file_names)
+    else:
+        _exit_if_number_chain_codes_and_file_names_dont_match(chain_codes, file_names)
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
