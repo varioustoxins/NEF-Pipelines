@@ -39,8 +39,6 @@ NUCLEUS = "Nuc"
 
 EXPECTED_HEADINGS = set(f"{GROUP} {ATOM} {NUCLEUS} {SHIFT} SDev Assignments".split())
 
-app = typer.Typer()
-
 
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
@@ -78,9 +76,9 @@ def shifts(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    sequence = sequence_from_entry_or_exit(entry)
+    entry = pipe(entry, chain_codes, frame_name, file_names)
 
-    pipe(entry, chain_codes, sequence, frame_name, file_names)
+    print(entry)
 
 
 def _exit_if_number_chain_codes_and_file_names_dont_match(chain_codes, file_names):
@@ -93,7 +91,9 @@ def _exit_if_number_chain_codes_and_file_names_dont_match(chain_codes, file_name
         exit_error(msg)
 
 
-def pipe(entry, chain_codes, sequence, entry_name, file_names):
+def pipe(entry, chain_codes, frame_name, file_names):
+
+    sequence = sequence_from_entry_or_exit(entry)
 
     sparky_frames = []
 
@@ -107,13 +107,11 @@ def pipe(entry, chain_codes, sequence, entry_name, file_names):
                 lines, chain_seqid_to_type, chain_code=chain_code, file_name=file_name
             )
 
-            frame = shifts_to_nef_frame(sparky_shifts, entry_name)
+            frame = shifts_to_nef_frame(sparky_shifts, frame_name)
 
             sparky_frames.append(frame)
 
-    entry = add_frames_to_entry(entry, sparky_frames)
-
-    print(entry)
+    return add_frames_to_entry(entry, sparky_frames)
 
 
 def _convert_residue_type_to_3_let_or_exit(residue_type, line_info):
