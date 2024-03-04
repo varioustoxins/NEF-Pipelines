@@ -4,6 +4,7 @@ f-yeah~=0.3.0
 fastaparser~=1.1.1
 freezegun~=1.1.0
 frozendict~=2.3.7
+hjson~=3.1.0
 Levenshtein~=0.20.9
 mmcif-pdbx~=2.0.1
 ordered_set~=4.1.0
