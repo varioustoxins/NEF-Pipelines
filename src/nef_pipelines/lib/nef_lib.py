@@ -406,12 +406,23 @@ def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
     if file is None or file == Path("-"):
         entry = read_entry_from_stdin_or_exit()
     else:
-        try:
-            with open(file) as fh:
-                entry = Entry.from_file(fh)
+        entry = read_entry_from_file_or_exit_error(file)
+    return entry
 
-        except IOError as e:
-            exit_error(f"couldn't read from the file {file}", e)
+
+def read_entry_from_file_or_exit_error(file):
+    """
+    read a star entry from a file or exit with an error message
+
+    :param file: a file on the file system
+    :return: a new Entry read from the file
+    """
+    try:
+        with open(file) as fh:
+            entry = Entry.from_file(fh)
+
+    except IOError as e:
+        exit_error(f"couldn't read from the file {file}", e)
     return entry
 
 
