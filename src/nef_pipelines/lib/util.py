@@ -344,12 +344,13 @@ def script_name(file: str) -> Path:
     return command
 
 
-def read_from_file_or_exit(file_name: Path, target: str) -> str:
+def read_from_file_or_exit(file_name: Path, target: str = "unknown") -> str:
     if file_name == STDIN and sys.stdin.isatty():
-        exit_error(
-            f"trying to open stdin to read {target}, but stdin is not a stream [did you forget to add a nef file to "
-            "your pipeline?]"
-        )
+        msg = f"""
+            while tring to read from {file_name} as {target} i expected to read from stdin,
+            howveer the inputs  is not a stream [did you forget to add a nef file to your pipeline?]
+        """
+        exit_error(msg)
     if running_in_pycharm():
         exit_error(
             "reading from stdin doesn't work in pycharm debug environment as there is no shell..."
