@@ -1,3 +1,4 @@
+import string
 from enum import auto
 
 from strenum import UppercaseStrEnum
@@ -12,6 +13,11 @@ class Isotope(UppercaseStrEnum):
     O17 = auto()
     F19 = auto()
     P31 = auto()
+
+    def __str__(self):
+        element = self.name.rstrip(string.digits)
+        isotope_number = self.name[len(element) :]
+        return f"{isotope_number}{element}"
 
 
 # fmt: off
