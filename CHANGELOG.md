@@ -209,3 +209,10 @@ release is the same as 0.1.49 but...
 ## version 0.1.51
 - added support for reading NMR-STAR shifts and sequences
 - various bug fixes
+
+## version 0.1.52
+release is the same as 0.1.49 but...
+- added missing packages required for installation
+  - annotated-types
+  - hjson
+  - pydantic
