@@ -56,7 +56,7 @@ NAME_TEMPLATE_HELP = """
 @shifts_app.command()
 def make_peaks(
     shift_frame_selectors: List[str] = typer.Option(
-        ["default"], help=SHIFT_FRAMES_HELP
+        None, "--shift-frames", help=SHIFT_FRAMES_HELP
     ),
     exact: bool = typer.Option(
         False, help="if set frames are selected by exact matches"
@@ -73,6 +73,14 @@ def make_peaks(
     ),
 ):
     """-  make a set of peaks for an hsqc or triple resonance spectrum from a list of shiftsdbxcli put rh"""
+
+    shift_frame_selectors = (
+        [
+            "*",
+        ]
+        if not shift_frame_selectors
+        else parse_comma_separated_options(shift_frame_selectors)
+    )
 
     shift_frames = parse_comma_separated_options(shift_frame_selectors)
 
