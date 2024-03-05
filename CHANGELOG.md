@@ -203,4 +203,9 @@ bug fixes for talos
 - use new lighter weight mmcif pdb and fasta parsers
 
 ## version 0.1.50
+release is the same as 0.1.49 but...
 - added missing packages required for installation
+
+## version 0.1.51
+- added support for reading NMR-STAR shifts and sequences
+- various bug fixes
