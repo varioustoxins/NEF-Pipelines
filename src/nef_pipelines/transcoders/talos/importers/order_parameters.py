@@ -57,7 +57,7 @@ def order_parameters(
         ..., help="input files of type <TALOS-FILE>.pred", metavar="<PRED-FILE>"
     ),
 ):
-    """convert rci order parameters (S2) from a talos file to NEF"""
+    """-  convert rci order parameters (S2) from a talos file to NEF"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 

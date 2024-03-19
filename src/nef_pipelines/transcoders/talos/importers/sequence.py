@@ -38,13 +38,13 @@ def sequence(
         "-i",
         "--input",
         metavar="|INPUT|",
-        help="file to read NEF data from",
+        help="file to read NEF data from [- is stdin; defaults is stdin]",
     ),
     file_name: Path = typer.Argument(
         ..., help="input files of type <TALOS-FILE>.pred", metavar="<PRED-FILE>"
     ),
 ):
-    """convert sequence from a talos pred file to NEF"""
+    """-  convert sequence from a talos pred file to NEF"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name=entry_name)
 

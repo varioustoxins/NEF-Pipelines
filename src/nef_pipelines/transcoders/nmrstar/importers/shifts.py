@@ -70,7 +70,7 @@ def shifts(
         "-i",
         "--input",
         metavar="|PIPE|",
-        help="input to read NEF data from [- is stdin]",
+        help="file to read NEF data from [- is stdin; defaults is stdin]]",
     ),
     stereo_mode: StereoAssignmentHandling = typer.Option("auto", help=STEREO_HELP),
     use_author: bool = typer.Option(

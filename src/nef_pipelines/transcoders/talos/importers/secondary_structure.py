@@ -58,7 +58,7 @@ def secondary_structure(
         ..., help="input files of type <TALOS-FILE>.pred", metavar="<PRED-FILE>"
     ),
 ):
-    f"""convert talos secondary structure predictions to NEF in namepace  {NEF_PIPELINES_NAMESPACE}"""
+    """-  convert talos secondary structure predictions to NEF [namespace nefpls]"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 

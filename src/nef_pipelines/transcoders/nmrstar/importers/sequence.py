@@ -67,7 +67,7 @@ def sequence(
         STDIN,
         "-i",
         "--in",
-        help="pipe to read NEF data from, for testing [overrides stdin !use stdin instead!]",
+        help="file to read NEF data from [- is stdin; defaults is stdin]",
     ),
     file_path: Path = typer.Argument(
         ..., help="the file to read", metavar="<NMR-STAR-FILE>"
