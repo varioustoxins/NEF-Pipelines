@@ -58,6 +58,7 @@ TRIPLE_SPECTRA = {
 
 @dataclass
 class PeakInfo:
+    name: str
     atoms: Tuple[Union[str, Tuple[str, ...]], ...]
     dimensions: Tuple[Isotope, ...]
     atom_sets: Tuple[Tuple[Tuple[int, str], ...], ...]
@@ -77,9 +78,10 @@ class AtomInfo:
 # TODO much of this is ugly!
 EXPERIMENT_INFO = {
     ExperimentType.N_HSQC: PeakInfo(
+        name="N-HSQC",
         atoms=("N", "H"),
         dimensions=(Isotope.N15, Isotope.H1),
-        atom_sets=(((1, "N"), (1, "H")),),
+        atom_sets=(((0, "N"), (0, "H")),),
         atom_set_signs=(1,),
         essential_atom_sets=(0,),
         atom_sets_by_mass={NMRMassClass.LOW: (0,), NMRMassClass.HIGH: (0,)},
@@ -93,11 +95,12 @@ EXPERIMENT_INFO = {
     #     atom_set_signs=[1]
     # ),
     ExperimentType.HNCA: PeakInfo(
+        name="HNCA",
         atoms=(("CA",), "N", "H"),
         dimensions=(Isotope.C13, Isotope.N15, Isotope.H1),
         atom_sets=(
-            ((1, "CA"), (1, "N"), (1, "H")),
-            ((2, "CA"), (1, "N"), (1, "H")),
+            ((0, "CA"), (0, "N"), (0, "H")),
+            ((-1, "CA"), (0, "N"), (0, "H")),
         ),
         atom_set_signs=(1, 1),
         essential_atom_sets=(0, 1),
@@ -106,9 +109,10 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNcoCA,),
     ),
     ExperimentType.HNcoCA: PeakInfo(
+        name="HNcoCA",
         atoms=("H", "N", ("CA",)),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
-        atom_sets=(((1, "H"), (1, "N"), (2, "CA")),),
+        atom_sets=(((0, "H"), (0, "N"), (-1, "CA")),),
         atom_set_signs=(1,),
         essential_atom_sets=(0,),
         atom_sets_by_mass={NMRMassClass.LOW: (0,), NMRMassClass.HIGH: (0,)},
@@ -116,13 +120,14 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNCA,),
     ),
     ExperimentType.HNCACB: PeakInfo(
+        name="HNCACB",
         atoms=("H", "N", ("CA", "CB")),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
         atom_sets=(
-            ((1, "H"), (1, "N"), (1, "CA")),
-            ((1, "H"), (1, "N"), (2, "CA")),
-            ((1, "H"), (1, "N"), (1, "CB")),
-            ((1, "H"), (1, "N"), (2, "CB")),
+            ((0, "H"), (0, "N"), (0, "CA")),
+            ((0, "H"), (0, "N"), (-1, "CA")),
+            ((0, "H"), (0, "N"), (0, "CB")),
+            ((0, "H"), (0, "N"), (-1, "CB")),
         ),
         atom_set_signs=(1, 1, -1, -1),
         essential_atom_sets=(0, 2),
@@ -134,11 +139,12 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNcoCACB, ExperimentType.CBCAcoNH),
     ),
     ExperimentType.HNcoCACB: PeakInfo(
+        name="HNcoCACB",
         atoms=("H", "N", ("CA", "CB")),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
         atom_sets=(
-            ((1, "H"), (1, "N"), (2, "CA")),
-            ((1, "H"), (1, "N"), (2, "CB")),
+            ((0, "H"), (0, "N"), (-1, "CA")),
+            ((0, "H"), (0, "N"), (-1, "CB")),
         ),
         atom_set_signs=(1, -1),
         essential_atom_sets=(1,),
@@ -147,11 +153,12 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNCACB,),
     ),
     ExperimentType.CBCAcoNH: PeakInfo(
+        name="CBCAcoNH",
         atoms=("H", "N", ("CA", "CB")),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
         atom_sets=(
-            ((1, "H"), (1, "N"), (2, "CA")),
-            ((1, "H"), (1, "N"), (2, "CB")),
+            ((0, "H"), (0, "N"), (-1, "CA")),
+            ((0, "H"), (0, "N"), (-1, "CB")),
         ),
         atom_set_signs=(1, 1),
         essential_atom_sets=(1,),
@@ -160,9 +167,10 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNCACB,),
     ),
     ExperimentType.HNCO: PeakInfo(
+        name="HNCO",
         atoms=("H", "N", ("C",)),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
-        atom_sets=(((1, "H"), (1, "N"), (2, "C")),),
+        atom_sets=(((0, "H"), (0, "N"), (-1, "C")),),
         atom_set_signs=(1,),
         essential_atom_sets=(0,),
         atom_sets_by_mass={NMRMassClass.LOW: (0,), NMRMassClass.HIGH: (0,)},
@@ -170,11 +178,12 @@ EXPERIMENT_INFO = {
         partners=(ExperimentType.HNcaCO,),
     ),
     ExperimentType.HNcaCO: PeakInfo(
+        name="HNcaCO",
         atoms=("H", "N", ("C",)),
         dimensions=(Isotope.H1, Isotope.N15, Isotope.C13),
         atom_sets=(
-            ((1, "H"), (1, "N"), (1, "C")),
-            ((1, "H"), (1, "N"), (2, "C")),
+            ((0, "H"), (0, "N"), (0, "C")),
+            ((0, "H"), (0, "N"), (-1, "C")),
         ),
         atom_set_signs=(1, 1),
         essential_atom_sets=(1,),
@@ -184,8 +193,8 @@ EXPERIMENT_INFO = {
     ),
 }
 
-# a subset of the synonyms produced by lib/experiments/prototypes from the ccp v2 experiment prototypes
-# just fro tipe reoenance spectra and hsqcs
+# a subset of the synonyms produced by lib/experiments/prototypes from the ccpn v2 experiment prototypes
+# just for tipe reoenance spectra and hsqcs
 EXPERIMENT_SYNONYM_TO_CLASSIFICATION = {
     "15N HSQC/HMQC": "H[N]",
     "13C HSQC/HMQC": "H[C]",

@@ -25,6 +25,8 @@ class Residue:
     chain_code: str
     sequence_code: Union[int, str]
     residue_name: str
+    sequence_code_prefix: str = ""
+    offset: int = 0
 
     @staticmethod
     def from_sequence_residue(sequence_residue: SequenceResidue) -> Residue:
