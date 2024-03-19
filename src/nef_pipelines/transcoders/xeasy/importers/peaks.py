@@ -22,11 +22,11 @@ from nef_pipelines.transcoders.xeasy.xeasy_lib import parse_peaks
 
 
 # TODO: this needs to be moved to a library
-class SparkyPeakListException(Exception):
+class XeasyPeakListException(Exception):
     pass
 
 
-class IncompatibleDimensionTypesException(SparkyPeakListException):
+class IncompatibleDimensionTypesException(XeasyPeakListException):
     pass
 
 
