@@ -13,9 +13,12 @@ if nef_app.app:
     )
 
     app.add_typer(
-        import_app, name="import", help="- import NMR-STAR sequences & shifts"
+        import_app,
+        name="import",
+        help="- import NMR-STAR sequences & shifts and whole projects",
     )
 
     # import of specific importers must be after app creation to avoid circular imports
+    import nef_pipelines.transcoders.nmrstar.importers.project  # noqa: F401
     import nef_pipelines.transcoders.nmrstar.importers.sequence  # noqa: F401
     import nef_pipelines.transcoders.nmrstar.importers.shifts  # noqa: F401
