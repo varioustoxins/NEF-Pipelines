@@ -39,8 +39,8 @@ def test_short_csv():
               _nef_spectrum_dimension.absolute_peak_positions
               _nef_spectrum_dimension.is_acquisition
 
-             1   ppm   N15   60.833    8.668   123.614   none   true   false
-             2   ppm   H1    600.123   1.078   9.349     none   true   true
+             1   ppm   15N   60.833    8.668   123.614   none   true   false
+             2   ppm   1H    600.123   1.078   9.349     none   true   true
 
            stop_
 

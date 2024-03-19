@@ -39,8 +39,8 @@ save_nef_nmr_spectrum_synthetic_n_hsqc
       _nef_spectrum_dimension.absolute_peak_positions
       _nef_spectrum_dimension.is_acquisition
 
-     1   ppm   N15   60.833    24.487   125.828   none   true   false
-     2   ppm   H1    600.123   0.606    8.535     none   true   true
+     1   ppm   15N   60.833    24.487   125.828   none   true   false
+     2   ppm   1H    600.123   0.606    8.535     none   true   true
 
    stop_
 
@@ -133,9 +133,9 @@ save_nef_nmr_spectrum_synthetic_hnca
       _nef_spectrum_dimension.absolute_peak_positions
       _nef_spectrum_dimension.is_acquisition
 
-     1   ppm   C13   150.933   9.523    61.581    none   true   false
-     2   ppm   N15   60.833    24.487   125.828   none   true   false
-     3   ppm   H1    600.123   0.606    8.535     none   true   true
+     1   ppm   13C   150.933   9.523    61.581    none   true   false
+     2   ppm   15N   60.833    24.487   125.828   none   true   false
+     3   ppm   1H    600.123   0.606    8.535     none   true   true
 
    stop_
 

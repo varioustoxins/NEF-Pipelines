@@ -33,9 +33,9 @@ save_nef_nmr_spectrum_xeasy_basic                                  # noqa: E501
       _nef_spectrum_dimension.absolute_peak_positions
       _nef_spectrum_dimension.is_acquisition
 
-     1   ppm   H1    600.123   0.001   8.732     none   true   false
-     2   ppm   H1    600.123   4.984   8.950     none   true   false
-     3   ppm   N15   60.833    0.023   115.276   none   true   true
+     1   ppm   1H    600.123   0.001   8.732     none   true   false
+     2   ppm   1H    600.123   4.984   8.950     none   true   false
+     3   ppm   15N   60.833    0.023   115.276   none   true   true
 
    stop_
 
