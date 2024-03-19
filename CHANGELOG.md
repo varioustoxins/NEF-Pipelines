@@ -217,5 +217,10 @@ release is the same as 0.1.49 but...
   - hjson
   - pydantic
 
+## version 0.1.53
+- added support for reading NMR-STAR projects from disk or the web
+  - including reading shifts and sequences
+  - supports direct download from the bmrb just using an acession code
+
 
 cachetools-5.3.3
