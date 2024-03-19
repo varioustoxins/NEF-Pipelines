@@ -14,7 +14,12 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import chain_code_iter
-from nef_pipelines.lib.util import STDIN, exit_error, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    STDIN,
+    exit_error,
+    is_int,
+    parse_comma_separated_options,
+)
 from nef_pipelines.transcoders.nmrstar import import_app
 from nef_pipelines.transcoders.nmrstar.importers.sequence import pipe as sequence_pipe
 from nef_pipelines.transcoders.nmrstar.importers.shifts import pipe as shift_pipe
@@ -41,14 +46,12 @@ STEREO_HELP = """\
     - auto: use as assigned if some geminal stereo assignments are present, otherwise assume all are ambiguous
 """
 
-BMRB_URL_TEMPLATE = (
-    "https://bmrb.io/ftp/pub/bmrb/entry_directories/{file_path}/{file_path}_3.str"
-)
+BMRB_URL_TEMPLATE = "https://bmrb.io/ftp/pub/bmrb/entry_directories/bmr{entry_number}/bmr{entry_number}_3.str"
 
 FILE_PATH_HELP = """\
-the file to read, if it is of the form bmr<NUMBER> or appears to be a url the program will
-attempt to fetch the entry from the bmrb or the web first before looking for a file on disc
-unless this behaviour overridden by the --source option
+the file to read, if it is of the form bmr<NUMBER> or just a number  or appears to be a url
+the program will attempt to fetch the entry from the bmrb or the web first before looking
+for a file on disc unless this behaviour overridden by the --source option
 """
 
 
@@ -198,7 +201,7 @@ def pipe(
 
 def _parse_text_to_star_or_none(possible_entry):
     nmrstar_entry = None
-    if possible_entry.startswith(b"data_"):
+    if possible_entry and possible_entry.startswith(b"data_"):
         try:
             nmrstar_entry = Entry.from_string(possible_entry.decode("utf-8"))
         except Exception:
@@ -229,4 +232,9 @@ def _get_path_as_url_or_none(file_path, url_template):
         if len(entry_check) == 0:
             url = f(url_template)
             is_bmrb = True
+    elif is_int(file_path):
+        entry_number = file_path
+        url = f(url_template)
+        is_bmrb = True
+
     return url, is_bmrb
