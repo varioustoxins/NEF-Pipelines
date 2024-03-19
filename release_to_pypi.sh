@@ -14,7 +14,7 @@ echo got here
 # define where the version file is found
 VERSION_FILE=src/nef_pipelines/VERSION
 
-# cheange to the correct working directory
+# change to the correct working directory
 cd /Users/garythompson/Dropbox/nef_pipelines/nef_pipelines
 
 #clear dists but don't complain if its empty
@@ -25,7 +25,6 @@ rm -rf  dist/* || true
 
 # increase version and tag it
 ver  --file $VERSION_FILE  up --patch
-
 
 # grab the version
 VERSION=`ver --file $VERSION_FILE |  awk '{print $3}'`
