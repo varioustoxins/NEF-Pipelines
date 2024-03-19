@@ -395,6 +395,7 @@ def exit_error(msg, exception=None):
         msg: the message
     """
 
+    # This should only happen in verbose mode
     if exception is not None:
         exc_info = sys.exc_info()
         traceback.print_exception(*exc_info, file=sys.stderr)
