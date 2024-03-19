@@ -225,4 +225,10 @@ release is the same as 0.1.51 but...
 ## version 0.1.54
 - added support for reading NMR-STAR projects from disk or the web
   - including reading shifts and sequences
-  - supports direct download from the bmrb just using an acession code
+  - supports direct download from the bmrb just using an accession code
+
+## version 0.1.55
+- shifts make peaks now supports non ccpn peak lists for triple resonance spectra†
+
+† ccpn peak lists when incompletely assigned use @xx-1 to indicate the previous residue
+  and this was supported in the previous release but raw peak numbers weren't!
