@@ -211,16 +211,18 @@ release is the same as 0.1.49 but...
 - various bug fixes
 
 ## version 0.1.52
-release is the same as 0.1.49 but...
+release is the same as 0.1.51 but...
 - added missing packages required for installation
   - annotated-types
   - hjson
   - pydantic
 
 ## version 0.1.53
+release is the same as 0.1.51 but...
+- added missing packages required for installation
+  - cache_tools
+
+## version 0.1.54
 - added support for reading NMR-STAR projects from disk or the web
   - including reading shifts and sequences
   - supports direct download from the bmrb just using an acession code
-
-
-cachetools-5.3.3
