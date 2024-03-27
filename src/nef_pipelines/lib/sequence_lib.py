@@ -471,7 +471,7 @@ def sequence_from_frame(
     can raise Exceptions
 
     :param frame: the save frame to read residues from, must have category nef molecular system
-    :param chain_code_to_select: the chain codes to select,t this can be either a string or list of strings,
+    :param chain_code_to_select: the chain codes to select this can be either a string or list of strings,
                                  any chain is selected using the instance of the constant string ANY_CHAIN [default]
     :return: a list of parsed residues and chains, in the order they were read
     """
@@ -669,20 +669,6 @@ def make_chunked_sequence_1let(
     return row_strings
 
 
-def residues_to_residue_name_lookup(
-    sequence: List[SequenceResidue],
-) -> Dict[Tuple[str, str], str]:
-
-    result = None
-    if len(sequence) > 0:
-        result = {
-            (residue.chain_code, str(residue.sequence_code)): residue.residue_name
-            for residue in sequence
-        }
-
-    return result
-
-
 def replace_chain_in_atom_labels(
     atom_labels: List[AtomLabel], chain_code: str
 ) -> List[AtomLabel]:
@@ -740,9 +726,14 @@ def sequence_to_residue_name_lookup(
     :param sequence: a list of sequence residues
     :return: the lookup table
     """
+
     result: Dict[Tuple[str, int], str] = {}
-    for residue in sequence:
-        result[residue.chain_code, residue.sequence_code] = residue.residue_name
+    if len(sequence) > 0:
+        result = {
+            (residue.chain_code, str(residue.sequence_code)): residue.residue_name
+            for residue in sequence
+        }
+
     return result
 
 
