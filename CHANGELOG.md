@@ -236,7 +236,12 @@ release is the same as 0.1.51 but...
 ## version 0.1.56
 - bmrb accession codes are now supported as raw numbers as well as bmrXXXXX in the nmrstar project subcommand
 
-- improve shifty output, by defaultit now
+- improve shifty output, by default it now
   1. infills missing residues
   2. selects a single assigned chain to output if present
   3. outputs to a templated file name
+
+## version 0.1.57
+- upgrade pyparsing and pynmrstar
+  1. pyparsing was triggering a deprication warning
+  2. pynmrstar had a bug in renaming frames
