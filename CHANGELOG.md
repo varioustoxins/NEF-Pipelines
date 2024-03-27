@@ -232,3 +232,12 @@ release is the same as 0.1.51 but...
 
 † ccpn peak lists when incompletely assigned use @xx-1 to indicate the previous residue
   and this was supported in the previous release but raw peak numbers weren't!
+
+## version 0.1.56
+- bmrb accession codes are now supported as raw numbers as well as bmrXXXXX in the nmrstar project subcommand
+
+## version 0.1.57
+- improve shifty output, by defaultit now
+  1. infills missing residues
+  2. selects a single assigned chain to output if present
+  3. outputs to a templated file name
