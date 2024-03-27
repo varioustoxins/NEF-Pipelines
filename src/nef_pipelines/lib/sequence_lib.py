@@ -732,7 +732,7 @@ def get_residue_name_from_lookup(
     return residue_name
 
 
-def sequence_to_residue_type_lookup(
+def sequence_to_residue_name_lookup(
     sequence: List[SequenceResidue],
 ) -> Dict[Tuple[str, int], str]:
     """

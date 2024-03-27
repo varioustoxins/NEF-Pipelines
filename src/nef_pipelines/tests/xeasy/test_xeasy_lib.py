@@ -1,6 +1,6 @@
 import pytest
 
-from nef_pipelines.lib.sequence_lib import residues_to_residue_name_lookup
+from nef_pipelines.lib.sequence_lib import sequence_to_residue_name_lookup
 from nef_pipelines.lib.structures import (
     AtomLabel,
     DimensionInfo,
@@ -234,7 +234,7 @@ EXPECTED_PEAKS = [
 def test_basic_peaks():
     peaks = open(path_in_test_data(__file__, "basic.peaks")).readlines()
 
-    lookup = residues_to_residue_name_lookup(EXPECTED_SEQUENCE)
+    lookup = sequence_to_residue_name_lookup(EXPECTED_SEQUENCE)
     spectrum_type, dimension_info, peaks = parse_peaks(
         peaks, source="unknown", residue_name_lookup=lookup
     )
@@ -349,7 +349,7 @@ def test_basic_shifts():
 
     shifts = open(path_in_test_data(__file__, "basic_shifts.prot")).readlines()
 
-    lookup = residues_to_residue_name_lookup(EXPECTED_SEQUENCE)
+    lookup = sequence_to_residue_name_lookup(EXPECTED_SEQUENCE)
     shifts = parse_shifts(shifts, source="unknown", residue_lookup=lookup)
 
     assert shifts == EXPECTED_SHIFTS

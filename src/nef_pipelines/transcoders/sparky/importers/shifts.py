@@ -13,7 +13,7 @@ from nef_pipelines.lib.sequence_lib import (
     chain_code_iter,
     get_residue_name_from_lookup,
     sequence_from_entry_or_exit,
-    sequence_to_residue_type_lookup,
+    sequence_to_residue_name_lookup,
     translate_1_to_3,
 )
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
@@ -101,7 +101,7 @@ def pipe(entry, chain_codes, frame_name, file_names):
 
         with open(file_name) as lines:
 
-            chain_seqid_to_type = sequence_to_residue_type_lookup(sequence)
+            chain_seqid_to_type = sequence_to_residue_name_lookup(sequence)
 
             sparky_shifts = _parse_shifts(
                 lines, chain_seqid_to_type, chain_code=chain_code, file_name=file_name

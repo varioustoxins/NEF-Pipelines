@@ -11,7 +11,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.peak_lib import peaks_to_frame
 from nef_pipelines.lib.sequence_lib import (
     sequence_from_entry_or_exit,
-    sequence_to_residue_type_lookup,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.transcoders.sparky.importers.peaks import (
@@ -88,7 +88,7 @@ def pipe(
 
     xeasy_frames = []
 
-    residue_type_lookup = sequence_to_residue_type_lookup(sequence)
+    residue_type_lookup = sequence_to_residue_name_lookup(sequence)
     for file_name in file_names:
 
         lines = file_name.open().readlines()

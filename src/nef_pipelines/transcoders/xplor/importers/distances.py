@@ -11,8 +11,8 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     ANY_CHAIN,
-    residues_to_residue_name_lookup,
     sequence_from_entry_or_exit,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.util import parse_comma_separated_options
 from nef_pipelines.transcoders.xplor import import_app
@@ -58,7 +58,7 @@ def distances(
 
     chains = parse_comma_separated_options(chains)
 
-    residue_name_lookup = residues_to_residue_name_lookup(sequence)
+    residue_name_lookup = sequence_to_residue_name_lookup(sequence)
 
     distance_restraints = []
 

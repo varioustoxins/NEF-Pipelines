@@ -17,8 +17,8 @@ from nef_pipelines.lib.peak_lib import peaks_to_frame
 from nef_pipelines.lib.sequence_lib import (
     MoleculeTypes,
     get_residue_name_from_lookup,
-    residues_to_residue_name_lookup,
     sequence_from_entry_or_exit,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.translation_lib import translate_new_peak
 from nef_pipelines.lib.util import STDIN, exit_error
@@ -72,7 +72,6 @@ def peaks(
         False, help="don't sort the peaks [by isotopes 1H and then 13C]"
     ),
 ):
-
     """convert mars [sparky] peaks file <MARS-PEAKS>.txt to NEF"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
@@ -192,7 +191,7 @@ def _sort_by_isotopes(peaks, dimensions, sort_isotopes):
 
 def _parse_peaks(chain_code, delete_unassigned, file_name, lines, sequence):
 
-    lookup = residues_to_residue_name_lookup(sequence)
+    lookup = sequence_to_residue_name_lookup(sequence)
 
     new_lines = []
     for line_no, line in enumerate(lines, start=1):

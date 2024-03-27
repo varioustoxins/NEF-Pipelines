@@ -8,7 +8,7 @@ from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.sequence_lib import (
     TRANSLATIONS_1_3,
     MoleculeType,
-    residues_to_residue_name_lookup,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -164,7 +164,7 @@ def parse_assignments(
     :return: a list of AtomLabels
     """
 
-    residue_name_lookup = residues_to_residue_name_lookup(sequence)
+    residue_name_lookup = sequence_to_residue_name_lookup(sequence)
 
     residue_name_translations = TRANSLATIONS_1_3[molecule_type]
 

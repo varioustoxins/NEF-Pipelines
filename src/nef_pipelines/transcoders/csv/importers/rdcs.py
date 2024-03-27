@@ -20,7 +20,7 @@ from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
     sequence_from_entry,
     sequence_from_entry_or_exit,
-    sequence_to_residue_type_lookup,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import AtomLabel, RdcRestraint, SequenceResidue
 from nef_pipelines.lib.util import (
@@ -163,7 +163,7 @@ def pipe(
 
     sequence = sequence_from_entry_or_exit(entry)
 
-    lookup = sequence_to_residue_type_lookup(sequence)
+    lookup = sequence_to_residue_name_lookup(sequence)
 
     encoding = {"encoding": csv_file_encoding}
     file_rdcs = _parse_csv(

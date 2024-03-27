@@ -6,9 +6,9 @@ from nef_pipelines.lib.sequence_lib import (
     get_chain_starts,
     get_residue_name_from_lookup,
     offset_chain_residues,
-    residues_to_residue_name_lookup,
     sequence_3let_list_from_sequence,
     sequence_3let_to_sequence_residues,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -132,7 +132,7 @@ def gdb_records_to_secondary_structure(
     include_predictions: bool = False,
 ) -> List[SecondaryStructure]:
 
-    residue_lookup = residues_to_residue_name_lookup(sequence)
+    residue_lookup = sequence_to_residue_name_lookup(sequence)
 
     column_indices = get_column_indices(gdb_records)
 
@@ -195,7 +195,7 @@ def gdb_records_to_secondary_structure(
 
 def gdb_records_to_s2(gdb_records, sequence, chain_code):
 
-    residue_lookup = residues_to_residue_name_lookup(sequence)
+    residue_lookup = sequence_to_residue_name_lookup(sequence)
 
     column_indices = get_column_indices(gdb_records)
 

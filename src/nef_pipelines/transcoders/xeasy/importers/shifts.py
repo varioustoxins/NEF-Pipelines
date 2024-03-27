@@ -9,7 +9,7 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     sequence_from_entry_or_exit,
-    sequence_to_residue_type_lookup,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import ShiftList
@@ -54,7 +54,7 @@ def pipe(entry, sequence, entry_name, file_names):
 
         with open(file_name) as lines:
 
-            chain_seqid_to_type = sequence_to_residue_type_lookup(sequence)
+            chain_seqid_to_type = sequence_to_residue_name_lookup(sequence)
 
             xeasy_shifts = parse_shifts(lines, file_name, chain_seqid_to_type)
 

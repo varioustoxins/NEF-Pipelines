@@ -9,7 +9,7 @@ from nef_pipelines.lib.nef_lib import file_name_path_to_frame_name
 from nef_pipelines.lib.sequence_lib import (
     ANY_CHAIN,
     get_sequence_or_exit,
-    residues_to_residue_name_lookup,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.util import (
     parse_comma_separated_options,
@@ -56,7 +56,7 @@ def dihedrals(
 
     sequence = get_sequence_or_exit(input)
 
-    residue_name_lookup = residues_to_residue_name_lookup(sequence)
+    residue_name_lookup = sequence_to_residue_name_lookup(sequence)
 
     dihedral_restraints = []
 

@@ -22,10 +22,10 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
     offset_chain_residues,
-    residues_to_residue_name_lookup,
     sequence_3let_to_sequence_residues,
     sequence_from_entry,
     sequence_to_chains,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -461,7 +461,7 @@ def _gdb_records_to_torsion_restraints(
     gdb_records, sequence, chain_code, class_to_merit, angle_type
 ):
 
-    residue_lookup = residues_to_residue_name_lookup(sequence)
+    residue_lookup = sequence_to_residue_name_lookup(sequence)
 
     column_indices = get_column_indices(gdb_records)
 

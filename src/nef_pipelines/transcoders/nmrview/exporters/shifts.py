@@ -15,9 +15,9 @@ from nef_pipelines.lib.sequence_lib import (
     frame_to_chains,
     get_chain_starts,
     get_residue_name_from_lookup,
-    residues_to_residue_name_lookup,
     sequence_from_entry_or_exit,
     sequence_from_frame,
+    sequence_to_residue_name_lookup,
 )
 from nef_pipelines.lib.structures import AtomLabel, SequenceResidue, ShiftData
 from nef_pipelines.lib.util import (
@@ -108,7 +108,7 @@ def pipe(
 
     sequence = sequence_from_entry_or_exit(entry)
 
-    residue_name_lookup = residues_to_residue_name_lookup(sequence)
+    residue_name_lookup = sequence_to_residue_name_lookup(sequence)
 
     shifts = read_all_defined_shifts_from_entry(entry, residue_name_lookup)
 
