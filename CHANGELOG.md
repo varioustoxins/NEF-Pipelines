@@ -245,3 +245,6 @@ release is the same as 0.1.51 but...
 - upgrade pyparsing and pynmrstar
   1. pyparsing was triggering a deprication warning
   2. pynmrstar had a bug in renaming frames
+
+## version 0.1.58
+- corrected a bug in Linking lookup in the nmrstar project subcommand that affected some python versions

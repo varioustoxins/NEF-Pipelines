@@ -6,7 +6,7 @@ from strenum import LowercaseStrEnum, StrEnum
 
 
 class Linking(StrEnum):
-    START = (auto(),)
+    START = auto()
     MIDDLE = auto()
     END = auto()
     FREE = auto()
