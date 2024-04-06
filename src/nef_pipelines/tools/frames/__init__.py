@@ -1,6 +1,5 @@
 import typer
 
-import nef_pipelines
 from nef_pipelines import nef_app
 
 frames_app = typer.Typer()
