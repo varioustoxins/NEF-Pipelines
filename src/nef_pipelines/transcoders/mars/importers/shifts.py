@@ -105,7 +105,7 @@ def shifts(
         ..., help="input files of type mars shifts.tab", metavar="<MARS-shifts>.tab"
     ),
 ):
-    """convert MARS shift file <mars-shifts>.txt to NEF"""
+    """- import shifts from MARS input shift file <mars-shifts>.tab"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name)
 

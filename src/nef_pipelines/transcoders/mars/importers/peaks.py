@@ -72,7 +72,7 @@ def peaks(
         False, help="don't sort the peaks [by isotopes 1H and then 13C]"
     ),
 ):
-    """convert mars [sparky] peaks file <MARS-PEAKS>.txt to NEF"""
+    """- import MARS [sparkyish] peaks files sparky_<NAME>.out"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 
