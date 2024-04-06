@@ -26,5 +26,5 @@ def sequence(
         metavar="<FASTA-SEQUENCE-FILE>",
     ),
 ):
-
+    """- write a mars sequence file [fasta]"""
     fasta_sequence(chain_code, in_file, output_file)

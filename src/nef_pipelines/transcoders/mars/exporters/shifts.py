@@ -53,7 +53,7 @@ def shifts(
         metavar="<MARS_SHIFT_FILE>",
     ),
 ):
-    """- convert nef chemical shifts to mars"""
+    """- write a mars chemical shift file"""
 
     if len(shift_frames) == 0:
         shift_frames = ["*"]

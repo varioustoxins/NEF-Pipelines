@@ -58,7 +58,7 @@ def fragments(
         metavar="<MARS_SHIFT_FILE>",
     ),
 ):
-    """- convert nef chemical shifts to mars fragments"""
+    """- convert chemical shifts to mars fragments"""
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 

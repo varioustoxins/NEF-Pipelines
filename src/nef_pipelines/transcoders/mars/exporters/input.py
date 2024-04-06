@@ -42,7 +42,7 @@ def input(
         metavar="<MARS-INPUT-FILENAME>",
     ),
 ):
-    """- convert nef file to mars input"""
+    """- write  mars input fixed assignment and connectivity files"""
 
     entry = read_entry_from_stdin_or_exit()
 
