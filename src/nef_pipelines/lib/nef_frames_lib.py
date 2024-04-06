@@ -17,6 +17,7 @@ CHEMICAL_SHIFT_LIST = "chemical_shift_list"
 EXPERIMENT_TYPE = "experiment_type"
 EXPERIMENT_CLASSIFICATION = "experiment_classification"
 CCPN_COMMENT = "ccpn_comment"
+CCPN_MERIT = "ccpn_figure_of_merit"
 
 SPECTRUM_FRAME_TAGS = (
     SF_CATEGORY,

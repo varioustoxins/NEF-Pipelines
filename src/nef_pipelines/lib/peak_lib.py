@@ -14,6 +14,7 @@ from nef_pipelines.lib.nef_frames_lib import (
     AXIS_CODE,
     AXIS_UNIT,
     CCPN_COMMENT,
+    CCPN_MERIT,
     CHAIN_CODE,
     CHAIN_CODE__DIMENSION_INDEX,
     CHEMICAL_SHIFT_LIST,
@@ -208,6 +209,12 @@ def peaks_to_frame(
             have_comments = True
             break
 
+    have_merits = False
+    for peak in peaks:
+        if peak.figure_of_merit != None:
+            have_merits = True
+            break
+
     peak_dimensions = []
     for peak in peaks:
         peak_dimensions.append(len(peak.shifts))
@@ -316,8 +323,12 @@ def peaks_to_frame(
     frame.add_loop(peak_loop)
 
     peak_loop_tags = _expand_templates(PEAK_LOOP_TAGS, dimension_indices)
+
     if have_comments:
         peak_loop_tags.append(CCPN_COMMENT)
+
+    if have_comments:
+        peak_loop_tags.append(CCPN_MERIT)
 
     peak_loop.add_tag(peak_loop_tags)
 
@@ -332,22 +343,22 @@ def peaks_to_frame(
         }
 
         for dim_index, shift in enumerate(peak.shifts, start=1):
-            peak_data[
-                CHAIN_CODE__DIMENSION_INDEX.format(dimension_index=dim_index)
-            ] = shift.atom.residue.chain_code
+            peak_data[CHAIN_CODE__DIMENSION_INDEX.format(dimension_index=dim_index)] = (
+                shift.atom.residue.chain_code
+            )
             peak_data[
                 SEQUENCE_CODE__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.residue.sequence_code
             peak_data[
                 RESIDUE_NAME__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.atom.residue.residue_name
-            peak_data[
-                ATOM_NAME__DIMENSION_INDEX.format(dimension_index=dim_index)
-            ] = shift.atom.atom_name
+            peak_data[ATOM_NAME__DIMENSION_INDEX.format(dimension_index=dim_index)] = (
+                shift.atom.atom_name
+            )
 
-            peak_data[
-                POSITION__DIMENSION_INDEX.format(dimension_index=dim_index)
-            ] = shift.value
+            peak_data[POSITION__DIMENSION_INDEX.format(dimension_index=dim_index)] = (
+                shift.value
+            )
             peak_data[
                 POSITION_UNCERTAINTY__DIMENSION_INDEX.format(dimension_index=dim_index)
             ] = shift.value_uncertainty
@@ -356,7 +367,10 @@ def peaks_to_frame(
                 peak_data[CCPN_COMMENT] = (
                     peak.comment if peak.comment is not None else UNUSED
                 )
-
+            if have_merits:
+                peak_data[CCPN_MERIT] = (
+                    peak.figure_of_merit if peak.figure_of_merit is not None else UNUSED
+                )
         peak_loop.add_data(
             [
                 peak_data,

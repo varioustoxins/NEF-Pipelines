@@ -305,7 +305,7 @@ def _parse_peaks(chain_code, delete_unassigned, file_name, lines, sequence):
         if "merit" in peak.comment:
             merit_letter = peak.comment[-1]
 
-            peak = replace(peak, comment="", figure_of_merit=MERITS[merit_letter])
+            peak = replace(peak, figure_of_merit=MERITS[merit_letter])
         modified_peaks.append(peak)
     peaks = modified_peaks
     return peaks
