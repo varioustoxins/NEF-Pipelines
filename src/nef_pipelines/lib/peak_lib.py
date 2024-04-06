@@ -236,7 +236,7 @@ def peaks_to_frame(
     )
     frame.add_tag(
         CHEMICAL_SHIFT_LIST, shift_list_name
-    )  # technically not correct to use unused bye default here but this is a nef file building
+    )  # technically not correct to use unused by default here but this is a nef file building
     # tool kit so an empty shift list maybe what we need
     # we may need to add a flag to build the shift list on the fly at a later date...
 
