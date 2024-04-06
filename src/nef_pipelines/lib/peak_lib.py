@@ -211,7 +211,7 @@ def peaks_to_frame(
 
     have_merits = False
     for peak in peaks:
-        if peak.figure_of_merit != None:
+        if peak.figure_of_merit is not None:
             have_merits = True
             break
 
