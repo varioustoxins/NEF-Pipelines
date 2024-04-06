@@ -7,6 +7,7 @@ from fastaparser import Reader
 from ordered_set import OrderedSet
 
 from nef_pipelines.lib.sequence_lib import (
+    BadResidue,
     MoleculeType,
     MoleculeTypes,
     chain_code_iter,
@@ -187,7 +188,15 @@ def read_sequences(
                     molecule_type = MoleculeTypes.PROTEIN
 
                 sequence = [letter_code.letter_code for letter_code in sequence]
-                sequence_3_let = translate_1_to_3(sequence, molecule_type=molecule_type)
+                try:
+                    sequence_3_let = translate_1_to_3(
+                        sequence, molecule_type=molecule_type
+                    )
+                except BadResidue as e:
+                    exit_error(
+                        f"Error translating sequence {sequence} to 3 letter code {e}",
+                        e,
+                    )
                 chain_residues = sequence_3let_to_res(sequence_3_let, chain_code)
 
                 residues.update(chain_residues)

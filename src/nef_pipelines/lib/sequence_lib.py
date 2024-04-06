@@ -1,3 +1,4 @@
+import os
 import string
 from collections import Counter
 from dataclasses import replace
@@ -229,7 +230,37 @@ class BadResidue(Exception):
     Bad residue found in a sequence
     """
 
-    pass
+    def __init__(self, residue_name, error_pos, sequence_string):
+
+        self.residue_name = residue_name
+        self.sequence_string = sequence_string
+        self.error_pos = error_pos
+
+    def __str__(self):
+        try:
+            terminal_width = os.get_terminal_size().columns
+        except OSError:
+            terminal_width = 80
+
+        error_pos_string = [
+            " ",
+        ] * len(self.sequence_string)
+        error_pos_string[self.error_pos] = "^"
+        error_pos_string = "".join(error_pos_string)
+
+        msg = f"""\
+        unknown residue {self.residue_name}
+        at residue {self.error_pos+1}
+        sequence:
+        """
+        msg = dedent(msg)
+        sequence_string_chunks = list(chunks(self.sequence_string, terminal_width - 10))
+        pos_string_chunks = list(chunks(error_pos_string, terminal_width - 10))
+        for sequence_chunk, pos_chunk in zip(sequence_string_chunks, pos_string_chunks):
+            msg += f"{''.join(sequence_chunk)}\n"
+            msg += f"{''.join(pos_chunk)}\n"
+
+        return msg
 
 
 def translate_1_to_3(
@@ -252,6 +283,9 @@ def translate_1_to_3(
 
     result = []
     for i, residue_name_1let in enumerate(sequence):
+        if residue_name_1let == " ":
+            continue
+        original_residue_name_1let = residue_name_1let
         residue_name_1let = residue_name_1let.upper()
         if translations is None:
             result.append(residue_name_1let)
@@ -261,13 +295,7 @@ def translate_1_to_3(
             if unknown:
                 result.append(unknown)
             else:
-                msg = f"""\
-                     unknown residue {residue_name_1let} at residue {i+1}
-                     sequence: {sequence}
-                               {(' ' * i) + '^'}
-                """
-                msg = dedent(msg)
-                raise BadResidue(msg)
+                raise BadResidue(original_residue_name_1let, i, sequence)
 
     return result
 

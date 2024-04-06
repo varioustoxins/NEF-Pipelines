@@ -60,9 +60,10 @@ def test_bad_1let_3let():
     BAD_SEQUENCE = "acdefghiklmonpqrstvwy"
 
     msgs = """\
-              unknown residue O
+              unknown residue o
               at residue 12
-              sequence: acdefghiklmonpqrstvwy
+              sequence:
+              acdefghiklmonpqrstvwy
               ^
               """
 
@@ -73,7 +74,7 @@ def test_bad_1let_3let():
         translate_1_to_3(BAD_SEQUENCE)
 
     for msg in msgs:
-        assert msg in exc_info.value.args[0]
+        assert msg in str(exc_info.value)
 
 
 def test_3let_sequence_residue():
