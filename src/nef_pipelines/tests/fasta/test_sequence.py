@@ -39,9 +39,19 @@ save_"""
 
 
 # noinspection PyUnusedLocal
-def test_3aa(clear_cache):
+def test_3aa():
 
     path = path_in_test_data(__file__, "3aa.fasta")
+    result = run_and_report(app, [path])
+
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+
+    assert_lines_match(EXPECTED_3AA, mol_sys_result)
+
+
+def test_3aa_spaces():
+
+    path = path_in_test_data(__file__, "3aa_spaces.fasta")
     result = run_and_report(app, [path])
 
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
@@ -76,7 +86,7 @@ save_"""
 
 
 # noinspection PyUnusedLocal
-def test_3aa_x2(clear_cache):
+def test_3aa_x2():
 
     path = path_in_test_data(__file__, "3aa_x2.fasta")
     result = run_and_report(app, [path])
@@ -115,7 +125,7 @@ save_"""
 
 
 # noinspection PyUnusedLocal
-def test_3aa_x2_off_10_b(clear_cache):
+def test_3aa_x2_off_10_b():
 
     path = path_in_test_data(__file__, "3aa_x2.fasta")
     result = run_and_report(app, ["--starts", "1,11", path])
