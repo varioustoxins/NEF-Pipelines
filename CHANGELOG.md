@@ -248,3 +248,8 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.58
 - corrected a bug in Linking lookup in the nmrstar project subcommand that affected some python versions
+
+## version 0.1.59
+- corrected a bug in fasta sequence importer that affected files with spaces between residues
+- improve handling of figures of merit especially for MARS peak imports
+- correct spectrum dimension transfers were not correct in peak imports
