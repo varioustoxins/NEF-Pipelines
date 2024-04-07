@@ -33,8 +33,9 @@ loop_
    _nef_peak.height_uncertainty
    _nef_peak.volume
    _nef_peak.volume_uncertainty
-   _nef_peak.ccpn_merit
+   _nef_peak.ccpn_figure_of_merit
    _nef_peak.ccpn_comment
+
   0    0    A   10   ALA   N   A   10   ALA   H   122.836   .   7.826   .   .   .   .   .   6.03818   'large violation!'
   1    1    A   11   ALA   N   A   11   ALA   H   118.678   .   8.063   .   .   .   .   .   6.36477   'large violation!'
   2    2    A   12   ALA   N   A   12   ALA   H   119.301   .   7.842   .   .   .   .   .   4.6192    'large violation!'

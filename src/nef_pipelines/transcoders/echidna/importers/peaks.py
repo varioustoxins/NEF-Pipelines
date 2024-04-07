@@ -7,7 +7,7 @@ import typer
 from fyeah import f
 from pynmrstar import Saveframe
 
-from nef_pipelines.lib.nef_frames_lib import SPECTRUM_FRAME_CATEGORY
+from nef_pipelines.lib.nef_frames_lib import CCPN_MERIT, SPECTRUM_FRAME_CATEGORY
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
     extract_column,
@@ -31,7 +31,6 @@ DEFAULT_MERIT_FUNTION = "round(x**(1.0/6.0),5)"
 # TODO: rationalise these into lib
 CCPN_COMMENT = "ccpn_comment"
 HEIGHT = "height"
-CCPN_MERIT = "ccpn_merit"
 NEF_PEAK = "nef_peak"
 
 app = typer.Typer()
@@ -410,6 +409,7 @@ def pipe(
         frame_name = file_name
 
         loop = frame.get_loop(NEF_PEAK)
+
         loop.add_tag(CCPN_MERIT, update_data=True)
 
         comment_values = _remove_and_store_comments(loop)

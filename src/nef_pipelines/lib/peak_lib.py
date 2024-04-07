@@ -211,7 +211,7 @@ def peaks_to_frame(
 
     have_merits = False
     for peak in peaks:
-        if peak.figure_of_merit is not None:
+        if peak.figure_of_merit != UNUSED and peak.figure_of_merit is not None:
             have_merits = True
             break
 
@@ -327,7 +327,7 @@ def peaks_to_frame(
     if have_comments:
         peak_loop_tags.append(CCPN_COMMENT)
 
-    if have_comments:
+    if have_merits:
         peak_loop_tags.append(CCPN_MERIT)
 
     peak_loop.add_tag(peak_loop_tags)
