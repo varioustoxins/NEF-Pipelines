@@ -303,8 +303,8 @@ def peaks_to_frame(
     transfer_loop.add_tag(transfer_loop_tags)
 
     for dim_index in range(1, len(dimensions)):
-        dim_1 = i
-        dim_2 = i + 1
+        dim_1 = dim_index
+        dim_2 = dim_index + 1
 
         transfer_data = {
             DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: dim_1}): dim_1,

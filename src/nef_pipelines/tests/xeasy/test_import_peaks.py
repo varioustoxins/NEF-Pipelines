@@ -46,7 +46,7 @@ save_nef_nmr_spectrum_xeasy_basic                                  # noqa: E501
       _nef_spectrum_dimension_transfer.transfer_type
       _nef_spectrum_dimension_transfer.is_indirect
 
-     .   2   3   onebond   false
+     1   2   .   onebond   false
      .   2   3   onebond   false
 
    stop_
