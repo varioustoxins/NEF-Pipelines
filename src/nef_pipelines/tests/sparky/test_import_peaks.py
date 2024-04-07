@@ -127,7 +127,8 @@ loop_
   _nef_peak.height_uncertainty
   _nef_peak.volume
   _nef_peak.volume_uncertainty
-_nef_peak.ccpn_comment
+  _nef_peak.ccpn_comment
+
      0   0   A   16   DG   H3'   A   16   DG   H8    4.905   .   8.01    .   .   .   7150000.0    .   'this is a comment'
      1   1   A   16   DG   H4'   A   16   DG   H8    4.439   .   8.013   .   .   .   5420000.0    .   .
      2   2   A   17   DT   H6    A   16   DG   H8    7.205   .   8.004   .   .   .   1680000.0    .   'so is this as well'
