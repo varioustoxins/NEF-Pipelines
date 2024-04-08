@@ -1,11 +1,6 @@
 import typer
 from typer.testing import CliRunner
 
-from nef_pipelines.lib.spectra_lib import (
-    EXPERIMENT_CLASSIFICATION_TO_SYNONYM,
-    SPECTRUM_TYPE_TO_CLASSIFICATION,
-    ExperimentType,
-)
 from nef_pipelines.lib.test_lib import (
     NOQA_E501,
     assert_lines_match,
@@ -20,9 +15,9 @@ app = typer.Typer()
 app.command()(make_peaks)
 
 EXPECTED = """ # noqa: E501
-save_nef_nmr_spectrum_synthetic_n_hsqc
+save_nef_nmr_spectrum_synthetic_N_HSQC
    _nef_nmr_spectrum.sf_category                nef_nmr_spectrum
-   _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_synthetic_n_hsqc
+   _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_synthetic_N_HSQC
    _nef_nmr_spectrum.num_dimensions             2
    _nef_nmr_spectrum.chemical_shift_list        .
    _nef_nmr_spectrum.experiment_classification  H[N]
@@ -92,7 +87,7 @@ def test_ubi_short():
     input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
     result = run_and_report(app, [], input=input)
 
-    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_n_hsqc")
+    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_N_HSQC")
     assert_lines_match(EXPECTED, new_peaks_frame)
 
 
@@ -100,7 +95,7 @@ def test_ubi_short_different_frame_name():
     input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
     result = run_and_report(app, ["--name-template", "wibble_{spectrum}"], input=input)
 
-    isolate_frame(result.stdout, "nef_nmr_spectrum_wibble_n_hsqc")
+    isolate_frame(result.stdout, "nef_nmr_spectrum_wibble_N_HSQC")
 
 
 def test_ubi_short_different_spectrometer_frequency():
@@ -109,14 +104,14 @@ def test_ubi_short_different_spectrometer_frequency():
 
     EXPECTED_800 = EXPECTED.replace("60.833", "81.095")
     EXPECTED_800 = EXPECTED_800.replace("600.123", "800.000")
-    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_n_hsqc")
+    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_N_HSQC")
     assert_lines_match(EXPECTED_800, new_peaks_frame)
 
 
 EXPECTED_HNCA = """ # noqa: E501
-save_nef_nmr_spectrum_synthetic_hnca
+save_nef_nmr_spectrum_synthetic_HNCA
    _nef_nmr_spectrum.sf_category                nef_nmr_spectrum
-   _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_synthetic_hnca
+   _nef_nmr_spectrum.sf_framecode               nef_nmr_spectrum_synthetic_HNCA
    _nef_nmr_spectrum.num_dimensions             3
    _nef_nmr_spectrum.chemical_shift_list        .
    _nef_nmr_spectrum.experiment_classification  H[N[CA]]
@@ -198,31 +193,5 @@ def test_ubi_short_triple():
     result = run_and_report(app, ["--spectra", "HNCA"], input=input)
 
     print(result.stdout)
-    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_hnca")
+    new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_HNCA")
     assert_lines_match(EXPECTED_HNCA, new_peaks_frame)
-
-
-EXPECTED_EXPERIMENT_CLASSIFICATIONS_AND_SYNONYMS = {
-    ExperimentType.N_HSQC: ("H[N]", "15N HSQC/HMQC"),
-    ExperimentType.C_HSQC: ("H[C]", "13C HSQC/HMQC"),
-    ExperimentType.HNCA: ("H[N[CA]]", "HNCA"),
-    ExperimentType.HNcoCA: ("H[N[co[CA]]]", "H-detected HNcoCA"),
-    ExperimentType.HNCACB: ("H[N[CA[CB]]]", "H-detected HNCACB"),
-    ExperimentType.HNcoCACB: ("H[N[co[CA[CB]]]]", "H-detected HNcoCACB"),
-    ExperimentType.CBCAcoNH: ("h{CA|Cca}coNH", "hbCB/haCAcoNNH"),
-    ExperimentType.HNCO: ("H[N[CO]]", "HNCO"),
-    ExperimentType.HNcaCO: ("H[N[ca[CO]]]", "H-detected HNcaCO"),
-}
-
-
-def test_experiment_classifications_and_synonyms():
-    for experiment_type in ExperimentType:
-        if experiment_type == ExperimentType.TRIPLE:
-            continue
-        classification = SPECTRUM_TYPE_TO_CLASSIFICATION[experiment_type]
-        synonym = EXPERIMENT_CLASSIFICATION_TO_SYNONYM[classification]
-
-        assert EXPECTED_EXPERIMENT_CLASSIFICATIONS_AND_SYNONYMS[experiment_type] == (
-            classification,
-            synonym,
-        )

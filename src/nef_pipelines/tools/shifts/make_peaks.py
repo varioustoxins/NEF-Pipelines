@@ -20,9 +20,9 @@ from nef_pipelines.lib.peak_lib import peaks_to_frame
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
 from nef_pipelines.lib.spectra_lib import (
     EXPERIMENT_CLASSIFICATION_TO_SYNONYM,
+    EXPERIMENT_GROUPS,
     EXPERIMENT_INFO,
     SPECTRUM_TYPE_TO_CLASSIFICATION,
-    TRIPLE_SPECTRA,
     ExperimentType,
     PeakInfo,
 )
@@ -90,6 +90,8 @@ def make_peaks(
 
     spectra = set(parse_comma_separated_options(spectra))
 
+    spectra = _strs_to_experiment_types_or_exit_error(spectra)
+
     spectra = _update_spectra_with_groups(spectra)
 
     # TODO add a check that we have some shift frames
@@ -103,10 +105,39 @@ def make_peaks(
     print(entry)
 
 
+def _strs_to_experiment_types_or_exit_error(spectra):
+    result = []
+    spectrum_names = set([experiment.value for experiment in ExperimentType])
+    for spectum in spectra:
+
+        found = False
+        if spectum in spectrum_names:
+            result.append(ExperimentType[spectum])
+            found = True
+
+        if not found:
+            spectrum_lower = spectum.lower()
+            if spectrum_lower in spectrum_names:
+                result.append(ExperimentType[spectrum_lower])
+                found = True
+
+        if not found:
+            _exit_bad_spectrum_type(spectum, list(ExperimentType))
+
+    return result
+
+
 def _update_spectra_with_groups(spectra):
-    if ExperimentType.TRIPLE in spectra:
-        spectra.update(TRIPLE_SPECTRA)
-        spectra.remove(ExperimentType.TRIPLE)
+
+    spectra = set(spectra)
+    to_update = []
+    for experiment_type in spectra:
+        if experiment_type in EXPERIMENT_GROUPS:
+            to_update.append(experiment_type)
+
+    for experiment_type in to_update:
+        spectra.update(EXPERIMENT_GROUPS[experiment_type])
+        spectra.remove(experiment_type)
 
     return spectra
 
@@ -144,13 +175,12 @@ def pipe(
 
     for spectrum in spectra:
 
-        spectrum = spectrum.lower()
+        if spectrum in EXPERIMENT_INFO:
+            spectrum_info = EXPERIMENT_INFO[spectrum]
+        elif spectrum_info.lower() in EXPERIMENT_INFO:
+            spectrum_info = EXPERIMENT_INFO[spectrum.lower()]
 
-        if spectrum not in EXPERIMENT_INFO:
-            _exit_bad_spectrum_type(spectrum, list(EXPERIMENT_INFO.keys()))
-        spectrum_info = EXPERIMENT_INFO[spectrum]
-
-        peaks = make_spectrum(shifts, spectrum_info)
+        peaks = _make_spectrum(shifts, spectrum_info)
 
         if len(peaks) == 0:
             continue
@@ -162,6 +192,9 @@ def pipe(
         ]
 
         # TODO add info about frames for errors
+        if spectrum not in SPECTRUM_TYPE_TO_CLASSIFICATION:
+            _exit_bad_spectrum_type(spectrum, SPECTRUM_TYPE_TO_CLASSIFICATION.keys())
+
         spectrum_classification = SPECTRUM_TYPE_TO_CLASSIFICATION[spectrum]
         extra_tags = {
             EXPERIMENT_CLASSIFICATION: spectrum_classification,
@@ -185,7 +218,7 @@ def _sign_of_value(value):
     return result
 
 
-def make_spectrum(
+def _make_spectrum(
     shifts: List[ShiftData], info: PeakInfo, height: int = 1_000_000
 ) -> List[NewPeak]:
 
@@ -292,6 +325,9 @@ def make_spectrum(
                     if shift.atom.atom_name == atom_name_required:
                         atom_set_shifts.append(shift)
 
+            if len(atom_set_shifts) != len(atom_set):
+                continue
+
             for i, shift in enumerate(atom_set_shifts):
                 sequence_code = shift.atom.residue.sequence_code
                 sequence_code_prefix = shift.atom.residue.sequence_code_prefix
@@ -314,7 +350,7 @@ def make_spectrum(
                     shift = replace(shift, atom=atom)
                     atom_set_shifts[i] = shift
 
-            if len(atom_set_shifts) == len(info.atoms):
+            if len(atom_set_shifts) == len(info.dimensions):
                 new_peak = NewPeak(
                     atom_set_shifts, height=height * sign, volume=height * sign
                 )
