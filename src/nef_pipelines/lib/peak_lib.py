@@ -108,7 +108,7 @@ def peaks_to_sweep_width_and_reference_shift(
     peaks: List[NewPeak], dim: int, multiplier: float = 1.1
 ) -> Tuple[float, float]:
     """
-    Given a set of peaks synthesise a sweepwidth and reference ppm from the min and max shifts of the peaks
+    Given a set of peaks synthesise a sweep width and reference ppm from the min and max shifts of the peaks
     plus a margin
     :param peaks: A list of peaks
     :param dim: the dimesnion of the peaks to use
