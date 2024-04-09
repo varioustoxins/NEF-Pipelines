@@ -55,7 +55,19 @@ It also provides tools for importing and exporing non NEF files from the followi
 
 ## Installation
 
-NEF-Pipelines can be installed using pip and pipx
+if you have ccpn assign its simple to install `NEF-Pipelines` using a supplied macro `install_nef_pipelines.sh`
+
+```bash
+# if assign is on your path type
+
+install_nef_pipelines
+
+# else if this fails and ccpnmr/3.2.1/bin/assign is where the ccpn assign program is on disk run:
+
+ccpnmr/3.2.1/bin/install_nef_pipelines
+```
+
+NEF-Pipelines can also  be installed using pip and pipx
 
 Firstly install pipx if you need to, using the commands for your OS ...
 
@@ -64,6 +76,15 @@ Firstly install pipx if you need to, using the commands for your OS ...
 ```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
+```
+
+#### Windows
+1. make sure you have python3 installed
+2. download zipapp [pipx.pyz] from https://github.com/pypa/pipx/releases
+3. run the following commands
+```bash
+python Downloads\pipx.pyz ensurepath
+python Downloads\pipx.pyz install nef-pipelines
 ```
 #### Windows using WSL2
 
