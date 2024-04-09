@@ -256,3 +256,6 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.60
 - add support for c detect spectra for idps in peak simulation code
+
+## version 0.1.61
+- use requests to download bmrb files from the web

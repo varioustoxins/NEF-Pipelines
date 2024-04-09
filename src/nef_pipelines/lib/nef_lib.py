@@ -417,6 +417,11 @@ def read_entry_from_file_or_exit_error(file):
     :param file: a file on the file system
     :return: a new Entry read from the file
     """
+
+    file = Path(file)
+
+    if not file.exists() or not file.is_file():
+        exit_error(f"the file {file} doesn't exist or isn't a file")
     try:
         with open(file) as fh:
             entry = Entry.from_file(fh)

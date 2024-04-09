@@ -1,12 +1,14 @@
 import string
-import urllib.request
+import sys
 from enum import auto
 from pathlib import Path
 from typing import List
 
+import requests
 import typer
 from fyeah import f
 from pynmrstar import Entry
+from requests.exceptions import HTTPError
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
@@ -114,7 +116,8 @@ def project(
     if source in (EntrySource.AUTO, EntrySource.WEB):
         url, is_bmrb = _get_path_as_url_or_none(file_path, url_template)
 
-        possible_entry = _get_bmrb_entry_from_web_or_none(url)
+        exit_on_error = True if source == EntrySource.WEB else False
+        possible_entry = _get_bmrb_entry_from_web_or_none(url, exit_on_error)
 
         nmrstar_entry = _parse_text_to_star_or_none(possible_entry)
 
@@ -209,15 +212,28 @@ def _parse_text_to_star_or_none(possible_entry):
     return nmrstar_entry
 
 
-def _get_bmrb_entry_from_web_or_none(url):
+def _get_bmrb_entry_from_web_or_none(url, exit_on_error=True):
     possible_entry = None
+    error = False
+    exception = None
     if url:
         try:
-            myreq = urllib.request.urlopen(url)
-            if myreq.status == 200:
-                possible_entry = myreq.read()
-        except Exception:
-            pass
+            response = requests.get(url)
+            response.raise_for_status()
+            possible_entry = response.content
+        except HTTPError as http_err:
+            msg = f"while trying to download the url {url} there was an http error {http_err}"
+            exception = http_err
+        except Exception as err:
+            msg = f"while trying to download the url {url} there was an error {err}"
+            exception = err
+
+    if error:
+        if exit_on_error:
+            exit_error(msg, exception)
+        else:
+            print(f"WARNING: {msg}, trying to read as a local file", file=sys.stderr)
+
     return possible_entry
 
 
