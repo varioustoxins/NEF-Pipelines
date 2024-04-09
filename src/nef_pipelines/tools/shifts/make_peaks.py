@@ -75,8 +75,8 @@ def make_peaks(
         help="input to read NEF data from [stdin = -]",
     ),
 ):
-    """-  make a set of peaks for an hsqc or triple resonance spectrum from a list of shifts [alpha for non
-    ccpn peak lists]"""
+    """-  make a set of peaks for an hsqc, 13C direct detect or triple resonance spectrum from a list of shifts
+    [alpha for non cpn peak lists and 13C detect]"""
 
     shift_frame_selectors = (
         [
