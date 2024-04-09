@@ -259,3 +259,6 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.61
 - use requests to download bmrb files from the web
+
+## version 0.1.62
+-use urllib3 <= / == 1.26.15 to avoid a security warning
