@@ -27,6 +27,10 @@ class ExperimentType(StrEnum):
     HNCO = auto()
     HNcaCO = auto()
 
+    # for transfer pathways in 13C detected spectra see
+    # Kosol s. et. al Molecules 2013, 18, 10802-10828; doi:10.3390/molecules180910802 [in references]
+    # Felli I.C. et. al. Chem. Rev. 2022, 122, 9468−9496 doi:10.1021/acs.chemrev.1c00871
+
     CON = auto()
     NCO = auto()
     CAN = auto()
