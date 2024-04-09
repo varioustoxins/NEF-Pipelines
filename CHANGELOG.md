@@ -243,7 +243,7 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.57
 - upgrade pyparsing and pynmrstar
-  1. pyparsing was triggering a deprication warning
+  1. pyparsing was triggering a deprecation warning
   2. pynmrstar had a bug in renaming frames
 
 ## version 0.1.58
@@ -252,7 +252,7 @@ release is the same as 0.1.51 but...
 ## version 0.1.59
 - corrected a bug in fasta sequence importer that affected files with spaces between residues
 - improve handling of figures of merit especially for MARS peak imports
-- correct spectrum dimension transfers were not correct in peak imports
+- spectrum dimension transfers were not correct in peak imports
 
 ## version 0.1.60
 - add support for c detect spectra for idps in peak simulation code
