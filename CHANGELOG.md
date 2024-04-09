@@ -265,3 +265,6 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.63
 - remove dependance on Levenshtein which was causing compilation errors
+
+## version 0.1.64
+- update to fyeah to try to make windows installation work
