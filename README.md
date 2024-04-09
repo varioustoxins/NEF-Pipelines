@@ -80,12 +80,14 @@ python3 -m pipx ensurepath
 
 #### Windows
 1. make sure you have python3 installed
-2. download zipapp [pipx.pyz] from https://github.com/pypa/pipx/releases
-3. run the following commands
+2. check if you have pipx installed by typing `pipx --version` in a command prompt
+3. if you don't have pipx installed, install it by typing
 ```bash
-python Downloads\pipx.pyz ensurepath
-python Downloads\pipx.pyz install nef-pipelines
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
 ```
+4. close your terminal window and open a new one an type
+
 #### Windows using WSL2
 
 follow the instruction for linux distro of choice inside WSL2...
@@ -109,9 +111,9 @@ sudo zypper install python3-pipx
 
 #### Then to install NEF-Pipelines
 ```bash
-python3 -m pipx install nef-pipelines
+pipx install nef-pipelines
 ```
-after the install has completed you can type
+after the installation has completed you can type
 
 ```bash
 nef
@@ -129,7 +131,7 @@ Options:
 ## Updating NEF-Pipelines
 
 ```bash
-python3 -m pip install --user -U pipx
+pipx upgrade nef-pipelines
 ```
 
 ## Pipelines and Standalone Use
