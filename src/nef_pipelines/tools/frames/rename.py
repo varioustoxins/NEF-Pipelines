@@ -1,4 +1,5 @@
 import sys
+from difflib import SequenceMatcher
 from fnmatch import fnmatch
 from pathlib import Path
 from textwrap import dedent, indent
@@ -6,7 +7,6 @@ from typing import List
 
 import typer
 from fyeah import f
-from Levenshtein import distance
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
@@ -201,13 +201,19 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
             "" if target_category == "*" else f" with category {target_category}"
         )
         category_msg = category_msg
-        distances = [
-            (
-                distance(name, target_name) + distance(target_category, category),
-                (name, category),
-            )
-            for name, category in all_names_and_categories
-        ]
+        matcher = SequenceMatcher()
+        distances = []
+        for name, category in all_names_and_categories:
+            matcher.set_seq1(name)
+            matcher.set_seq2(target_name)
+            distance_name = 1.0 - matcher.ratio()
+
+            matcher.set_seq1(target_category)
+            matcher.set_seq2(category)
+            distance_category = 1.0 - matcher.ratio()
+            distance = (distance_name + distance_category) / 2.0
+        distances.append((distance, (name, category)))
+
         distances.sort()
 
         all_names = [name for name, _ in all_names_and_categories]
