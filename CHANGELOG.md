@@ -268,3 +268,6 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.64
 - update to fyeah to try to make windows installation work
+
+## version 0.1.65
+- fixed a bug in export of CO shifts reported by Pete Simpson

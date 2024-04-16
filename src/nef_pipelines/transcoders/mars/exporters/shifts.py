@@ -204,7 +204,9 @@ def _filter_headings_by_pseudoatoms(base_headers, pseudo_residues):
                 if pseudo_atom.negative_offset == 1
                 else ""
             )
-            atom_names.add(f"{pseudo_atom.atom_name.upper()}{offset}")
+            atom_name = pseudo_atom.atom_name.upper()
+            atom_name = "CO" if atom_name == "C" else atom_name
+            atom_names.add(f"{atom_name}{offset}")
     headers = []
     for header in base_headers:
         if header == "" or header in atom_names:

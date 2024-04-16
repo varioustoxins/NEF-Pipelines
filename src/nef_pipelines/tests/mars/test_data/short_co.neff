@@ -1,0 +1,183 @@
+data_Sec5Part2_read_only_new_x31m_f1
+
+   save_nef_nmr_meta_data
+
+      _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+      _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+      _nef_nmr_meta_data.format_name      nmr_exchange_format
+      _nef_nmr_meta_data.format_version   1.1
+      _nef_nmr_meta_data.program_name     AnalysisAssign
+      _nef_nmr_meta_data.program_version  3.0.3
+      _nef_nmr_meta_data.creation_date    2021-02-03T10:01:08.531276
+      _nef_nmr_meta_data.uuid             AnalysisAssign-2021-02-03T10:01:08.531276-950970417
+      _nef_nmr_meta_data.coordinate_file_name  .
+      _nef_nmr_meta_data.ccpn_dataset_serial  .
+
+      loop_
+         _nef_program_script.program_name
+         _nef_program_script.script_name
+         _nef_program_script.script
+
+         CcpNmr  exportProject  .
+      stop_
+   save_
+
+
+   save_nef_molecular_system
+
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.index
+         _nef_sequence.chain_code
+         _nef_sequence.sequence_code
+         _nef_sequence.residue_name
+         _nef_sequence.linking
+         _nef_sequence.residue_variant
+         _nef_sequence.cis_peptide
+         _nef_sequence.ccpn_comment
+         _nef_sequence.ccpn_chain_role
+         _nef_sequence.ccpn_compound_name
+         _nef_sequence.ccpn_chain_comment
+
+         1   A  3   HIS  start   +HE2  .  .  .  Sec5  .
+         2   A  4   MET  middle  .     .  .  .  Sec5  .
+         3   A  5   ARG  middle  .     .  .  .  Sec5  .
+         4   A  6   GLN  middle  .     .  .  .  Sec5  .
+         5   A  7   PRO  middle  .     .  .  .  Sec5  .
+         6   A  8   PRO  middle  .     .  .  .  Sec5  .
+         7   A  9   LEU  middle  .     .  .  .  Sec5  .
+         8   A  10  VAL  middle  .     .  .  .  Sec5  .
+         9   A  11  THR  middle  .     .  .  .  Sec5  .
+         10  A  12  GLY  middle  .     .  .  .  Sec5  .
+         11  A  13  ILE  middle  .     .  .  .  Sec5  .
+         12  A  14  SER  middle  .     .  .  .  Sec5  .
+         13  A  15  PRO  middle  .     .  .  .  Sec5  .
+         14  A  16  ASN  middle  .     .  .  .  Sec5  .
+         15  A  17  GLU  middle  .     .  .  .  Sec5  .
+         16  A  18  GLY  middle  .     .  .  .  Sec5  .
+         17  A  19  ILE  middle  .     .  .  .  Sec5  .
+         18  A  20  PRO  middle  .     .  .  .  Sec5  .
+         19  A  21  TRP  middle  .     .  .  .  Sec5  .
+         20  A  22  THR  middle  .     .  .  .  Sec5  .
+         21  A  23  LYS  middle  .     .  .  .  Sec5  .
+         22  A  24  VAL  middle  .     .  .  .  Sec5  .
+         23  A  25  THR  middle  .     .  .  .  Sec5  .
+         24  A  26  ILE  middle  .     .  .  .  Sec5  .
+         25  A  27  ARG  middle  .     .  .  .  Sec5  .
+         26  A  28  GLY  middle  .     .  .  .  Sec5  .
+         27  A  29  GLU  middle  .     .  .  .  Sec5  .
+         28  A  30  ASN  middle  .     .  .  .  Sec5  .
+         29  A  31  LEU  middle  .     .  .  .  Sec5  .
+         30  A  32  GLY  middle  .     .  .  .  Sec5  .
+         31  A  33  THR  middle  .     .  .  .  Sec5  .
+         32  A  34  GLY  middle  .     .  .  .  Sec5  .
+         33  A  35  PRO  middle  .     .  .  .  Sec5  .
+         34  A  36  THR  middle  .     .  .  .  Sec5  .
+         35  A  37  ASP  middle  .     .  .  .  Sec5  .
+         36  A  38  LEU  middle  .     .  .  .  Sec5  .
+         37  A  39  ILE  middle  .     .  .  .  Sec5  .
+         38  A  40  GLY  middle  .     .  .  .  Sec5  .
+         39  A  41  LEU  middle  .     .  .  .  Sec5  .
+         40  A  42  THR  middle  .     .  .  .  Sec5  .
+         41  A  43  ILE  middle  .     .  .  .  Sec5  .
+         42  A  44  CYS  middle  .     .  .  .  Sec5  .
+         43  A  45  GLY  middle  .     .  .  .  Sec5  .
+         44  A  46  HIS  middle  +HE2  .  .  .  Sec5  .
+         45  A  47  ASN  middle  .     .  .  .  Sec5  .
+         46  A  48  CYS  middle  .     .  .  .  Sec5  .
+         47  A  49  LEU  middle  .     .  .  .  Sec5  .
+         48  A  50  LEU  middle  .     .  .  .  Sec5  .
+         49  A  51  THR  middle  .     .  .  .  Sec5  .
+         50  A  52  ALA  middle  .     .  .  .  Sec5  .
+         51  A  53  GLU  middle  .     .  .  .  Sec5  .
+         52  A  54  TRP  middle  .     .  .  .  Sec5  .
+         53  A  55  MET  middle  .     .  .  .  Sec5  .
+         54  A  56  SER  middle  .     .  .  .  Sec5  .
+         55  A  57  ALA  middle  .     .  .  .  Sec5  .
+         56  A  58  SER  middle  .     .  .  .  Sec5  .
+         57  A  59  LYS  middle  .     .  .  .  Sec5  .
+         58  A  60  ILE  middle  .     .  .  .  Sec5  .
+         59  A  61  VAL  middle  .     .  .  .  Sec5  .
+         60  A  62  CYS  middle  .     .  .  .  Sec5  .
+         61  A  63  ARG  middle  .     .  .  .  Sec5  .
+         62  A  64  VAL  middle  .     .  .  .  Sec5  .
+         63  A  65  GLY  middle  .     .  .  .  Sec5  .
+         64  A  66  GLN  middle  .     .  .  .  Sec5  .
+         65  A  67  ALA  middle  .     .  .  .  Sec5  .
+         66  A  68  LYS  middle  .     .  .  .  Sec5  .
+         67  A  69  ASN  middle  .     .  .  .  Sec5  .
+         68  A  70  ASP  middle  .     .  .  .  Sec5  .
+         69  A  71  LYS  middle  .     .  .  .  Sec5  .
+         70  A  72  GLY  middle  .     .  .  .  Sec5  .
+         71  A  73  ASP  middle  .     .  .  .  Sec5  .
+         72  A  74  ILE  middle  .     .  .  .  Sec5  .
+         73  A  75  ILE  middle  .     .  .  .  Sec5  .
+         74  A  76  VAL  middle  .     .  .  .  Sec5  .
+         75  A  77  THR  middle  .     .  .  .  Sec5  .
+         76  A  78  THR  middle  .     .  .  .  Sec5  .
+         77  A  79  LYS  middle  .     .  .  .  Sec5  .
+         78  A  80  SER  middle  .     .  .  .  Sec5  .
+         79  A  81  GLY  middle  .     .  .  .  Sec5  .
+         80  A  82  GLY  middle  .     .  .  .  Sec5  .
+         81  A  83  LYS  middle  .     .  .  .  Sec5  .
+         82  A  84  GLY  middle  .     .  .  .  Sec5  .
+         83  A  85  THR  middle  .     .  .  .  Sec5  .
+         84  A  86  SER  middle  .     .  .  .  Sec5  .
+         85  A  87  THR  middle  .     .  .  .  Sec5  .
+         86  A  88  VAL  middle  .     .  .  .  Sec5  .
+         87  A  89  SER  middle  .     .  .  .  Sec5  .
+         88  A  90  PHE  middle  .     .  .  .  Sec5  .
+         89  A  91  LYS  middle  .     .  .  .  Sec5  .
+         90  A  92  LEU  middle  .     .  .  .  Sec5  .
+         91  A  93  LEU  middle  .     .  .  .  Sec5  .
+         92  A  94  LYS  middle  .     .  .  .  Sec5  .
+         93  A  95  PRO  middle  .     .  .  .  Sec5  .
+         94  A  96  GLU  middle  .     .  .  .  Sec5  .
+         95  A  97  LYS  end     .     .  .  .  Sec5  .
+      stop_
+   save_
+
+
+   save_nef_chemical_shift_list_default
+
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
+      _nef_chemical_shift_list.ccpn_serial   1
+      _nef_chemical_shift_list.ccpn_auto_update  true
+      _nef_chemical_shift_list.ccpn_is_simulated  false
+      _nef_chemical_shift_list.ccpn_comment  .
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.value_uncertainty
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+         _nef_chemical_shift.ccpn_figure_of_merit
+         _nef_chemical_shift.ccpn_comment
+
+         @A  @1      .     H      11.67117407  .                H  1   1  .
+         @A  @1      .     N      136.6821303  .                N  15  1  .
+         @A  @2      .     H      10.94599653  .                H  1   1  .
+         @A  @2      .     N      131.6891476  .                N  15  1  .
+         @A  @3      .     C      176.7222773  .                C  13  1  .
+         @A  @3      .     CA     46.28145015  .                C  13  1  .
+         @A  @3      .     H      10.26626462  0.001074851437   H  1   1  .
+         @A  @3      .     N      112.5177213  0.02024062606    N  15  1  .
+         @A  @3-1    .     C      178.7257301  .                C  13  1  .
+         @A  @3-1    .     CA     63.86159248  0.03474860336    C  13  1  .
+         @A  @3-1    .     CB     32.98380379  0.008365316223   C  13  1  .
+         @A  @4      .     C      173.3904574  .                C  13  1  .
+         @A  @4      .     CA     46.46502223  .                C  13  1  .
+         @A  @4      .     H      9.632463255  0.004302581237   H  1   1  .
+         @A  @4      .     N      104.5287439  0.009710770452   N  15  1  .
+         @A  @4-1    .     C      175.7672529  .                C  13  1  .
+
+
+      stop_
+   save_

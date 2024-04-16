@@ -26,3 +26,21 @@ def test_export_shifts_nef5_short():
     """
 
     assert_lines_match(EXPECTED, result.stdout)
+
+
+def test_export_shifts_pete_co():
+
+    stream = open(path_in_test_data(__file__, "short_co.neff")).read()
+
+    result = run_and_report(app, ["-"], input=stream)
+
+    EXPECTED = """\
+                   H        N  CA      CA-1    CB-1    CO       CO-1
+        PR_1  11.671  136.682  -       -       -       -        -
+        PR_2  10.946  131.689  -       -       -       -        -
+        PR_3  10.266  112.518  46.281  63.862  32.984  176.722  178.726
+        PR_4   9.632  104.529  46.465  -       -       173.390  175.767
+
+    """
+
+    assert_lines_match(EXPECTED, result.stdout)
