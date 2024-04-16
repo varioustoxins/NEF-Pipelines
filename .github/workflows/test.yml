@@ -42,7 +42,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          echo $PYTHONPATH
-          echo $PWD
-          ls -l
-          #pytest src/nef_pipelines/tests
+          pytest src/nef_pipelines/tests
+#          echo $PYTHONPATH
+#          echo $PWD
+#          ls -l
