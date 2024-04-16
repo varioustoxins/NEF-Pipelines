@@ -3,10 +3,12 @@ name: NEF-Pipelines
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
-
+  schedule:
+    # Run roughly every 15 days at 00:00 UTC
+    # (useful to check if updates on dependencies break the package)
+    - cron: '0 0 1,16 * *'
 permissions:
   contents: read
 
