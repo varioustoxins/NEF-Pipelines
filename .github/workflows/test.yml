@@ -42,4 +42,4 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest src/ccpn_project_checker/tests
+          pytest src/nef_pipelines/tests
