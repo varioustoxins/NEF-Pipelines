@@ -38,10 +38,11 @@ jobs:
 
       - name: Set pythonpath
         run: |
-          export "PYTHONPATH=$PYTHONPATH:src" >> $GITHUB_ENV
+          export "PYTHONPATH=$PYTHONPATH:${PWD}/src" >> $GITHUB_ENV
 
       - name: Run pytest
         run: |
           echo $PYTHONPATH
           echo $PWD
+          ls -l
           #pytest src/nef_pipelines/tests
