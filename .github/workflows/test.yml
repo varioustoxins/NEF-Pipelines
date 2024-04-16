@@ -16,8 +16,8 @@ jobs:
   build:
     strategy:
       matrix:
-        python-version: [ "3.9"] #, "3.10", "3.11", "3.12" ]
-        os: [ubuntu-latest] #, macos-latest] #windows-latest]
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+        os: [ubuntu-latest, macos-latest] #windows-latest]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -43,7 +43,4 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest src/nef_pipelines/tests
-#          echo $PYTHONPATH
-#          echo $PWD
-#          ls -l
+          pytest --disable-warnings  src/nef_pipelines/tests
