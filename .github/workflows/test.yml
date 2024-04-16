@@ -38,7 +38,8 @@ jobs:
 
       - name: Set pythonpath
         run: |
-          export "PYTHONPATH=$PYTHONPATH:${PWD}/src" >> $GITHUB_ENV
+          PWD=$(pwd)
+          echo "PYTHONPATH=${PWD}/src" >> $GITHUB_ENV
 
       - name: Run pytest
         run: |
