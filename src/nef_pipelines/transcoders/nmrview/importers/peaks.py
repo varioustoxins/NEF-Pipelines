@@ -379,33 +379,33 @@ def create_spectrum_frame(args, entry_name, peaks_list):
     loop.add_tag(list_tags)
     list_data = peaks_list.peak_list_data
     for i in range(list_data.num_axis):
-        for tag in list_tags:
-            if tag == "dimension_id":
-                loop.add_data_by_tag(tag, i + 1)
-            elif tag == "axis_unit":
-                loop.add_data_by_tag(tag, "ppm")
-            elif tag == "axis_code":
-                axis_codes = args.axis_codes.split(".")
-                loop.add_data_by_tag(tag, _get_isotope_code_or_exit(i, axis_codes))
-            elif tag == "spectrometer_frequency":
-                loop.add_data_by_tag(tag, list_data.spectrometer_frequencies[i])
-            elif tag == "spectral_width":
-                if list_data.sweep_widths:
-                    loop.add_data_by_tag(tag, list_data.sweep_widths[i])
-                else:
-                    loop.add_data_by_tag(tag, NEF_UNKNOWN)
-            elif tag == "folding":
-                loop.add_data_by_tag(tag, "circular")
-            elif tag == "absolute_peak_positions":
-                loop.add_data_by_tag(tag, "true")
-            else:
-                loop.add_data_by_tag(tag, NEF_UNKNOWN)
+        row = {
+            "dimension_id": i + 1,
+            "axis_unit": "ppm",
+            "axis_code": _get_isotope_code_or_exit(i, args.axis_codes.split(".")),
+            "spectrometer_frequency": list_data.spectrometer_frequencies[i],
+            "spectral_width": (
+                list_data.sweep_widths[i] if list_data.sweep_widths else NEF_UNKNOWN
+            ),
+            "value_first_point": NEF_UNKNOWN,
+            "folding": "circular",
+            "absolute_peak_positions": "true",
+            "is_acquisition": NEF_UNKNOWN,
+        }
+        loop.add_data(
+            [
+                row,
+            ]
+        )
+
     loop = Loop.from_scratch("nef_spectrum_dimension_transfer")
     frame.add_loop(loop)
     transfer_dim_tags = ("dimension_1", "dimension_2", "transfer_type")
     loop.add_tag(transfer_dim_tags)
     loop = Loop.from_scratch("nef_peak")
     frame.add_loop(loop)
+
+    # TODO: put this in a sane order!
     peak_tags = [
         "index",
         "peak_id",
@@ -437,45 +437,66 @@ def create_spectrum_frame(args, entry_name, peaks_list):
         if peak_values.deleted:
             continue
 
+        positions = {}
         for tag in tags:
-
-            if tag == "index":
-                loop.add_data_by_tag(tag, i + 1)
-            elif tag == "peak_id":
-                loop.add_data_by_tag(tag, peak_values.serial)
-            elif tag == "volume":
-                loop.add_data_by_tag(tag, peak_values.volume)
-            elif tag == "height":
-                loop.add_data_by_tag(tag, peak_values.height)
-            elif tag.split("_")[0] == "position" and len(tag.split("_")) == 2:
+            if tag.split("_")[0] == "position" and len(tag.split("_")) == 2:
                 index = int(tag.split("_")[-1]) - 1
-                loop.add_data_by_tag(tag, peak[index].ppm)
-            elif tag.split("_")[:2] == ["chain", "code"]:
+                positions[tag] = peak[index].ppm
+
+        chain_codes = {}
+        for tag in tags:
+            if tag.split("_")[:2] == ["chain", "code"]:
                 index = int(tag.split("_")[-1]) - 1
                 chain_code = peak[index].atom_labels.residue.chain_code
                 chain_code = chain_code if chain_code is not None else args.chain_code
                 chain_code = chain_code if chain_code else "."
-                loop.add_data_by_tag(tag, chain_code)
-            elif tag.split("_")[:2] == ["sequence", "code"]:
+                chain_codes[tag] = chain_code
+
+        sequence_codes = {}
+        for tag in tags:
+            if tag.split("_")[:2] == ["sequence", "code"]:
                 index = int(tag.split("_")[-1]) - 1
                 sequence_code = peak[index].atom_labels.residue.sequence_code
                 sequence_code = sequence_code if sequence_code else "."
-                loop.add_data_by_tag(tag, sequence_code)
-            elif tag.split("_")[:2] == ["residue", "name"]:
+                sequence_codes[tag] = sequence_code
+
+        residue_names = {}
+        for tag in tags:
+            if tag.split("_")[:2] == ["residue", "name"]:
                 index = int(tag.split("_")[-1]) - 1
 
                 # TODO: there could be more than 1 atom label here and this should be a list...
                 residue_name = peak[index].atom_labels.residue.residue_name
                 residue_name = residue_name if residue_name else "."
-                loop.add_data_by_tag(tag, residue_name)
-            elif tag.split("_")[:2] == ["atom", "name"]:
+                residue_names[tag] = residue_name
+
+        atom_names = {}
+        for tag in tags:
+            if tag.split("_")[:2] == ["atom", "name"]:
                 index = int(tag.split("_")[-1]) - 1
 
                 atom_name = peak[index].atom_labels.atom_name
                 atom_name = atom_name if atom_name else "."
-                loop.add_data_by_tag(tag, atom_name)
-            else:
-                loop.add_data_by_tag(tag, constants.NEF_UNKNOWN)
+                atom_names[tag] = atom_name
+
+        row_dict = {
+            "index": i + 1,
+            "peak_id": peak_values.serial,
+            **chain_codes,
+            **sequence_codes,
+            **residue_names,
+            **atom_names,
+            **positions,
+            "volume": peak_values.volume,
+            "volume_uncertainty": NEF_UNKNOWN,
+            "height": peak_values.height,
+            "height_uncertainty": NEF_UNKNOWN,
+        }
+        loop.add_data(
+            [
+                row_dict,
+            ]
+        )
     return frame
 
 
