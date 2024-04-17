@@ -13,13 +13,15 @@ MOLECULAR_SYSTEM_NMRVIEW = "nef_spectrum_nmrview"
 app = typer.Typer()
 app.command()(peaks)
 
-EXPECTED_4AA = open(path_in_test_data(__file__, "nmrview_expected_4aa.txt")).read()
+with open(path_in_test_data(__file__, "nmrview_expected_4aa.txt")) as f:
+    EXPECTED_4AA = f.read()
 
 
 # noinspection PyUnusedLocal
 def test_4_peaks(clear_cache):
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
+    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
+        sequence_stream = sequence_stream.read()
 
     args = ["--axis", "1H.1H.15N", peaks_path]
     result = run_and_report(app, args, input=sequence_stream)
@@ -33,7 +35,9 @@ def test_3peaks_bad_axis_codes(clear_cache):
     # reading stdin doesn't work in pytest so for a clean header
     # TODO move to conftest.py
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
+
+    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
+        sequence_stream = sequence_stream.read()
 
     args = [
         "--axis",
@@ -113,7 +117,9 @@ EXPECTED_JOE_CLIC = """\
 # noinspection PyUnusedLocal
 def test_joe_bad_sweep_widths():
     peaks_path = path_in_test_data(__file__, "joe_clic.xpk")
-    sequence_stream = open(path_in_test_data(__file__, "4peaks_seq.nef")).read()
+
+    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
+        sequence_stream = sequence_stream.read()
 
     command = [
         "--axis",
