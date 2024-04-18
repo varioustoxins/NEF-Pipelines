@@ -122,7 +122,8 @@ def test_read_or_create_entry_exit_error_on_bad_file_empty_stdin(mocker):
 def test_read_or_create_entry_exit_error_on_bad_file_exception(mocker, tmp_path):
     mocker.patch("sys.exit")
     read_or_create_entry_exit_error_on_bad_file(tmp_path / "doesnt_exists.neff")
-    assert sys.exit.called_once_with(EXIT_ERROR)
+
+    sys.exit.assert_called_once_with(EXIT_ERROR)
 
 
 def test_read_or_create_entry_exit_error_on_bad_file_bad_stdin(mocker):
@@ -130,7 +131,8 @@ def test_read_or_create_entry_exit_error_on_bad_file_bad_stdin(mocker):
     mocker.patch("sys.exit")
 
     read_or_create_entry_exit_error_on_bad_file(STDIN)
-    assert sys.exit.called_once_with(EXIT_ERROR)
+
+    sys.exit.assert_called_once_with(EXIT_ERROR)
 
 
 def test_read_or_create_entry_exit_error_on_bad_file(mocker):
