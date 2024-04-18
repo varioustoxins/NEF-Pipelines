@@ -1,9 +1,10 @@
 import typer
+from pytest import fixture
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.chains.rename import rename
@@ -17,12 +18,17 @@ RENAME_CHAINS_B_D = ["B", "D"]
 RENAME_CHAINS_A_E = ["A", "E"]
 
 
+@fixture
+def INPUT_MULTI_CHAIN_SHIFTS_NEF():
+    return read_test_data("multi_chain_shifts.nef", __file__)
+
+
 # noinspection PyUnusedLocal
-def test_rename_basic(clear_cache):
+def test_rename_basic():
 
-    path = path_in_test_data(__file__, "multi_chain.nef")
+    INPUT = read_test_data("multi_chain.nef", __file__)
 
-    result = run_and_report(app, [*RENAME_CHAINS_B_D], input=open(path))
+    result = run_and_report(app, [*RENAME_CHAINS_B_D], input=INPUT)
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
@@ -65,11 +71,11 @@ def test_rename_basic(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_rename_multi_frame(clear_cache):
+def test_rename_multi_frame(INPUT_MULTI_CHAIN_SHIFTS_NEF):
 
-    path = path_in_test_data(__file__, "multi_chain_shifts.nef")
-
-    result = run_and_report(app, [*RENAME_CHAINS_A_E], input=open(path))
+    result = run_and_report(
+        app, [*RENAME_CHAINS_A_E], input=INPUT_MULTI_CHAIN_SHIFTS_NEF
+    )
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)
@@ -140,12 +146,10 @@ def test_rename_multi_frame(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_rename_select_frame_by_name(clear_cache):
-
-    path = path_in_test_data(__file__, "multi_chain_shifts.nef")
+def test_rename_select_frame_by_name(INPUT_MULTI_CHAIN_SHIFTS_NEF):
 
     result = run_and_report(
-        app, ["--frame", "test", *RENAME_CHAINS_A_E], input=open(path)
+        app, ["--frame", "test", *RENAME_CHAINS_A_E], input=INPUT_MULTI_CHAIN_SHIFTS_NEF
     )
 
     if result.exit_code != 0:
@@ -213,14 +217,11 @@ def test_rename_select_frame_by_name(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_rename_select_frame_by_category(clear_cache):
-
-    path = path_in_test_data(__file__, "multi_chain_shifts.nef")
-    input = open(path).read()
+def test_rename_select_frame_by_category(INPUT_MULTI_CHAIN_SHIFTS_NEF):
 
     command = [*RENAME_CHAINS_A_E, "--frame", "mol", "--selector-type", "category"]
 
-    result = run_and_report(app, command, input=input)
+    result = run_and_report(app, command, input=INPUT_MULTI_CHAIN_SHIFTS_NEF)
 
     if result.exit_code != 0:
         print("INFO: stdout from failed read:\n", result.stdout)

@@ -1,10 +1,10 @@
 import pytest
 
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.test_lib import path_in_test_data
+from nef_pipelines.lib.test_lib import read_test_data
 from nef_pipelines.transcoders.xplor.psf_lib import PSFParseException, parse_xplor_PSF
 
-A3_AB_PSF = open(path_in_test_data(__file__, "3a_ab.psf")).read()
+A3_AB_PSF = read_test_data("3a_ab.psf", __file__)
 
 
 def test_parse_3a_ab():
@@ -26,7 +26,7 @@ def test_parse_3a_ab():
     assert EXPECTED == result
 
 
-EMPTY_PSF = open(path_in_test_data(__file__, "empty.psf")).read()
+EMPTY_PSF = read_test_data("empty.psf", __file__)
 
 
 def test_parse_empty():
@@ -41,7 +41,7 @@ def test_parse_empty():
     assert "the first line of a PSF file should be 'PSF'" in exception_message
 
 
-BAD_NATOM_FIELDS_PSF = open(path_in_test_data(__file__, "bad_natom.psf")).read()
+BAD_NATOM_FIELDS_PSF = read_test_data("bad_natom.psf", __file__)
 
 
 def test_parse_bad_natom():
@@ -54,7 +54,7 @@ def test_parse_bad_natom():
     assert "can't convert natom to an int" in exception_message
 
 
-BAD_HEADER_PSF = open(path_in_test_data(__file__, "bad_header.psf")).read()
+BAD_HEADER_PSF = read_test_data("bad_header.psf", __file__)
 
 
 def test_parse_bad_header():
@@ -70,7 +70,7 @@ def test_parse_bad_header():
     )
 
 
-BAD_FIELD_COUNT = open(path_in_test_data(__file__, "bad_field_count.psf")).read()
+BAD_FIELD_COUNT = read_test_data("bad_field_count.psf", __file__)
 
 
 def test_parse_bad_field_count():
@@ -84,7 +84,7 @@ def test_parse_bad_field_count():
     assert "expected 9" in exception_message
 
 
-BAD_RESID_FIELD = open(path_in_test_data(__file__, "bad_residue_number.psf")).read()
+BAD_RESID_FIELD = read_test_data("bad_residue_number.psf", __file__)
 
 
 def test_parse_bad_resid():
@@ -98,7 +98,7 @@ def test_parse_bad_resid():
     assert "ZZZ" in exception_message
 
 
-NO_RESIDUES_FOUND = open(path_in_test_data(__file__, "no_residues_found.psf")).read()
+NO_RESIDUES_FOUND = read_test_data("no_residues_found.psf", __file__)
 
 
 def test_parse_no_residues_found():

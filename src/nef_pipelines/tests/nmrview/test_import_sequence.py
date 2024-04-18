@@ -6,6 +6,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.lib.util import get_version
@@ -82,7 +83,7 @@ def test_3aa10():
     assert_lines_match(EXPECTED_3AA10, mol_sys_result)
 
 
-HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
+HEADER = read_test_data("test_header_entry.txt", __file__)
 
 EXPECTED_HEADER = f"""\
 save_nef_nmr_meta_data

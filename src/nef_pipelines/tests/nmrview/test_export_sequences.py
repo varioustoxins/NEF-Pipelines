@@ -5,7 +5,7 @@ import typer
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrview.exporters.sequences import sequences
@@ -13,13 +13,13 @@ from nef_pipelines.transcoders.nmrview.exporters.sequences import sequences
 app = typer.Typer()
 app.command()(sequences)
 
+INPUT_MULTI_CHAIN_NEF = read_test_data("multi_chain.nef", __file__)
+
 
 # noinspection PyUnusedLocal
 def test_multi_chain():
 
-    STREAM = open(path_in_test_data(__file__, "multi_chain.nef")).read()
-
-    result = run_and_report(app, ["-o", "-"], input=STREAM)
+    result = run_and_report(app, ["-o", "-"], input=INPUT_MULTI_CHAIN_NEF)
 
     EXPECTED = """\
         ------------- A.seq -------------
@@ -38,9 +38,9 @@ def test_multi_chain():
 
 def test_multi_chain_template():
 
-    STREAM = open(path_in_test_data(__file__, "multi_chain.nef")).read()
-
-    result = run_and_report(app, ["-o", "-test_{chain_code}.seq"], input=STREAM)
+    result = run_and_report(
+        app, ["-o", "-test_{chain_code}.seq"], input=INPUT_MULTI_CHAIN_NEF
+    )
 
     EXPECTED = """\
         ------------- test_A.seq -------------
@@ -59,10 +59,8 @@ def test_multi_chain_template():
 
 def test_multi_chain_bad_selector():
 
-    STREAM = open(path_in_test_data(__file__, "multi_chain.nef")).read()
-
     result = run_and_report(
-        app, ["-o", "-", "AAAA"], input=STREAM, expected_exit_code=1
+        app, ["-o", "-", "AAAA"], input=INPUT_MULTI_CHAIN_NEF, expected_exit_code=1
     )
 
     assert "the chain code" in result.stdout
@@ -72,10 +70,8 @@ def test_multi_chain_bad_selector():
 
 def test_bad_template():
 
-    STREAM = open(path_in_test_data(__file__, "multi_chain.nef")).read()
-
     result = run_and_report(
-        app, ["-o", "test.seq", "A"], input=STREAM, expected_exit_code=1
+        app, ["-o", "test.seq", "A"], input=INPUT_MULTI_CHAIN_NEF, expected_exit_code=1
     )
 
     assert "the file name template" in result.stdout
@@ -83,12 +79,13 @@ def test_bad_template():
     assert "{chain_code}" in result.stdout
 
 
-def test_multiple_output_files_disk(tmp_path):
-    STREAM = open(path_in_test_data(__file__, "multi_chain.nef")).read()
+def test_multiple_output_files_disk(
+    tmp_path,
+):
 
     os.chdir(tmp_path)
 
-    run_and_report(app, [], input=STREAM)
+    run_and_report(app, [], input=INPUT_MULTI_CHAIN_NEF)
 
     EXPECTED_FILES = "A.seq", "B.seq", "C.seq"
 

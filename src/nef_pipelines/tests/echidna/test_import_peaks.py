@@ -5,6 +5,7 @@ from nef_pipelines.lib.test_lib import (
     isolate_frame,
     isolate_loop,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.echidna.importers.peaks import peaks
@@ -78,7 +79,7 @@ def test_basic():
 
     path = path_in_test_data(__file__, "echidna_peaks.txt")
 
-    data_sequence = open(path_in_test_data(__file__, "echidna_sequence.nef")).read()
+    data_sequence = read_test_data("echidna_sequence.nef", __file__)
 
     result = run_and_report(app, [path], input=data_sequence)
 

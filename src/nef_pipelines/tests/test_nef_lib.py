@@ -224,7 +224,7 @@ def replace_stdin(target: str):
     sys.stdin = orig
 
 
-def test_read_entry_stdin_or_exit_empty_stdin(clear_cache):
+def test_read_entry_stdin_or_exit_empty_stdin():
     with replace_stdin(""):
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             read_entry_from_stdin_or_exit()
@@ -234,7 +234,7 @@ def test_read_entry_stdin_or_exit_empty_stdin(clear_cache):
 
 
 @pytest.mark.skip(reason="not currently working and deprecated")
-def test_read_entry_stdin_or_exit(clear_cache):
+def test_read_entry_stdin_or_exit():
 
     EXPECTED = """\
     data_new

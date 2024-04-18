@@ -6,12 +6,13 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.lib.util import get_version
 from nef_pipelines.transcoders.nmrpipe.importers.sequence import sequence
 
-HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
+HEADER = read_test_data("test_header_entry.txt", __file__)
 
 app = typer.Typer()
 app.command()(sequence)

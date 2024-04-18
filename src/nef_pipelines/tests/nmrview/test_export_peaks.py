@@ -3,7 +3,7 @@ import typer
 from nef_pipelines.lib.structures import AtomLabel, Peak, PeakValues, SequenceResidue
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrview.exporters.peaks import (
@@ -15,9 +15,7 @@ from nef_pipelines.transcoders.nmrview.exporters.peaks import (
 app = typer.Typer()
 app.command()(peaks)
 
-EXPECTED = open(
-    path_in_test_data(__file__, "expected_sequence_and_peaks_nmrview.txt")
-).read()
+EXPECTED = read_test_data("expected_sequence_and_peaks_nmrview.txt", __file__)
 
 EXPECTED_AXES = ["1H_1", "1H_2", "15N"]
 
@@ -92,13 +90,13 @@ def test_row_to_peak():
     assert result == EXPECTED_PEAK
 
 
-EXPECTED = open(path_in_test_data(__file__, "expected_nmr_view.xpk")).read()
+EXPECTED = read_test_data("expected_nmr_view.xpk", __file__)
 
 
 # noinspection PyUnusedLocal
-def test_3peaks(clear_cache):
+def test_3peaks():
 
-    STREAM = open(path_in_test_data(__file__, "nef_3_peaks.nef")).read()
+    STREAM = read_test_data("nef_3_peaks.nef", __file__)
 
     result = run_and_report(app, [], input=STREAM)
 

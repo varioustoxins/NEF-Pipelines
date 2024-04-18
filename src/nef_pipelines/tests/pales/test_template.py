@@ -2,7 +2,7 @@ import typer
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.pales.exporters.template import template
@@ -10,11 +10,11 @@ from nef_pipelines.transcoders.pales.exporters.template import template
 app = typer.Typer()
 app.command()(template)
 
-SEQUENCE_STREAM = open(path_in_test_data(__file__, "tailin_seq_short.nef")).read()
+SEQUENCE_STREAM = read_test_data("tailin_seq_short.nef", __file__)
 
 
 # noinspection PyUnusedLocal
-def test_template(clear_cache):
+def test_template():
 
     result = run_and_report(app, [], input=SEQUENCE_STREAM)
 

@@ -1,10 +1,11 @@
 import typer
+from pytest import fixture
 
 from nef_pipelines.lib.test_lib import (
     NOQA_E501,
     assert_lines_match,
     isolate_loop,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.frames.unassign import unassign
@@ -83,13 +84,15 @@ stop_
 )
 
 
-# noinspection PyUnusedLocal
-def test_unassign_basic():
+@fixture
+def INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN():
+    return read_test_data("ubiquitin_short_unassign_single_chain.nef", __file__)
 
-    INPUT = open(
-        path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
-    ).read()
-    result = run_and_report(app, [], input=INPUT)
+
+# noinspection PyUnusedLocal
+def test_unassign_basic(INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN):
+
+    result = run_and_report(app, [], input=INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN)
 
     loop = isolate_loop(
         result.stdout, "nef_chemical_shift_list_default", "nef_chemical_shift"
@@ -169,12 +172,11 @@ EXPECTED_FULL_SPECTRUM = """
 )
 
 
-def test_unassign_all():
+def test_unassign_all(INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN):
 
-    INPUT = open(
-        path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
-    ).read()
-    result = run_and_report(app, ["--targets", "all"], input=INPUT)
+    result = run_and_report(
+        app, ["--targets", "all"], input=INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN
+    )
 
     loop = isolate_loop(
         result.stdout, "nef_chemical_shift_list_default", "nef_chemical_shift"
@@ -254,13 +256,12 @@ EXPECTED_UNUSED_SPECTRUM = """
 )
 
 
-def test_unassign_complete():
+def test_unassign_complete(INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN):
 
-    INPUT = open(
-        path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
-    ).read()
     result = run_and_report(
-        app, ["--targets", "all", "--sequence-mode", "unused"], input=INPUT
+        app,
+        ["--targets", "all", "--sequence-mode", "unused"],
+        input=INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN,
     )
 
     loop = isolate_loop(
@@ -341,12 +342,13 @@ EXPECTED_ORDERED_SPECTRUM = """
 )
 
 
-def test_unassign_ordered():
+def test_unassign_ordered(INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN):
 
-    INPUT = open(
-        path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
-    ).read()
-    result = run_and_report(app, ["--sequence-mode", "ordered"], input=INPUT)
+    result = run_and_report(
+        app,
+        ["--sequence-mode", "ordered"],
+        input=INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN,
+    )
 
     loop = isolate_loop(
         result.stdout, "nef_chemical_shift_list_default", "nef_chemical_shift"
@@ -426,11 +428,12 @@ EXPECTED_PRESERVED_SPECTRUM = """
 )
 
 
-def test_unassign_preserve():
-    INPUT = open(
-        path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
-    ).read()
-    result = run_and_report(app, ["--sequence-mode", "preserve"], input=INPUT)
+def test_unassign_preserve(INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN):
+    result = run_and_report(
+        app,
+        ["--sequence-mode", "preserve"],
+        input=INPUT_UBI_SHORT_UNASSIGNED_SINGLE_CHAIN,
+    )
 
     loop = isolate_loop(
         result.stdout, "nef_chemical_shift_list_default", "nef_chemical_shift"

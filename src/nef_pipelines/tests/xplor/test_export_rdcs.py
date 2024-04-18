@@ -44,7 +44,7 @@ assign  (  resn   ANI   and  name   OO  )
 
 
 # noinspection PyUnusedLocal
-def test_3ab(clear_cache):
+def test_3ab():
 
     input = open(path_in_test_data(__file__, "3a_ab_rdcs.neff")).read()
     result = run_and_report(app, [], input=input)

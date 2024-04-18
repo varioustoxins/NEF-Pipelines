@@ -4,6 +4,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.sparky.importers.shifts import shifts
@@ -64,7 +65,7 @@ save_
 
 def test_ppm_out_short():
 
-    STREAM = open(path_in_test_data(__file__, "P3a_L273R_sequence_short.neff")).read()
+    STREAM = read_test_data("P3a_L273R_sequence_short.neff", __file__)
 
     path = path_in_test_data(__file__, "test_shifts_P3a_L273R_shifts_short.txt")
 

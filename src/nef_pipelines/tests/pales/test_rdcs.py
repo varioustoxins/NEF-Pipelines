@@ -5,7 +5,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.pales.exporters.rdcs import rdcs
@@ -14,13 +14,13 @@ runner = CliRunner()
 app = typer.Typer()
 app.command()(rdcs)
 
-NEF_STREAM = open(path_in_test_data(__file__, "pales_test_1.nef")).read()
-NEF_STREAM_DISORDERED = open(path_in_test_data(__file__, "pales_test_2.nef")).read()
-NEF_STREAM_SEGIDS = open(path_in_test_data(__file__, "pales_test_segids.nef")).read()
+NEF_STREAM = read_test_data("pales_test_1.nef", __file__)
+NEF_STREAM_DISORDERED = read_test_data("pales_test_2.nef", __file__)
+NEF_STREAM_SEGIDS = read_test_data("pales_test_segids.nef", __file__)
 
 
 # noinspection PyUnusedLocal
-def test_rdcs(clear_cache):
+def test_rdcs():
 
     result = run_and_report(app, [], input=NEF_STREAM)
 
@@ -43,7 +43,7 @@ def test_rdcs(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_rdcs_disordered(clear_cache):
+def test_rdcs_disordered():
 
     result = run_and_report(app, [], input=NEF_STREAM_DISORDERED)
 
@@ -61,7 +61,7 @@ def test_rdcs_disordered(clear_cache):
     assert_lines_match(EXPECTED, result.stdout)
 
 
-def test_rdcs_segid(clear_cache):
+def test_rdcs_segid():
 
     result = run_and_report(app, ["--segids"], input=NEF_STREAM_SEGIDS)
 

@@ -4,6 +4,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.xeasy.importers.shifts import shifts
@@ -42,7 +43,7 @@ save_
 
 def test_ppm_out_short():
 
-    STREAM = open(path_in_test_data(__file__, "basic_sequence.nef")).read()
+    STREAM = read_test_data("basic_sequence.nef", __file__)
 
     path = path_in_test_data(__file__, "basic_shifts.prot")
 

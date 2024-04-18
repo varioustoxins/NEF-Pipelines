@@ -3,6 +3,7 @@ import typer
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.talos.exporters.shifts import shifts
@@ -42,9 +43,9 @@ FORMAT %4d      %1s        %4s           %8.3f
 """
 
 
-def test_4peaks(clear_cache):
+def test_4peaks():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_4.nef")).read()
+    STREAM = read_test_data("ubi_4.nef", __file__)
 
     result = run_and_report(app, [], input=STREAM)
 
@@ -85,9 +86,9 @@ FORMAT %4d      %1s        %4s           %8.3f
 """
 
 
-def test_4peak_his_he(clear_cache):
+def test_4peak_his_he():
 
-    STREAM = open(path_in_test_data(__file__, "protonated_his.nef")).read()
+    STREAM = read_test_data("protonated_his.nef", __file__)
 
     result = run_and_report(app, [], input=STREAM)
 
@@ -126,9 +127,9 @@ FORMAT %4d      %1s        %4s           %8.3f
 """
 
 
-def test_4peak_cis_oxidised(clear_cache):
+def test_4peak_cis_oxidised():
 
-    STREAM = open(path_in_test_data(__file__, "oxidised_cys.nef")).read()
+    STREAM = read_test_data("oxidised_cys.nef", __file__)
 
     result = run_and_report(app, [], input=STREAM)
 
@@ -167,7 +168,7 @@ EXPECTED_OFFSET_1 = """
 """
 
 
-def test_4peaks_offset(clear_cache):
+def test_4peaks_offset():
     STREAM = open(path_in_test_data(__file__, "ubi_4_offset_1.nef")).read()
 
     result = run_and_report(app, [], input=STREAM)

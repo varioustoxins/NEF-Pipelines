@@ -2,7 +2,7 @@ import typer
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.mars.exporters.shifts import shifts
@@ -12,9 +12,9 @@ app.command()(shifts)
 
 
 def test_export_shifts_nef5_short():
-    stream = open(path_in_test_data(__file__, "sec5_short.neff")).read()
+    input = read_test_data("sec5_short.neff", __file__)
 
-    result = run_and_report(app, ["-"], input=stream)
+    result = run_and_report(app, ["-"], input=input)
 
     EXPECTED = """\
               H      N        CA      CA-1    CB      CB-1
@@ -30,9 +30,9 @@ def test_export_shifts_nef5_short():
 
 def test_export_shifts_pete_co():
 
-    stream = open(path_in_test_data(__file__, "short_co.neff")).read()
+    input = read_test_data("short_co.neff", __file__)
 
-    result = run_and_report(app, ["-"], input=stream)
+    result = run_and_report(app, ["-"], input=input)
 
     EXPECTED = """\
                    H        N  CA      CA-1    CB-1    CO       CO-1

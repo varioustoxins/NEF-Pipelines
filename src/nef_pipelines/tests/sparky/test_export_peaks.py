@@ -3,6 +3,7 @@ import typer
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.sparky.exporters.peaks import peaks
@@ -26,12 +27,14 @@ Assignment       w1       w2      Height  Volume
 
 """
 
+INPUT_UBI_PEAKS_SHORT_NEF = read_test_data("ubi_peaks_short.neff", __file__)
+
 
 def test_ppm_out_short():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
-
-    result = run_and_report(app, ["--file-name-template", "-"], input=STREAM)
+    result = run_and_report(
+        app, ["--file-name-template", "-"], input=INPUT_UBI_PEAKS_SHORT_NEF
+    )
 
     assert_lines_match(EXPECTED, result.stdout)
 
@@ -52,12 +55,10 @@ EXPECTED_SUPPRESS_ASSIGNMENT = """\
 
 def test_ppm_out_short_suppress_assigment():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
-
     result = run_and_report(
         app,
         ["--file-name-template", "-", "--suppress-column", "assignment"],
-        input=STREAM,
+        input=INPUT_UBI_PEAKS_SHORT_NEF,
     )
 
     assert_lines_match(EXPECTED_SUPPRESS_ASSIGNMENT, result.stdout)
@@ -80,10 +81,10 @@ Assignment       w1       w2        Volume
 
 def test_ppm_out_short_no_height():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
-
     result = run_and_report(
-        app, ["--file-name-template", "-", "--suppress-column", "height"], input=STREAM
+        app,
+        ["--file-name-template", "-", "--suppress-column", "height"],
+        input=INPUT_UBI_PEAKS_SHORT_NEF,
     )
 
     assert_lines_match(EXPECTED_NO_HEIGHT, result.stdout)
@@ -106,10 +107,10 @@ Assignment       w1       w2      Height
 
 def test_ppm_out_short_no_volume():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
-
     result = run_and_report(
-        app, ["--file-name-template", "-", "--suppress-column", "volume"], input=STREAM
+        app,
+        ["--file-name-template", "-", "--suppress-column", "volume"],
+        input=INPUT_UBI_PEAKS_SHORT_NEF,
     )
 
     assert_lines_match(EXPECTED_NO_VOLUME, result.stdout)
@@ -132,8 +133,6 @@ Assignment       w1       w2
 
 def test_ppm_out_short_no_height_or_volume():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
-
     result = run_and_report(
         app,
         [
@@ -144,15 +143,13 @@ def test_ppm_out_short_no_height_or_volume():
             "--suppress-column",
             "height",
         ],
-        input=STREAM,
+        input=INPUT_UBI_PEAKS_SHORT_NEF,
     )
 
     assert_lines_match(EXPECTED_NO_HEIGHT_OR_VOLUME, result.stdout)
 
 
 def test_ppm_out_short_no_height_or_volume_with_data():
-
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
 
     result = run_and_report(
         app,
@@ -163,7 +160,7 @@ def test_ppm_out_short_no_height_or_volume_with_data():
             "volume,height",
             "--add-data",
         ],
-        input=STREAM,
+        input=INPUT_UBI_PEAKS_SHORT_NEF,
     )
 
     assert_lines_match(EXPECTED_NO_HEIGHT_OR_VOLUME, result.stdout)

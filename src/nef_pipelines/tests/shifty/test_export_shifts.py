@@ -3,7 +3,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.shifty.exporters.shifts import shifts
@@ -21,9 +21,9 @@ EXPECTED = """\
 
 
 # noinspection PyUnusedLocal
-def test_3ab(clear_cache):
+def test_3ab():
 
-    input = open(path_in_test_data(__file__, "test_agv.neff")).read()
+    input = read_test_data("test_agv.neff", __file__)
     result = run_and_report(app, ["-"], input=input)
 
     assert_lines_match(EXPECTED, result.stdout)

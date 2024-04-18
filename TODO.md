@@ -25,3 +25,4 @@ lines marked with '!x' are current priorities
 * Fasta export - done
 * xEasy shifts - done
 release - done
+test_filter not committed

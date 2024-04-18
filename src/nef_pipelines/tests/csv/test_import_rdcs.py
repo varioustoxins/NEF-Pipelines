@@ -1,9 +1,11 @@
 import typer
+from pytest import fixture
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.csv.importers.rdcs import rdcs
@@ -12,15 +14,17 @@ app = typer.Typer()
 app.command()(rdcs)
 
 
+@fixture
+def INPUT_3A_AB_NEF():
+    return read_test_data("3a_ab.neff", __file__)
+
+
 # noinspection PyUnusedLocal
-def test_short_csv():
-    sequence_path = path_in_test_data(__file__, "3a_ab.neff")
+def test_short_csv(INPUT_3A_AB_NEF):
     csv_path = path_in_test_data(__file__, "short.csv")
 
-    nef_sequence = open(sequence_path, "r").read()
-
     args = [csv_path, "--chain-code", "AAAA"]
-    result = run_and_report(app, args, input=nef_sequence)
+    result = run_and_report(app, args, input=INPUT_3A_AB_NEF)
 
     EXPECTED = """\
         save_nef_rdc_restraint_list_rdcs
@@ -71,14 +75,11 @@ def test_short_csv():
     assert_lines_match(EXPECTED, result)
 
 
-def test_short_complete_csv():
-    sequence_path = path_in_test_data(__file__, "3a_ab.neff")
+def test_short_complete_csv(INPUT_3A_AB_NEF):
     csv_path = path_in_test_data(__file__, "short_complete.csv")
 
-    nef_sequence = open(sequence_path, "r").read()
-
     args = [csv_path]
-    result = run_and_report(app, args, input=nef_sequence)
+    result = run_and_report(app, args, input=INPUT_3A_AB_NEF)
 
     EXPECTED = """\
         save_nef_rdc_restraint_list_rdcs

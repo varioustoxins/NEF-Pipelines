@@ -4,6 +4,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrview.importers.peaks import peaks
@@ -13,15 +14,15 @@ MOLECULAR_SYSTEM_NMRVIEW = "nef_spectrum_nmrview"
 app = typer.Typer()
 app.command()(peaks)
 
-with open(path_in_test_data(__file__, "nmrview_expected_4aa.txt")) as f:
-    EXPECTED_4AA = f.read()
+
+EXPECTED_4AA = read_test_data("nmrview_expected_4aa.txt", __file__)
 
 
 # noinspection PyUnusedLocal
-def test_4_peaks(clear_cache):
+def test_4_peaks():
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
-        sequence_stream = sequence_stream.read()
+
+    sequence_stream = read_test_data("4peaks_seq.nef", __file__)
 
     args = ["--axis", "1H.1H.15N", peaks_path]
     result = run_and_report(app, args, input=sequence_stream)
@@ -31,13 +32,12 @@ def test_4_peaks(clear_cache):
     assert_lines_match(EXPECTED_4AA, result)
 
 
-def test_3peaks_bad_axis_codes(clear_cache):
+def test_3peaks_bad_axis_codes():
     # reading stdin doesn't work in pytest so for a clean header
     # TODO move to conftest.py
     peaks_path = path_in_test_data(__file__, "4peaks.xpk")
 
-    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
-        sequence_stream = sequence_stream.read()
+    sequence_stream = read_test_data("4peaks_seq.nef", __file__)
 
     args = [
         "--axis",
@@ -118,8 +118,7 @@ EXPECTED_JOE_CLIC = """\
 def test_joe_bad_sweep_widths():
     peaks_path = path_in_test_data(__file__, "joe_clic.xpk")
 
-    with open(path_in_test_data(__file__, "4peaks_seq.nef")) as sequence_stream:
-        sequence_stream = sequence_stream.read()
+    sequence_stream = read_test_data("4peaks_seq.nef", __file__)
 
     command = [
         "--axis",

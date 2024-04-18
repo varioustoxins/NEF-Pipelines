@@ -5,6 +5,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_loop,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.sparky.importers.peaks import peaks
@@ -44,16 +45,14 @@ loop_
 stop_
 """
 
+DATA_SEQUENCE = read_test_data("sparky_manual_basic_sequence.nef", __file__)
+
 
 def test_basic():
 
     path = path_in_test_data(__file__, "sparky_manual_basic.peaks")
 
-    data_sequence = open(
-        path_in_test_data(__file__, "sparky_manual_basic_sequence.nef")
-    ).read()
-
-    result = run_and_report(app, ["--molecule-type", "dna", path], input=data_sequence)
+    result = run_and_report(app, ["--molecule-type", "dna", path], input=DATA_SEQUENCE)
 
     loop = isolate_loop(
         result.stdout, "nef_nmr_spectrum_sparky_sparky_manual_basic", "nef_peak"
@@ -79,11 +78,7 @@ def test_basic_no_sequence_requires_sequence():
 
     path = path_in_test_data(__file__, "sparky_manual_full_no_sequence.peaks")
 
-    sequence = open(
-        path_in_test_data(__file__, "sparky_manual_basic_sequence.nef")
-    ).read()
-
-    result = run_and_report(app, [path], input=sequence)
+    result = run_and_report(app, [path], input=DATA_SEQUENCE)
 
     loop = isolate_loop(
         result.stdout,

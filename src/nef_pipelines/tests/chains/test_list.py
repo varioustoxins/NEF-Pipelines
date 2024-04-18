@@ -2,7 +2,7 @@ import typer
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.chains.list import list as list_app
@@ -12,11 +12,11 @@ app.command()(list_app)
 
 
 # noinspection PyUnusedLocal
-def test_frame_basic(clear_cache):
+def test_frame_basic():
 
-    path = path_in_test_data(__file__, "multi_chain.nef")
+    input_data = read_test_data("multi_chain.nef", __file__)
 
-    result = run_and_report(app, [], input=open(path).read())
+    result = run_and_report(app, [], input=input_data)
 
     EXPECTED = "A B C"
 

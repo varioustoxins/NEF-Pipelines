@@ -5,6 +5,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.xeasy.importers.peaks import peaks
@@ -93,7 +94,7 @@ save_
 
 def test_basic():
 
-    data_sequence = open(path_in_test_data(__file__, "basic_sequence.nef")).read()
+    data_sequence = read_test_data("basic_sequence.nef", __file__)
     peaks_path = path_in_test_data(__file__, "basic.peaks")
 
     result = run_and_report(app, [peaks_path], input=data_sequence)

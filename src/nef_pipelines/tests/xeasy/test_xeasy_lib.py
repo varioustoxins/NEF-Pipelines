@@ -9,7 +9,7 @@ from nef_pipelines.lib.structures import (
     SequenceResidue,
     ShiftData,
 )
-from nef_pipelines.lib.test_lib import path_in_test_data
+from nef_pipelines.lib.test_lib import path_in_test_data, read_test_data
 from nef_pipelines.transcoders.xeasy.xeasy_lib import (
     parse_peaks,
     parse_sequence,
@@ -33,14 +33,14 @@ EXPECTED_SEQUENCE = [
 
 
 def test_sequence_basic():
-    sequence = open(path_in_test_data(__file__, "basic.seq")).readlines()
+    sequence = read_test_data("basic.seq", __file__).split("\n")
 
     result = parse_sequence(sequence)
     assert result == EXPECTED_SEQUENCE
 
 
 def test_sequence_basic_commented():
-    sequence = open(path_in_test_data(__file__, "basic.seq")).readlines()
+    sequence = read_test_data("basic.seq", __file__).split("\n")
     sequence = ["#a comment", *sequence]
 
     result = parse_sequence(sequence)

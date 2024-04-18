@@ -12,6 +12,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrpipe.importers.shifts import shifts as shifts_app
@@ -25,7 +26,7 @@ app.command()(shifts_app)
 
 SHIFTS_NMRPIPE = "nef_chemical_shift_list_nmrpipe"
 
-HEADER = open(path_in_test_data(__file__, "test_header_entry.txt")).read()
+HEADER = read_test_data("test_header_entry.txt", __file__)
 
 
 def test_lib_parse_shifts():

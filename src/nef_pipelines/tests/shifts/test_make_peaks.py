@@ -5,7 +5,7 @@ from nef_pipelines.lib.test_lib import (
     NOQA_E501,
     assert_lines_match,
     isolate_frame,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.shifts.make_peaks import make_peaks
@@ -81,26 +81,30 @@ save_
 )
 
 
+INPUT_UBI_SHORT_NEF = read_test_data("ubiquitin_short.nef", __file__)
+
+
 # noinspection PyUnusedLocal
 def test_ubi_short():
 
-    input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
-    result = run_and_report(app, [], input=input)
+    result = run_and_report(app, [], input=INPUT_UBI_SHORT_NEF)
 
     new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_N_HSQC")
     assert_lines_match(EXPECTED, new_peaks_frame)
 
 
 def test_ubi_short_different_frame_name():
-    input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
-    result = run_and_report(app, ["--name-template", "wibble_{spectrum}"], input=input)
+    result = run_and_report(
+        app, ["--name-template", "wibble_{spectrum}"], input=INPUT_UBI_SHORT_NEF
+    )
 
     isolate_frame(result.stdout, "nef_nmr_spectrum_wibble_N_HSQC")
 
 
 def test_ubi_short_different_spectrometer_frequency():
-    input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
-    result = run_and_report(app, ["--spectrometer-frequency", "800"], input=input)
+    result = run_and_report(
+        app, ["--spectrometer-frequency", "800"], input=INPUT_UBI_SHORT_NEF
+    )
 
     EXPECTED_800 = EXPECTED.replace("60.833", "81.095")
     EXPECTED_800 = EXPECTED_800.replace("600.123", "800.000")
@@ -189,8 +193,7 @@ save_
 
 def test_ubi_short_triple():
 
-    input = open(path_in_test_data(__file__, "ubiquitin_short.nef")).read()
-    result = run_and_report(app, ["--spectra", "HNCA"], input=input)
+    result = run_and_report(app, ["--spectra", "HNCA"], input=INPUT_UBI_SHORT_NEF)
 
     print(result.stdout)
     new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_HNCA")

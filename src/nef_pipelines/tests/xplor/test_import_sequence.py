@@ -41,7 +41,7 @@ save_"""
 
 
 # noinspection PyUnusedLocal
-def test_3ab(clear_cache):
+def test_3ab():
 
     path = path_in_test_data(__file__, "3a_ab.psf")
     result = run_and_report(app, [path])
@@ -51,7 +51,7 @@ def test_3ab(clear_cache):
     assert_lines_match(EXPECTED_3A_AB, result)
 
 
-def test_no_sequence_files(clear_cache):
+def test_no_sequence_files():
 
     result = run_and_report(app, [], expected_exit_code=1)
 

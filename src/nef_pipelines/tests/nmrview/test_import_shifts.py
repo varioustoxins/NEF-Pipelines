@@ -12,6 +12,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.nmrview.importers.shifts import shifts
@@ -138,22 +139,21 @@ EXPECTED_PPM_OUT_SHORT = """\
 
 
 # # noinspection PyUnusedLocal
-def test_ppm_out_short_no_sequence(clear_cache):
+def test_ppm_out_short_no_sequence():
 
-    STREAM = open(path_in_test_data(__file__, "header.nef")).read()
+    STREAM = read_test_data("header.nef", __file__)
 
     path = path_in_test_data(__file__, "ppm_short.out")
     result = run_and_report(app, [path], expected_exit_code=1, input=STREAM)
 
-    print(result.stdout)
     assert "ERROR" in result.stdout
     assert "did you read a sequence?" in result.stdout
 
 
 # noinspection PyUnusedLocal
-def test_ppm_out_short(clear_cache):
+def test_ppm_out_short():
 
-    STREAM = open(path_in_test_data(__file__, "ppm_short_seq.nef")).read()
+    STREAM = read_test_data("ppm_short_seq.nef", __file__)
 
     path = path_in_test_data(__file__, "ppm_short.out")
 

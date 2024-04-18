@@ -3,7 +3,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.frames.delete import delete
@@ -44,15 +44,13 @@ EXPECTED_DELETE_CATEGORY = """\
         save_
     """
 
+INPUT_PALES_TEST_1_NEF = read_test_data("pales_test_1.nef", __file__)
+
 
 # noinspection PyUnusedLocal
-def test_delete_type(clear_cache):
+def test_delete_type():
 
-    path = path_in_test_data(__file__, "pales_test_1.nef")
-
-    input_stream = open(path).read()
-
-    result = run_and_report(app, ["-c", "mol"], input=input_stream)
+    result = run_and_report(app, ["-c", "mol"], input=INPUT_PALES_TEST_1_NEF)
 
     assert_lines_match(EXPECTED_DELETE_CATEGORY, result.stdout)
 
@@ -85,12 +83,8 @@ EXPECTED_DELETE_NAME = """\
 
 
 # noinspection PyUnusedLocal
-def test_delete_name(clear_cache):
+def test_delete_name():
 
-    path = path_in_test_data(__file__, "pales_test_1.nef")
-
-    input_stream = open(path).read()
-
-    result = run_and_report(app, ["test_1"], input=input_stream)
+    result = run_and_report(app, ["test_1"], input=INPUT_PALES_TEST_1_NEF)
 
     assert_lines_match(EXPECTED_DELETE_NAME, result.stdout)

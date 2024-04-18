@@ -6,6 +6,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.talos.importers.order_parameters import order_parameters
@@ -50,12 +51,12 @@ save_
 )
 
 
-def test_ss_4(clear_cache):
+def test_ss_4():
 
     pred_4_path = path_in_test_data(__file__, "predS2_4.tab")
     pred_4_nef_path = path_in_test_data(__file__, "pred_4_seq.nef")
 
-    STREAM = open(pred_4_nef_path).read()
+    STREAM = read_test_data(pred_4_nef_path)
 
     result = run_and_report(
         app,

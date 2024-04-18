@@ -4,6 +4,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_loop,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.transcoders.mars.importers.peaks import peaks
@@ -145,7 +146,7 @@ stop_
 
 def test_import_peaks():
 
-    sequence_stream = open(path_in_test_data(__file__, "ubi_seq.nef")).read()
+    sequence_stream = read_test_data("ubi_seq.nef", __file__)
 
     filenames = "sparky_all.out sparky_CA-1.out sparky_CA.out".split()
 

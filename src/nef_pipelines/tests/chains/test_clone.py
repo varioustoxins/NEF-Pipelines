@@ -4,7 +4,7 @@ from typer.testing import CliRunner
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_frame,
-    path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.chains.clone import clone
@@ -13,13 +13,13 @@ runner = CliRunner()
 app = typer.Typer()
 app.command()(clone)
 
+INPUT_3AA_NEF = read_test_data("3aa.nef", __file__)
+
 
 # noinspection PyUnusedLocal
-def test_clone_basic(clear_cache):
+def test_clone_basic():
 
-    INPUT = open(path_in_test_data(__file__, "3aa.nef")).read()
-
-    result = run_and_report(app, ["A", "2"], input=INPUT)
+    result = run_and_report(app, ["A", "2"], input=INPUT_3AA_NEF)
 
     EXPECTED = """\
             save_nef_molecular_system
@@ -54,11 +54,9 @@ def test_clone_basic(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_bad_count(clear_cache):
+def test_bad_count():
 
-    INPUT = open(path_in_test_data(__file__, "3aa.nef")).read()
-
-    result = run_and_report(app, ["A", "0"], input=INPUT, expected_exit_code=1)
+    result = run_and_report(app, ["A", "0"], input=INPUT_3AA_NEF, expected_exit_code=1)
 
     assert result.exit_code == 1
 
@@ -66,21 +64,17 @@ def test_bad_count(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_bad_target(clear_cache):
+def test_bad_target():
 
-    INPUT = open(path_in_test_data(__file__, "3aa.nef")).read()
-
-    result = run_and_report(app, ["B", "1"], input=INPUT, expected_exit_code=1)
+    result = run_and_report(app, ["B", "1"], input=INPUT_3AA_NEF, expected_exit_code=1)
 
     assert "couldn't find target chain B" in result.stdout
 
 
 # noinspection PyUnusedLocal
-def test_custom_chains(clear_cache):
+def test_custom_chains():
 
-    INPUT = open(path_in_test_data(__file__, "3aa.nef")).read()
-
-    result = run_and_report(app, ["A", "2", "--chains", "D,E"], input=INPUT)
+    result = run_and_report(app, ["A", "2", "--chains", "D,E"], input=INPUT_3AA_NEF)
 
     EXPECTED = """\
             save_nef_molecular_system
@@ -115,9 +109,9 @@ def test_custom_chains(clear_cache):
 
 
 # noinspection PyUnusedLocal
-def test_clone_chain_clash(clear_cache):
+def test_clone_chain_clash():
 
-    INPUT = open(path_in_test_data(__file__, "3aa_x3.nef")).read()
+    INPUT = read_test_data("3aa_x3.nef", __file__)
 
     result = run_and_report(app, ["A", "2"], input=INPUT)
 
