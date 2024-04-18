@@ -118,7 +118,7 @@ def pipe(entry: Entry, target_chain_code: str, frame_selector: str) -> List[str]
         if shift.atom.residue.residue_name in TRANSLATIONS_3_1[MoleculeTypes.PROTEIN]
     ]
 
-    with (redirect_stdout(StringIO()) as capture):
+    with redirect_stdout(StringIO()) as capture:
         print(f"REMARK Chemical shift table for {entry.entry_id}")
         print()
         print(f"DATA CHAIN {target_chain_code}")

@@ -234,6 +234,21 @@ def _get_residues_from_string(string):
     return result
 
 
+# TODO: remove when python 3.8 no longer supported
+def _removeprefix(target: str, prefix: str) -> str:
+    if target.startswith(prefix):
+        return target[len(prefix) :]
+    else:
+        return target
+
+
+def _removesuffix(target: str, suffix: str) -> str:
+    if target.endswith(suffix):
+        return target[: -len(suffix)]
+    else:
+        return target
+
+
 def _parse_line(
     line_info, heading_indices, chain_code, prefix_to_strip, parse_residues
 ):
@@ -251,7 +266,7 @@ def _parse_line(
 
                 value = float(value)
 
-                pseudo_residue = pseudo_residue.removeprefix(prefix_to_strip)
+                pseudo_residue = _removeprefix(pseudo_residue, prefix_to_strip)
 
                 (
                     pseudo_pre_chars,
@@ -290,7 +305,7 @@ def _split_heading(heading: str):
 
     offset = ""
     if heading.endswith("-1"):
-        heading = heading.removesuffix("-1")
+        heading = _removesuffix(heading, "-1")
         offset = "-1"
     return heading, offset
 
@@ -311,9 +326,9 @@ def _warn_multiple_residues(residue_names, line_info):
 
 def _split_pseudo_residue(pseudo_residue):
     first_characters = _get_starting_alpha(pseudo_residue)
-    pseudo_residue = pseudo_residue.removeprefix(first_characters)
+    pseudo_residue = _removeprefix(pseudo_residue, first_characters)
     numbers = get_starting_number(pseudo_residue)
-    last_characters = pseudo_residue.removeprefix(numbers)
+    last_characters = _removeprefix(pseudo_residue, numbers)
 
     return first_characters, numbers, last_characters
 
