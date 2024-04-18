@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from io import StringIO
 from itertools import zip_longest
 from pathlib import Path
-from typing import IO, AnyStr, List, Optional
+from typing import IO, AnyStr, List, Optional, Tuple
 
 from click.testing import Result
 from pynmrstar import Entry
@@ -14,8 +14,47 @@ from typer.testing import CliRunner
 NOQA_E501 = "# noqa: E501"
 
 
-def run_and_read_pytest(args):
+def read_test_data(file_path: str, root_directory: Optional[str] = None) -> str:
+    """
+    Reads the content of a test data file from standard locations.
 
+    This function reads the content of a test data file located at the given file path.
+    If a root directory is provided, the function will consider the file path to be relative to this directory
+    using the function path_in_test_data for lookup.
+
+    Args:
+        file_path (str): The path to the test data file.
+        root_directory (Optional[str], optional): The root directory from which the file path is considered to be
+                                                  relative.
+                                                  If None, the file path is considered to be absolute.
+
+    Returns:
+        str: The content of the test data file.
+    """
+
+    file_path = (
+        path_in_test_data(root_directory, file_path) if root_directory else file_path
+    )
+    with open(file_path) as sequence_stream:
+        sequence_stream = sequence_stream.read()
+    return sequence_stream
+
+
+def run_and_read_pytest(args: List[str]) -> Tuple[int, str, str]:
+    """
+    Runs pytest with the provided arguments and captures the output.
+
+    This function runs pytest with the given arguments and captures the return code,
+    standard output, and standard error output. It temporarily redirects sys.stdout
+    and sys.stderr to capture the output.
+
+    Args:
+        args (List[str]): The arguments to pass to pytest.
+
+    Returns:
+        Tuple[int, str, str]: the return code, standard output,
+        and standard error output from pytest.
+    """
     from pytest import main
 
     original_output = sys.stdout
