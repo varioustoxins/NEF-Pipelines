@@ -10,6 +10,7 @@ from fyeah import f
 from pynmrstar import Entry
 from requests.exceptions import HTTPError
 from strenum import LowercaseStrEnum
+from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_exit_error,
@@ -28,6 +29,30 @@ from nef_pipelines.transcoders.nmrstar.importers.shifts import pipe as shift_pip
 from nef_pipelines.transcoders.nmrstar.nmrstar_lib import StereoAssignmentHandling
 
 app = typer.Typer()
+
+BMRB_URL_TEMPLATE = "https://bmrb.io/ftp/pub/bmrb/entry_directories/bmr{entry_number}/bmr{entry_number}_3.str"
+
+
+class EntrySource(LowercaseStrEnum):
+    FILE = auto()
+    WEB = auto()
+    AUTO = auto()
+
+
+SHORTCUTS = {
+    "UBIQUITIN": "bmr5387",
+    "GB1": "bmr7280",
+    "GB3": "bmr25910",
+    "MBP": "bmr4354",
+    "MSG": "bmr5471",
+    "INSULIN": "bmr1000",
+}
+
+SHORTCUT_ENTRYS = {name: id.lower()[3:] for name, id in SHORTCUTS.items()}
+SHORTCUT_URLS = {
+    name: f(BMRB_URL_TEMPLATE) for name, entry_number in SHORTCUT_ENTRYS.items()
+}
+SHORTCUT_NAMES = ", ".join({name.lower(): name for name in SHORTCUTS.keys()})
 
 NO_CHAIN_START_HELP = """\
 don't include the start chain link type on a chain for the first residue [linkage will be
@@ -48,23 +73,17 @@ STEREO_HELP = """\
     - auto: use as assigned if some geminal stereo assignments are present, otherwise assume all are ambiguous
 """
 
-BMRB_URL_TEMPLATE = "https://bmrb.io/ftp/pub/bmrb/entry_directories/bmr{entry_number}/bmr{entry_number}_3.str"
 
-FILE_PATH_HELP = """\
-the file to read, if it is of the form bmr<NUMBER> or just a number  or appears to be a url
-the program will attempt to fetch the entry from the bmrb or the web first before looking
+FILE_PATH_HELP = f"""\
+the file to read, if it is is one of the shortcuts {SHORTCUT_NAMES}, of the form bmr<NUMBER> or is just a number or
+appears to be a url the program will attempt to fetch the entry from the bmrb or the web first before looking
 for a file on disc unless this behaviour overridden by the --source option
 """
 
 
-class EntrySource(LowercaseStrEnum):
-    FILE = auto()
-    WEB = auto()
-    AUTO = auto()
-
-
 @import_app.command()
 def project(
+    ctx: typer.Context,
     chain_codes: List[str] = typer.Option(
         [],
         "--chains",
@@ -96,9 +115,23 @@ def project(
         BMRB_URL_TEMPLATE,
         help=f"template for the bmrb url [default {BMRB_URL_TEMPLATE}]",
     ),
-    file_path: str = typer.Argument(..., help=", metavar=<NMR-STAR-FILE>"),
+    list_shortcuts: bool = typer.Option(
+        False, "--list-shortcuts", help="list the available shortcuts and exit"
+    ),
+    file_path: str = typer.Argument(None, help=FILE_PATH_HELP),
 ):
     """-  convert as much as possible from an NMR-STAR file to NEF [shifts & sequences] [alpha]"""
+
+    if list_shortcuts:
+        _list_shortcuts_and_exit()
+
+    file_path = (
+        SHORTCUTS[file_path.upper()] if file_path.upper() in SHORTCUTS else file_path
+    )
+
+    if not file_path:
+        typer.echo(ctx.get_help())
+        exit_error("missing file path argument")
 
     chain_codes = parse_comma_separated_options(chain_codes)
     if not chain_codes:
@@ -147,6 +180,18 @@ def project(
     )
 
     print(entry)
+
+
+def _list_shortcuts_and_exit():
+    print("The available shortcuts are:\n", file=sys.stderr)
+    shortcuts = [
+        [shortcut.lower(), entry, SHORTCUT_URLS[shortcut]]
+        for shortcut, entry in SHORTCUTS.items()
+    ]
+    HEADERS = ["name", "entry id.", "url"]
+    print(tabulate(shortcuts, headers=HEADERS), file=sys.stderr)
+    print("\nexiting...", file=sys.stderr)
+    sys.exit(0)
 
 
 def pipe(
