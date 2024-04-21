@@ -114,7 +114,7 @@ def list(
             print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
         print()
 
-        frames = select_frames(entry, selector_type, filters)
+        frames = select_frames(entry, filters, selector_type)
 
         if verbose == 0:
             frame_names = [frame.name for frame in frames]

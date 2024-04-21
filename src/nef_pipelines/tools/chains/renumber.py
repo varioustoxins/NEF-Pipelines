@@ -79,7 +79,7 @@ def renumber(
 
         chain_offsets = chain_starts_to_offsets(molecular_system, chain_offsets)
 
-    frames = select_frames(entry, selector_type, frame_selectors)
+    frames = select_frames(entry, frame_selectors, selector_type)
 
     offset_chains_in_frames(frames, chain_offsets, starts)
 

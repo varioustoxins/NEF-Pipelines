@@ -61,7 +61,7 @@ def rename(
     changes = 0
     changed_frames = OrderedSet()
 
-    frames_to_process = select_frames(entry, selector_type, frame_selectors)
+    frames_to_process = select_frames(entry, frame_selectors, selector_type)
 
     for save_frame in frames_to_process:
         for loop in save_frame.loop_iterator():

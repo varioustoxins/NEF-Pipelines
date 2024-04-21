@@ -203,7 +203,7 @@ def unassign(
 
     frame_selectors = {
         (frame.category, frame.name)
-        for frame in select_frames(entry, selector_type, frame_selectors)
+        for frame in select_frames(entry, frame_selectors, selector_type)
     }
 
     entry = pipe(entry, frame_selectors, targets, sequence_mode, chain_mappings)
@@ -465,9 +465,9 @@ def _map_assignments(
                             if new_sequence_code in sequence_code_map:
                                 continue
 
-                            possible_new_sequence_codes[
-                                used_sequence_code
-                            ] = new_sequence_code
+                            possible_new_sequence_codes[used_sequence_code] = (
+                                new_sequence_code
+                            )
                             break
 
                 sequence_code_map.update(possible_new_sequence_codes)

@@ -350,7 +350,7 @@ def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namesp
 
 # TODO this partially overlaps with select_frames_by_name in this file, combine and simplify!
 def select_frames(
-    entry: Entry, selector_type: SelectionType, filters: List[str]
+    entry: Entry, filters: List[str], selector_type: SelectionType = SelectionType.ANY
 ) -> List[Saveframe]:
     """
     select a list of frames by name of either category or name
