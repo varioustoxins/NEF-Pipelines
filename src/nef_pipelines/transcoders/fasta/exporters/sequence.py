@@ -67,7 +67,7 @@ def pipe(entry, chain_codes, output_file):
     records = []
     for record in fasta_records.values():
         records.append("\n".join(record))
-    print('\n\n'.join(records), file=file_h)
+    print("\n\n".join(records), file=file_h)
 
     if output_file != str(STDOUT):
         file_h.close()
