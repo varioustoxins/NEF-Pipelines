@@ -72,8 +72,7 @@ def pipe(entry, chain_codes, output_file):
     if output_file != str(STDOUT):
         file_h.close()
 
-        if not sys.stdout.isatty():
-            print(entry)
+        print(entry)
 
 
 def fasta_records_from_entry(entry, chain_codes):
