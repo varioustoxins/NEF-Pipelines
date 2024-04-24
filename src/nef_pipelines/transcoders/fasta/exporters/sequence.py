@@ -53,6 +53,11 @@ def sequence(
 
     output_file = f"{entry.entry_id}.fasta" if output_file is None else output_file
 
+    pipe(entry, chain_codes, output_file)
+
+
+def pipe(entry, chain_codes, output_file):
+
     fasta_records = fasta_records_from_entry(entry, chain_codes)
 
     # TODO: move to utility function and use in all outputs
