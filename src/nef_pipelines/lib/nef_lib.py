@@ -352,18 +352,24 @@ def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namesp
 
 # TODO this partially overlaps with select_frames_by_name in this file, combine and simplify!
 def select_frames(
-    entry: Entry, filters: List[str], selector_type: SelectionType = SelectionType.ANY
+    entry: Entry,
+    filters: Union[str, List[str]],
+    selector_type: SelectionType = SelectionType.ANY,
 ) -> List[Saveframe]:
     """
     select a list of frames by name of either category or name
 
     :param entry: the entry in which frames are looked for
+    :param filters: a string or list of strings to use as filters as defined by fnmatch
     :param selector_type: the matching type frame.name or frame.category or both [default, search order
            frame.name frame.category]
-    :param filters: a list of strings to use as filters as defined by fnmatch
     :return: a list of selected saveframes
     """
 
+    if isinstance(filters, str):
+        filters = [
+            filters,
+        ]
     if not filters:
         filters = ["*"]
 
