@@ -69,7 +69,7 @@ def pipe(entry, chain_codes, output_file):
         records.append("\n".join(record))
     print('\n\n'.join(records), file=file_h)
 
-    if output_file != STDOUT:
+    if output_file != str(STDOUT):
         file_h.close()
 
         if not sys.stdout.isatty():
