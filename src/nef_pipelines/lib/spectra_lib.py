@@ -6,6 +6,8 @@ from strenum import StrEnum
 
 from nef_pipelines.lib.isotope_lib import Isotope
 
+FAKE_SPECTROMETER_FREQUENCY_600 = 600.12345678
+
 
 class NMRMassClass(Enum):
     IDP = auto()

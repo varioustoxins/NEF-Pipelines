@@ -22,6 +22,7 @@ from nef_pipelines.lib.spectra_lib import (
     EXPERIMENT_CLASSIFICATION_TO_SYNONYM,
     EXPERIMENT_GROUPS,
     EXPERIMENT_INFO,
+    FAKE_SPECTROMETER_FREQUENCY_600,
     SPECTRUM_TYPE_TO_CLASSIFICATION,
     ExperimentType,
     PeakInfo,
@@ -38,7 +39,6 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.tools.shifts import shifts_app
 
-FAKE_SPECTROMETER_FREQUENCY_600 = 600.12345678
 SPECTRUM_NAME_TEMPLATE = "synthetic_{spectrum}"
 
 SHIFT_FRAMES_HELP = """\
