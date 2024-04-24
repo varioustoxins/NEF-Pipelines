@@ -15,7 +15,7 @@ from nef_pipelines.lib.sequence_lib import (
     translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import STDOUT
+from nef_pipelines.lib.util import STDIN, STDOUT
 from nef_pipelines.transcoders.fasta import export_app
 
 # TODO: we should be able to output *s on the ends of sequences and comments
@@ -37,7 +37,7 @@ def sequence(
         metavar="<CHAIN-CODE>",
     ),
     in_file: Path = typer.Option(
-        None, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
+        STDIN, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
     output_file: str = typer.Argument(
         None,
