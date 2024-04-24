@@ -64,8 +64,10 @@ def pipe(entry, chain_codes, output_file):
     file_h = sys.stdout if output_file == str(STDOUT) else open(output_file, "w")
 
     # TODO we ought to output to multiple files witha template
+    records = []
     for record in fasta_records.values():
-        print("\n\n".join(record), file=file_h)
+        records.append("\n".join(record))
+    print('\n\n'.join(records), file=file_h)
 
     if output_file != STDOUT:
         file_h.close()
