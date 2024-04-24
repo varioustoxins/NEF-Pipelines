@@ -24,6 +24,8 @@ from nef_pipelines.lib.util import (
     script_name,
 )
 
+NEF_PIPELINES_PREFIX = "nefpls"
+
 DEFAULT_INCREMENT_SEPARATOR = "::"
 DEFAULT_INCREMENT_END = ""
 

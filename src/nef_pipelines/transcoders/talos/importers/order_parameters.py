@@ -6,6 +6,7 @@ from fyeah import f
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import (
+    NEF_PIPELINES_PREFIX,
     UNUSED,
     create_nef_save_frame,
     read_file_or_exit,
@@ -26,8 +27,8 @@ FRAME_NAME_HELP = """\
                         default is {chain_code}_{element_1}{isotope_number_1}_{element_2}{isotope_number_2}
                     """
 
-NEF_PIPELINES = "nefpls"
-PIPELINES_ORDER_DATA_CATEGORY = f"{NEF_PIPELINES}_order_data"
+
+PIPELINES_ORDER_DATA_CATEGORY = f"{NEF_PIPELINES_PREFIX}_order_data"
 DEFAULT_SEPARATOR = "::"
 DEFAULT_END = ""
 
@@ -119,7 +120,7 @@ def pipe(
         for tag, value in extra_tags.items():
             frame.add_tag(tag, value)
 
-        data_loop = Loop.from_scratch(f"{NEF_PIPELINES}_order_values")
+        data_loop = Loop.from_scratch(f"{NEF_PIPELINES_PREFIX}_order_values")
 
         value_types = set()
         for value in values.values():
