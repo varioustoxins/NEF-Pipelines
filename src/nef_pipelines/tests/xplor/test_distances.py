@@ -18,7 +18,8 @@ def test_2_distances():
     sequence_path = path_in_test_data(__file__, "3a_ab.neff")
     dihedrals_path = path_in_test_data(__file__, "test_2_distances.tbl")
 
-    nef_sequence = open(sequence_path, "r").read()
+    with open(sequence_path, "r") as fh:
+        nef_sequence = fh.read()
 
     args = [dihedrals_path]
     result = run_and_report(app, args, input=nef_sequence)
@@ -65,7 +66,8 @@ def test_2_distances_bad():
     sequence_path = path_in_test_data(__file__, "3a_ab.neff")
     distances_path = path_in_test_data(__file__, "test_2_distances_bad.tbl")
 
-    nef_sequence = open(sequence_path, "r").read()
+    with open(sequence_path, "r") as fh:
+        nef_sequence = fh.read()
 
     args = [distances_path]
     result = run_and_report(app, args, input=nef_sequence, expected_exit_code=1)
@@ -78,7 +80,8 @@ def test_2_dihstances_no_segids():
     sequence_path = path_in_test_data(__file__, "3a_ab.neff")
     distances_path = path_in_test_data(__file__, "test_2_distances_no_segids.tbl")
 
-    nef_sequence = open(sequence_path, "r").read()
+    with open(sequence_path, "r") as fh:
+        nef_sequence = fh.read()
 
     args = [distances_path, "--chains", "AAAA"]
     result = run_and_report(app, args, input=nef_sequence)
@@ -125,7 +128,8 @@ def test_2_distances_overriding_segids():
     sequence_path = path_in_test_data(__file__, "3a_ab.neff")
     distances_path = path_in_test_data(__file__, "test_2_distances.tbl")
 
-    nef_sequence = open(sequence_path, "r").read()
+    with open(sequence_path, "r") as fh:
+        nef_sequence = fh.read()
 
     args = [distances_path, "--chains", "BBBB", "--use-chains"]
     result = run_and_report(app, args, input=nef_sequence)

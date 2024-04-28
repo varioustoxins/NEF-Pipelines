@@ -169,7 +169,8 @@ EXPECTED_OFFSET_1 = """
 
 
 def test_4peaks_offset():
-    STREAM = open(path_in_test_data(__file__, "ubi_4_offset_1.nef")).read()
+    with open(path_in_test_data(__file__, "ubi_4_offset_1.nef")) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(app, [], input=STREAM)
 

@@ -118,9 +118,8 @@ def test_parse_dihedral():
 
 def test_read_multiple_dihedral_restraints():
 
-    TEST_DATA = open(path_in_test_data(__file__, "test_2_dihedrals.tbl")).read()
-
-    # print(TEST_DATA)
+    with open(path_in_test_data(__file__, "test_2_dihedrals.tbl")) as fh:
+        TEST_DATA = fh.read()
 
     result = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(TEST_DATA)
 
@@ -200,7 +199,8 @@ def test_read_multiple_dihedral_restraints():
 
 def test_read_3_dihedral_restraints_incomplete():
 
-    TEST_DATA = open(path_in_test_data(__file__, "test_2_dihedrals.tbl")).read()
+    with open(path_in_test_data(__file__, "test_2_dihedrals.tbl")) as fh:
+        TEST_DATA = fh.read()
 
     TEST_DATA = f"""\
         {TEST_DATA}
@@ -217,7 +217,8 @@ def test_read_3_dihedral_restraints_incomplete():
 
 def test_read_multiple_noe_restraints():
 
-    TEST_DATA = open(path_in_test_data(__file__, "test_2_noes.tbl")).read()
+    with open(path_in_test_data(__file__, "test_2_noes.tbl")) as fh:
+        TEST_DATA = fh.read()
 
     result = _distance_restraints.ignore(XPLOR_COMMENT).parseString(TEST_DATA)
 
@@ -338,7 +339,8 @@ def test_convert_selection_to_selection_expressions_double_sub_selection():
 def test_get_approximate_restraint():
     dihedrals_path = path_in_test_data(__file__, "test_2_dihedrals.tbl")
 
-    dihdedral_restraints = open(dihedrals_path, "r").read()
+    with open(dihedrals_path, "r") as fh:
+        dihdedral_restraints = fh.read()
 
     result = _get_approximate_restraint_strings(dihdedral_restraints)
 
@@ -367,7 +369,8 @@ def test_get_approximate_restraint():
 def test_get_single_atom_selection_dihderal_restraint():
     dihedrals_path = path_in_test_data(__file__, "test_2_dihedrals.tbl")
 
-    dihdedral_restraints = open(dihedrals_path, "r").read()
+    with open(dihedrals_path, "r") as fh:
+        dihdedral_restraints = fh.read()
 
     xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
         dihdedral_restraints

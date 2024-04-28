@@ -100,7 +100,8 @@ def test_ss_4_first_resid_2():
     pred_4_path = path_in_test_data(__file__, "predSS_4_first_resid_2.tab")
     pred_4_nef_path = path_in_test_data(__file__, "pred_4_seq_first_resid_2.nef")
 
-    STREAM = open(pred_4_nef_path).read()
+    with open(pred_4_nef_path) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app,

@@ -226,7 +226,8 @@ def get_text_from_file_or_exit(file_name: Path) -> str:
         result = sys.stdin.read()
     else:
         try:
-            result = open(file_name).read()
+            with open(file_name) as fh:
+                result = fh.read()
         except IOError as e:
             exit_error(f"couldn't read from {file_name} because of an error", e)
 
@@ -372,6 +373,9 @@ def read_from_file_or_exit(file_name: Path, target: str = "unknown") -> str:
     except Exception as e:
         msg = f"couldn't read {target} from {display_file_name}"
         exit_error(msg, e)
+
+    if file_name != STDIN:
+        fh.close()
 
     return text
 

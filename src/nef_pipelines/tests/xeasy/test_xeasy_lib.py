@@ -48,7 +48,8 @@ def test_sequence_basic_commented():
 
 
 def test_sequence_basic_commented_two_lines_bad():
-    sequence = open(path_in_test_data(__file__, "basic.seq")).readlines()
+    with open(path_in_test_data(__file__, "basic.seq")) as fh:
+        sequence = fh.readlines()
 
     with pytest.raises(SystemExit) as e:
         sequence = ["#a comment", "# a bad comment", *sequence]
@@ -232,7 +233,8 @@ EXPECTED_PEAKS = [
 
 
 def test_basic_peaks():
-    peaks = open(path_in_test_data(__file__, "basic.peaks")).readlines()
+    with open(path_in_test_data(__file__, "basic.peaks")) as fh:
+        peaks = fh.readlines()
 
     lookup = sequence_to_residue_name_lookup(EXPECTED_SEQUENCE)
     spectrum_type, dimension_info, peaks = parse_peaks(
@@ -347,7 +349,8 @@ EXPECTED_SHIFTS = [
 
 def test_basic_shifts():
 
-    shifts = open(path_in_test_data(__file__, "basic_shifts.prot")).readlines()
+    with open(path_in_test_data(__file__, "basic_shifts.prot")) as fh:
+        shifts = fh.readlines()
 
     lookup = sequence_to_residue_name_lookup(EXPECTED_SEQUENCE)
     shifts = parse_shifts(shifts, source="unknown", residue_lookup=lookup)

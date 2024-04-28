@@ -181,9 +181,9 @@ PR_66H-HA        7.406   4.180          10       5
 
 def test_ppm_out_short_different_residues():
 
-    STREAM = open(
-        path_in_test_data(__file__, "ubi_peaks_short_different_residues.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_different_residues.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(app, ["--file-name-template", "-"], input=STREAM)
 
@@ -204,7 +204,9 @@ A.G66H-A.G67HA   7.906   4.380          14       9
 
 def test_ppm_out_short_chains():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short_chains.neff")).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_chains.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(app, ["--file-name-template", "-"], input=STREAM)
 
@@ -225,7 +227,9 @@ G66H-G67HA      7.906    4.380          14       9
 
 def test_ppm_out_short_no_chains():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short_chains.neff")).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_chains.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--no-chains"], input=STREAM
@@ -251,7 +255,9 @@ Assignment       w1       w2      Data  Height  Volume
 
 def test_ppm_out_short_with_data():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--add-data"], input=STREAM
@@ -277,7 +283,9 @@ Assignment       w1       w2      Height  Volume
 
 def test_ppm_out_short_full_assignments():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--full-assignments"], input=STREAM
@@ -303,7 +311,9 @@ Assignment       w1     w2   Height  Volume
 
 def test_ppm_out_short_discard_assignments():
 
-    STREAM = open(path_in_test_data(__file__, "ubi_peaks_short.neff")).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--discard-assignments"], input=STREAM
@@ -330,9 +340,9 @@ Assignment       w1       w2      Height  Volume
 
 def test_ppm_out_short_with_full_assignments():
 
-    STREAM = open(
-        path_in_test_data(__file__, "peaks_short_with_assignments.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "peaks_short_with_assignments.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(app, ["--file-name-template", "-"], input=STREAM)
 
@@ -357,9 +367,9 @@ Assignment       w1       w2      Height  Volume
 
 def test_ppm_out_short_with_different_chain_separator():
 
-    STREAM = open(
-        path_in_test_data(__file__, "peaks_short_with_assignments.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "peaks_short_with_assignments.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--chain-separator", "_"], input=STREAM
@@ -386,9 +396,9 @@ Assignment                     w1       w2       w3      Height  Volume
 
 def test_ppm_out_short_3d_m1():
 
-    STREAM = open(
-        path_in_test_data(__file__, "ubi_peaks_short_i_minus_one.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_i_minus_one.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app,
@@ -420,9 +430,9 @@ Assignment                      w1      w2       w3     Height  Volume
 
 def test_ppm_out_short_3d_m1_no_negatives():
 
-    STREAM = open(
-        path_in_test_data(__file__, "ubi_peaks_short_i_minus_one.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_i_minus_one.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(
         app, ["--file-name-template", "-", "--no-negative-residues"], input=STREAM
@@ -433,9 +443,9 @@ def test_ppm_out_short_3d_m1_no_negatives():
 
 def test_ppm_out_short_overlapped_chains():
 
-    STREAM = open(
-        path_in_test_data(__file__, "ubi_peaks_short_overlapping_chains.neff")
-    ).read()
+    file_name = path_in_test_data(__file__, "ubi_peaks_short_overlapping_chains.neff")
+    with open(file_name) as fh:
+        STREAM = fh.read()
 
     result = run_and_report(app, ["--no-chains"], input=STREAM, expected_exit_code=1)
 

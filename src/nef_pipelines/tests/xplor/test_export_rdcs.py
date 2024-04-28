@@ -46,7 +46,9 @@ assign  (  resn   ANI   and  name   OO  )
 # noinspection PyUnusedLocal
 def test_3ab():
 
-    input = open(path_in_test_data(__file__, "3a_ab_rdcs.neff")).read()
+    with open(path_in_test_data(__file__, "3a_ab_rdcs.neff")) as fh:
+        input = fh.read()
+
     result = run_and_report(app, [], input=input)
 
     assert_lines_match(EXPECTED, result.stdout)

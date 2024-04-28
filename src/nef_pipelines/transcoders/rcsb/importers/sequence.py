@@ -12,9 +12,13 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
     process_stream_and_add_frames,
 )
-from nef_pipelines.transcoders.rcsb.rcsb_lib import parse_pdb, parse_cif, guess_cif_or_pdb, RCSBFileType
-
 from nef_pipelines.transcoders.rcsb import import_app
+from nef_pipelines.transcoders.rcsb.rcsb_lib import (
+    RCSBFileType,
+    guess_cif_or_pdb,
+    parse_cif,
+    parse_pdb,
+)
 
 app = typer.Typer()
 
@@ -87,7 +91,9 @@ def process_sequence(args: Namespace):
 
 def read_sequences(path, target_chain_codes, use_segids=False):
 
-    file_lines =  list(open(path).readlines())
+    with open(path) as fh:
+        lines = fh.readlines()
+    file_lines = list(lines)
     file_type = guess_cif_or_pdb(file_lines, str(path))
 
     if file_type is RCSBFileType.PDB:
@@ -95,15 +101,13 @@ def read_sequences(path, target_chain_codes, use_segids=False):
     elif file_type is RCSBFileType.CIF:
         model = parse_cif(file_lines)[0]
     else:
-        msg  =  \
-        f'''
+        msg = f"""
             Couldn't determine if the file {path} was a cif or pdb file...
             are you sure the file has the right format?
-        '''
+        """
         exit_error(msg)
 
     sequences = []
-
 
     if not use_segids:
 
@@ -114,7 +118,6 @@ def read_sequences(path, target_chain_codes, use_segids=False):
 
     all_chains = len(target_chain_codes) == 0
 
-
     for chain in model:
         for residue in chain:
             chain_code = chain.segment_id if use_segids else chain.chain_code
@@ -123,8 +126,8 @@ def read_sequences(path, target_chain_codes, use_segids=False):
             if not all_chains and chain_code not in target_chain_codes:
                 continue
 
-            sequence_code =  residue.sequence_code
-            #TODO support a hetero atom flag
+            sequence_code = residue.sequence_code
+            # TODO support a hetero atom flag
             # if len(hetero_atom_flag.strip()) != 0:
             #     continue
 

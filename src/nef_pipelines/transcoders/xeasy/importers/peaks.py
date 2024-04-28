@@ -91,7 +91,8 @@ def pipe(
     residue_type_lookup = sequence_to_residue_name_lookup(sequence)
     for file_name in file_names:
 
-        lines = file_name.open().readlines()
+        with file_name.open() as fh:
+            lines = fh.readlines()
 
         spectrum_type, dimension_info, peaks = parse_peaks(
             lines, file_name, residue_type_lookup

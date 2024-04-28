@@ -81,4 +81,8 @@ def pipe(
 
 
 def _read_sequence(file_name: Path) -> List[SequenceResidue]:
-    return parse_sequence(file_name.open().readlines())
+
+    with file_name.open() as fh:
+        lines = fh.readlines()
+
+    return parse_sequence(lines)
