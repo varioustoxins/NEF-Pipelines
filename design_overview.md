@@ -336,6 +336,7 @@ def pipe(entry: Entry, output_file: str, *other_args_here) -> Entry:
         exit_error(msg, e)
 
     print(fasta_text, file=out_handle)
+
     if output_file != STDOUT:
         out_handle.close()
 
