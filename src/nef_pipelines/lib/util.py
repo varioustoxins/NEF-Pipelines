@@ -665,7 +665,7 @@ def smart_open(filename=None, stream_type=StdStream.STDOUT):
     f"""
     context manager to open a file or use stdout depending on the filename, stdin is defined as '-'
     by corollary a std stream won't be closed on exit only file system streams
-    :param filename: the filename to use '-' indicates a standar stream selected by stream_type
+    :param filename: the filename to use '-' indicates a standard stream selected by stream_type
     :param stream_type: how to treat the stream choices are {', '.join(StdStream.__members__)}
 
     """
