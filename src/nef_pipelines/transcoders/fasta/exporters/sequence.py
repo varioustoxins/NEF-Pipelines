@@ -91,13 +91,13 @@ def fasta_records_from_entry(entry, chain_codes):
 
     residues = sequence_from_frame(molecular_system)
 
-    fasta_records = nef_to_fasta_records(residues, chain_codes)
+    fasta_records = nef_to_fasta_records(residues, chain_codes, entry.entry_id)
 
     return fasta_records
 
 
 def nef_to_fasta_records(
-    residues: List[SequenceResidue], target_chain_codes: List[str]
+    residues: List[SequenceResidue], target_chain_codes: List[str], entry_id: str
 ) -> Dict[str, List[str]]:
 
     all_chain_codes = sequence_to_chains(residues)
@@ -140,7 +140,7 @@ def nef_to_fasta_records(
     result = {}
     for chain_code, residue_sequence in residue_sequences.items():
         result[chain_code] = [
-            f">CHAIN: {chain_code} | START RESIDUE: {chain_starts[chain_code]}",
+            f">{entry_id} CHAIN: {chain_code} | START RESIDUE: {chain_starts[chain_code]}",
             "\n".join(residue_sequence),
         ]
 
