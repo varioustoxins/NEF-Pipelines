@@ -2,23 +2,27 @@ from pathlib import Path
 
 import typer
 
-from nef_pipelines.transcoders.fasta.exporters.sequence import (
-    sequence as fasta_sequence,
+from nef_pipelines.lib.nef_lib import (
+    molecular_system_from_entry_or_exit,
+    read_entry_from_file_or_stdin_or_exit_error,
 )
+from nef_pipelines.lib.sequence_lib import frame_to_chains
+from nef_pipelines.lib.util import STDIN, exit_error
+from nef_pipelines.transcoders.fasta.exporters.sequence import pipe as fasta_pipe
 from nef_pipelines.transcoders.mars import export_app
 
 
 @export_app.command()
 def sequence(
     chain_code: str = typer.Option(
-        "A",
+        None,
         "-c",
         "--chain_code",
         help=" single chain to export  [default: 'A']",
         metavar="<CHAIN-CODE>",
     ),
     in_file: Path = typer.Option(
-        None, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
+        STDIN, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
     output_file: Path = typer.Argument(
         None,
@@ -27,4 +31,72 @@ def sequence(
     ),
 ):
     """- write a mars sequence file [fasta]"""
-    fasta_sequence(chain_code, in_file, output_file)
+
+    entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
+
+    output_file = output_file if output_file else f"{entry.entry_id}.fasta"
+
+    molecular_system = molecular_system_from_entry_or_exit(entry)
+
+    chain_code = _get_single_chain_code_or_exit(chain_code, molecular_system, in_file)
+
+    entry = fasta_pipe(entry, chain_code, output_file)
+
+    if entry:
+        print(entry)
+
+
+def _get_single_chain_code_or_exit(chain_code_selector, molecular_system, input):
+
+    chain_codes = frame_to_chains(molecular_system)
+
+    _exit_if_no_chain_codes(chain_codes, input)
+
+    chain_code = None
+    if not chain_code_selector:
+        chain_code = _get_default_chain_code_or_exit(chain_codes, input)
+
+    if not chain_code:
+        chain_code = _select_single_chain_code_or_exit(chain_code_selector, chain_codes)
+
+    return chain_code
+
+
+def _exit_if_no_chain_codes(chain_codes, input):
+    if len(chain_codes) != 1:
+        msg = f"""\
+            A  chain code is required and I didn't fina any in
+            {input}
+        """
+        exit_error(msg)
+
+
+def _select_single_chain_code_or_exit(chain_code, chain_codes):
+
+    if chain_code not in chain_codes:
+        chain_code_list = ", ".join(chain_codes)
+        msg = f"""\
+                the selected chain code is {chain_code} but this wasn't found in the input
+                {input}
+                this contained the following chain codes
+                {chain_code_list}
+            """
+        exit_error(msg)
+
+    return chain_code
+
+
+def _get_default_chain_code_or_exit(chain_codes, input):
+
+    if len(chain_codes) != 1:
+        num_chains = len(chain_codes)
+        chains_list = ", ".join(chain_codes)
+        msg = f"""\
+            You didn't select a chain code and single chain is required...
+            I found {num_chains} chains in {input}
+            the chains were:
+            {chains_list}
+        """
+        exit_error(msg)
+
+    return chain_codes[0]
