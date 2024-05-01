@@ -1,12 +1,6 @@
 # What is the Structure of NEF-Pipelines and What Are the Common Design Features
 
-NEF-Pipelines is a collection of python scripts that are designed to be chained together in
-a unix pipeline to provide manipulation of NMR Exchange Format (NEF) based data. The
-scripts are designed to collaborate with each other because they share a common base
-command line interface (CLI) and a common data format in the form of NEF files or a stream of
-NEF text. This simple design which combines with the UNIX Tools Philosophy [^1] provides an
-approach to data manipulation that is both powerful and flexible and allows the inclusion
-of external programs and builtin unix commands in the pipeline
+NEF-Pipelines is a collection of python scripts that are designed to be chained together in a unix pipeline to provide manipulation of NMR Exchange Format (NEF) based data. The scripts are designed to collaborate with each other because they share a common base command line interface (CLI) and a common data format in the form of NEF files or a stream of NEF text. This simple design which combines with the UNIX Tools Philosophy [^1] provides an approach to data manipulation that is both powerful and flexible and allows the inclusion of external programs and builtin unix commands in the pipeline
 
 The base component of a nef pipeline is a _pipe_ whichis a single program that takes a NMR Exchange
 Format based text data stream which it maniuplates, modifies and usually finally outputs back to the
@@ -19,7 +13,7 @@ for python programs. It is based on the _click_ library and provides a simple wa
 using type annotations.
 
 As each subcommand is based on _typer_ their entry points are defined by a single function
-which is decorated with type annotations and typer based paramaters defining argumenst and options
+which is decorated with type annotations and typer based paramaters defining arguments and options
 and registered as a sub command of the main application which is called _nef_. A typical nef pipeline
 command is shown below [details of the sub command registration process are discussed below]
 
@@ -373,9 +367,9 @@ their own filename and include the entry_name template parameter {entry_name} in
 
 ### How NEF-Pipelines Cleany Shutsdown the Pipeline When an Error Occurs
 
-### The Structure of NEF-Pipelines
+### The Structure of the NEF-Pipelines Repositiory and Distribution
 
-### The NEF-Pipelines Library and How it is Used in the NEF-Pipelines
+### The NEF-Pipelines Library and How it is Used in NEF-Pipelines
 
-[^1]. https://en.wikipedia.org/wiki/Unix_philosophy
-[^2]. https://typer.tiangolo.com
+[^1]:  https://en.wikipedia.org/wiki/Unix_philosophy ↩
+[^2]:  https://typer.tiangolo.com
