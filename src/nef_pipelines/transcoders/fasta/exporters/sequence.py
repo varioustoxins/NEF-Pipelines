@@ -15,7 +15,7 @@ from nef_pipelines.lib.sequence_lib import (
     translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import STDIN, STDOUT
+from nef_pipelines.lib.util import STDIN, STDOUT, exit_error
 from nef_pipelines.transcoders.fasta import export_app
 
 # TODO: we should be able to output *s on the ends of sequences and comments
@@ -52,8 +52,12 @@ def sequence(
     entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
 
     output_file = f"{entry.entry_id}.fasta" if output_file is None else output_file
+    output_file = STDOUT if output_file == "-" else output_file
 
-    pipe(entry, chain_codes, output_file)
+    entry = pipe(entry, chain_codes, output_file)
+
+    if entry:
+        print(entry)
 
 
 def pipe(entry, chain_codes, output_file):
@@ -61,7 +65,13 @@ def pipe(entry, chain_codes, output_file):
     fasta_records = fasta_records_from_entry(entry, chain_codes)
 
     # TODO: move to utility function and use in all outputs
-    file_h = sys.stdout if output_file == str(STDOUT) else open(output_file, "w")
+    try:
+        file_h = sys.stdout if output_file == STDOUT else open(output_file, "w")
+    except Exception as e:
+        msg = (
+            f"Error opening output file {output_file} for writing fasa file because {e}"
+        )
+        exit_error(msg, e)
 
     # TODO we ought to be able to output to multiple files with a filename template
     records = []
@@ -69,10 +79,10 @@ def pipe(entry, chain_codes, output_file):
         records.append("\n".join(record))
     print("\n\n".join(records), file=file_h)
 
-    if output_file != str(STDOUT):
+    if output_file != STDOUT:
         file_h.close()
 
-        print(entry)
+    return entry if output_file != STDOUT else None
 
 
 def fasta_records_from_entry(entry, chain_codes):
