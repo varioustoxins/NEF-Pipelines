@@ -115,7 +115,8 @@ def _get_chem_atom_set_atoms(chem_atom_set, chem_comp):
             for nested_set in chem_atom_set.chemAtomSets:
                 result.extend(chem_atom_set_by_id[nested_set].chemAtoms)
 
-    return set(result)
+    id_and_values_result = {item.ID: item for item in result}
+    return list(id_and_values_result.values())
 
 
 def _get_geminal_pairs(residue_names):
@@ -281,8 +282,13 @@ def _get_atom_sets_by_residue(residue_names):
 
         active_chem_comp_vars_atom_sets = {}
         for chem_comp_var in active_chem_comp_vars:
-            active_chem_comp_atom_ids = set(chem_comp_var.chemAtoms)
-            for atom_set_name, atom_set_atom_ids in chem_atom_set_atoms.items():
+
+            active_chem_comp_atom_ids = set(
+                [chem_atom.ID for chem_atom in chem_comp_var.chemAtoms]
+            )
+
+            for atom_set_name, atom_set_atoms in chem_atom_set_atoms.items():
+                atom_set_atom_ids = set([atom.ID for atom in atom_set_atoms])
                 if atom_set_atom_ids.issubset(active_chem_comp_atom_ids):
                     atom_set_chem_atoms = [
                         chem_atoms_by_id[id].name for id in atom_set_atom_ids
@@ -380,7 +386,7 @@ def pipe(
 
     per_residue_ambiguities = _organise_ambiguities_by_residue(ambiguities)
 
-    _replace_atoms_with_duplicated_shifts(
+    per_residue_and_atom_shifts = _replace_atoms_with_duplicated_shifts(
         per_residue_and_atom_shifts,
         sequence_residues_by_residue,
         per_residue_ambiguities,
@@ -448,7 +454,6 @@ def _apply_stereo_assignment_ambiguities(
                 if stereo_mode is StereoAssignmentHandling.ALL_AMBIGUOUS:
                     for before, old_shift in found_pairs.items():
                         new_atom_name = ambiguous_pair[before]
-                        # print('!', before, new)
                         atom = old_shift.atom
                         atom = replace(atom, atom_name=new_atom_name)
                         new_shift = replace(old_shift, atom=atom)
@@ -518,6 +523,16 @@ def _replace_atoms_with_duplicated_shifts(
                 residue_ambiguities[atom_set_name] = new_ambiguity
                 for atom in related_atoms:
                     del residue_ambiguities[atom]
+
+                atom_set_shift = chemical_shifts_by_atom_names[atom_set_name]
+                atom_set_shift_atom = atom_set_shift.atom
+                atom_set_shift_atom = replace(
+                    atom_set_shift_atom, atom_name=atom_set_name
+                )
+                atom_set_shift = replace(atom_set_shift, atom=atom_set_shift_atom)
+                chemical_shifts_by_atom_names[atom_set_name] = atom_set_shift
+
+    return per_residue_and_atom_shifts
 
 
 def _get_stereo_mode(ambiguities, stereo_mode):
