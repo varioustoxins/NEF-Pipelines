@@ -82,7 +82,7 @@ def main():
             "nef_pipelines.tools.frames",
             "nef_pipelines.tools.header",
             "nef_pipelines.tools.peaks",
-            "nef_pipelines.tools.shifts",
+            "nef_pipelines.tools.simulate",
             "nef_pipelines.tools.stream",
             "nef_pipelines.tools.test",
             "nef_pipelines.transcoders.csv",
