@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 from textwrap import dedent, indent
@@ -37,7 +38,7 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
     strings_to_tabulated_terminal_sensitive,
 )
-from nef_pipelines.tools.shifts import shifts_app
+from nef_pipelines.tools.simulate import simulate_app
 
 SPECTRUM_NAME_TEMPLATE = "synthetic_{spectrum}"
 
@@ -56,15 +57,14 @@ NAME_TEMPLATE_HELP = """
 """
 
 
-@shifts_app.command()
-def make_peaks(
+@simulate_app.command()
+def peaks(
     shift_frame_selectors: List[str] = typer.Option(
         None, "--shift-frames", help=SHIFT_FRAMES_HELP
     ),
     exact: bool = typer.Option(
         False, help="if set frames are selected by exact matches"
     ),
-    spectra: List[str] = typer.Option([ExperimentType.N_HSQC], help=SPECTRA_HELP),
     name_template: str = typer.Option(SPECTRUM_NAME_TEMPLATE, help=NAME_TEMPLATE_HELP),
     spectrometer_frequency: float = typer.Option(FAKE_SPECTROMETER_FREQUENCY_600),
     input: Path = typer.Option(
@@ -74,9 +74,16 @@ def make_peaks(
         metavar="|INPUT|",
         help="input to read NEF data from [stdin = -]",
     ),
+    spectra: List[str] = typer.Argument(None, help=SPECTRA_HELP),
 ):
     """-  make a set of peaks for an hsqc, 13C direct detect or triple resonance spectrum from a list of shifts
     [alpha for non cpn peak lists and 13C detect]"""
+
+    spectra = [spectrum.replace("-", "_") for spectrum in spectra]
+    if not spectra:
+        spectra = [
+            ExperimentType.N_HSQC,
+        ]
 
     shift_frame_selectors = (
         [
@@ -115,11 +122,29 @@ def _strs_to_experiment_types_or_exit_error(spectra):
             result.append(ExperimentType[spectum])
             found = True
 
+        experiment_types_upper = [
+            experiment_type.name.upper() for experiment_type in ExperimentType
+        ]
+        upper_experiments_to_experiments = {
+            experiment_type.name.upper(): experiment_type
+            for experiment_type in ExperimentType
+        }
+        counts = Counter(experiment_types_upper)
+
         if not found:
-            spectrum_lower = spectum.lower()
-            if spectrum_lower in spectrum_names:
-                result.append(ExperimentType[spectrum_lower])
+            spectrum_upper = spectum.upper()
+            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] == 1:
+                result.append(upper_experiments_to_experiments[spectrum_upper])
                 found = True
+            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] > 1:
+                degenerate_spectra = [
+                    experiment_type.name
+                    for experiment_type in ExperimentType
+                    if experiment_type.upper() == spectrum_upper
+                ]
+                _exit_degnerate_spectrum_type(
+                    spectum, list(ExperimentType), degenerate_spectra
+                )
 
         if not found:
             _exit_bad_spectrum_type(spectum, list(ExperimentType))
@@ -148,6 +173,22 @@ def _exit_bad_spectrum_type(spectrum, known_spectra):
 
         {spectrum_types}
     """
+    msg = dedent(msg)
+
+    spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
+    spectrum_types = indent(spectrum_types, FOUR_SPACES)
+
+    exit_error(f(msg))
+
+
+def _exit_degnerate_spectrum_type(spectrum, known_spectra, degenerate_spectra):
+    degenerate_spectra = ", ".join(degenerate_spectra)
+    msg = """
+            the spectrum type {spectrum} doesn't exactly match a spectrum type in the list below
+            and has more than possible match when case is ignored [{degenerate_spectra}]
+
+            {spectrum_types}
+        """
     msg = dedent(msg)
 
     spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
