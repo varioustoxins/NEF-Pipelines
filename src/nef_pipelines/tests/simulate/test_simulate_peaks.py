@@ -8,11 +8,11 @@ from nef_pipelines.lib.test_lib import (
     read_test_data,
     run_and_report,
 )
-from nef_pipelines.tools.shifts.make_peaks import make_peaks
+from nef_pipelines.tools.simulate.peaks import peaks
 
 runner = CliRunner()
 app = typer.Typer()
-app.command()(make_peaks)
+app.command()(peaks)
 
 EXPECTED = """ # noqa: E501
 save_nef_nmr_spectrum_synthetic_N_HSQC
@@ -193,7 +193,7 @@ save_
 
 def test_ubi_short_triple():
 
-    result = run_and_report(app, ["--spectra", "HNCA"], input=INPUT_UBI_SHORT_NEF)
+    result = run_and_report(app, ["HNCA"], input=INPUT_UBI_SHORT_NEF)
 
     print(result.stdout)
     new_peaks_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_synthetic_HNCA")
