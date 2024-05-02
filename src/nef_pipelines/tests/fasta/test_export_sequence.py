@@ -13,7 +13,7 @@ app = typer.Typer()
 app.command()(sequence)
 
 EXPECTED_3AA = """
->test CHAIN: A | START RESIDUE: 1
+>test NEFPLS | CHAIN: A | START: 1
 
 AAA
 """
@@ -29,10 +29,10 @@ def test_3aa():
 
 
 EXPECTED_3AA_2_CHAINS = """
->test CHAIN: A | START RESIDUE: 1
+>test NEFPLS | CHAIN: A | START: 1
 
 AAA
->test CHAIN: B | START RESIDUE: 1
+>test NEFPLS | CHAIN: B | START: 1
 
 CCC
 """
@@ -47,7 +47,7 @@ def test_3aa_2_chains():
 
 
 EXPECTED_THX = """
->test CHAIN: thx | START RESIDUE: 1
+>test NEFPLS | CHAIN: thx | START: 1
 AAA
 """
 
