@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -139,8 +140,9 @@ def nef_to_fasta_records(
 
     result = {}
     for chain_code, residue_sequence in residue_sequences.items():
+        entry_id = re.sub(r"\s+", "", entry_id)
         result[chain_code] = [
-            f">{entry_id} CHAIN: {chain_code} | START RESIDUE: {chain_starts[chain_code]}",
+            f">{entry_id} NEFPLS | CHAIN: {chain_code} | START: {chain_starts[chain_code]}",
             "\n".join(residue_sequence),
         ]
 
