@@ -17,6 +17,7 @@ requests~=2.31.0
 StrEnum~=0.4.7
 tabulate~=0.8.7
 typer~=0.7.0
+uncertainties~=3.1.7
 urllib3 <=1.26.15
 wcmatch~=8.5
 xmltodict~=0.13.0
