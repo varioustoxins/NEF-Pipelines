@@ -22,7 +22,12 @@ from nef_pipelines.lib.sequence_lib import (
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import STDIN, exit_error, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    STDIN,
+    exit_error,
+    is_int,
+    parse_comma_separated_options,
+)
 from nef_pipelines.transcoders.fasta import import_app
 
 CHAIN_STARTS_HELP = """first residue number of sequences can be a comma separated list or added multiple times
@@ -81,7 +86,7 @@ def sequence(
         "--molecule-type",
         help="molecule type",
     ),
-    no_header: bool = typer.Option(True, "--no-header", help=NO_HEADER_HELP),
+    no_header: bool = typer.Option(False, "--no-header", help=NO_HEADER_HELP),
     file_names: List[Path] = typer.Argument(
         ..., help="the file to read", metavar="<FASTA-FILE>"
     ),
@@ -229,13 +234,20 @@ def _parse_fasta(fasta_sequence, parse_header: bool = True) -> Sequence:
 
     chain_code = None
     start = 1
+
     if fasta_sequence.description.startswith("NEFPLS") and parse_header:
-        fields = definition.split("|")
+        fields = fasta_sequence.description.split("|")
         for field in fields:
+
+            field = field.strip()
+
             if field.startswith("CHAIN:"):
                 chain_code = field.split()[-1]
+
             if field.startswith("START:"):
-                start = field.split()[-1]
+                if is_int(field[-1]):
+                    start = int(field.split()[-1])
+
         entry_id, comment = fasta_sequence.id, fasta_sequence.description
 
     elif bar_count == 3 and is_bracketed and is_last_field_number:
@@ -309,9 +321,7 @@ def _read_sequences(
 
         chain_residues = offset_chain_residues(
             chain_residues,
-            [
-                sequence_record.starts - 1,
-            ],
+            {sequence_record.chain_code: sequence_record.starts - 1},
         )
 
         residues.update(chain_residues)

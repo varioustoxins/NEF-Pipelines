@@ -133,3 +133,37 @@ def test_3aa_x2_off_10_b():
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB_B_start_11, mol_sys_result)
+
+
+EXPECTED_3AA_HEADER_PARSING = """\
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1   thx   -2   ALA   start    .   .
+     2   thx   -1   ALA   middle   .   .
+     3   thx    0   ALA   end      .   .
+
+   stop_
+
+save_"""
+
+
+def test_3aa_header_parsing():
+
+    path = path_in_test_data(__file__, "3aa_header.fasta")
+    result = run_and_report(app, [path])
+
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+
+    assert result.stdout.startswith("data_wibble")
+    assert_lines_match(EXPECTED_3AA_HEADER_PARSING, mol_sys_result)
