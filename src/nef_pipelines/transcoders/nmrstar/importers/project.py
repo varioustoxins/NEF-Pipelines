@@ -16,7 +16,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_exit_error,
     read_or_create_entry_exit_error_on_bad_file,
 )
-from nef_pipelines.lib.sequence_lib import chain_code_iter
+from nef_pipelines.lib.sequence_lib import get_chain_code_iter
 from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
@@ -102,7 +102,7 @@ def project(
     ),
     use_author: bool = typer.Option(False, help="use author field for sequence codes"),
     stereo_mode: StereoAssignmentHandling = typer.Option("auto", help=STEREO_HELP),
-    entry_name: str = typer.Option(
+    default_entry_name: str = typer.Option(
         None, help="a name for the entry (defaults to the bmrb entry number)"
     ),
     input: Path = typer.Option(
@@ -118,68 +118,73 @@ def project(
     list_shortcuts: bool = typer.Option(
         False, "--list-shortcuts", help="list the available shortcuts and exit"
     ),
-    file_path: str = typer.Argument(None, help=FILE_PATH_HELP),
+    file_paths: List[str] = typer.Argument(None, help=FILE_PATH_HELP),
 ):
-    """-  convert as much as possible from an NMR-STAR file to NEF [shifts & sequences] [alpha]"""
+    """- convert as much as possible from an NMR-STAR file to NEF [shifts & sequences] [alpha]"""
 
     if list_shortcuts:
         _list_shortcuts_and_exit()
 
-    file_path = (
+    file_paths = parse_comma_separated_options(file_paths)
+    file_paths = [
         SHORTCUTS[file_path.upper()] if file_path.upper() in SHORTCUTS else file_path
-    )
+        for file_path in file_paths
+    ]
 
-    if not file_path:
+    if not file_paths:
         typer.echo(ctx.get_help())
         exit_error("missing file path argument")
 
-    chain_codes = parse_comma_separated_options(chain_codes)
-    if not chain_codes:
-        chain_codes = chain_code_iter()
+    for file_path in file_paths:
+        chain_codes = parse_comma_separated_options(chain_codes)
+        chain_codes = get_chain_code_iter(chain_codes)
 
-    no_chain_starts = parse_comma_separated_options(no_chain_starts)
-    if not no_chain_starts:
-        no_chain_starts = [False]
+        no_chain_starts = parse_comma_separated_options(no_chain_starts)
+        if not no_chain_starts:
+            no_chain_starts = [False]
 
-    no_chain_ends = parse_comma_separated_options(no_chain_ends)
-    if no_chain_ends:
-        no_chain_ends = [False]
+        no_chain_ends = parse_comma_separated_options(no_chain_ends)
+        if no_chain_ends:
+            no_chain_ends = [False]
 
-    is_bmrb = False
-    if source in (EntrySource.AUTO, EntrySource.WEB):
-        url, is_bmrb = _get_path_as_url_or_none(file_path, url_template)
+        is_bmrb = False
+        if source in (EntrySource.AUTO, EntrySource.WEB):
+            url, is_bmrb = _get_path_as_url_or_none(file_path, url_template)
 
-        exit_on_error = True if source == EntrySource.WEB else False
-        possible_entry = _get_bmrb_entry_from_web_or_none(url, exit_on_error)
+            exit_on_error = True if source == EntrySource.WEB else False
+            possible_entry = _get_bmrb_entry_from_web_or_none(url, exit_on_error)
 
-        nmrstar_entry = _parse_text_to_star_or_none(possible_entry)
+            nmrstar_entry = _parse_text_to_star_or_none(possible_entry)
 
-    if (source == EntrySource.AUTO and not nmrstar_entry) or source == EntrySource.FILE:
-        nmrstar_entry = read_entry_from_file_or_exit_error(file_path)
+        if (
+            source == EntrySource.AUTO and not nmrstar_entry
+        ) or source == EntrySource.FILE:
+            nmrstar_entry = read_entry_from_file_or_exit_error(file_path)
 
-    if not nmrstar_entry:
-        msg = f"could not read entry from {file_path}"
-        exit_error(msg)
+        if not nmrstar_entry:
+            msg = f"could not read entry from {file_path}"
+            exit_error(msg)
 
-    entry_name = nmrstar_entry.entry_id if not entry_name else entry_name
-    entry_name = f"bmr{entry_name}" if is_bmrb else entry_name
+        entry_name = (
+            nmrstar_entry.entry_id if not default_entry_name else default_entry_name
+        )
+        entry_name = f"bmr{entry_name}" if is_bmrb else entry_name
+        nef_entry = read_or_create_entry_exit_error_on_bad_file(
+            input, entry_name=entry_name
+        )
 
-    nef_entry = read_or_create_entry_exit_error_on_bad_file(
-        input, entry_name=entry_name
-    )
+        entry = pipe(
+            nef_entry,
+            nmrstar_entry,
+            chain_codes,
+            no_chain_starts,
+            no_chain_ends,
+            use_author,
+            stereo_mode,
+            file_path,
+        )
 
-    entry = pipe(
-        nef_entry,
-        nmrstar_entry,
-        chain_codes,
-        no_chain_starts,
-        no_chain_ends,
-        use_author,
-        stereo_mode,
-        file_path,
-    )
-
-    print(entry)
+        print(entry)
 
 
 def _list_shortcuts_and_exit():
