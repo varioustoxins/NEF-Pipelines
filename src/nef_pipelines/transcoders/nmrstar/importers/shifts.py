@@ -19,7 +19,10 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_exit_error,
     read_entry_from_file_or_stdin_or_exit_error,
 )
-from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_from_entry_or_exit
+from nef_pipelines.lib.sequence_lib import (
+    get_chain_code_iter,
+    sequence_from_entry_or_exit,
+)
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
 from nef_pipelines.lib.translation.chem_comp import ID, ChemCompLinking
@@ -392,8 +395,6 @@ def pipe(
         per_residue_ambiguities,
     )
 
-    stereo_mode = StereoAssignmentHandling.ALL_AMBIGUOUS
-
     all_stereo_pairs = _get_geminal_pairs(residue_names)
 
     _apply_stereo_assignment_ambiguities(
@@ -698,9 +699,10 @@ def _build_entity_ids_to_chain_codes(chain_codes, denormalised_shifts):
             sorted([shift.atom.residue.chain_code for shift in denormalised_shifts])
         )
     )
+    chain_code_iter = get_chain_code_iter(chain_codes)
     entity_id_to_chain_code = {
         entity_id: chain_code
-        for entity_id, chain_code in zip(entity_ids, chain_code_iter(chain_codes))
+        for entity_id, chain_code in zip(entity_ids, chain_code_iter)
     }
     return entity_id_to_chain_code
 

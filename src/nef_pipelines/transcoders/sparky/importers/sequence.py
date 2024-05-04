@@ -9,7 +9,7 @@ from pynmrstar import Entry
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
 from nef_pipelines.lib.sequence_lib import (
     MoleculeType,
-    chain_code_iter,
+    get_chain_code_iter,
     offset_chain_residues,
     sequence_3let_to_res,
     sequence_to_nef_frame,
@@ -118,8 +118,7 @@ def pipe(
     no_chain_ends: List[bool],
     molecule_types: List[MoleculeType],
 ):
-
-    chain_code_iterator = chain_code_iter(chain_codes)
+    chain_code_iterator = get_chain_code_iter(chain_codes)
 
     chain_offsets = {}
     chains_with_no_start = set()

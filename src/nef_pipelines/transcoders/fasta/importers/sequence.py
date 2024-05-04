@@ -15,7 +15,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
     MoleculeType,
-    chain_code_iter,
+    get_chain_code_iter,
     offset_chain_residues,
     sequence_3let_to_res,
     sequence_to_nef_frame,
@@ -300,8 +300,10 @@ def _read_sequences(
     residues = OrderedSet()
     # read as many chain codes as there are sequences
     # https://stackoverflow.com/questions/16188270/get-a-fixed-number-of-items-from-a-generator
+
+    chain_code_iter = get_chain_code_iter(chain_codes)
     for sequence_record, chain_code, molecule_type in zip(
-        sequence_records, chain_code_iter(chain_codes), molecule_types
+        sequence_records, chain_code_iter, molecule_types
     ):
 
         try:

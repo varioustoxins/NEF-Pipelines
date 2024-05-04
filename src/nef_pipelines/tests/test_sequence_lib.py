@@ -6,9 +6,9 @@ from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
-    chain_code_iter,
     count_residues,
     frame_to_chains,
+    get_chain_code_iter,
     get_chain_starts,
     offset_chain_residues,
     sequence_3let_to_sequence_residues,
@@ -223,7 +223,8 @@ def test_offset_chains():
 
 
 def test_chain_code_iter_basic():
-    result = [chain_code for chain_code in islice(chain_code_iter(), 3)]
+    chain_code_iter = get_chain_code_iter()
+    result = [chain_code for chain_code in islice(chain_code_iter, 3)]
 
     EXPECTED = list("ABC")
 
@@ -231,7 +232,8 @@ def test_chain_code_iter_basic():
 
 
 def test_chain_code_iter_with_user():
-    result = [chain_code for chain_code in islice(chain_code_iter("DE"), 3)]
+    chain_code_iter = get_chain_code_iter("DE")
+    result = [chain_code for chain_code in islice(chain_code_iter, 3)]
 
     EXPECTED = list("DEA")
 
@@ -239,7 +241,8 @@ def test_chain_code_iter_with_user():
 
 
 def test_chain_code_iter_with_exclude():
-    result = [chain_code for chain_code in islice(chain_code_iter(exclude="BC"), 3)]
+    chain_code_iter = get_chain_code_iter(exclude="BC")
+    result = [chain_code for chain_code in islice(chain_code_iter, 3)]
 
     EXPECTED = list("ADE")
 

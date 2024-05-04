@@ -14,7 +14,7 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
-    chain_code_iter,
+    get_chain_code_iter,
     offset_chain_residues,
     sequence_to_nef_frame,
 )
@@ -169,9 +169,10 @@ def pipe(
         residue = Residue(entity_id, seq_code, residue_name)
         sequence_residues.append(residue)
 
+    chain_code_iter = get_chain_code_iter(chain_codes)
     entity_id_to_chain_code = {
         entity_id: chain_code
-        for entity_id, chain_code in zip(entity_ids, chain_code_iter(chain_codes))
+        for entity_id, chain_code in zip(entity_ids, chain_code_iter)
     }
 
     for i, residue in enumerate(sequence_residues):

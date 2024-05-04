@@ -7,8 +7,8 @@ from pynmrstar import Entry
 from typer import Argument, Option
 
 from nef_pipelines.lib.sequence_lib import (
-    chain_code_iter,
     frame_to_chains,
+    get_chain_code_iter,
     sequence_from_frame,
     sequence_to_nef_frame,
 )
@@ -67,8 +67,9 @@ def clone(
         exit_error(
             f"couldn't find target chain {target} in {', '.join(existing_chain_codes)}"
         )
-
-    useable_chain_codes = chain_code_iter(chain_codes, [target, *existing_chain_codes])
+    useable_chain_codes = get_chain_code_iter(
+        chain_codes, [target, *existing_chain_codes]
+    )
     new_chain_codes = islice(useable_chain_codes, count)
 
     target_residues = [residue for residue in sequence if residue.chain_code == target]

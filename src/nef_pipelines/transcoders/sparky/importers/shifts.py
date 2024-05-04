@@ -10,7 +10,7 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
-    chain_code_iter,
+    get_chain_code_iter,
     get_residue_name_from_lookup,
     sequence_from_entry_or_exit,
     sequence_to_residue_name_lookup,
@@ -97,7 +97,8 @@ def pipe(entry, chain_codes, frame_name, file_names):
 
     sparky_frames = []
 
-    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
+    chain_code_iter = get_chain_code_iter(chain_codes)
+    for file_name, chain_code in zip(file_names, chain_code_iter):
 
         with open(file_name) as lines:
 

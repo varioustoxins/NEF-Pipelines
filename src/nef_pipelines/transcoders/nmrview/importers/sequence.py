@@ -4,7 +4,7 @@ from typing import List
 
 import typer
 
-from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_to_nef_frame
+from nef_pipelines.lib.sequence_lib import get_chain_code_iter, sequence_to_nef_frame
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     STDIN,
@@ -61,7 +61,8 @@ def process_sequence(args: Namespace):
     nmrview_frames = []
 
     chain_codes = parse_comma_separated_options(args.chain_codes)
-    for file_name, chain_code in zip(args.file_names, chain_code_iter(chain_codes)):
+    chain_code_iter = get_chain_code_iter(chain_codes)
+    for file_name, chain_code in zip(args.file_names, chain_code_iter):
         with open(file_name, "r") as lines:
             nmrview_sequence = read_sequence(lines, chain_code=chain_code)
 

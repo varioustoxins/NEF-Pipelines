@@ -6,7 +6,10 @@ from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
-from nef_pipelines.lib.sequence_lib import chain_code_iter, sequence_from_entry_or_exit
+from nef_pipelines.lib.sequence_lib import (
+    get_chain_code_iter,
+    sequence_from_entry_or_exit,
+)
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import (
@@ -68,7 +71,8 @@ def pipe(entry, chain_codes, sequence, entry_name, file_names):
 
     nmrview_frames = []
 
-    for file_name, chain_code in zip(file_names, chain_code_iter(chain_codes)):
+    chain_code_iter = get_chain_code_iter(chain_codes)
+    for file_name, chain_code in zip(file_names, chain_code_iter):
 
         with open(file_name) as lines:
 

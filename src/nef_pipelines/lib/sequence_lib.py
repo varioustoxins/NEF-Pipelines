@@ -5,7 +5,7 @@ from dataclasses import replace
 from enum import auto
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
@@ -37,11 +37,44 @@ NEF_CHAIN_CODE = "chain_code"
 ANY_CHAIN = "_"
 
 
-def chain_code_iter(
+class ChainCodeIterable:
+
+    ASCII_UPPERCASE = list(string.ascii_uppercase)
+
+    def __init__(self, user_chain_codes: List[str], exclude: List[str] = ()):
+
+        self._index = 0
+        self._chain_codes = []
+
+        seen_codes = set()
+        self._chain_codes = []
+        for user_chain_code in user_chain_codes:
+            seen_codes.add(user_chain_code)
+            if user_chain_code not in exclude:
+                self._chain_codes.append(user_chain_code)
+
+        for chain_code in self.ASCII_UPPERCASE:
+            if chain_code not in seen_codes and chain_code not in exclude:
+                self._chain_codes.append(chain_code)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index < len(self._chain_codes):
+            result = self._chain_codes[self._index]
+            self._index += 1
+            return result
+        else:
+            raise StopIteration("run out of chain names!")
+
+
+def get_chain_code_iter(
     user_chain_codes: List[str] = "", exclude: List[str] = ()
-) -> Iterable[str]:
+) -> Iterator[str]:
     """
-    Yield chain codes in user chain codes and once exhausted yield any remaining letters of the upper case alphabet
+    return an iterator thay will yield chain codes in user chain codes and
+    once exhausted yield any remaining letters of the upper case alphabet
     till they run out. A list of chain codes to not use can be provided...
 
     Args:
@@ -52,20 +85,7 @@ def chain_code_iter(
         Iterable[str] single codes
     """
 
-    ascii_uppercase = list(string.ascii_uppercase)
-
-    seen_codes = set()
-
-    for chain_code in user_chain_codes:
-        seen_codes.add(chain_code)
-        if chain_code not in exclude:
-            yield chain_code
-
-    for chain_code in ascii_uppercase:
-        if chain_code not in seen_codes and chain_code not in exclude:
-            yield chain_code
-
-    raise ValueError("run out of chain names!")
+    return ChainCodeIterable(user_chain_codes, exclude).__iter__()
 
 
 def get_linking(
