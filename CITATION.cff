@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Thompson"
+  given-names: "Gary"
+  orcid: "https://orcid.org/0000-0001-9399-7636"
+title: "NEF-Pipelines"
+version: 0.1.65
+doi: 10.5281/zenodo.11127005
+date-released: 2024-05-07
+url: https://github.com/varioustoxins/NEF-Pipelines
