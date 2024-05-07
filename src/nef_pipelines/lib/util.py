@@ -42,6 +42,8 @@ from nef_pipelines.lib.header_lib import (
 )
 from nef_pipelines.lib.structures import LineInfo
 
+UNKNOWN_INPUT_SOURCE = "unknown"
+
 FOUR_SPACES = " " * 4
 
 STDIN = Path("-")
@@ -345,25 +347,23 @@ def script_name(file: str) -> Path:
     return command
 
 
-def read_from_file_or_exit(file_name: Path, target: str = "unknown") -> str:
-    if file_name == STDIN and sys.stdin.isatty():
-        msg = f"""
-            while tring to read from {file_name} as {target} i expected to read from stdin,
-            howveer the inputs  is not a stream [did you forget to add a nef file to your pipeline?]
+def read_from_file_or_exit(file_path: Path, target: str = UNKNOWN_INPUT_SOURCE) -> str:
+
+    if file_path == STDIN and sys.stdin.isatty():
+
+        msg = """
+            while trying to read from STDIN [-] the input is not a stream
+            [did you forget to add a nef file to your pipeline?]
         """
         exit_error(msg)
-    if running_in_pycharm():
-        exit_error(
-            "reading from stdin doesn't work in pycharm debug environment as there is no shell..."
-        )
 
-    display_file_name = get_display_file_name(file_name)
+    display_file_name = get_display_file_name(file_path)
 
     fh = sys.stdin
 
-    if not file_name == STDIN:
+    if not file_path == STDIN:
         try:
-            fh = open(file_name)
+            fh = open(file_path)
         except Exception as e:
             msg = f"couldn't open {display_file_name} to read {target}"
             exit_error(msg, e)
@@ -374,7 +374,7 @@ def read_from_file_or_exit(file_name: Path, target: str = "unknown") -> str:
         msg = f"couldn't read {target} from {display_file_name}"
         exit_error(msg, e)
 
-    if file_name != STDIN:
+    if file_path != STDIN:
         fh.close()
 
     return text
