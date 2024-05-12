@@ -1,4 +1,5 @@
 import dataclasses
+from enum import StrEnum, auto
 from typing import Dict, List
 
 from pynmrstar import Loop, Saveframe
@@ -13,6 +14,11 @@ from nef_pipelines.lib.structures import (
 )
 
 NEF_CHEMICAL_SHIFT_LOOP = "nef_chemical_shift"
+
+
+class DataType(StrEnum):
+    HEIGHT = auto()
+    VOLUME = auto()
 
 
 def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
