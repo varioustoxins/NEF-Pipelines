@@ -1,8 +1,9 @@
 import dataclasses
-from enum import StrEnum, auto
+from enum import auto
 from typing import Dict, List
 
 from pynmrstar import Loop, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
 from nef_pipelines.lib.structures import (
