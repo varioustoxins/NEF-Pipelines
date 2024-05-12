@@ -271,3 +271,36 @@ release is the same as 0.1.51 but...
 
 ## version 0.1.65
 - fixed a bug in export of CO shifts reported by Pete Simpson
+
+## version 0.1.66
+
+Major release with many new features and bug fixes
+
+- Relaxation
+  - Added initial support for fitting [using [Streamfitter](https://github.com/varioustoxins/Streamfitter)] this uses the NEF provisional data series format  [command: series build]
+  - Added a tool to build a NEF [provisional] data series format from spectra [aka peak lists] [command: series build]
+
+- Multi file streams
+  - Added the ability to save a series of NEF files from a multi entry stream [command save]
+  - Added the ability to stream multiple NEF files from BMRB entries [command nmrstar project]
+
+- Documentation & Project
+  - NEF-Pipelines has a citation record
+  - Add an initial version of design doc for NEF-Pipelines describing the internals of the pipe commands within the pipeline
+  - The project is now automatically tested on python 3.9-3.12 and Linux and MacOS as a matrix hsing GitHub Actions
+
+- MARS and Fasta
+  - Fasta output and input to NEF-Pipelines supports round tripping of chain ids [chain_codes] and chain starts via a custom header
+  - Mars has a command to read in a sequence from its Fasta file [including round tripping if written by NEF-Pipelines]  [command mars import sequence]
+  - Better support of a variety of Fasta headers (including PDB/RCSB headers)
+  - Fasta input and output the entry_id of the NEF stream is saved as the entry name of the fasta file
+  - Mars sequence exports has better error handling [command: mars export sequence]
+  - Fasta has improvement to the sequence handling [molecule type per sequence] and provides a python pipe command
+
+- Simulations
+  - The command `simulate peaks` replaces the command `shifts make_peaks` [mostly a rename]
+  - Types of spectra are now arguments to `simulate peaks` not options and the command has better error messages and case-insensitive matching of spectra names [where possible]
+  - Simulation of unlabelling spectra added [command: simulate unlabelling]
+
+- NMRStar and the BMRB
+  - Add the ability to read BMRB sequences, shifts and projects [currently shifts and sequences] [commands: nmrstar import sequences and nmrstar import shifts]
