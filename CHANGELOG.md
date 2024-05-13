@@ -305,6 +305,10 @@ Major release with many new features and bug fixes
 - NMRStar and the BMRB
   - Add the ability to read BMRB sequences, shifts and projects [currently shifts and sequences] [commands: nmrstar import sequences and nmrstar import shifts]
 
-## version 0.1.67
+## version 0.1.68
 
 - add missing dependency on parse
+
+## version 0.1.69
+
+- StrEnum was imported from wrong package
