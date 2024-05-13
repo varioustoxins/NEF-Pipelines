@@ -55,11 +55,10 @@ if nef_app:
         if not file_paths:
             if sys.argv[-1] == "-":
                 file_paths = ["-"]
-
-        if not file_paths:
-            file_paths = [
-                Path.cwd(),
-            ]
+            else:
+                file_paths = [
+                    Path.cwd(),
+                ]
 
         file_paths = parse_comma_separated_options(file_paths)
 
