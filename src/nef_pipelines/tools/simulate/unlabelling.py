@@ -153,11 +153,15 @@ NAME_TEMPLATE_HELP = """
 """
 
 RESIDUE_TYPES_HELP = """\
-output a residue type list and a reference peak list rather than simulated peaks. The reference peak list will have
-the peaks reassigned with the anonymous chain and and sequence codes anonymised by addition of an @ e.g a residue
-with chain code A and sequence code 4 will get chain code @- and sequence code @4.
-The format of the residue type can be printed using the --format option
+output a residue type list rather than simulated peaks, each residue type will be an anonymous residue with the same
+sequence code as the assigned reside i.e.
+    A 74 VAL H -> @- @74 '' H.
+The format of the residue type list can be printed using the --residue-types-format option
 """
+
+DISPLAY_RESIDUE_TYPES_FORMAT_HELP = (
+    "display the NEF format used by the --residue-types option"
+)
 
 RESIDUE_TYPES_FORMAT = """
     The Format of the residue type list is
@@ -605,7 +609,7 @@ def unlabelling(
         help="where to read NEF data from either a file or stdin '-'",
     ),
     peak_frame_selectors: List[str] = typer.Option(
-        None, "--peak-frames", help="the names of the peak frames to use"
+        None, "--peak-frames", metavar=None, help="the names of the peak frames to use"
     ),
     shift_frame_selectors: List[str] = typer.Option(
         None, "--shift-frames", help=SHIFT_FRAMES_HELP
@@ -617,9 +621,11 @@ def unlabelling(
     list_sets: bool = typer.Option(
         False, "--list", help="list the available amino acid sets"
     ),
-    residue_types: bool = typer.Option(False, help=RESIDUE_TYPES_HELP),
+    residue_types: bool = typer.Option(
+        False, "--residue-types", help=RESIDUE_TYPES_HELP
+    ),
     display_residue_types_format: bool = typer.Option(
-        False, "--format", help=RESIDUE_TYPES_HELP
+        False, "--residue-type-format", help=DISPLAY_RESIDUE_TYPES_FORMAT_HELP
     ),
     unlabelled_amino_acids_and_sets: List[str] = typer.Argument(
         None, help=UNLABELLED_AMINO_ACIDS_AND_SETS_HELP
