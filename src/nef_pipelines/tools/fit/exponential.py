@@ -1,10 +1,11 @@
-from enum import StrEnum, auto
+from enum import auto
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import (
     SelectionType,
