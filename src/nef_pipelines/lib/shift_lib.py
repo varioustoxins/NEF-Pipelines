@@ -17,7 +17,7 @@ from nef_pipelines.lib.structures import (
 NEF_CHEMICAL_SHIFT_LOOP = "nef_chemical_shift"
 
 
-class DataType(StrEnum):
+class IntensityMeasurementType(StrEnum):
     HEIGHT = auto()
     VOLUME = auto()
 

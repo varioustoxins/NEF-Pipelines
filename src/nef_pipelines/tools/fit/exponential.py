@@ -12,7 +12,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.shift_lib import DataType
+from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
 
@@ -59,8 +59,8 @@ def exponential(
     seed: int = typer.Option(
         42, "-s", "--seed", help="seed for random number generator"
     ),
-    data_type: DataType = typer.Option(
-        DataType.HEIGHT, "-d", "--data-type", help="data type to fit"
+    data_type: IntensityMeasurementType = typer.Option(
+        IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
     ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
@@ -134,7 +134,7 @@ def pipe(
     error_method: ErrorPropogation,
     cycles: int,
     noise_level,
-    data_type: DataType,
+    data_type: IntensityMeasurementType,
     seed: int,
 ) -> Dict:
 
