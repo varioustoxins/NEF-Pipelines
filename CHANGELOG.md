@@ -312,3 +312,10 @@ Major release with many new features and bug fixes
 ## version 0.1.69
 
 - StrEnum was imported from wrong package
+
+## version 0.1.70
+
+- handling fo the default file path in save wasn't working
+- simulate unaleblling improved help text
+- incosistent use of DataType in streamfitter and fit expoenetial was corrected
+- DataType replaced with IntensityMeasuremenType
