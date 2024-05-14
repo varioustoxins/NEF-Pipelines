@@ -16,11 +16,14 @@ from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
 
+streamfitter_install_failure = None
 try:
     from streamfitter.fitter import ErrorPropogation, fitter
 
     stream_fitter = fitter
-except ImportError:
+except ImportError as e:
+    streamfitter_intall_failure = e
+
     # this is partial copy of the enum to avoid errors
     class ErrorPropogation(StrEnum):
         PROPOGATION = "error stream fitter package not installed"
@@ -137,6 +140,10 @@ def pipe(
     data_type: IntensityMeasurementType,
     seed: int,
 ) -> Dict:
+
+    if stream_fitter is None:
+        msg = "error the package streamfitter is not installed or is not wimporting properly"
+        exit_error(msg)
 
     return stream_fitter(
         entry, series_frames, error_method, cycles, noise_level, data_type, seed
