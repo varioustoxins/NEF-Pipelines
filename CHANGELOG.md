@@ -319,3 +319,6 @@ Major release with many new features and bug fixes
 - simulate unaleblling improved help text
 - incosistent use of DataType in streamfitter and fit expoenetial was corrected
 - DataType replaced with IntensityMeasuremenType
+
+## version 0.1.71
+improved error handling when `streamfitter` does load into `fit exponential`

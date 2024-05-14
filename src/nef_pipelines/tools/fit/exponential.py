@@ -21,6 +21,7 @@ try:
     from streamfitter.fitter import ErrorPropogation, fitter
 
     stream_fitter = fitter
+
 except ImportError as e:
     streamfitter_intall_failure = e
 
@@ -142,7 +143,11 @@ def pipe(
 ) -> Dict:
 
     if stream_fitter is None:
-        msg = "error the package streamfitter is not installed or is not wimporting properly"
+        msg = f"""
+                error the package streamfitter is not installed or is not importing properly
+                the error was {streamfitter_intall_failure}
+            """
+
         exit_error(msg)
 
     return stream_fitter(
