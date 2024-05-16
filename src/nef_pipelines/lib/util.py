@@ -49,6 +49,8 @@ FOUR_SPACES = " " * 4
 STDIN = Path("-")
 STDOUT = Path("-")
 
+NEWLINE = "\n"
+
 
 def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
 

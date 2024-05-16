@@ -1,4 +1,5 @@
 import typer
+from pynmrstar import Entry
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.nef_lib import NEF_MOLECULAR_SYSTEM
@@ -44,6 +45,7 @@ def test_3aa():
     path = path_in_test_data(__file__, "3aa.fasta")
     result = run_and_report(app, [path])
 
+    assert Entry.from_string(result.stdout).entry_id == "test"
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
@@ -54,6 +56,7 @@ def test_3aa_spaces():
     path = path_in_test_data(__file__, "3aa_spaces.fasta")
     result = run_and_report(app, [path])
 
+    assert Entry.from_string(result.stdout).entry_id == "fasta"
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3AA, mol_sys_result)
@@ -91,8 +94,7 @@ def test_3aa_x2():
     path = path_in_test_data(__file__, "3aa_x2.fasta")
     result = run_and_report(app, [path])
 
-    assert result.exit_code == 0
-
+    assert Entry.from_string(result.stdout).entry_id == "test__test2"
     mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
 
     assert_lines_match(EXPECTED_3A_AB, mol_sys_result)
@@ -167,3 +169,55 @@ def test_3aa_header_parsing():
 
     assert result.stdout.startswith("data_wibble")
     assert_lines_match(EXPECTED_3AA_HEADER_PARSING, mol_sys_result)
+
+
+EXPECTED_3AA_X2_HEADER_PARSING = """\
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1  X   -2   VAL   start    .   .
+     2  X   -1   ILE   middle   .   .
+     3  X    0   CYS   middle   .   .
+     4  X    1   LYS   middle   .   .
+     5  X    2   TYR   end      .   .
+     6  Z   10   GLY   start    .   .
+     7  Z   11   ALA   middle   .   .
+     8  Z   12   ARG   middle   .   .
+     9  Z   13   TYR   end      .   .
+
+   stop_
+
+save_"""
+
+
+def test_3aa_x2_header_parsing():
+
+    path = path_in_test_data(__file__, "3aa_x2_header.fasta")
+    result = run_and_report(app, [path])
+
+    assert Entry.from_string(result.stdout).entry_id == "test__test2"
+    mol_sys_result = isolate_frame(result.stdout, "%s" % NEF_MOLECULAR_SYSTEM)
+
+    assert_lines_match(EXPECTED_3AA_X2_HEADER_PARSING, mol_sys_result)
+
+
+def test_3aa_x2_chain_repeat_header_parsing():
+
+    file_name = "3aa_x2_header_repeat_chains.fasta"
+    path = path_in_test_data(__file__, file_name)
+    result = run_and_report(app, [path], expected_exit_code=1)
+
+    assert "some of the input chain codes are repeated" in result.stdout
+    assert "Z [2]" in result.stdout
+    assert "all chain codes must be unique" in result.stdout
+    assert file_name in result.stdout

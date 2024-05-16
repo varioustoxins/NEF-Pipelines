@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 from itertools import chain, cycle, islice
 from pathlib import Path
@@ -23,6 +24,7 @@ from nef_pipelines.lib.sequence_lib import (
 )
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import (
+    NEWLINE,
     STDIN,
     exit_error,
     is_int,
@@ -160,7 +162,10 @@ def pipe(
     )
 
     if read_entry_name and not entry_name:
-        entry.entry_id = read_entry_name
+        entry_name = "__".join(read_entry_name)
+        if not entry_name:
+            entry_name = "fasta"
+        entry.entry_id = entry_name
     elif entry_name:
         entry.entry_id = entry_name
     else:
@@ -261,6 +266,48 @@ def _parse_fasta(fasta_sequence, parse_header: bool = True) -> Sequence:
     return Sequence(entry_id, comment, letters, chain_code, start)
 
 
+@dataclass
+class SequenceInfo:
+    entry_id: str
+    chain_code: str
+    start: int
+
+
+def _exit_if_there_are_file_and_input_chain_codes(
+    file_chain_codes, input_chain_codes, file_paths
+):
+    input_chain_codes = [
+        chain_code for chain_code in input_chain_codes if chain_code is not None
+    ]
+    file_chain_codes = [
+        chain_code for chain_code in file_chain_codes if chain_code is not None
+    ]
+    if file_chain_codes and input_chain_codes:
+        msg = f"""
+            there are chain codes in the files and input arguments
+            the chain codes in the files are {','.join(file_chain_codes)}
+            the chain codes in the input arguments are {','.join(input_chain_codes)}
+            the files are
+            {NEWLINE.join([str(file_path) for file_path in file_paths])}
+            chain codes must come from files or inputs not both!
+            """
+        exit_error(msg)
+
+
+def _exit_if_there_are_gaps_in_file_chain_codes(file_chain_codes, file_paths):
+
+    file_chain_codes = [
+        chain_code for chain_code in file_chain_codes if chain_code is not None
+    ]
+    if len(file_chain_codes) != len(file_chain_codes):
+        msg = f"""
+            there are sequences without chain codes in the files
+            {NEWLINE.join([str(file_path) for file_path in file_paths])}
+            either all sequences in files must have a chain code or none
+            """
+        exit_error(msg)
+
+
 def _read_sequences(
     file_paths: List[Path],
     chain_codes: Iterable[str],
@@ -301,6 +348,29 @@ def _read_sequences(
     # read as many chain codes as there are sequences
     # https://stackoverflow.com/questions/16188270/get-a-fixed-number-of-items-from-a-generator
 
+    file_chain_codes = [
+        sequence_record.chain_code for sequence_record in sequence_records
+    ]
+
+    _exit_if_there_are_gaps_in_file_chain_codes(file_chain_codes, file_paths)
+
+    # this keeps the default input chain code as A
+    file_chain_codes = [
+        chain_code for chain_code in file_chain_codes if chain_code is not None
+    ]
+    if file_chain_codes and chain_codes == ["A"]:
+        chain_codes = []
+
+    _exit_if_there_are_file_and_input_chain_codes(
+        file_chain_codes, chain_codes, file_paths
+    )
+
+    _exit_if_there_are_replicate_chain_codes_from_files(
+        file_chain_codes, chain_codes, file_paths
+    )
+
+    chain_codes = file_chain_codes if file_chain_codes else chain_codes
+
     chain_code_iter = get_chain_code_iter(chain_codes)
     for sequence_record, chain_code, molecule_type in zip(
         sequence_records, chain_code_iter, molecule_types
@@ -328,4 +398,66 @@ def _read_sequences(
 
         residues.update(chain_residues)
 
-    return residues, sequence_records[0].entry_id
+    entry_names = [
+        sequence_record.entry_id
+        for sequence_record in sequence_records
+        if sequence_record.entry_id
+    ]
+
+    return residues, entry_names
+
+
+def _exit_if_there_are_replicate_chain_codes_from_files(
+    file_chain_codes, input_chain_codes, file_paths
+):
+
+    file_chain_counts = Counter(file_chain_codes)
+    file_chain_replicates = {
+        chain_code: count
+        for chain_code, count in file_chain_counts.items()
+        if count > 1 and chain_code is not None
+    }
+    input_chain_counts = Counter(input_chain_codes)
+    input_chain_replicates = {
+        chain_code: count
+        for chain_code, count in input_chain_counts.items()
+        if count > 1
+    }
+
+    if file_chain_replicates:
+        repeats = " ".join(
+            [
+                f"{chain_code} [{count}]"
+                for chain_code, count in file_chain_replicates.items()
+            ]
+        )
+
+        msg = f"""
+                some of the input chain codes are repeated: {repeats}
+                {NEWLINE.join([str(file_path) for file_path in file_paths])}
+                all chain codes must be unique
+            """
+        exit_error(msg)
+
+    if input_chain_replicates:
+        msg = f"""
+            some of the chain codes: {','.join(input_chain_replicates.keys())}
+            are repeated in the input each chain must have a unique chain code
+        """
+
+        exit_error(msg)
+
+    all_chain_counts = Counter(file_chain_codes + input_chain_codes)
+    all_chain_replicates = {
+        chain_code: count
+        for chain_code, count in all_chain_counts.items()
+        if count > 1 and chain_code is not None
+    }
+    if all_chain_replicates:
+        msg = f"""
+                some of the chain codes are repeated: {','.join(all_chain_replicates.keys())}
+                the chain codes come from a combination of the input arguments and the files
+                {NEWLINE.join([str(file_paths) for file_path in file_paths])}
+                all chain_codes_must_be_unique
+            """
+        exit_error(msg)
