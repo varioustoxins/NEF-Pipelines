@@ -220,16 +220,6 @@ class Sequence:
 # could do with taking a list of offsets
 # noinspection PyUnusedLocal
 #
-# >pdb|4ciw|A
-# >CW42
-# >crab_anapl ALPHA CRYSTALLIN B CHAIN (ALPHA(B)-CRYSTALLIN).
-# >gnl|mdb|bmrb16965:1 HET-s
-# >gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
-# >2DLV_1|Chain A|Regulator of G-protein signaling 18|Homo sapiens (9606)
-# >2SRC_1|Chain A|TYROSINE-PROTEIN KINASE SRC|Homo sapiens (9606)
-# >H1N1 nucleoprotein, monomeric 416A mutant
-
-
 def _parse_fasta(fasta_sequence, parse_header: bool = True) -> Sequence:
     definition = fasta_sequence.formatted_definition_line()
     bar_count = definition.count("|")
@@ -257,10 +247,11 @@ def _parse_fasta(fasta_sequence, parse_header: bool = True) -> Sequence:
 
     elif bar_count == 3 and is_bracketed and is_last_field_number:
         fields = definition.split("|")
-        entry_id = fields[0]
-        comment = "|".join(fields[1:])
+        entry_id = fields[0].lstrip(">")
+        comment = "__".join(fields[1:])
     else:
-        entry_id, comment = fasta_sequence.id, fasta_sequence.description
+        sequence_id = "".join([c if c.isalnum() else "_" for c in fasta_sequence.id])
+        entry_id, comment = sequence_id, fasta_sequence.description
 
     letters = [letter_code.letter_code for letter_code in fasta_sequence.sequence]
     return Sequence(entry_id, comment, letters, chain_code, start)

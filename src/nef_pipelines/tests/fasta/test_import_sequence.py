@@ -1,3 +1,6 @@
+from textwrap import dedent
+
+import pytest
 import typer
 from pynmrstar import Entry
 from typer.testing import CliRunner
@@ -9,6 +12,7 @@ from nef_pipelines.lib.test_lib import (
     path_in_test_data,
     run_and_report,
 )
+from nef_pipelines.lib.util import is_int
 from nef_pipelines.transcoders.fasta.importers.sequence import sequence
 
 runner = CliRunner()
@@ -221,3 +225,45 @@ def test_3aa_x2_chain_repeat_header_parsing():
     assert "Z [2]" in result.stdout
     assert "all chain codes must be unique" in result.stdout
     assert file_name in result.stdout
+
+
+@pytest.mark.parametrize(
+    "header_or_text, expected_or_count",
+    [
+        (">pdb|4ciw|A", "pdb_4ciw_A"),
+        (">CW42", "CW42"),
+        (">crab_anapl ALPHA CRYSTALLIN B CHAIN (ALPHA(B)-CRYSTALLIN).", "crab_anapl"),
+        (">gnl|mdb|bmrb16965:1 HET-s", "gnl_mdb_bmrb16965_1"),
+        ("g", 1024),  # g repeated 1024 times
+        (
+            ">2DLV_1|Chain A|Regulator of G-protein signaling 18|Homo sapiens (9606)",
+            "2DLV_1",
+        ),
+        (">2SRC_1|Chain A|TYROSINE-PROTEIN KINASE SRC|Homo sapiens (9606)", "2SRC_1"),
+        (">H1N1 nucleoprotein, monomeric 416A mutant", "H1N1"),
+        (">test NEFPLS | CHAIN: Z | START: 10", "test"),
+        ("", "fasta"),
+        (">", "fasta"),
+    ],
+)
+def test_headers_2(header_or_text, expected_or_count, tmp_path):
+
+    if is_int(expected_or_count):
+        expected_or_count = header_or_text * expected_or_count
+        header_or_text = f">{expected_or_count}"
+
+    file_text = f"""
+        {header_or_text}
+        AAA
+    """
+    file_text = dedent(file_text)
+
+    tmp_file = tmp_path / "test.fasta"
+    with tmp_file.open("w") as fh:
+        fh.write(file_text)
+
+    result = run_and_report(app, [str(tmp_file)])
+
+    entry = Entry.from_string(result.stdout)
+
+    assert entry.entry_id == expected_or_count
