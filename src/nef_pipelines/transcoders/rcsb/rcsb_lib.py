@@ -15,28 +15,22 @@ from nef_pipelines.lib.structures import LineInfo
 from nef_pipelines.lib.util import exit_error
 
 
-class Atom:
-    ...
+class Atom: ...
 
 
-class Chain:
-    ...
+class Chain: ...
 
 
-class Residue:
-    ...
+class Residue: ...
 
 
-class Model:
-    ...
+class Model: ...
 
 
-class Structure:
-    ...
+class Structure: ...
 
 
-class Sequence:
-    ...
+class Sequence: ...
 
 
 @dataclass
@@ -79,6 +73,7 @@ class Chain:
 
     def __iter__(self):
         return self.residues.__iter__()
+
 
 @dataclass
 class Model:
@@ -136,7 +131,6 @@ class Structure:
 
     def __iter__(self):
         return self.models.__iter__()
-
 
     def __getitem__(self, index):
         return self.models[0]
@@ -302,10 +296,16 @@ def _parse_atom(line, line_info):
 
     if current_chain:
         new_chain = False
-        if (current_chain.chain_code and chain_code) and current_chain.chain_code != chain_code:
+        if (
+            current_chain.chain_code and chain_code
+        ) and current_chain.chain_code != chain_code:
             new_chain = True
 
-        if current_chain.segment_id and segment_id and current_chain.segment_id != segment_id:
+        if (
+            current_chain.segment_id
+            and segment_id
+            and current_chain.segment_id != segment_id
+        ):
             new_chain = True
 
         if new_chain:
@@ -446,7 +446,9 @@ def _parse_sheet(line, line_info):
         PdbSecondaryStructureType.SHEET,
     )
 
-    current_structure.secondary_structure.append(secondary_structure_element)
+    current_structure.secondary_structure.setdefault(chain_code, []).append(
+        secondary_structure_element
+    )
 
 
 def _fixup_sequences(current_structure):
@@ -483,7 +485,7 @@ def parse_pdb(lines: Iterable[str], source: str = "unknown"):
 
         line = _pad_line_to_80(line)
 
-        record_type = line.split()[0]
+        record_type = line[0:6].strip()
 
         line_info = PDBLineInfo(
             source, line_no=line_no, line=line, record_type=record_type
@@ -918,10 +920,10 @@ def _parse_cif_sheet(data, line_info):
             )
 
 
-def parse_cif(fh: Iterable[str], source: str) -> Structure:
+def parse_cif(lines: Iterable[str], source: str) -> Structure:
     global current_structure, current_indices
 
-    current_lines = fh.readlines()
+    current_lines = [line for line in lines]
 
     current_indices = _find_last_row_indices(
         current_lines,
@@ -958,13 +960,14 @@ def _match_sequences_and_set_offsets(structure):
         chain_matches = {}
         chain_starts = {}
         for chain in structure.models[0].chains.values():
-            chain_segment_id_key = chain.chain_code if chain.chain_code else chain.segment_id
+            chain_segment_id_key = (
+                chain.chain_code if chain.chain_code else chain.segment_id
+            )
             chain_residues = {}
             chain_starts[chain_segment_id_key] = chain.residues[0].sequence_code
 
             for residue in chain.residues:
                 chain_residues[residue.sequence_code] = residue.residue_name
-
 
             min_residue = min(chain_residues.keys())
             max_residue = max(chain_residues.keys())
@@ -976,7 +979,9 @@ def _match_sequences_and_set_offsets(structure):
 
             for index, sequence in structure.sequences.items():
                 matcher.set_seqs(match_residues, sequence.residues)
-                chain_segment_key = chain.chain_code if chain.chain_code else  chain.segment_id
+                chain_segment_key = (
+                    chain.chain_code if chain.chain_code else chain.segment_id
+                )
                 chain_matches.setdefault(chain_segment_key, {})[matcher.ratio()] = (
                     index,
                     matcher.get_opcodes(),
@@ -1026,44 +1031,83 @@ def _parse_cif_sequence(data, line_info):
 
         current_structure.sequences[entity_id].residues.append(monomer_id)
 
-PDB_RECORD_IDS = set([
 
-    'HEADER', 'OBSLTE', 'TITLE', 'SPLT',
-    'CAVEAT', 'COMPND', 'SOURCE','KEYWDS',
-    'EXPDTA','NUMMDL','MDLTYP','AUTHOR',
-    'REVDAT','SPRSDE','JRNL', 'REMARKS',
-    'DBREF', 'DBREF1', 'DBREF2', 'SEQADV',
-    'SEQRES', 'MODRES', 'HET','FORMUL',
-    'HETNAM','HETSYN', 'HELIX', 'SHEET',
-    'SSBOND', 'LINK', 'CISPEP', 'SITE'
-    'CRYST1', 'MTRIXn', 'ORIGXn', 'SCALEn',
-    'MODEL', 'ANISOU', 'TER', 'ENDMDL',
-    'CONECT', 'MASTER', 'END'
-])
+PDB_RECORD_IDS = set(
+    [
+        "HEADER",
+        "OBSLTE",
+        "TITLE",
+        "SPLT",
+        "CAVEAT",
+        "COMPND",
+        "SOURCE",
+        "KEYWDS",
+        "EXPDTA",
+        "NUMMDL",
+        "MDLTYP",
+        "AUTHOR",
+        "REVDAT",
+        "SPRSDE",
+        "JRNL",
+        "REMARKS",
+        "DBREF",
+        "DBREF1",
+        "DBREF2",
+        "SEQADV",
+        "SEQRES",
+        "MODRES",
+        "HET",
+        "FORMUL",
+        "HETNAM",
+        "HETSYN",
+        "HELIX",
+        "SHEET",
+        "SSBOND",
+        "LINK",
+        "CISPEP",
+        "SITE" "CRYST1",
+        "MTRIXn",
+        "ORIGXn",
+        "SCALEn",
+        "MODEL",
+        "ANISOU",
+        "TER",
+        "ENDMDL",
+        "CONECT",
+        "MASTER",
+        "END",
+    ]
+)
+
 
 class RCSBFileType(LowercaseStrEnum):
-    PDB= auto(),
-    CIF = auto(),
-    UNKNOWN =  auto()
+    PDB = (auto(),)
+    CIF = (auto(),)
+    UNKNOWN = auto()
 
-def guess_cif_or_pdb(lines: Iterable[str], file_name: str = '', test_length: int =100):
+
+def guess_cif_or_pdb(lines: Iterable[str], file_name: str = "", test_length: int = 100):
 
     pdb = 0
     cif = 0
 
     file_path = Path(file_name)
 
-    if file_path.suffix.lower() in ('.cif', '.mmcif', '.pdbx'):
+    if file_path.suffix.lower() in (".cif", ".mmcif", ".pdbx"):
         cif = 1
-    elif file_path.suffix.lower() == '.pdb':
+    elif file_path.suffix.lower() == ".pdb":
         pdb = 1
     else:
         for line in lines[:test_length]:
             fields = line.strip().split()
             if fields[0] in PDB_RECORD_IDS:
-                pdb+=1
-            if fields[0].startswith('data_') or fields[0][0] in ('_', ';') or fields[0] == 'loop_':
-                cif+=1
+                pdb += 1
+            if (
+                fields[0].startswith("data_")
+                or fields[0][0] in ("_", ";")
+                or fields[0] == "loop_"
+            ):
+                cif += 1
 
     if pdb > cif:
         result = RCSBFileType.PDB
@@ -1073,6 +1117,7 @@ def guess_cif_or_pdb(lines: Iterable[str], file_name: str = '', test_length: int
         result = RCSBFileType.UNKNOWN
 
     return result
+
 
 if __name__ == "__main__":
     root = Path(

@@ -157,3 +157,87 @@ def test_file_type_from_data(file_name):
 
     file_data = read_test_data(file_name, __file__).split("\n")
     assert guess_cif_or_pdb(file_data) == RCSBFileType[file_type_str.upper()]
+
+
+def test_parse_pdb_clic1():
+    file_name = "1k0o.pdb"
+    file_data = read_test_data(file_name, __file__).split("\n")
+    structure = parse_pdb(file_data, file_name)
+
+    assert len(structure.sequences) == 1
+    assert len(structure.secondary_structure) == 2
+    assert list(structure.secondary_structure.keys()) == ["A", "B"]
+    assert len(structure.models) == 1
+
+    model_0 = structure.models[0]
+    model_0_chain_A = model_0.chains["A"]
+    model_0_chain_B = model_0.chains["B"]
+
+    assert len(model_0_chain_A.residues) == 225
+    assert len(model_0_chain_B.residues) == 213
+
+    assert list(structure.sequences.keys()) == [
+        "1",
+    ]
+    assert structure.sequences["1"].id == "1"
+    assert len(structure.sequences["1"].residues) == 241
+    assert structure.sequences["1"].structure is structure
+
+    for chain in "AB":
+        secondary_structure = structure.secondary_structure[chain][0]
+        assert (
+            secondary_structure.secondary_structure_type
+            == PdbSecondaryStructureType.SHEET
+        )
+        assert secondary_structure.start_sequence_code == 8
+        assert secondary_structure.end_sequence_code == 13
+
+        secondary_structure = structure.secondary_structure[chain][-1]
+        assert (
+            secondary_structure.secondary_structure_type
+            == PdbSecondaryStructureType.HELIX_RIGHT_HANDED_ALPHA
+        )
+        assert secondary_structure.start_sequence_code == 225
+        assert secondary_structure.end_sequence_code == 233
+
+
+def test_parse_cif_clic1():
+    file_name = "1k0o.cif"
+    file_data = read_test_data(file_name, __file__).split("\n")
+    structure = parse_cif(file_data, file_name)
+
+    assert len(structure.sequences) == 1
+    assert len(structure.secondary_structure) == 2
+    assert list(structure.secondary_structure.keys()) == ["A", "B"]
+    assert len(structure.models) == 1
+
+    model_0 = structure.models[0]
+    model_0_chain_A = model_0.chains["A"]
+    model_0_chain_B = model_0.chains["B"]
+
+    assert len(model_0_chain_A.residues) == 225
+    assert len(model_0_chain_B.residues) == 213
+
+    assert list(structure.sequences.keys()) == [
+        "1",
+    ]
+    assert structure.sequences["1"].id == "1"
+    assert len(structure.sequences["1"].residues) == 241
+    assert structure.sequences["1"].structure is structure
+
+    for chain in "AB":
+        secondary_structure = structure.secondary_structure[chain][0]
+        assert (
+            secondary_structure.secondary_structure_type
+            == PdbSecondaryStructureType.SHEET
+        )
+        assert secondary_structure.start_sequence_code == 8
+        assert secondary_structure.end_sequence_code == 13
+
+        secondary_structure = structure.secondary_structure[chain][-1]
+        assert (
+            secondary_structure.secondary_structure_type
+            == PdbSecondaryStructureType.HELIX_RIGHT_HANDED_ALPHA
+        )
+        assert secondary_structure.start_sequence_code == 225
+        assert secondary_structure.end_sequence_code == 233
