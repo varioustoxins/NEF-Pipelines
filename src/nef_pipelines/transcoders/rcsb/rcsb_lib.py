@@ -920,7 +920,7 @@ def _parse_cif_sheet(data, line_info):
             )
 
 
-def parse_cif(lines: Iterable[str], source: str) -> Structure:
+def parse_cif(lines: Iterable[str], source: str = "unknown") -> Structure:
     global current_structure, current_indices
 
     current_lines = [line for line in lines]

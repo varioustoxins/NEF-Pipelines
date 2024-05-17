@@ -89,7 +89,7 @@ def process_sequence(args: Namespace):
     print(entry)
 
 
-def read_sequences(path, target_chain_codes, use_segids=False):
+def read_sequences(path: Path, target_chain_codes: List[str], use_segids: bool = False):
 
     with open(path) as fh:
         lines = fh.readlines()
@@ -97,9 +97,9 @@ def read_sequences(path, target_chain_codes, use_segids=False):
     file_type = guess_cif_or_pdb(file_lines, str(path))
 
     if file_type is RCSBFileType.PDB:
-        model = parse_pdb(file_lines)[0]
+        model = parse_pdb(file_lines, source=str(path))[0]
     elif file_type is RCSBFileType.CIF:
-        model = parse_cif(file_lines)[0]
+        model = parse_cif(file_lines, source=str(path))[0]
     else:
         msg = f"""
             Couldn't determine if the file {path} was a cif or pdb file...
