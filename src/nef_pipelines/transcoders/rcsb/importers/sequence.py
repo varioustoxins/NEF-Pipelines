@@ -96,16 +96,19 @@ def read_sequences(path: Path, target_chain_codes: List[str], use_segids: bool =
     file_lines = list(lines)
     file_type = guess_cif_or_pdb(file_lines, str(path))
 
-    if file_type is RCSBFileType.PDB:
-        model = parse_pdb(file_lines, source=str(path))[0]
-    elif file_type is RCSBFileType.CIF:
-        model = parse_cif(file_lines, source=str(path))[0]
-    else:
-        msg = f"""
-            Couldn't determine if the file {path} was a cif or pdb file...
-            are you sure the file has the right format?
-        """
-        exit_error(msg)
+    try:
+        if file_type is RCSBFileType.PDB:
+            model = parse_pdb(file_lines, source=str(path))[0]
+        elif file_type is RCSBFileType.CIF:
+            model = parse_cif(file_lines, source=str(path))[0]
+        else:
+            msg = f"""
+                Couldn't determine if the file {path} was a cif or pdb file...
+                are you sure the file has the right format?
+            """
+            exit_error(msg)
+    except Exception as e:
+        exit_error(f"failed to parse {path} because {e}")
 
     sequences = []
 
