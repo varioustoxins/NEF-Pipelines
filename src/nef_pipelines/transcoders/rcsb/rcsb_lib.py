@@ -1,12 +1,14 @@
 import random
+import re
 import string
 from collections import Counter
 from dataclasses import dataclass, field
-from difflib import SequenceMatcher
-from enum import IntEnum, auto
+from enum import Enum, IntEnum, auto
 from pathlib import Path
+from textwrap import dedent
 from typing import Dict, Iterable, List, Optional
 
+from fyeah import f
 from pdbx import DataContainer
 from pdbx.reader import PdbxReader
 from strenum import LowercaseStrEnum
@@ -15,22 +17,22 @@ from nef_pipelines.lib.structures import LineInfo
 from nef_pipelines.lib.util import exit_error
 
 
-class Atom: ...
+class Atom: ...  # noqa: E701
 
 
-class Chain: ...
+class Chain: ...  # noqa: E701
 
 
-class Residue: ...
+class Residue: ...  # noqa: E701
 
 
-class Model: ...
+class Model: ...  # noqa: E701
 
 
-class Structure: ...
+class Structure: ...  # noqa: E701
 
 
-class Sequence: ...
+class Sequence: ...  # noqa: E701
 
 
 @dataclass
@@ -110,12 +112,17 @@ class SecondaryStructureElement:
     structure: Optional[Structure] = None
 
 
+class SequenceSource(Enum):
+    SEQRES = auto()
+    RESIDUE = auto()
+
+
 @dataclass
 class Sequence:
     id: int
-    start_sequence_code: int
+    start_sequence_code: int = 1
     residues: List[str] = field(default_factory=list)
-
+    source: Optional[SequenceSource] = None
     structure: Optional[Structure] = None
 
 
@@ -134,6 +141,10 @@ class Structure:
 
     def __getitem__(self, index):
         return self.models[0]
+
+
+class StructureParseException(Exception):
+    pass
 
 
 current_structure: Optional[Structure] = None
@@ -377,7 +388,10 @@ def _parse_sequence(line: str, _: PDBLineInfo):
     chain_code = line[11]
     chain_code = _as_string_or_none(chain_code)
 
-    sequence = current_structure.sequences.setdefault(chain_code, Sequence(None, None))
+    sequence = current_structure.sequences.setdefault(
+        chain_code,
+        Sequence(id=None, start_sequence_code=1, source=SequenceSource.SEQRES),
+    )
 
     for offset in range(13):
         start = 19 + (offset * 4)
@@ -452,26 +466,92 @@ def _parse_sheet(line, line_info):
 
 
 def _fixup_sequences(current_structure):
-    sequence_index_by_sequences = {}
+    sequences_by_index = {}
     sequence_count = 1
+
+    sequence_residues_set = set()
     for sequence in current_structure.sequences.values():
-        sequence = tuple(sequence.residues)
-        if sequence not in sequence_index_by_sequences:
-            sequence_index_by_sequences[sequence] = str(sequence_count)
+        sequence_residues = tuple(sequence.residues)
+        if sequence_residues not in sequence_residues_set:
+            sequences_by_index[sequence_count] = sequence
+            sequence_residues_set.add(sequence_residues)
             sequence_count += 1
 
-    sequences = {
-        index: Sequence(index, None, list(sequence), current_structure)
-        for sequence, index in sequence_index_by_sequences.items()
-    }
+    for sequence_id, sequence in sequences_by_index.items():
+        sequence.id = sequence_id
 
-    current_structure.sequences = sequences
+    current_structure.sequences = sequences_by_index
+    for sequence in current_structure.sequences.values():
+        sequence.structure = current_structure
 
 
 def _fixup_secondary_structure(current_structure):
     for secondary_structure_list in current_structure.secondary_structure.values():
         for secondary_structure in secondary_structure_list:
             secondary_structure.structure = current_structure
+
+
+def _sequence_from_residues_if_no_seqres(structure):
+
+    if not structure.sequences:
+        chain_residues = {}
+        chain_min_residues = {}
+        chain_sequence_valid = {}
+        for model in structure.models:
+            for chain in model.chains.values():
+                for residue in chain.residues:
+                    chain_key = (chain.chain_code, chain.segment_id)
+                    chain_residues.setdefault(chain_key, {})
+                    chain_residues[chain_key].setdefault(
+                        residue.sequence_code, set()
+                    ).add(residue.residue_name)
+
+        for chain_key in chain_residues:
+            min_residue = min(chain_residues[chain_key].keys())
+            max_residue = max(chain_residues[chain_key].keys())
+            chain_min_residues[chain_key] = min_residue
+
+            chain_sequence_valid[chain_key] = True
+            for sequence_code in range(min_residue, max_residue + 1):
+                if sequence_code not in chain_residues[chain_key]:
+                    chain_sequence_valid[chain_key] = False
+                    break
+                if len(chain_residues[chain_key][sequence_code]) > 1:
+                    chain_sequence_valid[chain_key] = False
+                    break
+
+        raw_chain_sequences = {}
+        for chain_key in chain_residues:
+            if not chain_sequence_valid[chain_key]:
+                continue
+
+            current_chain = chain_residues[chain_key]
+            for sequence_code in sorted(current_chain):
+                residue = current_chain[sequence_code].pop()
+                raw_chain_sequences.setdefault(chain_key, []).append(residue)
+
+        chain_sequences = {}
+        for chain_id, (chain_key, sequence_residues) in enumerate(
+            raw_chain_sequences.items()
+        ):
+            sequence_start = chain_min_residues[chain_key]
+
+            sequence = Sequence(
+                chain_id,
+                sequence_start,
+                sequence_residues,
+                structure,
+                SequenceSource.RESIDUE,
+            )
+
+            chain_sequences[chain_key] = sequence
+
+        for sequence_chain_key, sequence in chain_sequences.items():
+            for model in structure.models:
+                for chain in model.chains.values():
+                    model_chain_key = (chain.chain_code, chain.segment_id)
+                    if sequence_chain_key == model_chain_key:
+                        chain.sequence = sequence
 
 
 def parse_pdb(lines: Iterable[str], source: str = "unknown"):
@@ -549,6 +629,8 @@ def parse_pdb(lines: Iterable[str], source: str = "unknown"):
         if record_type == "SHEET":
             _parse_sheet(line, line_info)
 
+    _sequence_from_residues_if_no_seqres(current_structure)
+
     _fixup_sequences(current_structure)
     _fixup_secondary_structure(current_structure)
 
@@ -574,14 +656,6 @@ def _find_last_row_indices(lines, targets):
                 result[target] = i
 
     return result
-
-
-def _find_row(line_data, target):
-    global current_lines, current_indices
-
-    offset = current_indices[target]
-
-    print(offset)
 
 
 def _attibute_index_to_name(items, target_index):
@@ -946,6 +1020,8 @@ def parse_cif(lines: Iterable[str], source: str = "unknown") -> Structure:
     _parse_cif_sheet(data, line_info)
     structure = _parse_cif_atoms(data, line_info)
 
+    _fixup_cif_sequences(structure)
+
     _match_sequences_and_set_offsets(structure)
 
     for secondary_structure_list in structure.secondary_structure.values():
@@ -954,17 +1030,46 @@ def parse_cif(lines: Iterable[str], source: str = "unknown") -> Structure:
     return structure
 
 
+def _fixup_cif_sequences(structure):
+    sequence_id_map = {}
+    for new_sequence_id, (original_sequence_id, sequence) in enumerate(
+        structure.sequences.items(), start=1
+    ):
+        sequence_id_map[original_sequence_id] = new_sequence_id
+    for old_sequence_id, new_sequence_id in sequence_id_map.items():
+        sequence = structure.sequences.pop(old_sequence_id)
+        sequence.id = new_sequence_id
+        structure.sequences[new_sequence_id] = sequence
+
+
+def _get_lenght_longest_residue_name(structure):
+
+    residue_names = set()
+    for sequence in structure.sequences.values():
+        residue_names.update(sequence.residues)
+
+    for model in structure.models:
+        for chain in model.chains.values():
+            residue_names.update([residue.residue_name for residue in chain])
+
+    name_lengths = [len(residue_name) for residue_name in residue_names]
+
+    return max(name_lengths)
+
+
 def _match_sequences_and_set_offsets(structure):
     if structure.sequences:
-        matcher = SequenceMatcher()
+        max_residue_name_length = _get_lenght_longest_residue_name(structure)
         chain_matches = {}
-        chain_starts = {}
+        chain_offsets = {}
+        chain_sequence_starts = {}
         for chain in structure.models[0].chains.values():
-            chain_segment_id_key = (
-                chain.chain_code if chain.chain_code else chain.segment_id
-            )
+            chain_segment_id_key = chain.chain_code, chain.segment_id
+
             chain_residues = {}
-            chain_starts[chain_segment_id_key] = chain.residues[0].sequence_code
+            chain_sequence_starts[chain_segment_id_key] = chain.residues[
+                0
+            ].sequence_code
 
             for residue in chain.residues:
                 chain_residues[residue.sequence_code] = residue.residue_name
@@ -973,41 +1078,78 @@ def _match_sequences_and_set_offsets(structure):
             max_residue = max(chain_residues.keys())
 
             match_residues = []
+            wildcard = "." * max_residue_name_length
             for i in range(min_residue, max_residue + 1):
-                match_residue = chain_residues[i] if i in chain_residues else "."
+
+                match_residue = (
+                    chain_residues[i].ljust(max_residue_name_length, "-")
+                    if i in chain_residues
+                    else wildcard
+                )
                 match_residues.append(match_residue)
+            match_residues = "".join(match_residues)
 
             for index, sequence in structure.sequences.items():
-                matcher.set_seqs(match_residues, sequence.residues)
-                chain_segment_key = (
-                    chain.chain_code if chain.chain_code else chain.segment_id
-                )
-                chain_matches.setdefault(chain_segment_key, {})[matcher.ratio()] = (
-                    index,
-                    matcher.get_opcodes(),
-                )
+                sequence_residues = [
+                    residue.ljust(max_residue_name_length, "-")
+                    for residue in sequence.residues
+                ]
+                sequence_residues = "".join(sequence_residues)
 
-        chain_offsets = {}
-        for chain, matches in chain_matches.items():
-            best = max(matches)
-            best_matches = matches[best]
-            for item in best_matches[1]:
-                if item[0] == "equal":
+                match = re.search(match_residues, sequence_residues)
 
-                    chain_offsets[chain] = best_matches[0], item[3]
-                    break
+                chain_key = chain.chain_code, chain.segment_id
+                if match:
+                    chain_offsets[chain_key] = int(
+                        match.start() / max_residue_name_length
+                    )
+                    chain_matches[chain_key] = sequence.id
+                    continue
 
-        seen_sequences = set()
+        sequence_start_counts = {}
+        chain_sequence_id_and_start = {}
+        for chain_key, chain_start in chain_sequence_starts.items():
+            if chain_key in chain_offsets:
+                sequence_start = chain_start - chain_offsets[chain_key]
+                sequence_id = chain_matches[chain_key]
+                sequence_start_counts.setdefault(sequence_id, Counter())[
+                    sequence_start
+                ] += 1
+                chain_sequence_id_and_start[chain_key] = (sequence_id, sequence_start)
 
-        for chain, (sequence_id, offset) in chain_offsets.items():
-            if sequence_id not in seen_sequences:
-                seen_sequences.add(sequence_id)
-                chain_first_residue = (
-                    structure.models[0].chains[chain].residues[0].sequence_code
-                )
-                structure.sequences[sequence_id].start_sequence_code = (
-                    int(chain_first_residue) - offset
-                )
+        for sequence_id, sequence_starts in sequence_start_counts.items():
+            if len(sequence_starts) > 1:
+                bad_chains = [
+                    chain_key
+                    for chain_key, (chain_sequence_id, _) in chain_sequence_id_and_start
+                    if sequence_id == chain_sequence_id
+                ]
+                bad_chains = [
+                    f"chain_code: {chain_key[0]} sequence_code: {chain_key[1]}"
+                    for chain_key in bad_chains
+                ]
+                bad_chains = "\n".join(bad_chains)  # noqua: E999
+                msg = """
+                    for sequence {sequence_id} there were multiple possible sequence starts
+                    derived from the sequences of the chains
+                    {bad_chains}
+                """
+                msg = dedent(msg)
+                msg = f(msg)
+                raise StructureParseException(msg)
+
+        sequences_by_id = {
+            sequence.id: sequence for sequence in structure.sequences.values()
+        }
+        chains_by_chain_key = {
+            (chain.chain_code, chain.segment_id): chain
+            for chain in structure.models[0].chains.values()
+        }
+
+        for chain_key, (sequence_id, _) in chain_sequence_id_and_start.items():
+            sequence = sequences_by_id[sequence_id]
+            chain = chains_by_chain_key[chain_key]
+            chain.sequence = sequence
 
 
 def _parse_cif_sequence(data, line_info):
@@ -1026,7 +1168,13 @@ def _parse_cif_sequence(data, line_info):
         entity_id = row[entity_id_index]
         monomer_id = row[monomer_id_index]
         current_structure.sequences.setdefault(
-            entity_id, Sequence(entity_id, None, structure=current_structure)
+            entity_id,
+            Sequence(
+                entity_id,
+                None,
+                structure=current_structure,
+                source=SequenceSource.SEQRES,
+            ),
         )
 
         current_structure.sequences[entity_id].residues.append(monomer_id)

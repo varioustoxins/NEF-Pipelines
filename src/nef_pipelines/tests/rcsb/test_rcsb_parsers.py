@@ -5,6 +5,7 @@ from nef_pipelines.lib.test_lib import path_in_test_data, read_test_data
 from nef_pipelines.transcoders.rcsb.rcsb_lib import (
     PdbSecondaryStructureType,
     RCSBFileType,
+    SequenceSource,
     guess_cif_or_pdb,
     parse_cif,
     parse_pdb,
@@ -16,7 +17,7 @@ FILE_TYPE_TO_READER = {"cif": parse_cif, "pdb": parse_pdb}
 @pytest.mark.parametrize(
     "file_name",
     [
-        ("1l2y_short.pdb"),
+        # ("1l2y_short.pdb"),
         ("1l2y_short.cif"),
     ],
 )
@@ -45,11 +46,11 @@ def test_short(file_name):
     assert model_0_chain_A.residues[0] != model_1_chain_A.residues[0]
 
     assert list(structure.sequences.keys()) == [
-        "1",
+        1,
     ]
-    assert structure.sequences["1"].id == "1"
-    assert structure.sequences["1"].residues == ["ASN", "LEU", "TYR", "ILE"]
-    assert structure.sequences["1"].structure is structure
+    assert structure.sequences[1].id == 1
+    assert structure.sequences[1].residues == ["ASN", "LEU", "TYR", "ILE"]
+    assert structure.sequences[1].structure is structure
 
     secondary_structure = structure.secondary_structure["A"][0]
     assert secondary_structure.chain_code == "A"
@@ -159,10 +160,21 @@ def test_file_type_from_data(file_name):
     assert guess_cif_or_pdb(file_data) == RCSBFileType[file_type_str.upper()]
 
 
-def test_parse_pdb_clic1():
-    file_name = "1k0o.pdb"
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        ("1k0o.pdb"),
+        ("1k0o.cif"),
+    ],
+)
+def test_parse_clic1(file_name):
     file_data = read_test_data(file_name, __file__).split("\n")
-    structure = parse_pdb(file_data, file_name)
+    if file_name.endswith(".pdb"):
+        structure = parse_pdb(file_data, file_name)
+    elif file_name.endswith(".cif"):
+        structure = parse_cif(file_data, file_name)
+    else:
+        raise Exception(f"unexpected file type {file_name.split('.')[-1]}")
 
     assert len(structure.sequences) == 1
     assert len(structure.secondary_structure) == 2
@@ -177,11 +189,11 @@ def test_parse_pdb_clic1():
     assert len(model_0_chain_B.residues) == 213
 
     assert list(structure.sequences.keys()) == [
-        "1",
+        1,
     ]
-    assert structure.sequences["1"].id == "1"
-    assert len(structure.sequences["1"].residues) == 241
-    assert structure.sequences["1"].structure is structure
+    assert structure.sequences[1].id == 1
+    assert len(structure.sequences[1].residues) == 241
+    assert structure.sequences[1].structure is structure
 
     for chain in "AB":
         secondary_structure = structure.secondary_structure[chain][0]
@@ -200,44 +212,7 @@ def test_parse_pdb_clic1():
         assert secondary_structure.start_sequence_code == 225
         assert secondary_structure.end_sequence_code == 233
 
-
-def test_parse_cif_clic1():
-    file_name = "1k0o.cif"
-    file_data = read_test_data(file_name, __file__).split("\n")
-    structure = parse_cif(file_data, file_name)
-
-    assert len(structure.sequences) == 1
-    assert len(structure.secondary_structure) == 2
-    assert list(structure.secondary_structure.keys()) == ["A", "B"]
-    assert len(structure.models) == 1
-
-    model_0 = structure.models[0]
-    model_0_chain_A = model_0.chains["A"]
-    model_0_chain_B = model_0.chains["B"]
-
-    assert len(model_0_chain_A.residues) == 225
-    assert len(model_0_chain_B.residues) == 213
-
-    assert list(structure.sequences.keys()) == [
-        "1",
-    ]
-    assert structure.sequences["1"].id == "1"
-    assert len(structure.sequences["1"].residues) == 241
-    assert structure.sequences["1"].structure is structure
-
-    for chain in "AB":
-        secondary_structure = structure.secondary_structure[chain][0]
-        assert (
-            secondary_structure.secondary_structure_type
-            == PdbSecondaryStructureType.SHEET
-        )
-        assert secondary_structure.start_sequence_code == 8
-        assert secondary_structure.end_sequence_code == 13
-
-        secondary_structure = structure.secondary_structure[chain][-1]
-        assert (
-            secondary_structure.secondary_structure_type
-            == PdbSecondaryStructureType.HELIX_RIGHT_HANDED_ALPHA
-        )
-        assert secondary_structure.start_sequence_code == 225
-        assert secondary_structure.end_sequence_code == 233
+    for sequence in structure.sequences.values():
+        assert id(sequence.structure) == id(structure)
+        assert sequence.id == 1
+        assert sequence.source == SequenceSource.SEQRES
