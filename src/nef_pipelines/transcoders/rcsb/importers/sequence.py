@@ -122,14 +122,20 @@ def read_sequences(path: Path, target_chain_codes: List[str], use_segids: bool =
     all_chains = len(target_chain_codes) == 0
 
     for chain in model:
-        for residue in chain:
+        sequence_start = (
+            chain.sequence.start_sequence_code
+            if chain.sequence.start_sequence_code
+            else 1
+        )
+        for sequence_code, residue_name in enumerate(
+            chain.sequence.residues, sequence_start
+        ):
             chain_code = chain.segment_id if use_segids else chain.chain_code
             chain_code = chain_code.strip()
 
             if not all_chains and chain_code not in target_chain_codes:
                 continue
 
-            sequence_code = residue.sequence_code
             # TODO support a hetero atom flag
             # if len(hetero_atom_flag.strip()) != 0:
             #     continue
@@ -137,12 +143,12 @@ def read_sequences(path: Path, target_chain_codes: List[str], use_segids: bool =
             if chain_code == "":
                 exit_error(
                     f"residue with no chain code found for file {path} sequence_code is {sequence_code} \
-                    residue_name is {residue.get_resname()}"
+                    residue_name is {residue_name}"
                 )
             residue = SequenceResidue(
                 chain_code=chain_code,
                 sequence_code=sequence_code,
-                residue_name=residue.residue_name,
+                residue_name=residue_name,
             )
             sequences.append(residue)
 
