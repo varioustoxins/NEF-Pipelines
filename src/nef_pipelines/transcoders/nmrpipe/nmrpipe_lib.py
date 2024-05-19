@@ -562,6 +562,7 @@ def read_peak_file(gdb_file, args):
         assignments = _assignments_to_atom_labels(assignments, dimensions, chain_code)
 
         height = line.values[column_indices["HEIGHT"]]
+        # TODO: sort out height errors
         # height_error = line.values[column_indices["DHEIGHT"]]
         # height_percentage_error = height_error / height
         volume = line.values[column_indices["VOL"]]
