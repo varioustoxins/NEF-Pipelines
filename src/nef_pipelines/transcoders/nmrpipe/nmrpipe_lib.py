@@ -607,7 +607,7 @@ def read_peak_file(gdb_file, args):
     return peak_list
 
 
-def read_shift_file(gdb_file, chain_code="A"):
+def read_shift_file(gdb_file, chain_code):
     data = select_records(gdb_file, VALUES)
 
     column_indices = get_column_indices(gdb_file)
