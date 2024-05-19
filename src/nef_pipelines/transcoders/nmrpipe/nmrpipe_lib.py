@@ -536,7 +536,7 @@ def check_is_shifts_file(gdb_file):
     return expected_fields.issubset(columns)
 
 
-def read_peak_file(gdb_file, args):
+def read_peak_file(gdb_file, chain_code, filter_noise=False):
     data = select_records(gdb_file, VALUES)
 
     dimensions = _get_peak_list_dimension(gdb_file)
@@ -553,7 +553,7 @@ def read_peak_file(gdb_file, args):
         peak = {}
         raw_peaks.append(peak)
         peak_type = line.values[column_indices["TYPE"]]
-        if args.filter_noise and peak_type != PEAK_TYPES.PEAK:
+        if filter_noise and peak_type != PEAK_TYPES.PEAK:
             continue
 
         assignment = line.values[column_indices["ASS"]]
