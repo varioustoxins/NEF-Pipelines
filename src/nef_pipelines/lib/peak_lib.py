@@ -95,8 +95,8 @@ def proton_frequency_to_axis_frequency(
 ) -> float:
     """
     Give a proton frequency in MHz and an isotope return the equivalent spectrometer
-    frequency for the isotops
-    :param spectrometer_frequency: sspectrometer frequency
+    frequency for the isotopes
+    :param spectrometer_frequency: spectrometer frequency
     :param isotope: an NMR isotope
     :return: the spectrometer frequency for the isotope
     """
