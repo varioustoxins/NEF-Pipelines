@@ -431,7 +431,7 @@ def gdb_to_sequence(gdb_file: DbFile, chain_code: str) -> List[SequenceResidue]:
     return sequence_residues
 
 
-def _assignments_to_atom_labels(assignments, dimensions, chain_code="A"):
+def _assignments_to_atom_labels(assignments, dimensions, chain_code):
     result = []
 
     for assignment in assignments:
@@ -559,7 +559,7 @@ def read_peak_file(gdb_file, args):
         assignment = line.values[column_indices["ASS"]]
         assignments = assignment.split("-")
         assignments = _propagate_assignments(assignments)
-        assignments = _assignments_to_atom_labels(assignments, dimensions)
+        assignments = _assignments_to_atom_labels(assignments, dimensions, chain_code)
 
         height = line.values[column_indices["HEIGHT"]]
         # height_error = line.values[column_indices["DHEIGHT"]]
