@@ -13,19 +13,25 @@
 # TODO doesn't check if peaks are deleted (should have an option to read all peaks?)
 
 import itertools
-from collections import OrderedDict
+import string
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
-from ordered_set import OrderedSet
-from pynmrstar import Loop, Saveframe
+from fyeah import f
+from pynmrstar import Entry, Loop, Saveframe
 
 from nef_pipelines.lib import constants
 from nef_pipelines.lib.constants import NEF_UNKNOWN
+from nef_pipelines.lib.isotope_lib import GAMMA_RATIOS
+from nef_pipelines.lib.nef_lib import (
+    add_frames_to_entry,
+    read_entry_from_file_or_stdin_or_exit_error,
+)
 from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
-    get_sequence_or_exit,
+    sequence_from_entry_or_exit,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -33,10 +39,16 @@ from nef_pipelines.lib.structures import (
     PeakList,
     PeakListData,
     PeakValues,
+    Residue,
     SequenceResidue,
 )
-from nef_pipelines.lib.typer_utils import get_args
-from nef_pipelines.lib.util import STDIN, exit_error, process_stream_and_add_frames
+from nef_pipelines.lib.util import (
+    NEWLINE,
+    STDIN,
+    exit_error,
+    is_float,
+    parse_comma_separated_options,
+)
 from nef_pipelines.transcoders.nmrview import import_app
 
 from ..nmrview_lib import parse_float_list, parse_tcl
@@ -47,57 +59,96 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def peaks(
-    entry_name: str = typer.Option(
-        "nmrview",
-        "-n",
-        "--name",
-        help="a name for a shift frame, additional calls add more names",
+    in_file: Path = typer.Option(
+        STDIN, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
-    chain_code: str = typer.Option(
-        "A", "--chain", help="chain code", metavar="<chain-code>"
+    chain_codes: List[str] = typer.Option(
+        None, "--chain", help="chain code", metavar="<chain-code>"
     ),
-    sequence: Path = typer.Option(
-        STDIN,
-        "-s",
-        "--sequence",
-        metavar="<nmrview>.seq)",
-        help="seq file for the chain <seq-file>.seq",
-    ),
-    axis_codes: str = typer.Option(
-        "1H.15N",
-        "-a",
-        "--axis",
-        metavar="<axis-codes>",
-        help="a list of axis codes joined by dots",
-    ),
+    # TODO: add don't filter deleted?
+    # TODO: add a flag to remove checking residue types
     file_names: List[Path] = typer.Argument(
         ..., help="input peak files", metavar="<peak-file.xpk>"
     ),
 ):
     """convert nmrview peak file <nmrview>.xpk files to NEF"""
-    args = get_args()
 
-    raw_sequence = get_sequence_or_exit(sequence)
+    if not chain_codes:
+        chain_codes = ["A"] * len(file_names)
 
-    sequence_lookup = _sequence_to_residue_type_lookup(raw_sequence)
+    if len(chain_codes) == 1:
+        chain_codes = chain_codes * len(file_names)
 
-    frames = [
-        read_xpk_file(args, sequence_lookup),
-    ]
+    chain_codes = parse_comma_separated_options(chain_codes)
 
-    entry = process_stream_and_add_frames(frames, args)
+    entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
+
+    sequence = sequence_from_entry_or_exit(entry)
+
+    _exit_if_num_chains_and_files_dont_match(chain_codes, file_names)
+
+    entry = pipe(entry, file_names, chain_codes, sequence)
+
     print(entry)
 
 
-def read_xpk_file(args, sequence_lookup, entry_name=None):
+def pipe(
+    entry: Entry, file_names: List[str], chain_codes: List[str], sequence: List[Residue]
+) -> Entry:
 
-    with open(args.file_names[0], "r") as lines:
-        peaks_list = read_raw_peaks(lines, args.chain_code, sequence_lookup)
+    frames = []
+    sequence_lookup = _sequence_to_residue_type_lookup(sequence)
 
-    if not entry_name:
-        entry_name = make_peak_list_entry_name(peaks_list)
+    frame_names_and_peak_lists = []
+    for file_name, chain_code in zip(file_names, chain_codes):
+        with open(file_name, "r") as lines:
+            peaks_list = read_raw_peaks(lines, chain_code, sequence_lookup)
 
-    return create_spectrum_frame(args, entry_name, peaks_list)
+        frame_name = _make_peak_list_frame_name(peaks_list)
+
+        frame_names_and_peak_lists.append((frame_name, peaks_list))
+
+    frame_names_and_peak_lists = _disammbiguate_frame_names(frame_names_and_peak_lists)
+
+    for (frame_name, peaks_list), chain_code in zip(
+        frame_names_and_peak_lists, chain_codes
+    ):
+        frames.append(create_spectrum_frame(frame_name, peaks_list, chain_code))
+
+    return add_frames_to_entry(entry, frames)
+
+
+def _disammbiguate_frame_names(peak_lists_and_entry_names):
+    seen_frames = Counter()
+    for i, (frame_name, peaks_list) in enumerate(peak_lists_and_entry_names):
+        if frame_name in seen_frames:
+            seen_frames[frame_name] += 1
+            frame_name = f"{frame_name}`{seen_frames[frame_name]}`"
+            peak_lists_and_entry_names[i] = (frame_name, peaks_list)
+        else:
+            seen_frames[frame_name] = 1
+    return peak_lists_and_entry_names
+
+
+def _create_entry_names_from_template_if_required(
+    entry_name_template, entry_names, file_names
+):
+    new_entry_names = []
+    for file_name, entry_name in itertools.zip_longest(file_names, entry_names):
+        if entry_name:
+            new_entry_names.append(entry_name)
+        else:
+            file_name = str(Path(file_name).stem)
+            numbers_and_letters = string.ascii_lowercase + string.digits
+            file_name = "".join(
+                [
+                    letter if letter in numbers_and_letters else "_"
+                    for letter in file_name
+                ]
+            )
+            file_name = f"_{file_name}"
+            new_entry_names.append(f(entry_name_template))
+    return new_entry_names
 
 
 def read_raw_peaks(lines, chain_code, sequence_lookup):
@@ -143,11 +194,22 @@ def read_peak_data(lines, header_data, column_indices, chain_code, sequence_look
         except Exception as e:
             field = str(field) if field else "unknown"
             msg = (
-                f"failed to parse file a line {line_no} with input: '{raw_line.strip()}' field: {field}  axis: "
+                f"failed to parse the line {line_no} with input: '{raw_line.strip()}' field: {field}  axis: "
                 f"  {axis_index + 1} exception: {e}"
             )
             exit_error(msg)
     return raw_peaks
+
+
+def _exit_if_num_chains_and_files_dont_match(chain_codes, file_names):
+    if len(chain_codes) != len(file_names):
+        msg = f"""
+            the number of chain codes {len(chain_codes)} does not match number of files {len(file_names)}
+            the chain codes are {', '.join(chain_codes)}
+            the files are
+            {NEWLINE.join(file_names)}
+        """
+        exit_error(msg)
 
 
 def read_peak_columns(lines, header_data):
@@ -255,7 +317,12 @@ def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence_lookup)
                 residue_number = None
                 atom_name = ""
             else:
-                residue_number, atom_name = label.split(".")
+                residue_name_residue_number, atom_name = label.split(".")
+                residue_number = residue_name_residue_number.lstrip(
+                    string.ascii_letters
+                )
+                if residue_number == "?":
+                    residue_number = None
                 residue_number = int(residue_number)
 
             if residue_number:
@@ -280,6 +347,12 @@ def read_axis_for_peak(line, axis, heading_indices, chain_code, sequence_lookup)
             axis_values.append(atom)
 
         elif axis_field == "P":
+            if not is_float(value):
+                msg = f"""
+                    in file
+                    expected a float for the peak position got {value} i
+                """
+                exit_error(msg)
             shift = float(value)
             axis_values.append(shift)
         elif axis_field in "WJU":
@@ -334,26 +407,52 @@ def _get_isotope_code_or_exit(axis, axis_codes):
     return axis_code
 
 
-def sequence_from_frames(frames: Saveframe):
-
-    residues = OrderedSet()
-    for frame in frames:
-        for loop in frame:
-            chain_code_index = loop.tag_index("chain_code")
-            sequence_code_index = loop.tag_index("sequence_code")
-            residue_name_index = loop.tag_index("residue_name")
-
-            for line in loop:
-                chain_code = line[chain_code_index]
-                sequence_code = line[sequence_code_index]
-                residue_name = line[residue_name_index]
-                residue = SequenceResidue(chain_code, sequence_code, residue_name)
-                residues.append(residue)
-
-    return list(residues)
+def round_to_nearest_and_distance(number, nearest):
+    rounded = round(number / nearest) * nearest
+    return rounded, abs(rounded - number)
 
 
-def create_spectrum_frame(args, entry_name, peaks_list):
+def _guess_spectrometer_frequency(peak_list):
+    frequencies = [
+        float(frequency)
+        for frequency in peak_list.peak_list_data.spectrometer_frequencies
+    ]
+    max_frequency = max(frequencies)
+
+    divisor = 10 if max_frequency < 240 else 50
+
+    distance_and_frequency = {}
+    for spectrometer_frequency in frequencies:
+        rounded_spectrometer_frequency, distance = round_to_nearest_and_distance(
+            spectrometer_frequency, divisor
+        )
+        distance_and_frequency[distance] = spectrometer_frequency
+
+    min_distance = min(distance_and_frequency.keys())
+    return distance_and_frequency[min_distance]
+
+
+def _spectrometer_frequencies_to_axis_codes(spectrometer_frequency, peak_list):
+    isotopes = []
+    for frequency in peak_list.peak_list_data.spectrometer_frequencies:
+        frequency = float(frequency)
+        ratio = frequency / spectrometer_frequency
+        ratio_distances = {
+            isotope: abs(ratio - gamma_ratio)
+            for isotope, gamma_ratio in GAMMA_RATIOS.items()
+        }
+        closest_isotope = min(ratio_distances, key=ratio_distances.get)
+        isotopes.append(closest_isotope)
+
+    return isotopes
+
+
+def create_spectrum_frame(entry_name, peak_list, chain_code):
+
+    spectrometer_frequency = _guess_spectrometer_frequency(peak_list)
+    axis_isotopes = _spectrometer_frequencies_to_axis_codes(
+        spectrometer_frequency, peak_list
+    )
 
     category = "nef_nmr_spectrum"
     frame_code = f"{category}_{entry_name}"
@@ -361,7 +460,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
 
     frame.add_tag("sf_category", category)
     frame.add_tag("sf_framecode", frame_code)
-    frame.add_tag("num_dimensions", peaks_list.peak_list_data.num_axis)
+    frame.add_tag("num_dimensions", peak_list.peak_list_data.num_axis)
     frame.add_tag("chemical_shift_list", constants.NEF_UNKNOWN)
     loop = Loop.from_scratch("nef_spectrum_dimension")
     frame.add_loop(loop)
@@ -377,12 +476,12 @@ def create_spectrum_frame(args, entry_name, peaks_list):
         "is_acquisition",
     )
     loop.add_tag(list_tags)
-    list_data = peaks_list.peak_list_data
+    list_data = peak_list.peak_list_data
     for i in range(list_data.num_axis):
         row = {
             "dimension_id": i + 1,
             "axis_unit": "ppm",
-            "axis_code": _get_isotope_code_or_exit(i, args.axis_codes.split(".")),
+            "axis_code": axis_isotopes[i],
             "spectrometer_frequency": list_data.spectrometer_frequencies[i],
             "spectral_width": (
                 list_data.sweep_widths[i] if list_data.sweep_widths else NEF_UNKNOWN
@@ -432,7 +531,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
     tags = [*peak_tags, *position_tags, *atom_name_tags]
 
     loop.add_tag(tags)
-    for i, peak in enumerate(peaks_list.peaks):
+    for i, peak in enumerate(peak_list.peaks):
         peak_values = peak["values"]
         if peak_values.deleted:
             continue
@@ -448,7 +547,7 @@ def create_spectrum_frame(args, entry_name, peaks_list):
             if tag.split("_")[:2] == ["chain", "code"]:
                 index = int(tag.split("_")[-1]) - 1
                 chain_code = peak[index].atom_labels.residue.chain_code
-                chain_code = chain_code if chain_code is not None else args.chain_code
+                chain_code = chain_code if chain_code is not None else chain_code
                 chain_code = chain_code if chain_code else "."
                 chain_codes[tag] = chain_code
 
@@ -510,7 +609,7 @@ def _remove_suffix(string: str, suffix: str) -> str:
     return result
 
 
-def make_peak_list_entry_name(peaks_list):
+def _make_peak_list_frame_name(peaks_list):
     entry_name = peaks_list.peak_list_data.data_set.replace(" ", "_")
     entry_name = _remove_suffix(entry_name, ".nv")
     entry_name = entry_name.replace(".", "_")

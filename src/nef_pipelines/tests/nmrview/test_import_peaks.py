@@ -24,35 +24,17 @@ def test_4_peaks():
 
     sequence_stream = read_test_data("4peaks_seq.nef", __file__)
 
-    args = ["--axis", "1H.1H.15N", peaks_path]
-    result = run_and_report(app, args, input=sequence_stream)
+    result = run_and_report(
+        app,
+        [
+            peaks_path,
+        ],
+        input=sequence_stream,
+    )
 
     result = isolate_frame(result.stdout, "nef_nmr_spectrum_simnoe")
 
     assert_lines_match(EXPECTED_4AA, result)
-
-
-def test_3peaks_bad_axis_codes():
-    # reading stdin doesn't work in pytest so for a clean header
-    # TODO move to conftest.py
-    peaks_path = path_in_test_data(__file__, "4peaks.xpk")
-
-    sequence_stream = read_test_data("4peaks_seq.nef", __file__)
-
-    args = [
-        "--axis",
-        "1H,15N",
-        peaks_path,
-    ]
-    result = run_and_report(app, args, expected_exit_code=1, input=sequence_stream)
-
-    EXPECTED = [
-        "can't find isotope code for axis 2 got axis codes 1H,15N",
-        "exiting...",
-    ]
-
-    for expected in EXPECTED:
-        assert expected in result.stdout
 
 
 EXPECTED_JOE_CLIC = """\
@@ -74,7 +56,7 @@ EXPECTED_JOE_CLIC = """\
             _nef_spectrum_dimension.is_acquisition
 
             1   ppm   1H   600.052978516    6.1679  .   circular   true   .
-            2   ppm   1H   60.8100013733   35.9997  .   circular   true   .
+            2   ppm  15N   60.8100013733   35.9997  .   circular   true   .
 
         stop_
 
@@ -120,12 +102,13 @@ def test_joe_bad_sweep_widths():
 
     sequence_stream = read_test_data("4peaks_seq.nef", __file__)
 
-    command = [
-        "--axis",
-        "1H.1H.15N",
-        peaks_path,
-    ]
-    result = run_and_report(app, command, input=sequence_stream)
+    result = run_and_report(
+        app,
+        [
+            peaks_path,
+        ],
+        input=sequence_stream,
+    )
 
     result = isolate_frame(result.stdout, "nef_nmr_spectrum_trosyrdcjoe")
 
