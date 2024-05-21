@@ -11,7 +11,6 @@ from nef_pipelines.transcoders.nmrpipe.importers.peaks import peaks
 
 HEADER = read_test_data("test_header_entry.txt", __file__)
 
-PEAKS_NMRPIPE = "nef_nmr_spectrum_nmrpipe"
 METADATA_NMRPIPE = "nef_nmr_meta_data"
 
 
@@ -26,7 +25,6 @@ def test_peaks():
     path = path_in_test_data(__file__, "gb3_assigned_trunc.tab")
     result = run_and_report(app, [path], input=HEADER)
 
-    assert result.exit_code == 0
-    peaks_result = isolate_frame(result.stdout, "%s" % PEAKS_NMRPIPE)
+    peaks_result = isolate_frame(result.stdout, "nef_nmr_spectrum_gb3_assigned_trunc")
 
     assert_lines_match(EXPECTED, peaks_result)
