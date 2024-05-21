@@ -33,6 +33,8 @@ from ..nmrpipe_lib import (
 
 app = typer.Typer()
 
+# TODO should check peaks against sequence
+
 
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
@@ -90,6 +92,7 @@ def pipe(
     return add_frames_to_entry(entry, frames)
 
 
+# TODO move much of this to utilities
 def _exit_if_num_chains_and_files_dont_match(chain_codes, file_names):
     if len(chain_codes) != len(file_names):
         msg = f"""
