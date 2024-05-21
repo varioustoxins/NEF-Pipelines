@@ -69,7 +69,7 @@ def test_lib_parse_shifts():
 
     test_records = read_db_file_records(test_data.split("\n"))
 
-    shifts = read_shift_file(test_records)
+    shifts = read_shift_file(test_records, chain_code="A")
     assert shifts == EXPECTED
 
 
