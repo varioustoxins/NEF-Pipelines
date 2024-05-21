@@ -108,7 +108,7 @@ def pipe(
 
         frame_names_and_peak_lists.append((frame_name, peaks_list))
 
-    frame_names_and_peak_lists = _disammbiguate_frame_names(frame_names_and_peak_lists)
+    frame_names_and_peak_lists = _disambiguate_frame_names(frame_names_and_peak_lists)
 
     for (frame_name, peaks_list), chain_code in zip(
         frame_names_and_peak_lists, chain_codes
@@ -118,7 +118,7 @@ def pipe(
     return add_frames_to_entry(entry, frames)
 
 
-def _disammbiguate_frame_names(peak_lists_and_entry_names):
+def _disambiguate_frame_names(peak_lists_and_entry_names):
     seen_frames = Counter()
     for i, (frame_name, peaks_list) in enumerate(peak_lists_and_entry_names):
         if frame_name in seen_frames:
