@@ -1,6 +1,6 @@
-save_nef_nmr_spectrum_nmrpipe
+save_nef_nmr_spectrum_gb3_assigned_trunc
    _nef_nmr_spectrum.sf_category          nef_nmr_spectrum
-   _nef_nmr_spectrum.sf_framecode         nef_nmr_spectrum_nmrpipe
+   _nef_nmr_spectrum.sf_framecode         nef_nmr_spectrum_gb3_assigned_trunc
    _nef_nmr_spectrum.num_dimensions       2
    _nef_nmr_spectrum.chemical_shift_list  .
 
