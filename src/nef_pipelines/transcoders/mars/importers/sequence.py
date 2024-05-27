@@ -71,15 +71,6 @@ def sequence(
         file_name,
     ]
 
-    print(
-        chain_codes,
-        starts,
-        no_chain_starts,
-        no_chain_ends,
-        molecule_types,
-        file_names,
-        input,
-    )
     entry = pipe(
         entry,
         chain_codes,
@@ -87,8 +78,9 @@ def sequence(
         no_chain_starts,
         no_chain_ends,
         molecule_types,
+        False,
         file_names,
-        input,
+        file_name.root,
     )
 
     print(entry)
