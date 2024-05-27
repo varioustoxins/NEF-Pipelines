@@ -42,15 +42,15 @@ def input(
         metavar="<MARS-INPUT-FILENAME>",
     ),
 ):
-    """- write  mars input fixed assignment and connectivity files"""
+    """- write mars input fixed assignment and connectivity files"""
 
     entry = read_entry_from_stdin_or_exit()
 
-    output_file = f"{entry.entry_id}_mars.inp" if output_file is None else output_file
+    output_file = f"{entry.entry_id}.inp" if output_file is None else output_file
     pred_file = (
-        f"{entry.entry_id}_pred.tab"
+        f"{entry.entry_id}_fix_con.tab"
         if output_file is None
-        else convert_output_to(output_file, "_pred", "tab")
+        else convert_output_to(output_file, "_fix_con", "tab")
     )
     ass_file = (
         f"{entry.entry_id}_fix_ass.tab"
