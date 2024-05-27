@@ -1,4 +1,6 @@
 import sys
+from collections.abc import MutableMapping
+
 from argparse import Namespace
 from enum import auto
 from fnmatch import fnmatch
@@ -291,6 +293,57 @@ def read_entry_from_stdin_or_exit() -> Entry:
 
     return entry
 
+class RowDict(MutableMapping):
+    def __init__(self, loop: Loop, row: int, convert:bool):
+        super().__init__()
+        self._data = row
+        self._convert = convert
+        self._tag_to_index = {tag: i for i, tag in enumerate(loop.tags)}
+        self._tag_types = {tag: type(value) for tag, value in zip(loop.tags, self._data)}
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._tag_to_index.keys())
+    def __delitem__(self, key):
+        self._data[self._tag_to_index[key]] = UNUSED
+
+    def __getitem__(self, key):
+        index = self._tag_to_index[key]
+        value = self._data[index]
+        if self._convert:
+            value = do_reasonable_type_conversions(value)
+        return value
+
+    def __setitem__(self, key, value):
+        index = self._tag_to_index[key]
+        if self._tag_types[key] == str and not isinstance(value, str):
+            value = str(value)
+        self._data[index] = value
+
+    def __repr__(self):
+        row = {key: self._data[index] for key, index in self._tag_to_index.items()}
+        return str(row)
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __getattribute__(self, item):
+        try:
+            return self[item]
+        except Exception:
+            return object.__getattribute__(self, item)
+
+    def __setattr__(self, item, value):
+        if hasattr(self,item):
+            self[item] = value
+        else:
+            return super().__setattr__(item, value)
+
+
+    def __delattr__(self, key):
+        self.__delitem__(key)
 
 # TODO we should examine columns for types not individual rows entries
 def loop_row_dict_iter(
@@ -311,14 +364,9 @@ def loop_row_dict_iter(
         """
         raise Exception(msg)
 
-    for row in loop:
-        row = {tag: value for tag, value in zip(loop.tags, row)}
-
-        if convert:
-            for key in row:
-                row[key] = do_reasonable_type_conversions(row[key])
-
-        yield row
+    for i,row in enumerate(loop):
+        result = RowDict(loop, row, convert)
+        yield result
 
 
 def do_reasonable_type_conversions(value: str) -> Union[str, float, int]:
@@ -345,8 +393,12 @@ def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namesp
     :param loop: thr Loop
     :param convert: try to convert values to ints or floats if possible [default is True]
     :return: iterator of rows as dictionaries
+
+    NOTE: This function is effectively replaced by loop_row_dict_iter, which returns a RowDict object
+          with support for attribute lookup
     """
     for row in loop_row_dict_iter(loop, convert=convert):
+        #yield row needs more tests modified
         yield Namespace(**row)
 
 

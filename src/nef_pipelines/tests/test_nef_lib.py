@@ -15,11 +15,24 @@ from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe
     loop_row_namespace_iter,
     read_entry_from_stdin_or_exit,
     read_or_create_entry_exit_error_on_bad_file,
-    select_frames_by_name,
+    select_frames_by_name, UNUSED,
 )
 from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.main import EXIT_ERROR
+
+ITER_TEST_DATA = """\
+    loop_
+        _test.col_1
+        _test.col_2
+        _test.col_3
+
+        a 2 4.5
+        b 3 5.6
+
+    stop_
+
+"""
 
 # def test_nef_to_pandas():
 #
@@ -276,20 +289,8 @@ def test_read_entry_stdin_or_exit():
 
 
 def test_loop_row_dict_iter():
-    TEST_DATA = """\
-        loop_
-            _test.col_1
-            _test.col_2
-            _test.col_3
 
-            a 2 4.5
-            b 3 5.6
-
-        stop_
-
-    """
-
-    loop = Loop.from_string(TEST_DATA)
+    loop = Loop.from_string(ITER_TEST_DATA)
 
     EXPECTED = [
         {"col_1": "a", "col_2": 2, "col_3": 4.5},
@@ -302,20 +303,8 @@ def test_loop_row_dict_iter():
 
 
 def test_loop_row_dict_iter_no_convert():
-    TEST_DATA = """\
-        loop_
-            _test.col_1
-            _test.col_2
-            _test.col_3
 
-            a 2 4.5
-            b 3 5.6
-
-        stop_
-
-    """
-
-    loop = Loop.from_string(TEST_DATA)
+    loop = Loop.from_string(ITER_TEST_DATA)
 
     EXPECTED = [
         {"col_1": "a", "col_2": "2", "col_3": "4.5"},
@@ -327,21 +316,64 @@ def test_loop_row_dict_iter_no_convert():
     assert result == EXPECTED
 
 
+def test_row_dict_iter_update():
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    EXPECTED = [
+        {"col_1": "a", "col_2": "2_updated", "col_3": "4.5"},
+        {"col_1": "b", "col_2": "3_updated", "col_3": "5.6"},
+    ]
+
+    for row in loop_row_dict_iter(loop, convert=False):
+       for tag in row:
+              if tag == "col_2":
+                row[tag] =  f"{row[tag]}_updated"
+
+    result = [row for row in loop_row_dict_iter(loop, convert=False)]
+
+    assert result == EXPECTED
+
+def test_row_dict_iter_update_convert():
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    EXPECTED = [
+        {"col_1": "a", "col_2": "3", "col_3": "5.5"},
+        {"col_1": "b", "col_2": "4", "col_3": "6.6"},
+    ]
+
+    for row in loop_row_dict_iter(loop, convert=True):
+       for tag in row:
+              if tag in ["col_2", "col_3"]:
+                row[tag] = row[tag] + 1
+
+    result = [row for row in loop_row_dict_iter(loop, convert=False)]
+
+    assert result == EXPECTED
+
+
+def test_row_dict_iter_delete():
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    EXPECTED = [
+        {"col_1": "a", "col_2": UNUSED, "col_3": "4.5"},
+        {"col_1": "b", "col_2": UNUSED, "col_3": "5.6"},
+    ]
+
+    for row in loop_row_dict_iter(loop, convert=True):
+       for tag in row:
+              if tag == "col_2":
+                del row[tag]
+
+    result = [row for row in loop_row_dict_iter(loop, convert=False)]
+
+    assert result == EXPECTED
+
 def test_loop_row_namespace_iter():
-    TEST_DATA = """\
-        loop_
-            _test.col_1
-            _test.col_2
-            _test.col_3
 
-            a 2 4.5
-            b 3 5.6
-
-        stop_
-
-    """
-
-    loop = Loop.from_string(TEST_DATA)
+    loop = Loop.from_string(ITER_TEST_DATA)
 
     EXPECTED = [
         Namespace(col_1="a", col_2=2, col_3=4.5),
@@ -354,20 +386,8 @@ def test_loop_row_namespace_iter():
 
 
 def test_loop_row_namespace_iter_no_convert():
-    TEST_DATA = """\
-        loop_
-            _test.col_1
-            _test.col_2
-            _test.col_3
 
-            a 2 4.5
-            b 3 5.6
-
-        stop_
-
-    """
-
-    loop = Loop.from_string(TEST_DATA)
+    loop = Loop.from_string(ITER_TEST_DATA)
 
     EXPECTED = [
         Namespace(col_1="a", col_2="2", col_3="4.5"),
@@ -377,3 +397,39 @@ def test_loop_row_namespace_iter_no_convert():
     result = [row for row in loop_row_namespace_iter(loop, convert=False)]
 
     assert result == EXPECTED
+
+def test_loop_row_dict_iter_attributes():
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    EXPECTED = [
+        {"a": "a", "b": '2', "c": "4.5"},
+        {"a": "b", "b": '3', "c": "5.6"},
+    ]
+
+
+    for i, row in enumerate(loop_row_dict_iter(loop, convert=False)):
+        assert row.col_1 == EXPECTED[i]["a"]
+        assert row.col_2 == EXPECTED[i]["b"]
+        assert row.col_3 == EXPECTED[i]["c"]
+
+
+def test_loop_row_dict_iter_attributes_update():
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    EXPECTED = [
+        {"a": "a_b", "b": '3', "c": "5.5"},
+        {"a": "b_b", "b": '4', "c": "6.6"},
+    ]
+
+    for row in loop_row_dict_iter(loop, convert=True):
+        row.col_1 += "_b"
+        row.col_2 += 1
+        row.col_3 += 1
+
+
+    for i, row in enumerate(loop_row_namespace_iter(loop, convert=False)):
+        assert str(row.col_1) == EXPECTED[i]["a"]
+        assert str(row.col_2) == EXPECTED[i]["b"]
+        assert str(row.col_3) == EXPECTED[i]["c"]
