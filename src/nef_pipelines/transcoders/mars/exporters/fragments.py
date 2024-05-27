@@ -140,10 +140,15 @@ def _get_connected_residues_and_chains(frame: Saveframe, entry: Entry):
     return connected_residues
 
 
+def _get_assignment_frames(entry):
+    return entry.get_saveframes_by_category("ccpn_assignment")
+
+
 def _get_assignment_frame_or_exit(entry):
-    frames = entry.get_saveframes_by_category("ccpn_assignment")
+    frames = _get_assignment_frames(entry)
+
     if len(frames) == 0:
-        exit_error(f"no assignment frame found in entry {entry.name}")
+        exit_error(f"no assignment frame found in entry {entry.entry_id}")
     if len(frames) > 1:
         msg = f"""\
                     there should only be one assignment frame i found {len(frames)} in entry {entry.name}
