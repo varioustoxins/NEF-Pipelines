@@ -1,7 +1,6 @@
 import sys
-from collections.abc import MutableMapping
-
 from argparse import Namespace
+from collections.abc import MutableMapping
 from enum import auto
 from fnmatch import fnmatch
 from itertools import zip_longest
@@ -151,20 +150,21 @@ def get_frame_id(frame: Saveframe) -> str:
     return frame.name[len(frame.category) + 1 :]
 
 
-def get_frame_ids(frames: List[Saveframe]) -> List[str]:
+def get_frame_ids(frames_or_entry: Union[List[Saveframe], Entry]) -> List[str]:
     """
     given a list of frames get theirs id (the characters after the category and a separating _ charctacter)
-    :param frames: a list of frames
+    :param frames_or_entry: a list of frames or an entty
     :return: a list of ids in the same order
     """
-    return list([get_frame_id(frame) for frame in frames])
+
+    return list([get_frame_id(frame) for frame in frames_or_entry])
 
 
 def select_frames_by_name(
     frames: Union[List[Saveframe], Entry],
     name_selectors: Union[List[str], str],
     exact=False,
-) -> Tuple[Saveframe]:
+) -> Tuple[Saveframe, ...]:
     """
     select frames  by names and wild cards, to avoid typing *s on the command line the match is greedy by default,
     if an exact match is not found for one of the frames first time we search again with all the name selectors
@@ -179,7 +179,7 @@ def select_frames_by_name(
 
     def match_frames(
         frames: List[Saveframe], name_selectors: List[str]
-    ) -> List[Saveframe]:
+    ) -> Dict[Any, Saveframe]:
         result = {}
 
         for frame in frames:
@@ -293,19 +293,23 @@ def read_entry_from_stdin_or_exit() -> Entry:
 
     return entry
 
+
 class RowDict(MutableMapping):
-    def __init__(self, loop: Loop, row: int, convert:bool):
+    def __init__(self, loop: Loop, row: int, convert: bool):
         super().__init__()
         self._data = row
         self._convert = convert
         self._tag_to_index = {tag: i for i, tag in enumerate(loop.tags)}
-        self._tag_types = {tag: type(value) for tag, value in zip(loop.tags, self._data)}
+        self._tag_types = {
+            tag: type(value) for tag, value in zip(loop.tags, self._data)
+        }
 
     def __len__(self):
         return len(self._data)
 
     def __iter__(self):
         return iter(self._tag_to_index.keys())
+
     def __delitem__(self, key):
         self._data[self._tag_to_index[key]] = UNUSED
 
@@ -336,16 +340,17 @@ class RowDict(MutableMapping):
             return object.__getattribute__(self, item)
 
     def __setattr__(self, item, value):
-        if hasattr(self,item):
+        if hasattr(self, item):
             self[item] = value
         else:
             return super().__setattr__(item, value)
 
-
     def __delattr__(self, key):
         self.__delitem__(key)
 
+
 # TODO we should examine columns for types not individual rows entries
+# TODO we should rename this loop_row_iter
 def loop_row_dict_iter(
     loop: Loop, convert: bool = True
 ) -> Iterator[Dict[str, Union[str, int, float]]]:
@@ -364,7 +369,7 @@ def loop_row_dict_iter(
         """
         raise Exception(msg)
 
-    for i,row in enumerate(loop):
+    for i, row in enumerate(loop):
         result = RowDict(loop, row, convert)
         yield result
 
@@ -398,7 +403,7 @@ def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namesp
           with support for attribute lookup
     """
     for row in loop_row_dict_iter(loop, convert=convert):
-        #yield row needs more tests modified
+        # yield row needs more tests modified
         yield Namespace(**row)
 
 
