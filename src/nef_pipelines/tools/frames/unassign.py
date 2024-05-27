@@ -50,7 +50,6 @@ class Targets(LowercaseStrEnum):
     SEQUENCE_CODE = auto()
     RESIDUE_NAME = auto()
     ATOM_NAME = auto()
-    OFFSETS = auto()
     ALL = auto()
     NOT_ATOM = auto()
 
