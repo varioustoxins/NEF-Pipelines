@@ -1,16 +1,10 @@
-# TODO: add reading of sequence from input stream
 # TODO: xplor names -> iupac and deal with %% and ## properly
 # TODO: add common experiment types
-# TODO: guess axis codes
 # TODO: add a chemical shift list reference
 # TODO: _nef_nmr_spectrum: value_first_point, folding, absolute_peak_positions, is_acquisition
 # TODO: cleanup
-# TODO: add function
-# TODO: remove ics
 # TODO: multiple assignments per peak... howto in nef
 # TODO: add libs pipeline
-# TODO axis codes need to be guessed
-# TODO doesn't check if peaks are deleted (should have an option to read all peaks?)
 
 import itertools
 import string
