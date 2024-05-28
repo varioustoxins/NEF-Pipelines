@@ -13,6 +13,7 @@ from typing import Dict, List
 
 import typer
 from ordered_set import OrderedSet
+from pynmrstar import Saveframe
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
@@ -121,10 +122,14 @@ RANDOM_SEED_HELP = """
 ANY = "*"
 
 SELECTION_TYPE_HELP = f"""
-    how to select frames to renumber, can be one of: {SELECTORS_LOWER}.
+    how to select frames to unassign, can be one of: {SELECTORS_LOWER}.
     Any will match on frame name first and then if there is no match attempt to match on category
 """
 
+USE_RESIDUE_OFFSETS_HELP = """
+if the experiment is a triple resonance experiment don't offset residues so that assignment from the previous frame
+are labelled as CA-1 and CB-1 [compatability with CCP]
+"""
 # TODO: add the ability to unassign a particular dimension
 # TODO: add the ability specify the pseudo residue prefix
 
@@ -151,6 +156,7 @@ def unassign(
         SequenceMode.INDEX, metavar="<MODE>", help=SEQUENCE_MODE_HELP
     ),
     random_seed: int = typer.Option(42, metavar="<RANDOM-SEED>", help=RANDOM_SEED_HELP),
+    no_residue_offsets: bool = typer.Option(False, help=USE_RESIDUE_OFFSETS_HELP),
     frame_selectors: List[str] = typer.Argument(
         None,
         help=SELECTOR_HELP,
@@ -159,6 +165,8 @@ def unassign(
     """- unassign frames in the current input"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
+
+    use_residue_offsets = not no_residue_offsets
 
     if random_seed < 0:
         seed = int(time.time())
@@ -205,46 +213,38 @@ def unassign(
         for frame in select_frames(entry, frame_selectors, selector_type)
     }
 
-    entry = pipe(entry, frame_selectors, targets, sequence_mode, chain_mappings)
+    entry = pipe(
+        entry,
+        frame_selectors,
+        targets,
+        sequence_mode,
+        chain_mappings,
+        use_residue_offsets,
+    )
 
     print(entry)
 
 
 # noinspection PyUnusedLocal
-def _build_targets(raw_targets: List[Targets]) -> List[Targets]:
-    result = set()
-
-    for raw_target in raw_targets:
-        result.update(TARGET_LOOKUP[raw_target])
-
-    return result
 
 
-def pipe(entry, frame_selectors, targets, sequence_mode, chain_mappings):
+# todo move frame selectors to non pipe part
+def pipe(
+    entry, frame_selectors, targets, sequence_mode, chain_mappings, use_residue_offsets
+):
 
     current_assignments = OrderedSet()
-    for frame in entry:
-        if (frame.category, frame.name) in frame_selectors:
-            for loop in frame:
-                for i, row in enumerate(loop_row_dict_iter(loop)):
-                    assignments_by_index = {}
-                    for index, prefix in product(range(1, 16), ATOM_LABEL_FIELDS):
 
-                        if prefix in row:
-                            key = prefix
-                        else:
-                            key = f"{prefix}_{index}"
+    target_frames = [
+        frame for frame in entry if (frame.category, frame.name) in frame_selectors
+    ]
 
-                            if key not in row:
-                                break
+    for frame in target_frames:
+        if _is_triple_resonance_frame(frame) and use_residue_offsets:
+            _offset_sequence_codes_in_triple(frame, targets)
 
-                        assignments_by_index.setdefault(index, {})[prefix] = row[key]
-
-                    for assignment in assignments_by_index.values():
-                        label = _dict_to_label(assignment)
-
-                        if label:
-                            current_assignments.add(label)
+    for frame in target_frames:
+        current_assignments.update(_build_current_assignments_for_frame(frame))
 
     if sequence_mode == SequenceMode.ORDERED:
         current_assignments = sorted(current_assignments, key=atom_sort_key)
@@ -253,57 +253,97 @@ def pipe(entry, frame_selectors, targets, sequence_mode, chain_mappings):
         current_assignments, targets, sequence_mode, chain_mappings
     )
 
-    for frame in entry:
-        if (frame.category, frame.name) in frame_selectors:
-            for loop in frame:
-                tag_indices = {tag: index for index, tag in enumerate(loop.tags)}
-                for row_index, row in enumerate(loop_row_dict_iter(loop)):
-                    assignments_by_index = {}
-                    for index, prefix in product(range(1, 16), ATOM_LABEL_FIELDS):
-
-                        if prefix in row:
-                            key = prefix
-                        else:
-                            key = f"{prefix}_{index}"
-
-                        if key not in row:
-                            break
-
-                        assignments_by_index.setdefault(index, {})[prefix] = row[key]
-
-                    for column_index, assignment in enumerate(
-                        assignments_by_index.values(), start=1
-                    ):
-                        old_label = _dict_to_label(assignment)
-
-                        if old_label is not None:
-
-                            new_label = assignment_map[old_label]
-
-                            for atom_label_field in ATOM_LABEL_FIELDS:
-                                key = None
-                                if atom_label_field in tag_indices:
-                                    key = atom_label_field
-                                if not key:
-                                    possible_key = f"{atom_label_field}_{column_index}"
-                                    if possible_key in tag_indices:
-                                        key = possible_key
-
-                                if key:
-                                    tag_index = tag_indices[key]
-
-                                    if atom_label_field == "chain_code":
-                                        new_value = new_label.residue.chain_code
-                                    elif atom_label_field == "sequence_code":
-                                        new_value = new_label.residue.sequence_code
-                                    elif atom_label_field == "residue_name":
-                                        new_value = new_label.residue.residue_name
-                                    elif atom_label_field == "atom_name":
-                                        new_value = new_label.atom_name
-
-                                    loop.data[row_index][tag_index] = new_value
+    for frame in target_frames:
+        for loop in frame:
+            _reassign_loop(loop, assignment_map)
 
     return entry
+
+
+def _reassign_loop(loop, assignment_map):
+    tag_indices = {tag: index for index, tag in enumerate(loop.tags)}
+    for row_index, row in enumerate(loop_row_dict_iter(loop)):
+        assignments_by_index = {}
+        for index, prefix in product(range(1, 16), ATOM_LABEL_FIELDS):
+
+            if prefix in row:
+                key = prefix
+            else:
+                key = f"{prefix}_{index}"
+
+            if key not in row:
+                break
+
+            assignments_by_index.setdefault(index, {})[prefix] = row[key]
+
+        for column_index, assignment in enumerate(
+            assignments_by_index.values(), start=1
+        ):
+            old_label = _dict_to_label(assignment)
+
+            if old_label is not None:
+
+                new_label = assignment_map[old_label]
+
+                for atom_label_field in ATOM_LABEL_FIELDS:
+                    key = None
+                    if atom_label_field in tag_indices:
+                        key = atom_label_field
+                    if not key:
+                        possible_key = f"{atom_label_field}_{column_index}"
+                        if possible_key in tag_indices:
+                            key = possible_key
+
+                    if key:
+                        tag_index = tag_indices[key]
+
+                        if atom_label_field == "chain_code":
+                            new_value = new_label.residue.chain_code
+                        elif atom_label_field == "sequence_code":
+                            new_value = new_label.residue.sequence_code
+                        elif atom_label_field == "residue_name":
+                            new_value = new_label.residue.residue_name
+                        elif atom_label_field == "atom_name":
+                            new_value = new_label.atom_name
+
+                        loop.data[row_index][tag_index] = new_value
+
+
+def _build_current_assignments_for_frame(frame):
+
+    result = OrderedSet()
+
+    for loop in frame:
+        for i, row in enumerate(loop_row_dict_iter(loop)):
+            assignments_by_index = {}
+            for index, prefix in product(range(1, 16), ATOM_LABEL_FIELDS):
+
+                if prefix in row:
+                    key = prefix
+                else:
+                    key = f"{prefix}_{index}"
+
+                    if key not in row:
+                        break
+
+                assignments_by_index.setdefault(index, {})[prefix] = row[key]
+
+            for assignment in assignments_by_index.values():
+                label = _dict_to_label(assignment)
+
+                if label:
+                    result.add(label)
+
+    return result
+
+
+def _build_targets(raw_targets: List[Targets]) -> List[Targets]:
+    result = set()
+
+    for raw_target in raw_targets:
+        result.update(TARGET_LOOKUP[raw_target])
+
+    return result
 
 
 def _dict_to_label(assignment):
@@ -317,6 +357,28 @@ def _dict_to_label(assignment):
         }
         residue = Residue(**residue_values)
         result = AtomLabel(residue, atom_name)
+    return result
+
+
+TRIPLE_RESONANCE_CLASSIFICATION = [
+    "H[N[co[CA]]]",
+    "H[N[CA[CB]]]",
+    "H[N[co[CA[CB]]]]",
+    "H[N[CA]]",
+    "H[N[ca[CO]]]",
+    "H[N[CO]]",
+]
+
+
+def _is_triple_resonance_frame(frame: Saveframe):
+    result = False
+    if frame.category == "nef_nmr_spectrum":
+        experiment_classification = frame.get_tag("experiment_classification")
+        experiment_classification = (
+            experiment_classification[0] if experiment_classification else None
+        )
+        if experiment_classification in TRIPLE_RESONANCE_CLASSIFICATION:
+            result = True
     return result
 
 
@@ -376,9 +438,10 @@ def _map_assignments(
 
         for chain, assignments in new_assignment_by_chain.items():
             old_sequence_codes = OrderedSet()
-            for _, new_assignment in assignments:
+            for old_assignment, new_assignment in assignments:
 
                 sequence_code = str(new_assignment.residue.sequence_code)
+
                 if "-" in sequence_code:
                     sequence_code = "-".join(sequence_code.split("-")[:-1])
                 old_sequence_codes.add(sequence_code)
@@ -472,7 +535,6 @@ def _map_assignments(
                 sequence_code_map.update(possible_new_sequence_codes)
 
         for assignment, new_assignment in assignment_map.items():
-
             old_sequence_code = str(new_assignment.residue.sequence_code)
             offset = None
             if "-" in old_sequence_code:
@@ -499,3 +561,30 @@ def _map_assignments(
             assignment_map[assignment] = updated_atom_label
 
     return assignment_map
+
+
+def _offset_sequence_codes_in_triple(frame, targets):
+    if _is_triple_resonance_frame(frame) and Targets.SEQUENCE_CODE in targets:
+        peak_loop = frame.get_loop("nef_peak")
+
+        sequence_codes = set()
+        for row in loop_row_dict_iter(peak_loop):
+            for i in range(1, 16):
+                key = f"{'sequence_code'}_{i}"
+                if key in row:
+                    sequence_code = row[key]
+                    if is_int(sequence_code):
+                        sequence_codes.add(int(sequence_code))
+
+            max_sequence_code = max(sequence_codes)
+            max_sequence_code_m1 = max_sequence_code - 1
+
+            for i in range(1, 16):
+                key = f"{'sequence_code'}_{i}"
+                if key in row:
+                    sequence_code = row[key]
+                    if is_int(sequence_code):
+                        sequence_code = int(sequence_code)
+                        if sequence_code == max_sequence_code_m1:
+                            sequence_code = f"{max_sequence_code}-1"
+                            row[key] = sequence_code
