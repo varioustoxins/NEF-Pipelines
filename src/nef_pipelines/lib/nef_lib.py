@@ -333,20 +333,21 @@ class RowDict(MutableMapping):
     def __str__(self):
         return self.__repr__()
 
-    def __getattribute__(self, item):
-        try:
-            return self[item]
-        except Exception:
-            return object.__getattribute__(self, item)
-
-    def __setattr__(self, item, value):
-        if hasattr(self, item):
-            self[item] = value
-        else:
-            return super().__setattr__(item, value)
-
-    def __delattr__(self, key):
-        self.__delitem__(key)
+    # def __getattribute__(self, item):
+    #     print(item)
+    #     try:
+    #         return self[item]
+    #     except Exception:
+    #         return object.__getattribute__(self, item)
+    #
+    # def __setattr__(self, item, value):
+    #     if hasattr(self, item):
+    #         self[item] = value
+    #     else:
+    #         return super().__setattr__(item, value)
+    #
+    # def __delattr__(self, key):
+    #     self.__delitem__(key)
 
 
 # TODO we should examine columns for types not individual rows entries
