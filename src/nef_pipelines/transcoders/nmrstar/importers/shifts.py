@@ -83,7 +83,7 @@ def shifts(
         ..., help="input files of type shifts.txt", metavar="<NMR-STAR-shifts>.str"
     ),
 ):
-    """- convert nmrpipe shift file <nmr-star>.str to NEF [alpha]"""
+    """- convert nmrstar shift file <nmr-star>.str to NEF [alpha]"""
 
     nmrstar_entry = read_entry_from_file_or_exit_error(file_path)
 
@@ -102,6 +102,95 @@ def shifts(
     )
 
     print(nef_entry)
+
+
+def pipe(
+    nef_entry: Entry,
+    chain_codes: List[str],
+    frame_name: str,
+    nmrstar_entry: Entry,
+    file_name: Path,
+    use_author: bool,
+    stereo_mode: StereoAssignmentHandling,
+):
+
+    sequence_residues = sequence_from_entry_or_exit(nef_entry)
+
+    sequence_residues_by_residue = {
+        Residue.from_sequence_residue(sequence_residue): sequence_residue
+        for sequence_residue in sequence_residues
+    }
+
+    residues = set(sequence_residues_by_residue.keys())
+
+    denormalised_shifts, ambiguities, name_info = _chemical_shifts_from_star_frame(
+        nmrstar_entry, use_author, file_name
+    )
+
+    stereo_mode = _get_stereo_mode(ambiguities, stereo_mode)
+
+    entity_id_to_chain_code = _build_entity_ids_to_chain_codes(
+        chain_codes, denormalised_shifts
+    )
+
+    denormalised_shifts = _replace_shift_entity_ids_with_chain_codes(
+        denormalised_shifts, entity_id_to_chain_code
+    )
+
+    per_residue_and_atom_shifts = _organise_shifts_by_residue_and_atom_names(
+        denormalised_shifts
+    )
+
+    shift_residues = set(per_residue_and_atom_shifts.keys())
+
+    _exit_error_if_missing_residues(residues, shift_residues, file_name)
+
+    residue_names = sorted(
+        list(set([residue.residue_name for residue in per_residue_and_atom_shifts]))
+    )
+
+    ambiguities = _replace_atom_dict_entity_ids_with_chain_codes(
+        ambiguities, entity_id_to_chain_code
+    )
+
+    per_residue_ambiguities = _organise_ambiguities_by_residue(ambiguities)
+
+    per_residue_and_atom_shifts = _replace_atoms_with_duplicated_shifts(
+        per_residue_and_atom_shifts,
+        sequence_residues_by_residue,
+        per_residue_ambiguities,
+    )
+
+    all_stereo_pairs = _get_geminal_pairs(residue_names)
+
+    _apply_stereo_assignment_ambiguities(
+        per_residue_and_atom_shifts,
+        all_stereo_pairs,
+        sequence_residues_by_residue,
+        per_residue_ambiguities,
+        stereo_mode,
+    )
+
+    all_shifts = sorted(
+        flatten(
+            [
+                list(residue_shifts.values())
+                for residue_shifts in per_residue_and_atom_shifts.values()
+            ]
+        )
+    )
+
+    if not frame_name:
+        frame_name = name_info.entry_id + "__" + str(name_info.identifier)
+
+    shifts_frame = shifts_to_nef_frame(ShiftList(all_shifts), frame_name)
+
+    return add_frames_to_entry(
+        nef_entry,
+        [
+            shifts_frame,
+        ],
+    )
 
 
 def _get_chem_atom_set_atoms(chem_atom_set, chem_comp):
@@ -338,95 +427,6 @@ def rmsd(values):
     return mean_of_squared_values**0.5
 
 
-def pipe(
-    nef_entry: Entry,
-    chain_codes: List[str],
-    frame_name: str,
-    nmrstar_entry: Entry,
-    file_name: Path,
-    use_author: bool,
-    stereo_mode: StereoAssignmentHandling,
-):
-
-    sequence_residues = sequence_from_entry_or_exit(nef_entry)
-
-    sequence_residues_by_residue = {
-        Residue.from_sequence_residue(sequence_residue): sequence_residue
-        for sequence_residue in sequence_residues
-    }
-
-    residues = set(sequence_residues_by_residue.keys())
-
-    denormalised_shifts, ambiguities, name_info = _chemical_shifts_from_star_frame(
-        nmrstar_entry, use_author, file_name
-    )
-
-    stereo_mode = _get_stereo_mode(ambiguities, stereo_mode)
-
-    entity_id_to_chain_code = _build_entity_ids_to_chain_codes(
-        chain_codes, denormalised_shifts
-    )
-
-    denormalised_shifts = _replace_shift_entity_ids_with_chain_codes(
-        denormalised_shifts, entity_id_to_chain_code
-    )
-
-    per_residue_and_atom_shifts = _organise_shifts_by_residue_and_atom_names(
-        denormalised_shifts
-    )
-
-    shift_residues = set(per_residue_and_atom_shifts.keys())
-
-    _exit_error_if_missing_residues(residues, shift_residues, file_name)
-
-    residue_names = sorted(
-        list(set([residue.residue_name for residue in per_residue_and_atom_shifts]))
-    )
-
-    ambiguities = _replace_atom_dict_entity_ids_with_chain_codes(
-        ambiguities, entity_id_to_chain_code
-    )
-
-    per_residue_ambiguities = _organise_ambiguities_by_residue(ambiguities)
-
-    per_residue_and_atom_shifts = _replace_atoms_with_duplicated_shifts(
-        per_residue_and_atom_shifts,
-        sequence_residues_by_residue,
-        per_residue_ambiguities,
-    )
-
-    all_stereo_pairs = _get_geminal_pairs(residue_names)
-
-    _apply_stereo_assignment_ambiguities(
-        per_residue_and_atom_shifts,
-        all_stereo_pairs,
-        sequence_residues_by_residue,
-        per_residue_ambiguities,
-        stereo_mode,
-    )
-
-    all_shifts = sorted(
-        flatten(
-            [
-                list(residue_shifts.values())
-                for residue_shifts in per_residue_and_atom_shifts.values()
-            ]
-        )
-    )
-
-    if not frame_name:
-        frame_name = name_info.entry_id + "__" + str(name_info.identifier)
-
-    shifts_frame = shifts_to_nef_frame(ShiftList(all_shifts), frame_name)
-
-    return add_frames_to_entry(
-        nef_entry,
-        [
-            shifts_frame,
-        ],
-    )
-
-
 def _apply_stereo_assignment_ambiguities(
     per_residue_and_atom_shifts,
     all_stereo_pairs,
@@ -556,6 +556,7 @@ class ShiftListNameInfo:
 
 
 def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
+
     shift_lists = nmrstar_entry.get_saveframes_by_category("assigned_chemical_shifts")
 
     if len(shift_lists) == 0:
