@@ -85,6 +85,7 @@ def main():
             "nef_pipelines.tools.peaks",
             "nef_pipelines.tools.save",
             "nef_pipelines.tools.series",
+            "nef_pipelines.tools.shifts",
             "nef_pipelines.tools.simulate",
             "nef_pipelines.tools.sink",
             "nef_pipelines.tools.stream",
