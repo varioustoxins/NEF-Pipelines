@@ -102,8 +102,8 @@ def project(
     ),
     use_author: bool = typer.Option(False, help="use author field for sequence codes"),
     stereo_mode: StereoAssignmentHandling = typer.Option("auto", help=STEREO_HELP),
-    default_entry_name: str = typer.Option(
-        None, help="a name for the entry (defaults to the bmrb entry number)"
+    entry_name: str = typer.Option(
+        None, help="a name for the entry (defaults to the bmr{entry_number})"
     ),
     input: Path = typer.Option(
         STDIN,
@@ -165,9 +165,7 @@ def project(
             msg = f"could not read entry from {file_path}"
             exit_error(msg)
 
-        entry_name = (
-            nmrstar_entry.entry_id if not default_entry_name else default_entry_name
-        )
+        entry_name = nmrstar_entry.entry_id if not entry_name else entry_name
         entry_name = f"bmr{entry_name}" if is_bmrb else entry_name
         nef_entry = read_or_create_entry_exit_error_on_bad_file(
             input, entry_name=entry_name
@@ -185,18 +183,6 @@ def project(
         )
 
         print(entry)
-
-
-def _list_shortcuts_and_exit():
-    print("The available shortcuts are:\n", file=sys.stderr)
-    shortcuts = [
-        [shortcut.lower(), entry, SHORTCUT_URLS[shortcut]]
-        for shortcut, entry in SHORTCUTS.items()
-    ]
-    HEADERS = ["name", "entry id.", "url"]
-    print(tabulate(shortcuts, headers=HEADERS), file=sys.stderr)
-    print("\nexiting...", file=sys.stderr)
-    sys.exit(0)
 
 
 def pipe(
@@ -222,7 +208,7 @@ def pipe(
     #         use_author: bool,
     # ):
 
-    entry_id = nmrstar_entry.entry_id
+    entry_id = nef_entry.entry_id
     nef_entry = sequence_pipe(
         nef_entry,
         chain_codes,
@@ -250,6 +236,18 @@ def pipe(
     )
 
     return nef_entry
+
+
+def _list_shortcuts_and_exit():
+    print("The available shortcuts are:\n", file=sys.stderr)
+    shortcuts = [
+        [shortcut.lower(), entry, SHORTCUT_URLS[shortcut]]
+        for shortcut, entry in SHORTCUTS.items()
+    ]
+    HEADERS = ["name", "entry id.", "url"]
+    print(tabulate(shortcuts, headers=HEADERS), file=sys.stderr)
+    print("\nexiting...", file=sys.stderr)
+    sys.exit(0)
 
 
 def _parse_text_to_star_or_none(possible_entry):
