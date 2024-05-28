@@ -322,3 +322,12 @@ Major release with many new features and bug fixes
 
 ## version 0.1.71
 improved error handling when `streamfitter` does load into `fit exponential`
+
+## version 0.1.72
+
+- better handling of NEF-Pipelines fasta headers for round tripping
+- many more fasta format headers supported
+- correct error in handling beta sheet records in pdb files
+- pdbx reader takes sequence from SEQRES records as default
+- add initial chemical shift averager [alpha quality]
+- unassign supports creating ccpn style residue -1 entries e.g @32-1
