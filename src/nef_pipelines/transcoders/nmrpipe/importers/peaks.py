@@ -22,7 +22,7 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.transcoders.nmrpipe import import_app
 
-from ...nmrview.importers.peaks import create_spectrum_frame
+from ...nmrview.importers.peaks import _create_spectrum_frame
 from ..nmrpipe_lib import (
     NMRPIPE_PEAK_EXPECTED_FIELDS,
     check_is_peak_file,
@@ -70,7 +70,7 @@ def peaks(
 
 
 def pipe(
-    entry: Entry, file_names: List[str], chain_codes: List[str], filter_noise: bool
+    entry: Entry, file_names: List[Path], chain_codes: List[str], filter_noise: bool
 ) -> Entry:
 
     peak_lists = _read_nmrpipe_peaks(file_names, chain_codes, filter_noise=filter_noise)
@@ -86,7 +86,7 @@ def pipe(
         zip(peak_lists, frame_names, chain_codes), start=1
     ):
 
-        frames.append(create_spectrum_frame(frame_name, peak_list, chain_code))
+        frames.append(_create_spectrum_frame(frame_name, peak_list, chain_code))
 
     # TODO when adding frames they need to be disambiguated if there are name clashes
     return add_frames_to_entry(entry, frames)
@@ -130,7 +130,7 @@ def _create_entry_names_from_template_if_required(
         else:
             file_name = str(Path(file_name).stem)
             numbers_and_letters = string.ascii_lowercase + string.digits
-            file_name = "".join(
+            file_name = "".join(  # noqa: F841
                 [
                     letter if letter in numbers_and_letters else "_"
                     for letter in file_name
