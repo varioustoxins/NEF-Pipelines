@@ -294,22 +294,18 @@ def peaks_to_frame(
     transfer_loop = Loop.from_scratch(SPECTRUM_DIMENSION_TRANSFER_LOOP_CATEGORY)
     frame.add_loop(transfer_loop)
 
-    dimension_indices = [
-        {"dimension_index": dimension_index}
-        for dimension_index in range(1, len(dimensions) + 1)
-    ]
-    transfer_loop_tags = _expand_templates(TRANSFER_LOOP_TAGS, dimension_indices)
+    transfer_loop_indices = [{"dimension_index": 1}, {"dimension_index": 2}]
+    transfer_loop_tags = _expand_templates(TRANSFER_LOOP_TAGS, transfer_loop_indices)
 
     transfer_loop.add_tag(transfer_loop_tags)
-
     for dim_index in range(1, len(dimensions)):
         dim_1 = dim_index
         dim_2 = dim_index + 1
 
         transfer_data = {
-            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: dim_1}): dim_1,
-            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: dim_2}): dim_2,
-            TRANSFER_TYPE: ONE_BOND,
+            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: 1}): dim_1,
+            DIMENSION__DIMENSION_INDEX.format(**{DIMENSION_INDEX: 2}): dim_2,
+            TRANSFER_TYPE: ONE_BOND,  # TODO: this is not correct
             IS_INDIRECT: NEF_FALSE,
         }
 
@@ -321,6 +317,11 @@ def peaks_to_frame(
 
     peak_loop = Loop.from_scratch(SPECTRUM_PEAK_LOOP_CATEGORY)
     frame.add_loop(peak_loop)
+
+    dimension_indices = [
+        {"dimension_index": dimension_index}
+        for dimension_index in range(1, len(dimensions) + 1)
+    ]
 
     peak_loop_tags = _expand_templates(PEAK_LOOP_TAGS, dimension_indices)
 
