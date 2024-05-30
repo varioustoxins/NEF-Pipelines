@@ -338,3 +338,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - pdbx reader takes sequence from SEQRES records as default
 - add initial chemical shift averager [alpha quality]
 - unassign supports creating ccpn style residue -1 entries e.g @32-1
+
+## version 0.1.75
+- peak dimesnions were incorrecly indexed causing a failure to import into CCPN suite of programs
