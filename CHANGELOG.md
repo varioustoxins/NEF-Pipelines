@@ -340,4 +340,4 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - unassign supports creating ccpn style residue -1 entries e.g @32-1
 
 ## version 0.1.75
-- peak dimesnions were incorrecly indexed causing a failure to import into CCPN suite of programs
+- peak dimensions were incorrectly indexed causing a failure to import into CCPN suite of programs
