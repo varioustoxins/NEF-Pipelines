@@ -740,7 +740,7 @@ def get_residue_name_from_lookup(
     chain_code: str,
     sequence_code: Union[str, int],
     lookup_table: Dict[Union[str, int], str],
-) -> str:
+) -> Optional[str]:
     """
     get a residue name from a chain_code and sequence_code, using the provided lookup table. The sequence code is
     treated being as either  a string or an int, strs are checked first
@@ -855,12 +855,20 @@ def atom_sort_key(item: AtomLabel) -> Tuple[Any, ...]:
     return items
 
 
-def exit_if_chain_not_in_sequence(chain_code: str, entry: Entry, file_name: str):
+def exit_if_chain_not_in_entrys_sequence(chain_code: str, entry: Entry, file_name: str):
 
     nef_sequence = sequence_from_entry(entry)
 
-    nef_chain_codes = sequence_to_chains(nef_sequence)
+    exit_if_chain_not_in_sequence(chain_code, nef_sequence, entry, file_name)
 
+
+def exit_if_chain_not_in_sequence(
+    chain_code: str,
+    nef_sequence: List[SequenceResidue],
+    entry: Entry,
+    file_name: Union[str, Path],
+):
+    nef_chain_codes = sequence_to_chains(nef_sequence)
     if chain_code not in nef_chain_codes:
         msg = f"""
             The chain code {chain_code} was not found in the input chain codes in the nef stream

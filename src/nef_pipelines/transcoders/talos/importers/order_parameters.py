@@ -13,7 +13,7 @@ from nef_pipelines.lib.nef_lib import (
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
-    exit_if_chain_not_in_sequence,
+    exit_if_chain_not_in_entrys_sequence,
     sequence_from_entry,
 )
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import read_db_file_records
@@ -72,7 +72,7 @@ def order_parameters(
 def pipe(
     entry: Entry, lines: List[str], chain_code: str, frame_name: str, file_name: Path
 ):
-    exit_if_chain_not_in_sequence(chain_code, entry, file_name)
+    exit_if_chain_not_in_entrys_sequence(chain_code, entry, file_name)
 
     nef_sequence = sequence_from_entry(entry)
 
