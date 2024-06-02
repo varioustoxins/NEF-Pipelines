@@ -2,7 +2,7 @@ import itertools
 import string
 import sys
 from copy import copy
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import time
 from enum import auto
 from itertools import product
@@ -122,7 +122,7 @@ class SequenceMode(LowercaseStrEnum):
 
 # TODO: how do you decide whether its a selection within a chain or the file
 SEQUENCE_MODE_HELP = f"""
-    value to deassign the sequence code to [one of {', '.join([e.value for e in SequenceMode])}] UNUSED is .,
+    value to deassign the sequence code to [one of {', '.join([e for e in SequenceMode])}] UNUSED is .,
     INDEX is the index of the assignment in its chain, RANDOM is a random index for the assignment
     within its chain, ORDERED retains the order of the residues when deassigned to pseudo residues, PRESERVE deassigns
     residues to pseudo residues with the same number as the assigned residue any clashes are disambiguated by renaming
@@ -148,10 +148,52 @@ SELECTION_TYPE_HELP = f"""
 
 USE_RESIDUE_OFFSETS_HELP = """
 if the experiment is a triple resonance experiment don't offset residues so that assignment from the previous frame
-are labelled as CA-1 and CB-1 [compatability with CCP]
+are labelled as CA-1 and CB-1 [compatability with CCPN]
 """
 # TODO: add the ability to unassign a particular dimension
 # TODO: add the ability specify the pseudo residue prefix
+
+
+@dataclass
+class ResidueRange:
+    chain_code: str
+    start: int
+    end: int
+
+
+def _build_residue_ranges(raw_residue_ranges: List[str]) -> List[ResidueRange]:
+
+    results = []
+    for elem in raw_residue_ranges:
+        if ":" in elem:
+            chain_code, range_str = elem.split(":")
+        else:
+            chain_code = ANY
+            range_str = elem
+
+        range_fields = range_str.split("-")
+
+        if len(range_fields) != 2:
+            msg = f"""
+                residue ranges must be in the form <START>-<END> [2 elements], i got {elem} [{len(range_fields)}]
+            """
+            exit_error(msg)
+
+        for i, field in enumerate(range_fields):
+            if not is_int(field):
+                msg = f"""
+                    residue ranges must be integers, i got {field} for element {i} in {elem}
+                """
+                exit_error(msg)
+
+            range_fields[i] = int(field)
+
+        start, end = range_fields
+
+        if end >= start:
+            results.append(ResidueRange(chain_code, start, end))
+
+    return results
 
 
 @frames_app.command()
@@ -176,15 +218,26 @@ def unassign(
         SequenceMode.INDEX, metavar="<MODE>", help=SEQUENCE_MODE_HELP
     ),
     random_seed: int = typer.Option(42, metavar="<RANDOM-SEED>", help=RANDOM_SEED_HELP),
-    no_residue_offsets: bool = typer.Option(False, help=USE_RESIDUE_OFFSETS_HELP),
+    no_residue_offsets: bool = typer.Option(
+        False, "--no-residue-offsets", help=USE_RESIDUE_OFFSETS_HELP
+    ),
+    raw_residue_ranges: List[str] = typer.Option(
+        None,
+        "--residue-ranges",
+        help=RESIDUE_RANGES_HELP,
+    ),
     frame_selectors: List[str] = typer.Argument(
         None,
         help=SELECTOR_HELP,
     ),
 ):
-    """- unassign frames in the current input"""
+    """- unassign frames in the current input [alpha]"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
+
+    raw_residue_ranges = parse_comma_separated_options(raw_residue_ranges)
+
+    residue_ranges = _build_residue_ranges(raw_residue_ranges)
 
     use_residue_offsets = not no_residue_offsets
 
@@ -239,6 +292,7 @@ def unassign(
         targets,
         sequence_mode,
         chain_mappings,
+        residue_ranges,
         use_residue_offsets,
     )
 
@@ -250,7 +304,13 @@ def unassign(
 
 # todo move frame selectors to non pipe part
 def pipe(
-    entry, frame_selectors, targets, sequence_mode, chain_mappings, use_residue_offsets
+    entry,
+    frame_selectors,
+    targets,
+    sequence_mode,
+    chain_mappings,
+    residue_ranges,
+    use_residue_offsets,
 ):
 
     current_assignments = OrderedSet()
@@ -259,12 +319,17 @@ def pipe(
         frame for frame in entry if (frame.category, frame.name) in frame_selectors
     ]
 
+    # this is a bit messy it uses the entry for storing data...
     for frame in target_frames:
-        if _is_triple_resonance_frame(frame) and use_residue_offsets:
+        if use_residue_offsets:
             _offset_sequence_codes_in_triple(frame, targets)
 
     for frame in target_frames:
         current_assignments.update(_build_current_assignments_for_frame(frame))
+
+    current_assignments = _filter_assignments_by_residue_ranges(
+        current_assignments, residue_ranges, use_residue_offsets
+    )
 
     if sequence_mode == SequenceMode.ORDERED:
         current_assignments = sorted(current_assignments, key=atom_sort_key)
@@ -277,7 +342,34 @@ def pipe(
         for loop in frame:
             _reassign_loop(loop, assignment_map)
 
+    for frame in target_frames:
+        if use_residue_offsets:
+            _unoffset_sequence_codes_in_triple(frame, targets)
+
     return entry
+
+
+def _filter_assignments_by_residue_ranges(
+    current_assignments, residue_ranges, use_residue_offsets
+):
+    assignments_to_remove = OrderedSet()
+
+    current_assignments = OrderedSet(current_assignments)
+    for assignment in current_assignments:
+        for residue_range in residue_ranges:
+            if (
+                residue_range.chain_code == ANY
+                or residue_range.chain_code == assignment.residue.chain_code
+            ):
+                if (
+                    residue_range.start
+                    <= assignment.residue.sequence_code
+                    <= residue_range.end
+                ):
+                    assignments_to_remove.add(assignment)
+                    break
+
+    return list(current_assignments - assignments_to_remove)
 
 
 def _reassign_loop(loop, assignment_map):
@@ -299,9 +391,10 @@ def _reassign_loop(loop, assignment_map):
         for column_index, assignment in enumerate(
             assignments_by_index.values(), start=1
         ):
+
             old_label = _dict_to_label(assignment)
 
-            if old_label is not None:
+            if old_label is not None and old_label in assignment_map:
 
                 new_label = assignment_map[old_label]
 
@@ -320,7 +413,14 @@ def _reassign_loop(loop, assignment_map):
                         if atom_label_field == "chain_code":
                             new_value = new_label.residue.chain_code
                         elif atom_label_field == "sequence_code":
-                            new_value = new_label.residue.sequence_code
+                            if new_label.residue.offset == 0:
+                                new_value = new_label.residue.sequence_code
+                            else:
+                                if new_label.residue.sequence_code != UNUSED:
+                                    new_value = f"{new_label.residue.sequence_code}{new_label.residue.offset}"
+                                else:
+                                    new_value = new_label.residue.sequence_code
+
                         elif atom_label_field == "residue_name":
                             new_value = new_label.residue.residue_name
                         elif atom_label_field == "atom_name":
@@ -375,8 +475,35 @@ def _dict_to_label(assignment):
             for key in assignment
             if key != "atom_name" and key in ATOM_LABEL_FIELDS
         }
+        if "sequence_code" in residue_values:
+            sequence_code = residue_values["sequence_code"]
+            if is_int(sequence_code):
+                residue_values["sequence_code"] = int(sequence_code)
+            elif sequence_code_offset := _get_sequence_code_and_offset_or_none(
+                sequence_code
+            ):
+                sequence_code, offset = sequence_code_offset
+                residue_values["sequence_code"] = sequence_code
+                residue_values["offset"] = offset
+            else:
+                residue_values["sequence_code"] = sequence_code
+
         residue = Residue(**residue_values)
         result = AtomLabel(residue, atom_name)
+    return result
+
+
+def _get_sequence_code_and_offset_or_none(sequence_code):
+
+    result = None
+    sequence_code_fields = sequence_code.split("-") if "-" in str(sequence_code) else []
+    if len(sequence_code_fields) == 2:
+        sequence_code, offset = sequence_code_fields
+        if is_int(sequence_code) and is_int(offset):
+            sequence_code = int(sequence_code)
+            offset = -int(offset)
+
+            result = sequence_code, offset
     return result
 
 
@@ -462,13 +589,12 @@ def _map_assignments(
 
                 sequence_code = str(new_assignment.residue.sequence_code)
 
-                if "-" in sequence_code:
-                    sequence_code = "-".join(sequence_code.split("-")[:-1])
                 old_sequence_codes.add(sequence_code)
 
             if sequence_mode == SequenceMode.UNUSED:
                 for old_sequence_code in old_sequence_codes:
                     sequence_code_map[old_sequence_code] = UNUSED
+
             elif sequence_mode in (
                 SequenceMode.INDEX,
                 SequenceMode.RANDOM,
@@ -607,4 +733,23 @@ def _offset_sequence_codes_in_triple(frame, targets):
                         sequence_code = int(sequence_code)
                         if sequence_code == max_sequence_code_m1:
                             sequence_code = f"{max_sequence_code}-1"
+                            row[key] = sequence_code
+
+
+def _unoffset_sequence_codes_in_triple(frame, targets):
+    if _is_triple_resonance_frame(frame) and Targets.SEQUENCE_CODE in targets:
+        peak_loop = frame.get_loop("nef_peak")
+
+        for row in loop_row_dict_iter(peak_loop):
+            for i in range(1, 16):
+                key = f"{'sequence_code'}_{i}"
+                if key in row:
+                    sequence_code = row[key]
+                    is_assigned_residue = str(sequence_code)[0] != "@"
+                    if is_assigned_residue:
+                        if sequence_code_and_offset := _get_sequence_code_and_offset_or_none(
+                            sequence_code
+                        ):
+                            sequence_code, offset = sequence_code_and_offset
+                            sequence_code = sequence_code + offset
                             row[key] = sequence_code
