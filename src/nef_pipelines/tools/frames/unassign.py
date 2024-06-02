@@ -14,7 +14,7 @@ from typing import Dict, List
 import typer
 from ordered_set import OrderedSet
 from pynmrstar import Saveframe
-from strenum import LowercaseStrEnum
+from strenum import KebabCaseStrEnum, LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
     SELECTORS_LOWER,
@@ -36,6 +36,13 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.tools.frames import frames_app
 
+# TODO: add the ability to do inverted assignments with ^
+RESIDUE_RANGES_HELP = """
+    residue ranges to unassign, can be defined as comma separated pairs of ranges e.g 1-10,11-24
+    or can also have a colon separated chain_code e.g A:1-10,B:14-32. Multiple selections are combined
+    additively. Multiple copies of the option can be used to add extra values [default is all]
+"""
+
 SELECTOR_HELP = """
     limit changes to a a particular frame by a selector which can be a frame name or category
     note: wildcards [*] are allowed. Frames are selected by name and subsequently by category if the name
@@ -46,10 +53,11 @@ SELECTOR_HELP = """
 ATOM_LABEL_FIELDS = "chain_code sequence_code residue_name atom_name".split()
 
 
-class Targets(LowercaseStrEnum):
+class Targets(KebabCaseStrEnum):
     CHAIN_CODE = auto()
     SEQUENCE_CODE = auto()
     RESIDUE_NAME = auto()
+    # RESIDUE = auto()  #TODO add..
     ATOM_NAME = auto()
     ALL = auto()
     NOT_ATOM = auto()
@@ -65,16 +73,16 @@ NOT_ATOM_COMPONENTS = copy(ALL_COMPONENTS)
 NOT_ATOM_COMPONENTS.remove(Targets.ATOM_NAME)
 
 TARGET_LOOKUP = {
-    str(Targets.CHAIN_CODE): {
+    str(Targets.CHAIN_CODE).replace("_", "-"): {
         Targets.CHAIN_CODE,
     },
-    str(Targets.SEQUENCE_CODE): {
+    str(Targets.SEQUENCE_CODE).replace("_", "-"): {
         Targets.SEQUENCE_CODE,
     },
-    str(Targets.RESIDUE_NAME): {
+    str(Targets.RESIDUE_NAME).replace("_", "-"): {
         Targets.RESIDUE_NAME,
     },
-    str(Targets.ATOM_NAME): {
+    str(Targets.ATOM_NAME).replace("_", "-"): {
         Targets.ATOM_NAME,
     },
     str(Targets.ALL): ALL_COMPONENTS,
