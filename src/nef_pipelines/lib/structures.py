@@ -12,12 +12,19 @@ class Linking(StrEnum):
     FREE = auto()
 
 
-class SequenceResidue:
-    ...
+class SequenceResidue: ...  # noqa: E701
 
 
-class Residue:
-    ...
+class Residue: ...  # noqa: E701
+
+
+# something like this migh be nice
+# but we would need updates...
+# class ResidueAssignmentState(StrEnum):
+#     UNASSIGNED = auto()
+#     ASSIGNED = auto()
+#     OFFSET_OR_PREFIX = auto()
+#     LABEL = auto()
 
 
 @dataclass(frozen=True, order=True)
@@ -27,6 +34,7 @@ class Residue:
     residue_name: str
     sequence_code_prefix: str = ""
     offset: int = 0
+    # assignmnet_state:ResidueAssignmentState  add as property
 
     @staticmethod
     def from_sequence_residue(sequence_residue: SequenceResidue) -> Residue:
