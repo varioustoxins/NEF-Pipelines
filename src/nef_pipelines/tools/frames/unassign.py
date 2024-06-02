@@ -86,8 +86,20 @@ TARGET_LOOKUP = {
         Targets.ATOM_NAME,
     },
     str(Targets.ALL): ALL_COMPONENTS,
-    str(Targets.NOT_ATOM): NOT_ATOM_COMPONENTS,
+    str(Targets.NOT_ATOM).replace("_", "-"): NOT_ATOM_COMPONENTS,
+    # str(Targets.RESIDUE): { #TODO add
+    #     Targets.SEQUENCE_CODE,
+    #     Targets.RESIDUE_NAME,
+    # },
 }
+
+# TODO allow residue as an unassignment
+# TARGETS_HELP = f"""
+#     choose what to de-assign it can be a comma separated list or called multiple times. Possible values are:
+#     {', '.join([e.value for e in Targets])}.
+#     all, residue and not_atom are combinations, all is: chain_code + sequence_code + residue_name + atom_name and
+#     residue is sequence_code + residue_name, not_atom is: chain_code + sequence_code + residue_name.
+# """
 
 # TODO: allow unique abbreviations
 TARGETS_HELP = f"""
