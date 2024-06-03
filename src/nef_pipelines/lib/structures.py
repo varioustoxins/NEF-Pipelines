@@ -181,6 +181,10 @@ class ShiftData:
     line_width: Optional[float] = None  # line width in Hz
     line_width_uncertainty: Optional[float] = None  # uncertainty of line width in Hz
 
+    frame_name: Optional[str] = ""
+    frame_row: Optional[int] = None
+    frame_line: Optional[str] = None
+
 
 @dataclass
 class ShiftList:

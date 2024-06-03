@@ -38,7 +38,7 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
 
         loop = frame.get_loop(NEF_CHEMICAL_SHIFT_LOOP)
 
-        for row in loop_row_namespace_iter(loop):
+        for i, row in enumerate(loop_row_namespace_iter(loop), start=1):
 
             residue_fields = {
                 name: value
@@ -52,7 +52,21 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
             }
             residue = Residue(**residue_fields)
             label = AtomLabel(residue, **atom_fields)
-            shifts.append(ShiftData(label, row.value, row.value_uncertainty))
+
+            value_str = ", ".join([f"{value}" for value in vars(row).values()])
+            name_str = ", ".join([f"{name}" for name in vars(row).keys()])
+
+            line = f"{name_str}\n{value_str}"
+
+            shift_data = ShiftData(
+                label,
+                row.value,
+                row.value_uncertainty,
+                frame_name=frame.name,
+                frame_row=i,
+                frame_line=line,
+            )
+            shifts.append(shift_data)
 
     return shifts
 
