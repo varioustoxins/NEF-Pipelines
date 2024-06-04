@@ -313,7 +313,7 @@ def pipe(
     use_residue_offsets,
 ):
 
-    current_assignments = OrderedSet()
+    all_assignments = OrderedSet()
 
     target_frames = [
         frame for frame in entry if (frame.category, frame.name) in frame_selectors
@@ -325,17 +325,17 @@ def pipe(
             _offset_sequence_codes_in_triple(frame, targets)
 
     for frame in target_frames:
-        current_assignments.update(_build_current_assignments_for_frame(frame))
+        all_assignments.update(_build_current_assignments_for_frame(frame))
 
-    current_assignments = _filter_assignments_by_residue_ranges(
-        current_assignments, residue_ranges, use_residue_offsets
+    assignments_to_remove = _select_assignments_to_remove_by_residue_ranges(
+        all_assignments, residue_ranges, use_residue_offsets
     )
 
     if sequence_mode == SequenceMode.ORDERED:
-        current_assignments = sorted(current_assignments, key=atom_sort_key)
+        assignments_to_remove = sorted(assignments_to_remove, key=atom_sort_key)
 
     assignment_map = _map_assignments(
-        current_assignments, targets, sequence_mode, chain_mappings
+        assignments_to_remove, targets, sequence_mode, chain_mappings
     )
 
     for frame in target_frames:
@@ -349,7 +349,7 @@ def pipe(
     return entry
 
 
-def _filter_assignments_by_residue_ranges(
+def _select_assignments_to_remove_by_residue_ranges(
     current_assignments, residue_ranges, use_residue_offsets
 ):
     assignments_to_remove = OrderedSet()
@@ -369,7 +369,7 @@ def _filter_assignments_by_residue_ranges(
                     assignments_to_remove.add(assignment)
                     break
 
-    return list(current_assignments - assignments_to_remove)
+    return assignments_to_remove
 
 
 def _reassign_loop(loop, assignment_map):
