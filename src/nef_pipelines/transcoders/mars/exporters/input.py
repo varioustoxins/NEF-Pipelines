@@ -11,7 +11,7 @@ from nef_pipelines.transcoders.mars import export_app
 
 MARS_DEFAULT_FILE = "mars.inp"
 
-TEMPLATE = """\
+INPUT_TEMPLATE = """\
      fragSize:     5                      # Maximum length of pseudoresidue fragments
 
      cutoffCO:     0.25                   # Connectivity cutoff (ppm) of CO [0.25]
@@ -47,20 +47,15 @@ TEMPLATE = """\
 
 
 # noinspection PyUnusedLocal
-@export_app.command()
-def input(
+@export_app.command("input")
+def input_(
     deuterated: bool = typer.Option(
         False,
         help="is the protein deuterated [default: False]",
         metavar="<DEUTERATED-PROTEIN>",
     ),
-    folded: bool = typer.Option(
-        True, help="is the protein folded [default: False]", metavar="<FOLDED-PROTEIN>"
-    ),
-    output_file: str = typer.Argument(
-        None,
-        help="file name to output to [default <entry_id>.inp] for stdout use -",
-        metavar="<MARS-INPUT-FILENAME>",
+    random_coil: bool = typer.Option(
+        False, help="is the protein folded [default: False]", metavar="<FOLDED-PROTEIN>"
     ),
     force: bool = typer.Option(
         False,
@@ -68,41 +63,58 @@ def input(
         "--force",
         help="force overwrite of output file if it exists and isn't empty",
     ),
+    output_path: Path = typer.Argument(
+        None,
+        help="directory file name to output to [default <entry_id>.inp] for stdout use -",
+        metavar="<MARS-INPUT-FILENAME>",
+    ),
 ):
     """- write mars input fixed assignment and connectivity files"""
 
     entry = read_entry_from_stdin_or_exit()
 
-    output_file = Path(output_file) if output_file else Path(f"{entry.entry_id}.inp")
+    output_file = Path(output_path) if output_path else Path(f"{entry.entry_id}.inp")
 
-    entry = pipe(entry, deuterated, folded, output_file, force)
+    entry = pipe(entry, deuterated, random_coil, output_file, force)
 
     if entry:
         print(entry)
 
 
 def pipe(
-    entry: Entry, deuterated: bool, folded: bool, output_file: Path, force: bool
+    entry: Entry, deuterated: bool, random_coil: bool, output_path: Path, force: bool
 ) -> Entry:
 
-    root = output_file.stem if output_file != STDOUT else f"{entry.entry_id}"
+    deuterated = int(deuterated)
+    random_coil = int(random_coil)
 
-    random_coil = not folded
+    output_path = (
+        output_path / f"{entry.entry_id}.inp" if output_path.is_dir() else output_path
+    )
 
-    output = TEMPLATE.format(root=root, deuterated=deuterated, random_coil=random_coil)
+    root = (
+        output_path.parent / output_path.stem
+        if output_path != STDOUT
+        else f"{entry.entry_id}"
+    )
 
-    exit_if_file_has_bytes_and_no_force(output_file, force)
+    templated_text = INPUT_TEMPLATE.format(
+        root=root, deuterated=deuterated, random_coil=random_coil
+    )
 
-    file_h = sys.stdout if output_file == STDOUT else open(output_file, "w")
+    exit_if_file_has_bytes_and_no_force(output_path, force)
 
-    print(output, file=file_h)
+    file_h = sys.stdout if output_path == STDOUT else open(output_path, "w")
 
-    if output_file != STDOUT:
+    print(templated_text, file=file_h)
+
+    if output_path != STDOUT:
         file_h.close()
 
-    Path(f"{root}_fix_con.tab").touch()
-    Path(f"{root}_fix_ass.tab").touch()
+    if output_path != STDOUT:
+        Path(f"{root}_fix_con.tab").touch()
+        Path(f"{root}_fix_ass.tab").touch()
 
-    result = entry if output_file != STDOUT else None
+    result = entry if output_path != STDOUT else None
 
     return result
