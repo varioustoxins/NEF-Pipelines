@@ -21,7 +21,7 @@ def sequence(
         help=" single chain to export  [default: 'A']",
         metavar="<CHAIN-CODE>",
     ),
-    in_file: Path = typer.Option(
+    input_file: Path = typer.Option(
         STDIN, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
     output_file: Path = typer.Argument(
@@ -32,13 +32,13 @@ def sequence(
 ):
     """- write a mars sequence file [fasta]"""
 
-    entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input_file)
 
     output_file = output_file if output_file else f"{entry.entry_id}.fasta"
 
     molecular_system = molecular_system_from_entry_or_exit(entry)
 
-    chain_code = _get_single_chain_code_or_exit(chain_code, molecular_system, in_file)
+    chain_code = _get_single_chain_code_or_exit(chain_code, molecular_system, input_file)
 
     entry = fasta_pipe(entry, chain_code, output_file)
 
@@ -46,7 +46,7 @@ def sequence(
         print(entry)
 
 
-def _get_single_chain_code_or_exit(chain_code_selector, molecular_system, input):
+def _get_single_chain_code_or_exit(chain_code_selector, molecular_system, input_file):
 
     chain_codes = frame_to_chains(molecular_system)
 
@@ -54,7 +54,7 @@ def _get_single_chain_code_or_exit(chain_code_selector, molecular_system, input)
 
     chain_code = None
     if not chain_code_selector:
-        chain_code = _get_default_chain_code_or_exit(chain_codes, input)
+        chain_code = _get_default_chain_code_or_exit(chain_codes, input_file)
 
     if not chain_code:
         chain_code = _select_single_chain_code_or_exit(chain_code_selector, chain_codes)
@@ -86,14 +86,14 @@ def _select_single_chain_code_or_exit(chain_code, chain_codes):
     return chain_code
 
 
-def _get_default_chain_code_or_exit(chain_codes, input):
+def _get_default_chain_code_or_exit(chain_codes, input_file):
 
     if len(chain_codes) != 1:
         num_chains = len(chain_codes)
         chains_list = ", ".join(chain_codes)
         msg = f"""\
             You didn't select a chain code and single chain is required...
-            I found {num_chains} chains in {input}
+            I found {num_chains} chains in {input_file}
             the chains were:
             {chains_list}
         """
