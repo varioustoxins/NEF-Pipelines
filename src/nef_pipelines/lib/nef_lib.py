@@ -236,7 +236,7 @@ def create_entry_from_stdin() -> Optional[Entry]:
 
 def read_file_or_exit(file_path: Path) -> List[str]:
     """
-    read the contenst of a file or exit with error
+    read the contents of a file or exit with error
 
     :param file_path: the path to the file
     :return: a list of strings from the file
