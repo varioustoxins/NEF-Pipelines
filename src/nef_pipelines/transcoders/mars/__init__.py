@@ -21,6 +21,7 @@ if nef_app.app:
     )
 
     # import of specific importers must be after app creation to avoid circular imports
+    import nef_pipelines.transcoders.mars.exporters.fixed  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.fragments  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.input  # noqa: F401
     import nef_pipelines.transcoders.mars.exporters.sequence  # noqa: F401
