@@ -45,6 +45,9 @@ if nef_app:
         single_file: bool = typer.Option(
             False, help="write all entries to a single file"
         ),
+        no_globals_cleanup: bool = typer.Option(
+            False, "--no-globals-cleanup", help="do not remove the globals frame"
+        ),
         no_header: bool = typer.Option(False, help="do not write a header"),
         file_paths: List[str] = typer.Argument(None, help=FILE_PATHS_HELP),
     ):
@@ -72,6 +75,11 @@ if nef_app:
             file_paths = [Path(file_path).resolve() for file_path in file_paths]
 
         entries = list(_entry_list_from_stdin_or_exit_error_if_none(input))
+
+        if not no_globals_cleanup:
+            for entry in entries:
+                for save_frame in entry.get_saveframes_by_category("nefpls_globals"):
+                    entry.remove_saveframe(save_frame)
 
         entries = pipe(entries, file_paths, template, no_header, single_file, force)
 

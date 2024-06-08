@@ -405,3 +405,33 @@ def test_multi_line_string():
 
     Entry.from_string(result.stdout)
     # no exceptions is all that is needed
+
+
+def test_globals_cleanup():
+    data = read_test_data(
+        "header_globals.nef",
+        __file__,
+    )
+
+    result = run_and_report(
+        app,
+        ["-"],
+        input=data,
+    )
+
+    assert_frame_category_exists(result.stdout, "nefpls_globals", count=0)
+
+
+def test_globals_cleanup_off():
+    data = read_test_data(
+        "header_globals.nef",
+        __file__,
+    )
+
+    result = run_and_report(
+        app,
+        ["--no-globals-cleanup", "-"],
+        input=data,
+    )
+
+    assert_frame_category_exists(result.stdout, "nefpls_globals", count=1)
