@@ -29,6 +29,12 @@ def sequence(
         help="file name to output to [default <ENTRY-ID.fasta>] for stdout use -",
         metavar="<FASTA-SEQUENCE-FILE>",
     ),
+    force: bool = typer.Option(
+        False,
+        "-f",
+        "--force",
+        help="force overwrite of output file if it exists and isn't empty",
+    ),
 ):
     """- write a mars sequence file [fasta]"""
 
@@ -38,9 +44,11 @@ def sequence(
 
     molecular_system = molecular_system_from_entry_or_exit(entry)
 
-    chain_code = _get_single_chain_code_or_exit(chain_code, molecular_system, input_file)
+    chain_code = _get_single_chain_code_or_exit(
+        chain_code, molecular_system, input_file
+    )
 
-    entry = fasta_pipe(entry, chain_code, output_file)
+    entry = fasta_pipe(entry, chain_code, Path(output_file), force)
 
     if entry:
         print(entry)
