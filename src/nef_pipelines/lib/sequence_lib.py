@@ -855,19 +855,20 @@ def atom_sort_key(item: AtomLabel) -> Tuple[Any, ...]:
     return items
 
 
-def exit_if_chain_not_in_entrys_sequence(chain_code: str, entry: Entry, file_name: str):
+def exit_if_chain_not_in_entrys_sequence(chain_code: str, entry: Entry):
 
     nef_sequence = sequence_from_entry(entry)
 
-    exit_if_chain_not_in_sequence(chain_code, nef_sequence, entry, file_name)
+    _exit_if_chain_not_in_sequence(chain_code, nef_sequence, entry)
 
 
-def exit_if_chain_not_in_sequence(
+def _exit_if_chain_not_in_sequence(
     chain_code: str,
     nef_sequence: List[SequenceResidue],
     entry: Entry,
-    file_name: Union[str, Path],
 ):
+    file_name = f"{entry.source} [stdin]" if entry.source == "-" else entry.source
+
     nef_chain_codes = sequence_to_chains(nef_sequence)
     if chain_code and chain_code not in nef_chain_codes:
         msg = f"""
