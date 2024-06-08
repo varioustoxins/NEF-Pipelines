@@ -265,7 +265,8 @@ def _entry_list_from_stdin_or_exit_error_if_none(file_name):
             if tokens:
                 entry_strings.append(" ".join(tokens))
             tokens = []
-        tokens.append(f"{token[0]}{token[2]}")
+
+        tokens.append(f"\n{token[2]}{token[0]}\n{token[2]}")
 
     if tokens:
         entry_strings.append(" ".join(tokens))

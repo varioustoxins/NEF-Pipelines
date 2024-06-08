@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import typer
+from pynmrstar import Entry
 
 from nef_pipelines.lib.test_lib import (
     assert_frame_category_exists,
@@ -388,3 +389,19 @@ def test_save_single_stream_stdout():
 
     assert "--------" not in result.stdout
     assert_frame_category_exists(result.stdout, "nef_nmr_meta_data")
+
+
+def test_multi_line_string():
+    data = read_test_data(
+        "header_globals.nef",
+        __file__,
+    )
+
+    result = run_and_report(
+        app,
+        ["-"],
+        input=data,
+    )
+
+    Entry.from_string(result.stdout)
+    # no exceptions is all that is needed
