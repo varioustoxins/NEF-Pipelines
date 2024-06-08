@@ -64,15 +64,13 @@ def order_parameters(
 
     lines = read_file_or_exit(file_name)
 
-    entry = pipe(entry, lines, chain_code, frame_name, file_name)
+    entry = pipe(entry, lines, chain_code, frame_name)
 
     print(entry)
 
 
-def pipe(
-    entry: Entry, lines: List[str], chain_code: str, frame_name: str, file_name: Path
-):
-    exit_if_chain_not_in_entrys_sequence(chain_code, entry, file_name)
+def pipe(entry: Entry, lines: List[str], chain_code: str, frame_name: str):
+    exit_if_chain_not_in_entrys_sequence(chain_code, entry)
 
     nef_sequence = sequence_from_entry(entry)
 
@@ -81,7 +79,7 @@ def pipe(
     talos_order = read_order_parmeters(
         gdb_records,
         chain_code=chain_code,
-        file_name=file_name,
+        file_name=entry.source,
         nef_sequence=nef_sequence,
     )
 

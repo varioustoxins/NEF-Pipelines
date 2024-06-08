@@ -78,7 +78,7 @@ def pipe(
     include_predictions: bool,
 ):
 
-    exit_if_chain_not_in_entrys_sequence(chain_code, entry, file_name)
+    exit_if_chain_not_in_entrys_sequence(chain_code, entry)
 
     nef_sequence = sequence_from_entry(entry)
 
