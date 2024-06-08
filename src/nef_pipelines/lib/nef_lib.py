@@ -231,6 +231,9 @@ def create_entry_from_stdin() -> Optional[Entry]:
     except ParsingError as e:
         raise BadNefFileException(str(e)) from e
 
+    if entry:
+        entry.source = "-"
+
     return entry
 
 
@@ -287,6 +290,8 @@ def read_entry_from_stdin_or_exit() -> Entry:
             f"failed to read nef entry from stdin because the NEF parser replied: {e}",
             e,
         )
+
+    entry.source = "-"
 
     return entry
 
@@ -491,6 +496,7 @@ def read_entry_from_file_or_exit_error(file):
 
     except IOError as e:
         exit_error(f"couldn't read from the file {file}", e)
+
     return entry
 
 
@@ -509,6 +515,8 @@ def read_or_create_entry_exit_error_on_bad_file(
     try:
         if file is None or file == Path("-"):
             entry = create_entry_from_stdin()
+            if entry and entry.entry_id == "nefpls_globals":
+                entry.entry_id = entry_name
         else:
             try:
                 with open(file) as fh:
