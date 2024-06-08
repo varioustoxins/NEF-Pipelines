@@ -252,3 +252,34 @@ def shifts_to_chains(
         if not fnmatch_one_of(chain_code, filter)
     ]
     return chain_codes
+
+
+def _select_unassigned_shifts(all_shifts):
+    unassigned_shifts = []
+    for shift in all_shifts:
+        chain_code = str(shift.atom.residue.chain_code)
+        sequence_code = str(shift.atom.residue.sequence_code)
+
+        if (
+            chain_code.startswith("@") or chain_code.startswith("#")
+        ) and sequence_code.startswith("@"):
+            unassigned_shifts.append(shift)
+
+    return unassigned_shifts
+
+
+def frames_to_assigned_and_unassigned_shift_lists(
+    frames: List[Saveframe],
+) -> Tuple[List[ShiftData], List[ShiftData]]:
+    """
+    split a list of frames into assigned and unassigned shifts
+    :param frames: the frames
+    :return: a tuple of assigned and unassigned shifts
+    """
+    all_shifts = set(nef_frames_to_shifts(frames))
+
+    unassigned_shifts = _select_unassigned_shifts(all_shifts)
+
+    assigned_shifts = all_shifts - set(unassigned_shifts)
+
+    return assigned_shifts, unassigned_shifts
