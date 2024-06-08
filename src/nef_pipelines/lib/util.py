@@ -1039,3 +1039,19 @@ def fnmatch_one_of(target: str, patterns: Tuple[str, ...]) -> bool:
         True if the chain code matches any of the patterns
     """
     return any(fnmatch(target, pattern) for pattern in patterns)
+
+
+def exit_if_file_has_bytes_and_no_force(output_file: Path, force: bool):
+    """
+    Exit if the output file exists is not empty and the force flag is not set
+
+    Args:
+        output_file: the output file
+        force: if the file exists and isn't empty it still isn't an error if this flag is set
+    """
+    if output_file != STDOUT:
+        if output_file.exists() and output_file.stat().st_size != 0 and not force:
+            msg = f"""
+            the file {output_file} already exists and is not empty, if you want to overwrite it use the --force flag
+            """
+            exit_error(msg)
