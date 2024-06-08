@@ -8,6 +8,7 @@ import traceback
 import warnings
 from argparse import Namespace
 from enum import auto
+from fnmatch import fnmatch
 from math import floor
 from pathlib import Path
 from textwrap import dedent
@@ -1024,3 +1025,17 @@ def convert_to_float_or_exit(putative_float: str, line_info: LineInfo) -> float:
             """
         exit_error(msg)
     return float(putative_float)
+
+
+def fnmatch_one_of(target: str, patterns: Tuple[str, ...]) -> bool:
+    """
+    Check if a string code matches any of the patterns
+
+    Args:
+        target: the string to match
+        patterns: a tuple of patterns to match using fnmatch
+
+    Returns:
+        True if the chain code matches any of the patterns
+    """
+    return any(fnmatch(target, pattern) for pattern in patterns)
