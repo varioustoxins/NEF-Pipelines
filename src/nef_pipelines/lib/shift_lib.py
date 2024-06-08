@@ -1,6 +1,6 @@
 import dataclasses
 from enum import auto
-from typing import Dict, List
+from typing import Dict, Iterable, List, Tuple
 
 from pynmrstar import Loop, Saveframe
 from strenum import StrEnum
@@ -13,6 +13,7 @@ from nef_pipelines.lib.structures import (
     ShiftData,
     ShiftList,
 )
+from nef_pipelines.lib.util import fnmatch_one_of
 
 NEF_CHEMICAL_SHIFT_LOOP = "nef_chemical_shift"
 
@@ -232,3 +233,22 @@ def _collapse_cluster(shifts: List[ShiftData]) -> List[ShiftData]:
         result = _collapse_cluster(_collapse_cluster(result))
 
     return result
+
+
+def shifts_to_chains(
+    all_shifts: Iterable[ShiftData], filter: Tuple[str, ...] = ("#*,", "@*")
+) -> List[str]:
+    """
+    get the chain codes from a list of shifts
+    :param all_shifts: the shifts
+    :param filter: a tuple of patterns used to exclude chains from the result [default '#*,', '@*']
+                   which are the nef conventions for the unassigned chains
+    :return: the matching chain codes
+    """
+    chain_codes = {shift.atom.residue.chain_code for shift in all_shifts}
+    chain_codes = [
+        chain_code
+        for chain_code in chain_codes
+        if not fnmatch_one_of(chain_code, filter)
+    ]
+    return chain_codes
