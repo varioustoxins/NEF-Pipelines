@@ -19,6 +19,8 @@ from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDIN, STDOUT, exit_error
 from nef_pipelines.transcoders.fasta import export_app
 
+from pynmrstar import Entry
+
 # TODO: we should be able to output *s on the ends of sequences and comments
 # TODO: we should be able to select chains by fnmatch
 
@@ -55,13 +57,13 @@ def sequence(
     output_file = f"{entry.entry_id}.fasta" if output_file is None else output_file
     output_file = STDOUT if output_file == "-" else output_file
 
-    entry = pipe(entry, chain_codes, output_file)
+    entry = pipe(entry, chain_codes, Path(output_file))
 
     if entry:
         print(entry)
 
 
-def pipe(entry, chain_codes, output_file):
+def pipe(entry: Entry, chain_codes: List[str], output_file: Path, force: bool):
 
     fasta_records = fasta_records_from_entry(entry, chain_codes)
 
