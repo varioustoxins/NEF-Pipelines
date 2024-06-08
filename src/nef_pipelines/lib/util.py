@@ -1050,8 +1050,25 @@ def exit_if_file_has_bytes_and_no_force(output_file: Path, force: bool):
         force: if the file exists and isn't empty it still isn't an error if this flag is set
     """
     if output_file != STDOUT:
-        if output_file.exists() and output_file.stat().st_size != 0 and not force:
+        if file_exists_and_has_bytes(output_file) and not force:
             msg = f"""
             the file {output_file} already exists and is not empty, if you want to overwrite it use the --force flag
             """
             exit_error(msg)
+
+
+def file_exists_and_has_bytes(output_file: Path):
+    """
+    Check if a file exists and has bytes in it
+
+    Args:
+        output_file: the file to check
+
+    Returns:
+        True if the file exists and has bytes in it
+    """
+    return (
+        output_file.exists()
+        and output_file.is_file()
+        and output_file.stat().st_size != 0
+    )
