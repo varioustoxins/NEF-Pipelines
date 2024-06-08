@@ -73,7 +73,7 @@ def get_chain_code_iter(
     user_chain_codes: List[str] = "", exclude: List[str] = ()
 ) -> Iterator[str]:
     """
-    return an iterator thay will yield chain codes in user chain codes and
+    return an iterator they will yield chain codes in user chain codes and
     once exhausted yield any remaining letters of the upper case alphabet
     till they run out. A list of chain codes to not use can be provided...
 
@@ -393,7 +393,7 @@ def sequence_residues_to_sequence_3let(
     Translate a list of SequenceResidues to 3 letter sequence codes t
     Args:
         sequence (List([SequenceResidues]): list of residues
-        chain_code (str): the chain code [defaults to A] only residues fromthis chain will be converted
+        chain_code (str): the chain code [defaults to A] only residues from this chain will be converted
 
     Returns List[str]:
         the sequence as a list of 3 letter residues
@@ -594,7 +594,7 @@ def sequence_3let_to_res(
     :param sequence_3_let: 3 letter names
     :param chain_code: chain code to use
     :param start:  start of the chain [default is 1]
-    :return: a list of sequeence residues
+    :return: a list of sequence residues
     """
     result = set()
     for res_number, residue_name in enumerate(sequence_3_let, start=start):
@@ -608,7 +608,7 @@ def get_chain_starts(residues: List[SequenceResidue]) -> Dict[str, int]:
     from a list of residues get the lowest residue number for each chain ignoring any sequence codes that
     can't be converted to an integer
 
-    :param residues:  a list of residues from one ore more chains
+    :param residues:  a list of residues from one or more chains
     :return: a dictionary of chain starts by chain_code
     """
 
@@ -631,7 +631,7 @@ def sequence_to_chains(residues: List[SequenceResidue]) -> List[str]:
     """
     from a list of residues get chain_codes
 
-    :param residues:  a list of residues from one ore more chains
+    :param residues:  a list of residues from one or more chains
     :return: a list of chain_codes
     """
 
@@ -651,7 +651,7 @@ def offset_chain_residues(
     take a list of residues and offset residue sequence_codes by any offsets in chains if the
     sequence_code can be converted to an integer and the chain_code matches
 
-    :param residues:  a list of residues from one ore more chains
+    :param residues:  a list of residues from one or more chains
     :return: a list of residues
     """
 
@@ -698,7 +698,7 @@ def make_chunked_sequence_1let(
     sequence_1_let: List[str], sub_chunk: int = 10, line_length: int = 100
 ) -> List[str]:
     """
-    convert a list of strings into a chunked list of strings with (by de]fault) every 100 sting being
+    convert a list of strings into a chunked list of strings with (by default) every 100 sting being
     separated by a new line [line_length] and sequences of strings being separated by a space
     :param sequence_1_let: a list of strings typically 1 single letter
     :param sub_chunk: how often to separate strings by a space
@@ -792,7 +792,7 @@ def atom_sort_key(item: AtomLabel) -> Tuple[Any, ...]:
     which are not numeric...
 
     :param item: an atom label
-    :return: a tuple baed on the atom label which gives the correct sort order
+    :return: a tuple based on the atom label which gives the correct sort order
     """
 
     try:
