@@ -81,6 +81,7 @@ def main():
             "nef_pipelines.tools.entry",
             "nef_pipelines.tools.fit",
             "nef_pipelines.tools.frames",
+            "nef_pipelines.tools.globals",
             "nef_pipelines.tools.header",
             "nef_pipelines.tools.peaks",
             "nef_pipelines.tools.save",
