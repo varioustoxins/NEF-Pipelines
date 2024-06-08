@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from io import StringIO
 from itertools import zip_longest
 from pathlib import Path
-from typing import IO, AnyStr, List, Optional, Tuple
+from typing import IO, AnyStr, List, Optional, Tuple, Union
 
 from click.testing import Result
 from pynmrstar import Entry
@@ -362,3 +362,50 @@ def run_and_report(
     assert result.exit_code == expected_exit_code
 
     return result
+
+
+def assert_frame_category_exists(
+    entry: Union[Entry, str], category: str, count: int = 1, exact: bool = False
+):
+    """
+    Asserts that the specified category exists in the given entry and
+    additionally that the number of frames in that category is greater than the
+    expected count if the count is specified. If you want to use an exact count
+    set exact to True.
+
+    Args:
+        entry (Entry): The NEF entry to check.
+        category (str): The category to look for in the entry.
+        count (int, optional): The expected number of frames in the category. Defaults to 1.
+        exact (bool, optional): If True, the number of frames with the category must match the expected count exactly.
+    Raises:
+        AssertionError: If the number of frames with the category does not match the expected count.
+    """
+
+    """
+      Asserts that the specified category exists in the given entry and that the number of frames in that category
+      matches the expected count [default >1].
+
+      This function checks if the specified category exists in the given NEF entry. If the category exists, it then
+      checks if the number of frames in that category is greater than or equal to the expected count. If the 'exact'
+      parameter is set to True, the function checks if the number of frames in the category exactly matches
+      the expected count.
+
+      Args:
+          entry (Union[Entry, str]): The NEF entry to check. This can be an Entry object or a string.
+          category (str): The category to look for in the entry.
+          count (int, optional): The expected number of frames in the category. Defaults to 1.
+          exact (bool, optional): If True, the number of frames with the category must match the expected
+          count exactly. Defaults to False.
+
+      Raises:
+          AssertionError: If the number of frames with the category does not match the expected count.
+      """
+
+    if isinstance(entry, str):
+        entry = Entry.from_string(entry)
+    globals_frames = entry.get_saveframes_by_category(category)
+    if exact:
+        assert len(globals_frames) == count
+    else:
+        assert len(globals_frames) >= count
