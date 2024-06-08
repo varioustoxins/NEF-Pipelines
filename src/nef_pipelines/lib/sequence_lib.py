@@ -869,7 +869,7 @@ def exit_if_chain_not_in_sequence(
     file_name: Union[str, Path],
 ):
     nef_chain_codes = sequence_to_chains(nef_sequence)
-    if chain_code not in nef_chain_codes:
+    if chain_code and chain_code not in nef_chain_codes:
         msg = f"""
             The chain code {chain_code} was not found in the input chain codes in the nef stream
             with entry name {entry.entry_id}  in file {file_name}
