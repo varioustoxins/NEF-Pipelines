@@ -263,9 +263,6 @@ def read_entry_from_stdin_or_exit() -> Entry:
     if sys.stdin.isatty():
         exit_error("you appear to be reading from an empty stdin")
 
-    if running_in_pycharm():
-        exit_error("streaming doesn't work inside pycharm")
-
     try:
         stdin_lines = sys.stdin.read()
         if stdin_lines is None:
