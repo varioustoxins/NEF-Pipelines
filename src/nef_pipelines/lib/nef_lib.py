@@ -15,6 +15,7 @@ from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib import util
 from nef_pipelines.lib.constants import NEF_PIPELINES
+from nef_pipelines.lib.globals_lib import set_global
 from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
@@ -521,6 +522,7 @@ def read_or_create_entry_exit_error_on_bad_file(
             try:
                 with open(file) as fh:
                     entry = Entry.from_file(fh)
+                    _parse_globals(entry)
 
             except IOError as e:
                 msg = f"""
@@ -539,6 +541,20 @@ def read_or_create_entry_exit_error_on_bad_file(
         entry = Entry.from_scratch(entry_name)
 
     return entry
+
+
+def _parse_globals(entry: Entry):
+
+    globals_frames = entry.get_saveframes_by_category("nefpls_globals")
+    for globals_frame in globals_frames:
+
+        values = {name: globals_frame.get_tag(name) for name in globals_frame.tags}
+        values = {
+            name: do_reasonable_type_conversions(value)
+            for name, value in values.items()
+        }
+        for key, value in values.items():
+            set_global(key, value)
 
 
 def file_name_path_to_frame_name(path: str) -> str:
