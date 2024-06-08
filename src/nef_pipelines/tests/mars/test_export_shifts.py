@@ -14,7 +14,7 @@ app.command()(shifts)
 def test_export_shifts_nef5_short():
     input = read_test_data("sec5_short.neff", __file__)
 
-    result = run_and_report(app, ["-"], input=input)
+    result = run_and_report(app, "--out -".split(), input=input)
 
     EXPECTED = """\
               H      N        CA      CA-1    CB      CB-1
@@ -22,17 +22,17 @@ def test_export_shifts_nef5_short():
         PR_2  8.928  131.397  -       -       -       -
         PR_3  9.671  130.698  60.735  62.418  39.792  69.744
         PR_4  8.185  128.894  53.744  54.679  43.207  34.050
-        PR_5  8.548  128.09   56.292  65.574  32.964  69.899
+        PR_5  8.548  128.090  56.292  65.574  32.964  69.899
     """
 
-    assert_lines_match(EXPECTED, result.stdout)
+    assert_lines_match(result.stdout, EXPECTED, squash_spaces=True)
 
 
 def test_export_shifts_pete_co():
 
     input = read_test_data("short_co.neff", __file__)
 
-    result = run_and_report(app, ["-"], input=input)
+    result = run_and_report(app, "--out -".split(), input=input)
 
     EXPECTED = """\
                    H        N  CA      CA-1    CB-1    CO       CO-1
@@ -43,4 +43,4 @@ def test_export_shifts_pete_co():
 
     """
 
-    assert_lines_match(EXPECTED, result.stdout)
+    assert_lines_match(result.stdout, EXPECTED, squash_spaces=True)
