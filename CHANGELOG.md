@@ -339,10 +339,10 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - add initial chemical shift averager [alpha quality]
 - unassign supports creating ccpn style residue -1 entries e.g @32-1
 
-## version 0.1.75 - removed broken dependancy
+## version 0.1.75 - removed broken dependency
 - peak dimensions were incorrectly indexed causing a failure to import into CCPN suite of programs
 
 ## version 0.1.76
 - added ability to unassign residue ranges in nef frames
 - better reporting of errors from reading chemical shift frames
-- add missing dependancy on runstat
+- add missing dependency on runstat
