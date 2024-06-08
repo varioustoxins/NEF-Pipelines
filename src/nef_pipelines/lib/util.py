@@ -36,6 +36,7 @@ from nef_pipelines.lib.constants import (
     NEF_PIPELINES,
     NEF_UNKNOWN,
 )
+from nef_pipelines.lib.globals_lib import get_global
 from nef_pipelines.lib.header_lib import (
     create_header_frame,
     get_creation_time,
@@ -1050,7 +1051,7 @@ def exit_if_file_has_bytes_and_no_force(output_file: Path, force: bool):
         force: if the file exists and isn't empty it still isn't an error if this flag is set
     """
     if output_file != STDOUT:
-        if file_exists_and_has_bytes(output_file) and not force:
+        if file_exists_and_has_bytes(output_file) and not get_global("force", force):
             msg = f"""
             the file {output_file} already exists and is not empty, if you want to overwrite it use the --force flag
             """
