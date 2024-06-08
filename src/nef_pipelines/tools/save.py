@@ -158,7 +158,7 @@ def pipe(
             else open(file_path, "a" if append_mode else "w")
         )
 
-        if write_header:
+        if len(entries) > 1 and write_header:
             entry_id = entry.entry_id  # noqa: F841
             header_text = f(HEADER)
             print(header_text, file=file_h)
@@ -176,7 +176,9 @@ def pipe(
             if file_path == STDOUT
             else open(file_path, "a" if append_mode else "w")
         )
-        print("-" * len(header_text), file=file_h)
+        if len(entries) > 1:
+            print("-" * len(header_text), file=file_h)
+
         if not write_stdout:
             file_h.close()
 

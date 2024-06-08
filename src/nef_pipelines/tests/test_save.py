@@ -4,6 +4,7 @@ from pathlib import Path
 import typer
 
 from nef_pipelines.lib.test_lib import (
+    assert_frame_category_exists,
     assert_lines_match,
     read_test_data,
     run_and_report,
@@ -371,3 +372,19 @@ def test_save_single_file_to_multipe_files_error(tmp_path):
     )
     assert str(test_path_1) in result.stdout
     assert str(test_path_2) in result.stdout
+
+
+def test_save_single_stream_stdout():
+    data = read_test_data(
+        "header.nef",
+        __file__,
+    )
+
+    result = run_and_report(
+        app,
+        ["-"],
+        input=data,
+    )
+
+    assert "--------" not in result.stdout
+    assert_frame_category_exists(result.stdout, "nef_nmr_meta_data")
