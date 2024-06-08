@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import typer
+from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
     molecular_system_from_entry_or_exit,
@@ -16,10 +17,13 @@ from nef_pipelines.lib.sequence_lib import (
     translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
-from nef_pipelines.lib.util import STDIN, STDOUT, exit_error
+from nef_pipelines.lib.util import (
+    STDIN,
+    STDOUT,
+    exit_error,
+    exit_if_file_has_bytes_and_no_force,
+)
 from nef_pipelines.transcoders.fasta import export_app
-
-from pynmrstar import Entry
 
 # TODO: we should be able to output *s on the ends of sequences and comments
 # TODO: we should be able to select chains by fnmatch
@@ -66,6 +70,8 @@ def sequence(
 def pipe(entry: Entry, chain_codes: List[str], output_file: Path, force: bool):
 
     fasta_records = fasta_records_from_entry(entry, chain_codes)
+
+    exit_if_file_has_bytes_and_no_force(output_file, force)
 
     # TODO: move to utility function and use in all outputs
     try:
