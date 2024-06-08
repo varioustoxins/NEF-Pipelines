@@ -17,6 +17,7 @@ from nef_pipelines.lib.util import (
     STDIN,
     end_with_ordinal,
     exit_error,
+    exit_if_file_has_bytes_and_no_force,
     iter_consecutive_pairs,
     remove_duplicates_stable,
 )
@@ -57,6 +58,12 @@ def fragments(
         help="file name to output to [default <entry_id>_fix_con.tab] for stdout use -",
         metavar="<MARS_SHIFT_FILE>",
     ),
+    force: bool = typer.Option(
+        False,
+        "-f",
+        "--force",
+        help="force overwrite of output file if it exists and isn't empty",
+    ),
 ):
     """- convert chemical shifts to mars fragments"""
 
@@ -66,18 +73,50 @@ def fragments(
         f"{entry.entry_id}_fix_ass.tab" if output_file is None else output_file
     )
 
-    table = pipe(entry)
+    entry = pipe(entry, Path(output_file), force)
 
-    table = _format_table(table)
-    file_h = sys.stdout if output_file == "-" else open(output_file, "w")
-
-    print(tabulate(table, tablefmt="plain"), file=file_h)
-
-    if output_file != STDOUT_PATH:
-        file_h.close()
-
-    if output_file != STDOUT_PATH and not sys.stdout.isatty():
+    if entry:
         print(entry)
+
+
+def pipe(entry: Entry, output_file: Path, force: bool) -> Entry:
+
+    exit_if_file_has_bytes_and_no_force(output_file, force)
+
+    assignment_frames = _get_assignment_frames(entry)
+
+    _exit_if_too_may_assignment_frames(assignment_frames, entry)
+
+    assignment_frame = assignment_frames[0] if assignment_frames else None
+
+    if assignment_frame:
+        connected_residues = _get_connected_residues_and_chains(assignment_frame, entry)
+
+        table = _build_connected_pseudo_residues(connected_residues)
+
+        table = _format_table(table)
+        file_h = sys.stdout if output_file == "-" else open(output_file, "w")
+
+        print(tabulate(table, tablefmt="plain"), file=file_h)
+
+        if output_file != STDOUT_PATH:
+            file_h.close()
+
+        result = None
+        if output_file != STDOUT_PATH:
+            result = entry
+
+    return result
+
+
+def _exit_if_too_may_assignment_frames(frames, entry):
+
+    if len(frames) > 1:
+        msg = f"""\
+                    there should only be one assignment frame i found {len(frames)} in entry {entry.name}
+                    there names were {' '.join([frame.name for frame in frames])}
+            """
+        exit_error(msg)
 
 
 def _format_table(table: List[List[Tuple[str, str]]]) -> List[List[str]]:
@@ -92,12 +131,6 @@ def _format_table(table: List[List[Tuple[str, str]]]) -> List[List[str]]:
             pr_pair = f"{prs[0]}{pad}{prs[1]}"
             chain[i] = pr_pair
     return table
-
-
-def pipe(entry: Entry) -> List[List[Tuple[str, str]]]:
-    frame = _get_assignment_frame_or_exit(entry)
-    connected_residues = _get_connected_residues_and_chains(frame, entry)
-    return _build_connected_pseudo_residues(connected_residues)
 
 
 def _build_connected_pseudo_residues(connected_residues):
@@ -142,20 +175,6 @@ def _get_connected_residues_and_chains(frame: Saveframe, entry: Entry):
 
 def _get_assignment_frames(entry):
     return entry.get_saveframes_by_category("ccpn_assignment")
-
-
-def _get_assignment_frame_or_exit(entry):
-    frames = _get_assignment_frames(entry)
-
-    if len(frames) == 0:
-        exit_error(f"no assignment frame found in entry {entry.entry_id}")
-    if len(frames) > 1:
-        msg = f"""\
-                    there should only be one assignment frame i found {len(frames)} in entry {entry.name}
-                    there names were {' '.join([frame.name for frame in frames])}
-            """
-        exit_error(msg)
-    return frames[0]
 
 
 def _get_connected_residue_or_exit_error(residue, line_info: LineInfo):
