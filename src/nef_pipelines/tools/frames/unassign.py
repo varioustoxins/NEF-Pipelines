@@ -369,7 +369,7 @@ def _select_assignments_to_remove_by_residue_ranges(
                     assignments_to_remove.add(assignment)
                     break
 
-    return assignments_to_remove
+    return current_assignments - assignments_to_remove
 
 
 def _reassign_loop(loop, assignment_map):
