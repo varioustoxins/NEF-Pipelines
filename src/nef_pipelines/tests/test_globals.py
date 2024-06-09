@@ -1,6 +1,8 @@
+import pytest
 import typer
 from pynmrstar import Entry
 
+from nef_pipelines.lib.globals_lib import debug_clear_globals
 from nef_pipelines.lib.test_lib import (
     assert_frame_category_exists,
     read_test_data,
@@ -12,14 +14,21 @@ app = typer.Typer()
 app.command()(globals_)
 
 
-def test_null():
+@pytest.fixture
+def setup_globals():
+    debug_clear_globals()
+    yield
+    debug_clear_globals()
+
+
+def test_null(setup_globals):
 
     result = run_and_report(app, [])
 
     assert result.stdout.strip() == ""
 
 
-def test_basic():
+def test_basic(setup_globals):
     data = read_test_data(
         "header.nef",
         __file__,
@@ -39,7 +48,7 @@ def test_basic():
     assert "global options" in globals_frame.get_tag("_nefpls_globals.info")[0]
 
 
-def test_passthru():
+def test_passthru(setup_globals):
     data = read_test_data(
         "header.nef",
         __file__,
