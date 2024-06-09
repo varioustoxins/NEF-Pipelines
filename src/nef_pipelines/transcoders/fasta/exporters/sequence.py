@@ -51,6 +51,12 @@ def sequence(
         help="file name to output to [default <entry_id>.fasta] for stdout use -",
         metavar="<FASTA-SEQUENCE-FILE>",
     ),
+    force: bool = typer.Option(
+        False,
+        "-f",
+        "--force",
+        help="force overwrite of output file if it exists and isn't empty",
+    ),
 ):
     """- convert nef sequence to fasta"""
 
@@ -61,7 +67,7 @@ def sequence(
     output_file = f"{entry.entry_id}.fasta" if output_file is None else output_file
     output_file = STDOUT if output_file == "-" else output_file
 
-    entry = pipe(entry, chain_codes, Path(output_file))
+    entry = pipe(entry, chain_codes, Path(output_file), force)
 
     if entry:
         print(entry)
