@@ -16,13 +16,12 @@ from nef_pipelines.lib.util import (
     STDIN,
     exit_error,
     fixup_metadata,
-    get_pipe_file_text_or_exit,
     get_version,
     parse_comma_separated_options,
     script_name,
 )
 from nef_pipelines.transcoders.nmrview import import_app
-from nef_pipelines.transcoders.nmrview.nmrview_lib import parse_shifts, read_sequence
+from nef_pipelines.transcoders.nmrview.nmrview_lib import parse_shifts
 
 app = typer.Typer()
 
@@ -41,7 +40,7 @@ def shifts(
     frame_name: str = typer.Option(
         "nmrview", "-f", "--frame-name", help="a name for the frame"
     ),
-    input: Path = typer.Option(
+    input_path: Path = typer.Option(
         STDIN,
         "-i",
         "--input",
@@ -55,7 +54,7 @@ def shifts(
     """convert nmrview shift file <nmrview-shifts>.out to NEF"""
 
     try:
-        entry = read_entry_from_file_or_stdin_or_exit_error(input)
+        entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
 
         chain_codes = parse_comma_separated_options(chain_codes)
 
@@ -153,31 +152,6 @@ def sequence_from_frames(frames: Saveframe) -> List[SequenceResidue]:
                 residues.append(residue)
 
     return residues
-
-
-# TODO this should be replaced by a library function from nef or sequence utils...
-# also need ro report what file we are trying to read shifts from
-def _get_sequence_or_exit(args):
-    sequence_file = None
-    if "sequence" in args:
-        sequence_file = args.sequence
-
-    sequence = None
-    if not sequence_file:
-        try:
-            lines = get_pipe_file_text_or_exit(args)
-
-            entry = Entry.from_string(lines)
-            frames = entry.get_saveframes_by_category("nef_molecular_system")
-            sequence = sequence_from_frames(frames)
-
-        except Exception as e:
-            exit_error(f"failed to read sequence from input stream because {e}", e)
-
-    else:
-        with open(sequence_file, "r") as lines:
-            sequence = read_sequence(lines, chain_code=args.chain_code)
-    return sequence
 
 
 def _sequence_to_residue_type_lookup(
