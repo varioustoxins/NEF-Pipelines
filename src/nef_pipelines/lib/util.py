@@ -286,41 +286,6 @@ def get_pipe_file_text(args: Namespace) -> Optional[str]:
     return result if result else None
 
 
-def get_pipe_file_text_or_exit(args: Namespace) -> Optional[TextIO]:
-
-    try:
-        result = get_pipe_file_text(args)
-    except Exception as e:
-        exit_error("couldn't read from stdin or -pipe file", e)
-
-    if result is None:
-        exit_error("couldn't read from stdin and no -pipe in command line arguments")
-
-    return result
-
-
-def get_pipe_file_or_exit(args: Namespace) -> Optional[TextIO]:
-
-    try:
-        result = get_pipe_file(args)
-    except Exception as e:
-        exit_error("couldn't read from stdin or -pipe file", e)
-
-    if isinstance(result, StringIteratorIO):
-
-        result = "\n".join(list(result))
-
-        if len(result) == 0:
-            result = None
-        else:
-            result = io.StringIO(result)
-
-    if result is None:
-        exit_error("couldn't read from stdin and no -pipe in command line arguments")
-
-    return result
-
-
 def in_pytest():
     return "pytest" in sys.modules
 
