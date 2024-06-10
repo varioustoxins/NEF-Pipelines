@@ -1,22 +1,19 @@
 from dataclasses import replace
 from itertools import islice
+from pathlib import Path
 from typing import List
 
 import typer
-from pynmrstar import Entry
 from typer import Argument, Option
 
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.sequence_lib import (
     frame_to_chains,
     get_chain_code_iter,
     sequence_from_frame,
     sequence_to_nef_frame,
 )
-from nef_pipelines.lib.util import (
-    exit_error,
-    get_pipe_file_or_exit,
-    parse_comma_separated_options,
-)
+from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.chains import chains_app
 
 app = typer.Typer()
@@ -25,6 +22,11 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @chains_app.command()
 def clone(
+    input_path: Path = typer.Option(
+        None,
+        metavar="|PIPE|",
+        help="file to read NEF data from default is stdin '-'",
+    ),
     target: str = Argument("A", help="chain to clone"),
     count: int = Argument(1, help="how many copys to make"),
     chain_codes: List[str] = Option(
@@ -32,7 +34,7 @@ def clone(
         "-c",
         "--chains",
         help="new chain codes to add otherwise defaults to next available ascii upper case letter,"
-        " can be called mutiple times or be a comma separated list",
+        " can be called multiple times or be a comma separated list",
     ),
 ):
     """- duplicate chains one or more times"""
@@ -42,9 +44,7 @@ def clone(
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
-    lines = "".join(get_pipe_file_or_exit([]).readlines())
-
-    entry = Entry.from_string(lines)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
 
     molecular_system = entry.get_saveframes_by_category("nef_molecular_system")
 
