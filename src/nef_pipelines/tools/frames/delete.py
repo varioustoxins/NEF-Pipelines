@@ -1,12 +1,10 @@
-import inspect
-import sys
 from fnmatch import fnmatch
+from pathlib import Path
 from typing import List
 
 import typer
-from pynmrstar import Entry
 
-from nef_pipelines.lib.util import exit_error, running_in_pycharm
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
@@ -17,6 +15,11 @@ parser = None
 # noinspection PyUnusedLocal
 @frames_app.command()
 def delete(
+    input_path: Path = typer.Option(
+        None,
+        metavar="|PIPE|",
+        help="file to read NEF data from default is stdin '-'",
+    ),
     use_categories: bool = typer.Option(
         False,
         "-c",
@@ -34,7 +37,7 @@ def delete(
 ):
     """- delete frames in the current input by type or name"""
 
-    entry = _create_entry_from_stdin_or_exit(current_function())
+    entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
 
     to_delete = []
     for name in selectors:
@@ -57,41 +60,3 @@ def delete(
     entry.remove_saveframe(to_delete)
 
     print(entry)
-
-
-def current_function():
-
-    return inspect.stack()[1][3]
-
-
-def calling_function():
-
-    return inspect.stack()[2][3]
-
-
-# TODO: This should be a library function
-def _create_entry_from_stdin_or_exit(command_name: str):
-
-    try:
-
-        if sys.stdin.isatty():
-            exit_error(
-                f"the command {command_name} reads from stdin and there is no stream..."
-            )
-
-        if running_in_pycharm():
-            exit_error("you can't build read fron stdin in pycharm...")
-
-        lines = list(iter(sys.stdin))
-
-        if len(lines) == 0:
-            exit_error(
-                f"the command {command_name} reads from stdin and the stream is empty..."
-            )
-
-        entry = Entry.from_string("".join(lines))
-
-    except Exception as e:
-        exit_error(f"failed to read nef entry from stdin because {e}", e)
-
-    return entry
