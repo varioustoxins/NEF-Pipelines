@@ -193,6 +193,8 @@ def _build_residue_ranges(raw_residue_ranges: List[str]) -> List[ResidueRange]:
         if end >= start:
             results.append(ResidueRange(chain_code, start, end))
 
+    if not results:
+        results.append(ResidueRange(ANY, -sys.maxsize, sys.maxsize))
     return results
 
 
@@ -362,14 +364,29 @@ def _select_assignments_to_remove_by_residue_ranges(
                 or residue_range.chain_code == assignment.residue.chain_code
             ):
                 if (
-                    residue_range.start
+                    is_int(assignment.residue.sequence_code)
+                    and residue_range.start
                     <= assignment.residue.sequence_code
                     <= residue_range.end
                 ):
                     assignments_to_remove.add(assignment)
                     break
+                elif (
+                    assignment.residue.chain_code == "@-"
+                    and isinstance(assignment.residue.sequence_code, str)
+                    and assignment.residue.sequence_code[0] == "@"
+                    and is_int(assignment.residue.sequence_code[1:])
+                ):
+                    break  # already fully unassigned ignore
+                elif (
+                    residue_range.start == -sys.maxsize
+                    and residue_range.end == sys.maxsize
+                    and assignment.residue.sequence_code[0] in "@#"
+                ):
+                    assignments_to_remove.add(assignment)
+                    break
 
-    return current_assignments - assignments_to_remove
+    return assignments_to_remove
 
 
 def _reassign_loop(loop, assignment_map):
