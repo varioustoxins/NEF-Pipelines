@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from ordered_set import OrderedSet
 from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
@@ -76,8 +75,6 @@ def sequence(
     """- convert NMR_STAR sequence to NEF [alpha]"""
 
     chain_codes = parse_comma_separated_options(chain_codes)
-    if not chain_codes:
-        chain_codes = ["A"]
 
     no_chain_starts = parse_comma_separated_options(no_chain_starts)
     if not no_chain_starts:
@@ -139,41 +136,38 @@ def pipe(
         """
 
         exit_error(msg)
-    elif num_entities > 1:
-        msg = f"""
-            More than one sequence (entity) found in {file_path} i can only currently cope with 1.
-        """
-        exit_error(msg)
 
-    entity = entities[0]
-
-    sequence_loop = entity.get_loop("_Entity_comp_index")
-
-    sequence_residues = []
-    entity_ids = OrderedSet()
-    # TODO: add ability to skip unknown chem comps
-    # TODO add warnings and check all required fileds are present
-    for row in loop_row_namespace_iter(sequence_loop):
-        if use_author:
-            seq_code = row.Auth_seq_ID
-        else:
-            seq_code = row.ID
-
-        if seq_code == UNUSED and row.Auth_seq_ID != UNUSED:
-            seq_code = row.Auth_seq_ID
-
-        residue_name = row.Comp_ID
-        entity_id = row.Entity_ID
-
-        entity_ids.add(entity_id)
-        residue = Residue(entity_id, seq_code, residue_name)
-        sequence_residues.append(residue)
-
+    entity_ids = [entity.get_tag("_Entity.ID")[0] for entity in entities]
     chain_code_iter = get_chain_code_iter(chain_codes)
     entity_id_to_chain_code = {
-        entity_id: chain_code
+        int(entity_id): chain_code
         for entity_id, chain_code in zip(entity_ids, chain_code_iter)
     }
+    # print(entity_id_to_chain_code)
+    # import sys
+    # sys.exit()
+
+    sequence_residues = []
+    for entity in entities:
+
+        sequence_loop = entity.get_loop("_Entity_comp_index")
+
+        # TODO: add ability to skip unknown chem comps
+        # TODO add warnings and check all required fields are present
+        for row in loop_row_namespace_iter(sequence_loop):
+            if use_author:
+                seq_code = row.Auth_seq_ID
+            else:
+                seq_code = row.ID
+
+            if seq_code == UNUSED and row.Auth_seq_ID != UNUSED:
+                seq_code = row.Auth_seq_ID
+
+            residue_name = row.Comp_ID
+            entity_id = row.Entity_ID
+
+            residue = Residue(entity_id, seq_code, residue_name)
+            sequence_residues.append(residue)
 
     for i, residue in enumerate(sequence_residues):
         sequence_residues[i] = replace(
