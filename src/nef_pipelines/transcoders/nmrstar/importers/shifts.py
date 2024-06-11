@@ -503,14 +503,9 @@ def _replace_atoms_with_duplicated_shifts(
             )
 
             if len(new_ambiguities) != 1:
-                new_ambiguity = max(new_ambiguities)
+                # we need to choose a small set of atoms to remove the ambiguous ambiguity!...
+                continue
 
-                msg = f"""
-                WARNING: the ambiguities for the atoms in atom set {atom_set_name} in the atom set are not all the same
-                i got {', '.join(new_ambiguities)} i chose {new_ambiguity} as the ambiguity for the atom set
-                """
-
-                print(msg, file=sys.stderr)
             else:
                 new_ambiguity = new_ambiguities.pop()
 
