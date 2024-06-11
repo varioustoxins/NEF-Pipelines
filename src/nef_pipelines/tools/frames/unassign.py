@@ -359,6 +359,7 @@ def _select_assignments_to_remove_by_residue_ranges(
     current_assignments = OrderedSet(current_assignments)
     for assignment in current_assignments:
         for residue_range in residue_ranges:
+            # TODO: add a specific function to check residue assignment status
             if (
                 residue_range.chain_code == ANY
                 or residue_range.chain_code == assignment.residue.chain_code
