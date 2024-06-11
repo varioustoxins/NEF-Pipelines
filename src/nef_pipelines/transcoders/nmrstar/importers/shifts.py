@@ -561,14 +561,6 @@ def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
 
         exit_error(msg)
 
-    if len(shift_lists) != 1:
-        msg = f"""\
-        i can only cope with one saveframe of assigned chemical shifts currently there are {len(shift_lists)}
-        in the file {file_name}
-        """
-
-        exit_error(msg)
-
     # can there be more than one? I guess yes
     ambiguities = {}
     denormalised_shifts = []
