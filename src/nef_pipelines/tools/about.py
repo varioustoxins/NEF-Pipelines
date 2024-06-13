@@ -42,6 +42,7 @@ if nef_app:
                     -----------
 
                     Python version:   {platform.python_version()}
+                    Python path:      {sys.executable}
                     Operating system: {platform.platform(aliased=True, terse=True)}
 
                 """
