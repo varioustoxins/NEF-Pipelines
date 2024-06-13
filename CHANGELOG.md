@@ -346,3 +346,18 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - added ability to unassign residue ranges in nef frames
 - better reporting of errors from reading chemical shift frames
 - add missing dependency on runstat
+
+## version 0.1.77
+- add display of python executable path to about --verbose
+- unassign can be filtered by chains and residue ranges
+- improvements to nmrstar project and shift reader which can
+  * work with multiple lists of shifts
+  * work with multiple sequences
+- frame clone and remove get a --input option and pipe functions
+- add a globals command to set global values through a pipe and save to clean up control frame correctly
+  this allows you to use global setting of the --force option with mars
+- updates to mars output transcoders: they now has a pipe function and checs for file overwriting
+  and have a force option
+- mars can now ouput assigned shifts and fixed assignment restraints
+- mars output now includes assigned fragments using the ccpn # syntax
+- fixed a bug where multi line strings were not being parsed correctly
