@@ -1,7 +1,7 @@
 #!/bin/bash
 
-sudo apt install python3-pip
-sudo apt install pipx
+sudo apt --yes install python3-pip
+sudo apt --yes install pipx
 pip install --upgrade wheel setuptools
 pipx install nef-pipelines
 pipx inject nef-pipelines rich
