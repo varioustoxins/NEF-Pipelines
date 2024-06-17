@@ -101,6 +101,7 @@ def main():
             "nef_pipelines.transcoders.rcsb",
             "nef_pipelines.transcoders.rpf",
             "nef_pipelines.transcoders.shifty",
+            "nef_pipelines.transcoders.shiftx2",
             "nef_pipelines.transcoders.sparky",
             "nef_pipelines.transcoders.nmrstar",
             "nef_pipelines.transcoders.talos",
