@@ -361,3 +361,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - mars can now ouput assigned shifts and fixed assignment restraints
 - mars output now includes assigned fragments using the ccpn # syntax
 - fixed a bug where multi line strings were not being parsed correctly
+
+## version 0.1.78
+- add support for reading shiftx2 shifts [alpha]
