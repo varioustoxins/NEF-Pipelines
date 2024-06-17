@@ -76,7 +76,7 @@ def main():
     try:
         # import components which will self register, this could and will be automated
         modules = [
-            "nef_pipelines.tools.about",
+            "nef_pipelines.tools.help",
             "nef_pipelines.tools.chains",
             "nef_pipelines.tools.entry",
             "nef_pipelines.tools.fit",
