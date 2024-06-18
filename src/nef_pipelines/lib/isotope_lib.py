@@ -54,4 +54,16 @@ ATOM_TO_ISOTOPE = {
     "F": Isotope.F19,
     "P": Isotope.P31,
 }
+
+CODE_TO_ISOTOPE = {
+    # Nuc   Isotope
+    "1H": Isotope.H1,
+    "2H": Isotope.H2,
+    "3H": Isotope.H3,
+    "13C": Isotope.C13,
+    "15N": Isotope.N15,
+    "17O": Isotope.O17,
+    "19F": Isotope.F19,
+    "31P": Isotope.P31,
+}
 # fmt: on
