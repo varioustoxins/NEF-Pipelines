@@ -3,6 +3,16 @@ from enum import auto
 
 from strenum import UppercaseStrEnum
 
+# from https://www.kherb.io/docs/nmr_table.html
+# The values are taken from the IAEA's table of recommended nuclear magnetic moments and have been converted to
+# gyromagnetic ratios using the 2018 CODATA recommended values for the nuclear magneton and Planck's constant.
+# However, the value for hydrogen has been replaced with the CODATA value. The number in parentheses represents
+# the one-sigma (1σ) uncertainty in the last two digits of the value provided.
+# this is agreement with the values in the Cavanagh et als book (2nd edition)
+# 42.577478518 * 2 * 3.1415927 / 100 = 2.675221874410521 vs 2.6752 in Cavanagh within reasonable errors
+# the value from NIST is 2.675 221 8708 (12) s-1 T-1 which is in agreement with the value in Cavanagh
+MAGNETOGYRIC_RATIO_1H = 42.577478518  # uncertainty (18)  MHz/T
+
 
 class Isotope(UppercaseStrEnum):
     H1 = auto()
