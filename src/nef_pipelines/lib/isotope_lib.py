@@ -32,6 +32,7 @@ class Isotope(UppercaseStrEnum):
 
 # fmt: off
 GAMMA_RATIOS = {
+    # where did i get these from (not wikipedia or the bruker handbook)? is that an authoritative source?
     # Nuc	        ratio	        # (MHz⋅T−1)
     Isotope.H1:     1.0,            # 42.58
     Isotope.H2:     0.153508386,    # 6.54
