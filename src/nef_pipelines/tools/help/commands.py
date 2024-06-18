@@ -110,7 +110,7 @@ def _path_components(path):
 
 def _walk_tree(root, root_name):
 
-    def objwalk(obj, path=(), parents={}):
+    def objwalk(obj, path=()):
         path = [*path]
 
         yield path, obj
