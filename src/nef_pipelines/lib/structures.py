@@ -208,10 +208,10 @@ class PeakFitMethod(LowercaseStrEnum):
 
 @dataclass(frozen=True, order=True)
 class NewPeak:
-
+    # TODO: support multiple assignments
     shifts: List[
         ShiftData
-    ]  # shifts we support this by maving mutiples peaks with the same id
+    ]  # multiple assignments  we support this by having mutiple shifts with the same value?
 
     id: Optional[int] = None
     height: Optional[float] = None
