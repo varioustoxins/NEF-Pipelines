@@ -102,11 +102,7 @@ def pipe(entry: Entry, output_file: Path, force: bool) -> Entry:
         if output_file != STDOUT_PATH:
             file_h.close()
 
-        result = None
-        if output_file != STDOUT_PATH:
-            result = entry
-
-    return result
+    return None if output_file == STDOUT_PATH else entry
 
 
 def _exit_if_too_may_assignment_frames(frames, entry):
