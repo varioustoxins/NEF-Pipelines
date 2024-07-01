@@ -1,7 +1,7 @@
 import string
 import sys
 from collections import Counter
-from enum import auto
+from enum import IntEnum, auto
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
@@ -13,6 +13,8 @@ from strenum import StrEnum
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
+    NEF_PIPELINES_PREFIX,
+    NEF_RELAXATION_VERSION,
     UNUSED,
     SelectionType,
     add_frames_to_entry,
@@ -28,6 +30,8 @@ from nef_pipelines.lib.util import (
     strings_to_tabulated_terminal_sensitive,
 )
 from nef_pipelines.tools.series import series_app
+
+NAMESPACE = NEF_PIPELINES_PREFIX
 
 FRAMES_AND_TIMES_HELP = "the list of frame selectors and their values"
 
@@ -47,6 +51,12 @@ class RelaxationExperimentType(StrEnum):
     CPMG = auto()
     CEST = auto()
     OTHER = auto()
+    T1 = HETERONUCLEAR_R1_RELAXATION
+    T2 = HETERONUCLEAR_R2_RELAXATION
+    T1RHO = HETERONUCLEAR_R1RHO_RELAXATION
+    R1 = HETERONUCLEAR_R1_RELAXATION
+    R2 = HETERONUCLEAR_R2_RELAXATION
+    NOE = HETERONUCLEAR_NOES
 
 
 EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE = {
@@ -110,11 +120,30 @@ NAME_TO_EXPERIMENT_TYPE = {
     "T1p": RelaxationExperimentType.HETERONUCLEAR_R1RHO_RELAXATION,
     "R1": RelaxationExperimentType.HETERONUCLEAR_R1_RELAXATION,
     "R2": RelaxationExperimentType.HETERONUCLEAR_R2_RELAXATION,
-    "nOe": RelaxationExperimentType.HETERONUCLEAR_NOES,
-    "cpmg": RelaxationExperimentType.CPMG,
-    "rex": RelaxationExperimentType.CPMG,
-    "cest": RelaxationExperimentType.CEST,
-    "dest": RelaxationExperimentType.CEST,
+    "NOE": RelaxationExperimentType.HETERONUCLEAR_NOES,
+    "CPMG": RelaxationExperimentType.CPMG,
+    "REX": RelaxationExperimentType.CPMG,
+    "CEST": RelaxationExperimentType.CEST,
+    "DEST": RelaxationExperimentType.CEST,
+}
+
+
+class SaturationState(IntEnum):
+    SATURATED = 1
+    UNSATURATED = 0
+
+
+STR_TO_SATURATION_STATE = {
+    "saturated": SaturationState.SATURATED,
+    "unsaturated": SaturationState.UNSATURATED,
+    "on": SaturationState.SATURATED,
+    "off": SaturationState.UNSATURATED,
+    "true": SaturationState.SATURATED,
+    "false": SaturationState.UNSATURATED,
+    "yes": SaturationState.SATURATED,
+    "no": SaturationState.UNSATURATED,
+    "1": SaturationState.SATURATED,
+    "0": SaturationState.UNSATURATED,
 }
 
 
@@ -167,6 +196,7 @@ def build(
         )
     )
 
+    # TODO arenn't these the same? add a name and expt attribute to the template and only use this notherwise
     if not name:
         name = _guess_series_name(entry, frames_and_timings)
 
@@ -186,7 +216,7 @@ def pipe(
     experiment_type: str,
 ) -> Entry:
 
-    series_frame = create_nef_save_frame("nef_series_list", name)
+    series_frame = create_nef_save_frame(f"{NAMESPACE}_series_list", name)
 
     series_variable_type = EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE[
         RelaxationExperimentType[experiment_type]
@@ -220,10 +250,11 @@ def pipe(
     series_frame.add_tags(tags)
 
     # TODO: pynmstar doesn't catch prepended spaces here it just gives and obscure error report!
-    series_experiment_loop = Loop.from_scratch("nef_series_experiment")
+    series_experiment_loop = Loop.from_scratch(f"{NAMESPACE}_series_experiment")
     series_frame.add_loop(series_experiment_loop)
     series_experiment_loop.add_tag(
         [
+            "version",
             "nmr_spectrum_id",
             "reference_experiment",
             "combination_id",
@@ -239,6 +270,7 @@ def pipe(
         frame_name, _ = frame_key
         loop_data.append(
             {
+                "version": NEF_RELAXATION_VERSION,
                 "nmr_spectrum_id": frame_name,
                 "reference_experiment": "false",
                 "combination_id": UNUSED,
@@ -262,32 +294,24 @@ def pipe(
 
 
 def _guess_experiment_type(name):
-    if name in NAME_TO_EXPERIMENT_TYPE:
-        result = NAME_TO_EXPERIMENT_TYPE[name]
-    else:
-        result = "unknown"
+    upper_name = name.upper()
+    for experiment_name in NAME_TO_EXPERIMENT_TYPE:
+        if experiment_name in upper_name:
+            result = NAME_TO_EXPERIMENT_TYPE[upper_name]
+            break
+        else:
+            result = "unknown"
     return result
 
 
 def _guess_series_name(entry, frames_and_timings):
     result = None
-    for relaxation_type in (
-        "T1",
-        "T2",
-        "T1rho",
-        "T1p",
-        "R1",
-        "R2",
-        "nOe",
-        "cpmg",
-        "rex",
-        "cest",
-        "dest",
-    ):
+    for relaxation_type in NAME_TO_EXPERIMENT_TYPE:
         do_break = False
         for name, _ in frames_and_timings.keys():
-            if relaxation_type.lower() in name.lower():
-                start_index = name.lower().index(relaxation_type.lower())
+            name = name.upper()
+            if relaxation_type in name.upper():
+                start_index = name.index(relaxation_type)
                 end_index = start_index + len(relaxation_type)
                 found_relaxation_type = name[start_index:end_index]
 
@@ -335,6 +359,7 @@ def _exit_if_too_many_clashing_frame_names(bad_frame_name, base_result):
 def _get_timings_and_units_for_frames(
     frames, frame_selectors, timings, input_unit, display_parsed_values
 ):
+
     if timings:
         timings_and_units = _parse_timings(timings)
         units = [timing_and_unit[1] for timing_and_unit in timings_and_units]
@@ -431,6 +456,7 @@ def _select_relaxation_frames(entry: Entry, frame_selectors: List[str]) -> List[
         non_spectrum_frame_names = "\n".join(
             [non_spectrum_frame[0] for non_spectrum_frame in non_spectrum_frames]
         )
+        # TODO: just filter out non spectra frames...
         _exit_if_some_frames_are_not_spectra(non_spectrum_frame_names)
 
     return relaxation_frames
@@ -451,8 +477,8 @@ def _parse_timings_from_frames_or_exit(
         msg = f"no timing selector placeholder {{var}} provided in frame selector {frame_selector}"
         exit_error(msg)
 
-    frame_selector = frame_selector.replace("{var}", "{var:w}")
-    frame_selector = frame_selector.replace("*", "{}")
+    frame_selector = frame_selector.replace("{var}", "{var}")
+    frame_selector = frame_selector.replace("*", "{:opt}")
 
     parser = parse_compile(frame_selector)
 
@@ -464,8 +490,10 @@ def _parse_timings_from_frames_or_exit(
         result = parser.search(frame.name)
 
         value, unit = None, None
-        if "var" in result:
+        if result and "var" in result:
             raw_value = result["var"]
+            raw_value = raw_value.replace("_", ".")
+            raw_value = raw_value.replace("-", ".")
 
             value, unit = _parse_value_and_unit(raw_value)
 
@@ -486,6 +514,7 @@ def _parse_timings_from_frames_or_exit(
             tabulate(parsed_values, headers=["spectrum", "raw value", "value", "unit"]),
             file=sys.stderr,
         )
+        sys.exit(0)
 
     return frame_value_and_units
 
@@ -505,17 +534,26 @@ def _parse_timings(timings: List[str]) -> List[Tuple[Union[int, float, bool], st
 
 
 def _parse_value_and_unit(value: str) -> Tuple[Union[bool, int, float, None]]:
+
     unit = value.lstrip(string.digits + ".eE")
     len_digits = len(value) - len(unit)
     value = value[:len_digits]
-    if not unit:
-        if value.lower() in "on off true false yes no":
-            unit = "bool"
-            value = True if value.lower() in "on true yes" else False
-        elif is_int(value):
+
+    lower_unit = unit.lower()
+    if value and unit:
+        pass
+    elif not value and lower_unit in STR_TO_SATURATION_STATE:
+        unit = "bool"
+        value = STR_TO_SATURATION_STATE[lower_unit]
+    elif not unit:
+        if is_int(value):
             value = int(value)
         elif is_float(value):
             value = float(value)
+    else:
+        unit = None
+        value = None
+
     return value, unit
 
 

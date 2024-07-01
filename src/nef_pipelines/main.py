@@ -95,6 +95,7 @@ def main():
             "nef_pipelines.transcoders.echidna",
             "nef_pipelines.transcoders.fasta",
             "nef_pipelines.transcoders.mars",
+            "nef_pipelines.transcoders.modelfree",
             "nef_pipelines.transcoders.nmrpipe",
             "nef_pipelines.transcoders.nmrview",
             "nef_pipelines.transcoders.pales",

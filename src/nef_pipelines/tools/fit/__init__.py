@@ -12,3 +12,4 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.tools.fit.exponential  # noqa: F401
+    import nef_pipelines.tools.fit.ratio  # noqa: F401

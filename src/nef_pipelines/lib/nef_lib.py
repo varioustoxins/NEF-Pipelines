@@ -28,6 +28,8 @@ from nef_pipelines.lib.util import (
 
 NEF_PIPELINES_PREFIX = "nefpls"
 
+NEF_RELAXATION_VERSION = "0.1.0a"
+
 DEFAULT_INCREMENT_SEPARATOR = "::"
 DEFAULT_INCREMENT_END = ""
 
