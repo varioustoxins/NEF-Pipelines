@@ -453,7 +453,7 @@ def frame_to_peaks(frame: Saveframe, source="unknown") -> List[NewPeak]:
             value = unused_to_none(row[name])
             height_volume_data[name] = unused_to_none(value)
 
-        peak = NewPeak(tuple(shift_data), **height_volume_data)
+        peak = NewPeak(tuple(shift_data), **height_volume_data, id=row["peak_id"])
 
         peaks.append(peak)
 
