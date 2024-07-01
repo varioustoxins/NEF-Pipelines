@@ -93,7 +93,6 @@ def list(
             entry = read_entry_from_file_or_stdin_or_exit_error(input)
         except Exception as e:
             exit_error(f"failed to read nef file {args.pipe} because", e)
-        lines = str(entry)
 
     if entry is None:
         if args.pipe is not None:
@@ -103,6 +102,7 @@ def list(
         else:
             exit_error("couldn't read a nef stream from stdin")
 
+    lines = str(entry)
     with contextlib.redirect_stdout(sys.stderr):
         print(f"entry {entry.entry_id}")
         if verbose:
@@ -163,8 +163,8 @@ def list(
                     comma = ", "
                     print(f"    loop names: {comma.join(loop_names)}")
 
-                    frame_standard = frame.name[: len("nef")]
-                    is_standard_frame = frame_standard == "nef"
+                    frame_standard = frame.name[: len("nef_")]
+                    is_standard_frame = frame_standard == "nef_"
                     print(f"    is nef frame: {is_standard_frame}")
 
                     # ccpn_compound_name
