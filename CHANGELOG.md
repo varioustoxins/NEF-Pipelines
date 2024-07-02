@@ -364,3 +364,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.78
 - add support for reading shiftx2 shifts [alpha]
+
+## version 0.1.79
+- support for the NEF relaxation data draft proposal
+- output of data to modelfree
+- minor bug fixes
