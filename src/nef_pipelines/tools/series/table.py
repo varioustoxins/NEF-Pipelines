@@ -1,10 +1,10 @@
-from enum import StrEnum
 from itertools import zip_longest
 from pathlib import Path
 from typing import List
 
 import typer
 from pynmrstar import Entry, Loop, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import (
     NEF_PIPELINES_PREFIX,
