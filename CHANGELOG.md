@@ -369,3 +369,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - support for the NEF relaxation data draft proposal
 - output of data to modelfree
 - minor bug fixes
+
+##  version 0.1.80
+- fixed bugs
+  - tree lib not included in requirements
+  - Strenum imported from python stdlib enum not strenum
