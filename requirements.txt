@@ -20,6 +20,7 @@ requests~=2.31.0
 runstats~=2.0.0
 StrEnum~=0.4.7
 tabulate~=0.8.7
+treelib~=1.7.0
 typer~=0.7.0
 uncertainties~=3.1.7
 urllib3 <=1.26.15
