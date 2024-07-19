@@ -4,6 +4,9 @@ from typing import Dict, List, Optional, Union
 
 from strenum import LowercaseStrEnum, StrEnum
 
+# TODO: to avoid circular import, move to constants
+UNUSED = "."
+
 
 class Linking(StrEnum):
     START = auto()
@@ -60,6 +63,17 @@ class AtomLabel:
     atom_name: str
     element: str = None
     isotope_number: int = None
+
+    def is_unassigned(self):
+        residue_unassigned = (
+            self.residue.chain_code == UNUSED
+            and self.residue.sequence_code == UNUSED
+            and self.residue.residue_name == UNUSED
+        )
+        return residue_unassigned and self.atom_name == UNUSED
+
+
+UNASSIGNED_ATOM = AtomLabel(Residue(UNUSED, UNUSED, UNUSED), UNUSED)
 
 
 @dataclass
