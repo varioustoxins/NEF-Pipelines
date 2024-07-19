@@ -44,7 +44,7 @@ def ratio(
         help="read NEF data from a file instead of stdin",
     ),
     noise_level: float = typer.Option(
-        None,
+        ...,
         "-n",
         "--noise",
         help="noise level to use instead of value from spectra",
