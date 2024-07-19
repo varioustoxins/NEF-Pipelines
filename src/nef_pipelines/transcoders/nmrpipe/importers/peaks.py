@@ -12,7 +12,7 @@ from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
-    read_entry_from_file_or_stdin_or_exit_error,
+    read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.util import (
     NEWLINE,
@@ -46,6 +46,9 @@ def peaks(
     in_file: Path = typer.Option(
         STDIN, "-i", "--in", help="file to read nef data from", metavar="<NEF-FILE>"
     ),
+    entry_name: str = typer.Option(
+        "nmrpipe", "-e", "--entry", help="entry name", metavar="<entry-name>"
+    ),
     file_names: List[Path] = typer.Argument(
         ..., help="input peak files", metavar="<peak-file.xpk>"
     ),
@@ -62,7 +65,7 @@ def peaks(
 
     _exit_if_num_chains_and_files_dont_match(chain_codes, file_names)
 
-    entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
+    entry = read_or_create_entry_exit_error_on_bad_file(in_file, entry_name=entry_name)
 
     entry = pipe(entry, file_names, chain_codes, filter_noise)
 
