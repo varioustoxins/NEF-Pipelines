@@ -92,6 +92,7 @@ def main():
             "nef_pipelines.tools.stream",
             "nef_pipelines.tools.test",
             "nef_pipelines.transcoders.csv",
+            "nef_pipelines.transcoders.deep",
             "nef_pipelines.transcoders.echidna",
             "nef_pipelines.transcoders.fasta",
             "nef_pipelines.transcoders.mars",
