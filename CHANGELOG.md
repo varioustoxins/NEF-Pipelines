@@ -374,3 +374,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - fixed bugs
   - tree lib not included in requirements
   - Strenum imported from python stdlib enum not strenum
+
+## version 0.1.81
+- fit ratio requires a noise level
+- add a deep neural network peak list importer
