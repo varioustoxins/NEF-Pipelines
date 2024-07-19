@@ -4,6 +4,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import IntEnum
+from fnmatch import fnmatch
 from textwrap import dedent
 from typing import Callable, List, Optional, TextIO, Tuple, Union
 
@@ -17,6 +18,7 @@ from nef_pipelines.lib.sequence_lib import (
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import (
+    UNASSIGNED_ATOM,
     AtomLabel,
     LineInfo,
     PeakAxis,
@@ -77,7 +79,6 @@ def _raise_data_before_format(line_info):
 
 
 def read_db_file_records(file_h: TextIO, file_name: str = "unknown") -> DbFile:
-
     """
     Read from NmrPipe (NIH) tab/gdb-file
     Args:
@@ -364,7 +365,9 @@ def select_data_records(gdb: DbFile, type: str) -> List[DbRecord]:
     :param type: the type of data record to select
     :return: a list of matching DbRecords
     """
-    return select_records(gdb, "DATA", predicate=lambda rec: rec.values[0] == type)
+    return select_records(
+        gdb, "DATA", predicate=lambda rec: fnmatch(rec.values[0], type)
+    )
 
 
 def gdb_to_3let_sequence(
@@ -408,7 +411,6 @@ def gdb_to_chain_start(gdb_file: DbFile) -> int:
 
 
 def gdb_to_sequence(gdb_file: DbFile, chain_code: str) -> List[SequenceResidue]:
-
     """
     Read the sequence from a GDB file, note if a FIRST_RESID record is found the sequence
     is offset correctly...
@@ -552,20 +554,31 @@ def read_peak_file(gdb_file, chain_code, filter_noise=False):
 
         peak = {}
         raw_peaks.append(peak)
-        peak_type = line.values[column_indices["TYPE"]]
-        if filter_noise and peak_type != PEAK_TYPES.PEAK:
-            continue
+
+        if "TYPE" in column_indices:
+            peak_type = line.values[column_indices["TYPE"]]
+            if filter_noise and peak_type != PEAK_TYPES.PEAK:
+                continue
 
         assignment = line.values[column_indices["ASS"]]
-        assignments = assignment.split("-")
-        assignments = _propagate_assignments(assignments)
-        assignments = _assignments_to_atom_labels(assignments, dimensions, chain_code)
+
+        # deep uses 'peak' as an empty assignment
+        # TODO: does this need something more thoughtful?
+        if assignment != "peak":
+            assignments = assignment.split("-")
+            assignments = _propagate_assignments(assignments)
+            assignments = _assignments_to_atom_labels(
+                assignments, dimensions, chain_code
+            )
+        else:
+            assignments = [UNASSIGNED_ATOM] * dimensions
 
         height = line.values[column_indices["HEIGHT"]]
         # TODO: sort out height errors
         # height_error = line.values[column_indices["DHEIGHT"]]
         # height_percentage_error = height_error / height
-        volume = line.values[column_indices["VOL"]]
+
+        volume = line.values[column_indices["VOL"]] if "VOL" in column_indices else None
         # volume_error = volume * height_percentage_error
 
         peak_values = PeakValues(
@@ -582,18 +595,23 @@ def read_peak_file(gdb_file, chain_code, filter_noise=False):
             # point = line.values[column_indices["%s_AXIS" % dimension]]
             # shift_error = point_error / point * shift
 
-            pos_hz = line.values[column_indices["%s_HZ" % dimension]]
+            pos_hz = (
+                line.values[column_indices["%s_HZ" % dimension]]
+                if "%s_HZ" % dimension in column_indices
+                else None
+            )
 
             axis = PeakAxis(atom_labels=assignments[i], ppm=shift, merit=1)
 
             peak[i] = axis
 
-            sf = pos_hz / shift
+            if pos_hz:
+                sf = pos_hz / shift
 
-            spectrometer_frequencies[i].append(sf)
+                spectrometer_frequencies[i].append(sf)
 
     spectrometer_frequencies = [
-        _mean(frequencies) for frequencies in spectrometer_frequencies
+        _mean(frequencies) for frequencies in spectrometer_frequencies if frequencies
     ]
     header_data = PeakListData(
         num_axis=dimensions,
@@ -728,7 +746,6 @@ class DataBeforeFormat(BadNmrPipeFile):
 
 
 def format_pipe_sequence(sequence_1_let: List[str]) -> str:
-
     """
     convert a set of 1 letter amino acid codes to an nmr pipe DATA SEQUENCE record
     :param sequence_1_let:  1 letter amino acid codes as a list of strings
