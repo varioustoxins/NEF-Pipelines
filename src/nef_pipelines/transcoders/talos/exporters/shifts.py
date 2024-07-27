@@ -57,10 +57,8 @@ def shifts(
         "--input",
         help="input to read NEF data from [- is stdin]",
     ),
-    frame_selector: str = typer.Option(
+    frame_selector: str = typer.Argument(
         None,
-        "-f",
-        "--frame",
         help="selector for the chemical shift list frame to use",
     ),
 ):
