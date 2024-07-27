@@ -6,8 +6,7 @@
 # this is for python3.8 and can be removed when it is no longer supported
 _is_3_8 = False
 try:
-    from typing import (
-        Annotated,
+    from typing import (  # Annotated,
         Any,
         Callable,
         Dict,
@@ -22,8 +21,7 @@ try:
         get_origin,
     )
 except Exception:
-    from typing_extensions import (
-        Annotated,
+    from typing_extensions import (  # Annotated,
         Any,
         Callable,
         Dict,
