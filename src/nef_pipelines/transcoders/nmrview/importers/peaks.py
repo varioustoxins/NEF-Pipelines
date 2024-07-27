@@ -8,28 +8,32 @@
 
 import itertools
 import string
+import sys
 from collections import Counter, OrderedDict
+from enum import auto
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
 from fyeah import f
 from pynmrstar import Entry, Loop, Saveframe
+from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib import constants
 from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.isotope_lib import GAMMA_RATIOS
 from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
-    read_entry_from_file_or_stdin_or_exit_error,
+    read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
-    BadResidue,
+    MoleculeType,
     get_residue_name_from_lookup,
-    sequence_from_entry_or_exit,
+    sequence_from_entry,
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import (
+    UNUSED,
     AtomLabel,
     LineInfo,
     PeakAxis,
@@ -54,13 +58,49 @@ from ..nmrview_lib import parse_float_list, parse_tcl
 
 app = typer.Typer()
 
-# class ErrorResponse(Enum):
-#     STOP = auto()         # stop processing
-#     REPORT = auto()       # report the error and continue processing and stop with and error at the end of the program
-#     UNASSIGNED = auto()   # continue processing but removed the bad information, it becomes a @xxx or #xxx
-#     IGNORE = auto()       # continue processing and put the bad information in the output
-#     REMOVE = auto()       # remove the bad information, replace it with a '.'  and continue processing
-#     CORRECT = auto()      # correct the bad information using some custom python from the user and continue processing
+
+class ResidueHandlingOption(LowercaseStrEnum):
+
+    STOP = auto()  # stop processing
+    PSEUDO = (
+        auto()
+    )  # continue processing but the residue becomes a pseudo residue with sequence code @xxx
+    UNASSSIGN = (
+        auto()
+    )  # set the chain_code, sequence code and  residue type to . and continue
+    CONTINUE = auto()  # don't change anything take whats in the file
+
+    CASE = (
+        auto()
+    )  # if the residue name matches the sequence but the case is different correct it
+    WARN = auto()  # report the peak with missing residue information
+
+
+RESIDUE_HANDLING_HELP = """
+what to do when the residue for a peak isn't defined in the sequence (if read) but it has a chain and residue number and
+the residue name doesn't match the one in the sequence. Choices are
+stop: stop processing if the residue name isn't defined or is mismatched
+pseudo: continue processing but the residue becomes a pseudo residue with sequence_code @xxx and the residue name read
+unassign: set the chain_code, sequence code and  residue type to . and continue without warning
+continue: leave everything it as it is
+
+two modifiers can be added to the choice by adding them as extra options
+
+warn: report the peak with mismatched residue information on STDERR, use the read values and continue processing
+case: if the residue name matches the sequence but the case is different correct it and continue
+"""
+
+
+class ResidueNameTypeOption(LowercaseStrEnum):
+    AUTO = auto()
+    SINGLE = auto()
+    THREE = auto()
+
+
+RESIDUE_NAME_TYPE_HELP = """
+auto: translate name based on its length otherwise, single: single letter amino acid code
+three: three letter or longer amino acid code
+"""
 
 
 # noinspection PyUnusedLocal
@@ -72,15 +112,25 @@ def peaks(
     chain_codes: List[str] = typer.Option(
         None, "--chain", help="chain code", metavar="<chain-code>"
     ),
-    ignore_bad_residues: bool = typer.Option(
-        False, help="ignore  residue types that don't match the sequence"
+    residue_handling: List[ResidueHandlingOption] = typer.Option(
+        None, "--residue-handling", help=RESIDUE_HANDLING_HELP
     ),
-    # TODO: add flag bad assignments are partially assigned
+    residue_name_type: ResidueNameTypeOption = typer.Option(
+        ResidueNameTypeOption.AUTO, "--residue-name-type", help=RESIDUE_NAME_TYPE_HELP
+    ),
+    molecule_type: MoleculeType = typer.Option(
+        MoleculeType.PROTEIN,
+        "--molecule-type",
+        help="molecule type one of protein, dna, rna or  carbohydrate",
+    ),
+    entry_name: str = typer.Option(
+        "nmrview", "-n", "--name", help="entry name", metavar="<entry-name>"
+    ),
     file_names: List[Path] = typer.Argument(
         ..., help="input peak files", metavar="<peak-file.xpk>"
     ),
 ):
-    """convert nmrview peak file <nmrview>.xpk files to NEF"""
+    """convert nmrview peak file <nmrview>.xpk files to NEF [alpha for new residue handling]"""
 
     if not chain_codes:
         chain_codes = ["A"] * len(file_names)
@@ -90,13 +140,25 @@ def peaks(
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
-    entry = read_entry_from_file_or_stdin_or_exit_error(in_file)
+    entry = read_or_create_entry_exit_error_on_bad_file(in_file, entry_name)
 
-    sequence = sequence_from_entry_or_exit(entry)
+    sequence = sequence_from_entry(entry)
 
     _exit_if_num_chains_and_files_dont_match(chain_codes, file_names)
 
-    entry = pipe(entry, file_names, chain_codes, sequence, ignore_bad_residues)
+    residue_handling = parse_comma_separated_options(residue_handling)
+
+    residue_handling = _fixup_residue_handling_or_exit_bad(residue_handling)
+
+    entry = pipe(
+        entry,
+        file_names,
+        chain_codes,
+        sequence,
+        molecule_type,
+        residue_name_type,
+        residue_handling,
+    )
 
     print(entry)
 
@@ -106,7 +168,9 @@ def pipe(
     file_names: List[str],
     chain_codes: List[str],
     sequence: List[Residue],
-    ignore_bad_residues: bool,
+    molecule_type: MoleculeType,
+    residue_name_type: ResidueNameTypeOption,
+    residue_handling: ResidueHandlingOption,
 ) -> Entry:
 
     frames = []
@@ -116,7 +180,13 @@ def pipe(
     for file_name, chain_code in zip(file_names, chain_codes):
         with open(file_name, "r") as lines:
             peaks_list = read_raw_peaks(
-                lines, chain_code, sequence_lookup, file_name, ignore_bad_residues
+                lines,
+                chain_code,
+                sequence_lookup,
+                file_name,
+                molecule_type,
+                residue_name_type,
+                residue_handling,
             )
 
         frame_name = _make_peak_list_frame_name(peaks_list)
@@ -166,7 +236,15 @@ def _create_entry_names_from_template_if_required(
     return new_entry_names
 
 
-def read_raw_peaks(lines, chain_code, sequence_lookup, file_name, ignore_bad_residues):
+def read_raw_peaks(
+    lines,
+    chain_code,
+    sequence_lookup,
+    file_name,
+    molecule_type,
+    residue_name_type,
+    residue_handling,
+):
 
     header = get_header_or_exit(lines)
 
@@ -181,7 +259,9 @@ def read_raw_peaks(lines, chain_code, sequence_lookup, file_name, ignore_bad_res
         chain_code,
         sequence_lookup,
         file_name,
-        ignore_bad_residues,
+        molecule_type,
+        residue_name_type,
+        residue_handling,
     )
 
     return PeakList(header_data, raw_peaks)
@@ -194,7 +274,9 @@ def _read_peak_data(
     chain_code,
     sequence_lookup,
     file_name,
-    ignore_bad_residues,
+    molecule_type,
+    residue_name_type,
+    residue_handling,
 ):
     raw_peaks = []
     field = None
@@ -216,7 +298,9 @@ def _read_peak_data(
                     column_indices,
                     chain_code,
                     sequence_lookup,
-                    ignore_bad_residues,
+                    molecule_type,
+                    residue_name_type,
+                    residue_handling,
                     line_info,
                 )
 
@@ -344,7 +428,11 @@ def _exit_if_nmrview_residue_name_doesnt_match_sequence(
     nmrview_residue_name, chain_code, residue_number, residue_type, line_info
 ):
 
-    if nmrview_residue_name and nmrview_residue_name != residue_type:
+    if (
+        residue_type != NEF_UNKNOWN
+        and nmrview_residue_name
+        and nmrview_residue_name != residue_type
+    ):
         msg = f"""
                 in file {line_info.file_name} at line {line_info.line_no}
                 for residue number {residue_number} in chain {chain_code} the residue type in the NEF sequence
@@ -364,7 +452,9 @@ def _read_axis_for_peak(
     heading_indices,
     chain_code,
     sequence_lookup,
-    ignore_bad_residues,
+    molecule_type,
+    residue_name_type,
+    residue_handling,
     line_info,
 ):
     # print(line_info.line, ':', axis, heading_indices)
@@ -376,7 +466,13 @@ def _read_axis_for_peak(
         if axis_field == "L":
             axis_values.append(
                 _read_atom_label(
-                    value, chain_code, sequence_lookup, ignore_bad_residues, line_info
+                    value,
+                    chain_code,
+                    sequence_lookup,
+                    molecule_type,
+                    residue_name_type,
+                    residue_handling,
+                    line_info,
                 )
             )
         elif axis_field == "P":
@@ -403,74 +499,167 @@ def _read_shift(value, line_info):
 
 
 def _read_atom_label(
-    value, chain_code, sequence_lookup, ignore_bad_residues, line_info
+    value,
+    chain_code,
+    sequence_lookup,
+    molecule_type,
+    residue_name_type,
+    residue_handling,
+    line_info,
 ):
     label = value[0] if value else "?"
     label = label.strip()
 
     if "." in label and len(label.split(".")) == 2:
         residue_name_residue_number, atom_name = label.split(".")
-        residue_name, sequence_code = strip_characters_left(
+        file_residue_name, sequence_code = strip_characters_left(
             residue_name_residue_number, string.ascii_letters
         )
     else:
         sequence_code = None
-        atom_name = ""
-        residue_name = "" if label == "?" else label
-
-    if ignore_bad_residues:
-        nmrview_residue_name = ""
-    else:
-        nmrview_residue_name = _get_residue_type_none_or_exit(line_info, residue_name)
+        atom_name = None
+        file_residue_name = None if label == "?" else label
 
     _exit_if_sequence_code_isnt_int_or_none(line_info, sequence_code)
 
     if sequence_code:
-        sequence_code = int(sequence_code)
+        if is_int(sequence_code):
+            sequence_code = int(sequence_code)
 
     if sequence_code:
-        residue_name = get_residue_name_from_lookup(
+        sequence_residue_name = get_residue_name_from_lookup(
             chain_code, sequence_code, sequence_lookup
         )
     else:
-        residue_name = NEF_UNKNOWN
+        sequence_residue_name = None
 
-    _exit_if_sequence_code_not_in_the_sequence(
-        chain_code, sequence_code, -10, 10000, line_info
+    if file_residue_name and sequence_code:
+        file_residue_name = _translate_1_to_3_or_or_exit_bad(
+            file_residue_name, molecule_type, residue_name_type, line_info
+        )
+
+    file_residue_name = _correct_residue_name_case_if_required(
+        residue_handling, file_residue_name, sequence_residue_name
     )
 
-    if not ignore_bad_residues:
-        _exit_if_nmrview_residue_name_doesnt_match_sequence(
-            nmrview_residue_name, chain_code, sequence_code, residue_name, line_info
-        )
+    _warn_of_residue_name_mismatch_if_required(
+        file_residue_name, sequence_residue_name, residue_handling, line_info
+    )
 
-    if sequence_code:
-        atom = AtomLabel(
-            SequenceResidue(chain_code, sequence_code, residue_name),
-            atom_name.upper(),
-        )
+    residue_handling = [
+        option
+        for option in residue_handling
+        if option not in {ResidueHandlingOption.CASE, ResidueHandlingOption.WARN}
+    ]
+
+    residue_handling = residue_handling.pop()
+
+    if (
+        file_residue_name
+        and sequence_residue_name
+        and (sequence_residue_name != file_residue_name)
+    ):
+        if residue_handling == ResidueHandlingOption.STOP:
+            _exit_residue_name_mismatch(
+                file_residue_name, sequence_residue_name, line_info
+            )
+            residue_name = sequence_residue_name
+        elif residue_handling == ResidueHandlingOption.PSEUDO:
+            residue_name = file_residue_name
+            sequence_code = f"@{sequence_code}"
+        elif residue_handling == ResidueHandlingOption.UNASSIGN:
+            residue_name = None
+            sequence_code = None
+            chain_code = None
+            atom_name = None
+        elif residue_handling == ResidueHandlingOption.SEQUENCE:
+            residue_name = sequence_residue_name
+        elif residue_handling == ResidueHandlingOption.CONTINUE:
+            residue_name = file_residue_name
+        else:
+            raise Exception("unexpected")
+    elif not file_residue_name and sequence_residue_name:
+        residue_name = sequence_residue_name
     else:
-        # surely we know the chain_code at this point
-        atom = AtomLabel(SequenceResidue("", None, ""), atom_name.upper())
+        residue_name = file_residue_name
+
+    chain_code = chain_code if sequence_code or atom_name else UNUSED
+    sequence_code = UNUSED if not sequence_code else sequence_code
+    atom_name = UNUSED if not atom_name else atom_name
+    residue_name = UNUSED if not residue_name else residue_name
+
+    atom = AtomLabel(
+        SequenceResidue(chain_code, sequence_code, residue_name),
+        atom_name,
+    )
+
     return atom
 
 
-def _get_residue_type_none_or_exit(line_info, residue_name):
-    try:
-        nmrview_residue_name_3_letter = (
-            translate_1_to_3(residue_name)[0] if residue_name else None
+def _warn_of_residue_name_mismatch_if_required(
+    file_residue_name, sequence_residue_name, residue_handling, line_info
+):
+    if ResidueHandlingOption.WARN in residue_handling:
+        msg = (
+            f"WARNING: at line {line_info.line_no} in file {line_info.file_name} the residue name "
+            + f"{file_residue_name} doesn't match the sequence residue name {sequence_residue_name}"
         )
-    except BadResidue:
-        msg = f"""
-                in file {line_info.file_name} at line {line_info.line_no}
-                residue name {residue_name} is not a valid residue name
-                in line {line_info.line}
+        print(msg, file=sys.stderr)
 
-                run with --ignore-bad-residues to ignore residue types and avoid this error
-            """
-        exit_error(msg)
 
-    return nmrview_residue_name_3_letter
+def _correct_residue_name_case_if_required(
+    residue_handling, file_residue_name, sequence_residue_name
+):
+    if ResidueHandlingOption.CASE in residue_handling:
+        if (
+            sequence_residue_name
+            and file_residue_name
+            and sequence_residue_name.lower() == file_residue_name.lower()
+        ):
+            file_residue_name = sequence_residue_name
+    return file_residue_name
+
+
+def _exit_residue_name_mismatch(file_residue_name, sequence_residue_name, line_info):
+    msg = f"""
+                    in file {line_info.file_name} at line {line_info.line_no}
+                    the residue name {file_residue_name} doesn't match the one in the sequence {sequence_residue_name}
+                    the line was
+                    {line_info.line}
+                """
+    exit_error(msg)
+
+
+def _exit_no_residue_name(line_info):
+    msg = f"""
+            in file {line_info.file_name} at line {line_info.line_no}
+            residue name is not defined for the peak
+            the line was
+            {line_info.line}
+        """
+    exit_error(msg)
+
+
+def _translate_1_to_3_or_or_exit_bad(
+    residue_name, molecule_type, residue_name_type, line_info
+):
+    if residue_name:
+        if residue_name_type == ResidueNameTypeOption.AUTO:
+            if len(residue_name) > 1:
+                residue_name = translate_1_to_3(residue_name, molecule_type)
+        elif residue_name_type == ResidueNameTypeOption.SINGLE:
+            if len(residue_name) > 1:
+                msg = f"""
+                    in file {line_info.file_name} at line {line_info.line_no}
+                    the residue name {residue_name} is longer than one character
+                    and you have chosen to use single letter residue names
+                    the line was
+                    {line_info.line}
+                """
+                exit_error(msg)
+            residue_name = translate_1_to_3(residue_name, molecule_type)
+
+    return residue_name
 
 
 def _exit_if_sequence_code_isnt_int_or_none(line_info, residue_number):
@@ -748,3 +937,38 @@ def _make_peak_list_frame_name(peaks_list):
     entry_name = _remove_suffix(entry_name, ".nv")
     entry_name = entry_name.replace(".", "_")
     return entry_name
+
+
+def _fixup_residue_handling_or_exit_bad(residue_handling):
+
+    number_residue_handling_options = len(residue_handling)
+    if number_residue_handling_options == 0:
+        residue_handling = [
+            ResidueHandlingOption.STOP,
+        ]
+
+    active_residue_options = _remove_residue_handling_modifiers(residue_handling)
+    if len(active_residue_options) != 1:
+        _exit_too_many_residue_handling_options(residue_handling)
+    return residue_handling
+
+
+def _remove_residue_handling_modifiers(residue_handling):
+    return [
+        option
+        for option in residue_handling
+        if option not in {ResidueHandlingOption.CASE, ResidueHandlingOption.WARN}
+    ]
+
+
+def _exit_too_many_residue_handling_options(residue_handling):
+    active_residue_handling_options = _remove_residue_handling_modifiers(
+        residue_handling
+    )
+    number_active_residue_handling_options = len(active_residue_handling_options)
+    if number_active_residue_handling_options > 1:
+        msg = f"""
+            you have specified residue handling options  {','.join(active_residue_handling_options)}
+            that are not compatible with each other, you can only combine options with case and warn...
+            """
+    exit_error(msg)
