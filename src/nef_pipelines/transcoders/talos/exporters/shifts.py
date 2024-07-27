@@ -11,6 +11,7 @@ from typing import List
 
 import tabulate
 import typer
+from click import get_current_context
 from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_frames_lib import SHIFT_LIST_FRAME_CATEGORY
@@ -40,7 +41,6 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @export_app.command()
 def shifts(
-    context: typer.Context,
     user_chain: str = typer.Option(
         None,
         "-c",
@@ -184,7 +184,7 @@ def _select_shift_frame_or_exit(entry, frame_selector):
     shift_frames = entry.get_saveframes_by_category(SHIFT_LIST_FRAME_CATEGORY)
 
     if len(shift_frames) == 0:
-        print(typer.context.get_help())
+        print(get_current_context().get_help())
         exit_error("no shift frames in input stream")
 
     if len(shift_frames) == 1:
@@ -193,8 +193,8 @@ def _select_shift_frame_or_exit(entry, frame_selector):
             target_id = get_frame_id(target_shift_frame)
             if target_id != frame_selector:
                 msg = f"""
-                        the selected frame [{frame_selector}] is different from the frame found [{target_id}]
-                        as only one shift frame is present you don't need a frame selector [--frame]!
+                    the selected frame [{frame_selector}] is different from the frame found [{target_id}]
+                    as only one shift frame is present you don't need a frame selector [--frame]!
                     """
                 exit(msg)
 
