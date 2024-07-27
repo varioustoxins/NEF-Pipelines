@@ -30,7 +30,7 @@ class MoleculeType(LowercaseStrEnum):
     PROTEIN = auto()
     RNA = auto()
     DNA = auto()
-    CARBOH = auto()
+    CARBOHYDRATE = auto()
 
 
 NEF_CHAIN_CODE = "chain_code"

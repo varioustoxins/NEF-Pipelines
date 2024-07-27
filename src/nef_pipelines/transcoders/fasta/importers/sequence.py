@@ -86,7 +86,7 @@ def sequence(
             MoleculeType.PROTEIN,
         ],
         "--molecule-type",
-        help="molecule type",
+        help="molecule type one of protein, dna, rna or  carbohydrate",
     ),
     no_header: bool = typer.Option(False, "--no-header", help=NO_HEADER_HELP),
     file_names: List[Path] = typer.Argument(
