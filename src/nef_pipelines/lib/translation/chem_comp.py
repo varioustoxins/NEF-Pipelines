@@ -7,6 +7,7 @@
 _is_3_8 = False
 try:
     from typing import (  # Annotated,
+        Annotated,
         Any,
         Callable,
         Dict,
@@ -22,6 +23,7 @@ try:
     )
 except Exception:
     from typing_extensions import (  # Annotated,
+        Annotated,
         Any,
         Callable,
         Dict,
