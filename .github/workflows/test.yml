@@ -48,3 +48,8 @@ jobs:
       - name: Run nef entry point
         run: |
           python src/nef_pipelines/main.py
+
+      - name: Check all plugins load
+        run: |
+          python src/nef_pipelines/main.py > /tmp/nef_pipelines.log
+          ! grep -q "WARNING: the following plugins failed to load" /tmp/nef_pipelines.log
