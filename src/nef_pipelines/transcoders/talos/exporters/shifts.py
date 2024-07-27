@@ -196,7 +196,7 @@ def _select_shift_frame_or_exit(entry, frame_selector):
                     the selected frame [{frame_selector}] is different from the frame found [{target_id}]
                     as only one shift frame is present you don't need a frame selector [--frame]!
                     """
-                exit(msg)
+                exit_error(msg)
 
     if len(shift_frames) > 1:
         if frame_selector is None:
