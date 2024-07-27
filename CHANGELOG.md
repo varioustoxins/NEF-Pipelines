@@ -378,3 +378,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 ## version 0.1.81
 - fit ratio requires a noise level
 - add a deep neural network peak list importer
+
+## version 0.1.82
+- better handling of residue names that don't match the read sequence
+- fixed a bug in python 3.8 where annotations were stopping the nmrstar plugin loading
+- added a github actions test to check that the main entry point runs and all plugins are loaded
