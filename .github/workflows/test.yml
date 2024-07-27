@@ -44,3 +44,7 @@ jobs:
       - name: Run pytest
         run: |
           pytest --disable-warnings  src/nef_pipelines/tests
+
+      - name: Run nef entry point
+        run: |
+          python src/nef_pipelines/main.py
