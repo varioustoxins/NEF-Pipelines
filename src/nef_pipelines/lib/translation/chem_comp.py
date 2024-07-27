@@ -3,22 +3,44 @@
 # # todo remove parent links on json dump
 # # todo unify tree iterators!
 #
+# this is for python3.8 and can be removed when it is no longer supported
+_is_3_8 = False
+try:
+    from typing import (
+        Annotated,
+        Any,
+        Callable,
+        Dict,
+        Generic,
+        List,
+        Literal,
+        Optional,
+        Tuple,
+        TypeVar,
+        Union,
+        get_args,
+        get_origin,
+    )
+except Exception:
+    from typing_extensions import (
+        Annotated,
+        Any,
+        Callable,
+        Dict,
+        Generic,
+        List,
+        Literal,
+        Optional,
+        Tuple,
+        TypeVar,
+        Union,
+        get_args,
+        get_origin,
+    )
+
+    _is_3_8 = True
 
 from enum import Enum, auto
-from typing import (
-    Annotated,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-)
 
 from annotated_types import Gt
 
@@ -63,7 +85,8 @@ class ID(int):
 T = TypeVar("T")
 
 
-class IDTuple(Tuple):
+# the addition of generic[T] is for python3.8 and can be removed when it is no longer supported
+class IDTuple(Tuple, Generic[T]):
     is_idlist = True
 
     @classmethod
@@ -77,7 +100,8 @@ class IDTuple(Tuple):
             return no_info_after_validator_function(IDTuple, handler(Tuple))
 
 
-class IDList(List):
+# the addition of Generic[T] is for python3.8 and can be removed when it is no longer supported
+class IDList(List, Generic[T]):
     is_idlist = True
 
     @classmethod
@@ -106,10 +130,17 @@ OneOrMoreOfType = Union[List[T], T]
 OptionalOneOrMoreOfType = Optional[OneOrMoreOfType]
 
 # containers for IDs - not used on their own
+# this is for python3.8 and can be removed when it is no longer supported
 ItemOfID = Annotated[ID, None]
-PairOfID = IDTuple[ID, ID]
-TripletOfID = IDTuple[ID, ID, ID]
-QuartetOfID = IDTuple[ID, ID, ID, ID]
+if _is_3_8:
+    PairOfID = IDTuple[ID]
+    TripletOfID = IDTuple[ID]
+    QuartetOfID = IDTuple[ID]
+else:
+    PairOfID = IDTuple[ID, ID]
+    TripletOfID = IDTuple[ID, ID, ID]
+    QuartetOfID = IDTuple[ID, ID, ID, ID]
+
 OneOrMoreOfID = Union[IDList[ID], ID]
 OptionalOneOrMoreOfID = Optional[OneOrMoreOfID]  # - no such instances currently
 
