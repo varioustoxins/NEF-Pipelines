@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
+
 import logging
 import sys
 from importlib import import_module
@@ -22,7 +22,7 @@ if not sys.version_info >= MINIMUM_VERSION:
     )
     print("exiting...", file=sys.stderr)
 
-
+# for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
 logging.getLogger().setLevel(logging.ERROR)
 
 EXIT_ERROR = 1
