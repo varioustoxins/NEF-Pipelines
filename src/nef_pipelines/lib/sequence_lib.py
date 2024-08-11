@@ -545,10 +545,10 @@ def sequences_from_frames(
         for loop in frame.loops:
             residues.update(_parse_loops_residues(loop, chain_codes_to_select))
 
-    return _select_best_residues_by_info_content(residues)
+    return select_best_residues_by_info_content(residues)
 
 
-def _select_best_residues_by_info_content(residues):
+def select_best_residues_by_info_content(residues):
     """
     given a list of residues select the best residue definition for each chain code and sequence code
     this removes formally unassigned residues [contain # or @ in sequence_code or chain_code] and favours a residue
