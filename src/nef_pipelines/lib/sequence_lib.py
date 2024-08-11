@@ -507,12 +507,13 @@ def sequence_from_entry(entry) -> List[SequenceResidue]:
         frames = entry.get_saveframes_by_category("nef_molecular_system")
 
         if frames:
-            result = sequence_from_frame(frames[0])
+            result = sequences_from_frames(frames[0])
     return result
 
 
-def sequence_from_frame(
-    frame: Saveframe, chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN
+def sequences_from_frames(
+    frame_or_frames: Union[Saveframe, List[Saveframe]],
+    chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN,
 ) -> List[SequenceResidue]:
     """
     read sequences from a nef save frame with the maximal information content about the residues
@@ -534,10 +535,15 @@ def sequence_from_frame(
     elif chain_codes_to_select is not ANY_CHAIN:
         chain_codes_to_select = set(chain_codes_to_select)
 
-    residues = OrderedSet()
+    if isinstance(frame_or_frames, Saveframe):
+        frame_or_frames = [
+            frame_or_frames,
+        ]
 
-    for loop in frame.loops:
-        residues.update(_parse_loops_residues(loop, chain_codes_to_select))
+    residues = OrderedSet()
+    for frame in frame_or_frames:
+        for loop in frame.loops:
+            residues.update(_parse_loops_residues(loop, chain_codes_to_select))
 
     return _select_best_residues_by_info_content(residues)
 
