@@ -12,8 +12,8 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     make_chunked_sequence_1let,
-    sequence_from_frame,
     sequence_to_chains,
+    sequences_from_frames,
     translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
@@ -104,7 +104,7 @@ def fasta_records_from_entry(entry, chain_codes):
 
     molecular_system = molecular_system_from_entry_or_exit(entry)
 
-    residues = sequence_from_frame(molecular_system)
+    residues = sequences_from_frames(molecular_system)
 
     fasta_records = nef_to_fasta_records(residues, chain_codes, entry.entry_id)
 

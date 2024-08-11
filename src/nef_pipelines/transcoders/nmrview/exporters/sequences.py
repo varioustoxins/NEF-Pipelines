@@ -14,7 +14,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import (
     frame_to_chains,
     get_chain_starts,
-    sequence_from_frame,
+    sequences_from_frames,
 )
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDIN, exit_error, in_pytest, smart_open
@@ -85,7 +85,7 @@ def sequences(
 
 def _exit_if_no_molecular_system_in_entry(entry):
     if not is_save_frame_name_in_entry(entry, "nef_molecular_system"):
-        msg = f"the entry does not contain a nef_molecular_system saveframe"
+        msg = f"the entry {entry.entry_id} does not contain a nef_molecular_system saveframe"
         exit_error(msg)
 
 
@@ -190,7 +190,7 @@ def _nmrview_sequences_from_entry(entry, chain_codes):
 
     molecular_system_frame = molecular_system_from_entry(entry)
 
-    residues = sequence_from_frame(molecular_system_frame)
+    residues = sequences_from_frames(molecular_system_frame)
 
     return _nef_to_nmrview_sequences(residues, chain_codes)
 

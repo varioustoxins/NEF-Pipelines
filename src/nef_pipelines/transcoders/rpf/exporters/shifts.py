@@ -19,8 +19,8 @@ from nef_pipelines.lib.sequence_lib import (
     get_chain_starts,
     get_residue_name_from_lookup,
     sequence_from_entry_or_exit,
-    sequence_from_frame,
     sequence_to_residue_name_lookup,
+    sequences_from_frames,
 )
 from nef_pipelines.lib.structures import AtomLabel, SequenceResidue, ShiftData
 from nef_pipelines.lib.util import (
@@ -353,7 +353,7 @@ def _nmrview_sequences_from_entry(entry, chain_codes):
 
     molecular_system_frame = molecular_system_from_entry(entry)
 
-    residues = sequence_from_frame(molecular_system_frame)
+    residues = sequences_from_frames(molecular_system_frame)
 
     return _nef_to_nmrview_sequences(residues, chain_codes)
 

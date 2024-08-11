@@ -12,7 +12,7 @@ from nef_pipelines.lib.sequence_lib import (
     get_chain_starts,
     offset_chain_residues,
     sequence_3let_to_sequence_residues,
-    sequence_from_frame,
+    sequences_from_frames,
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import SequenceResidue
@@ -254,14 +254,10 @@ def test_sequence_from_frame():
 
     frames = Entry.from_file(path).get_saveframes_by_category("nef_molecular_system")
 
-    sequence = sequence_from_frame(frames[0], chain_codes_to_select=["B", "C"])
+    sequence = sequences_from_frames(frames[0], chain_codes_to_select=["B", "C"])
 
     EXPECTED = [
-        SequenceResidue(
-            chain_code="B",
-            sequence_code=5,
-            residue_name="ARG",
-        ),
+        SequenceResidue(chain_code="B", sequence_code=5, residue_name="ARG"),
         SequenceResidue(chain_code="B", sequence_code=6, residue_name="GLN"),
         SequenceResidue(chain_code="C", sequence_code=7, residue_name="PRO"),
     ]
@@ -274,7 +270,7 @@ def test_sequence_from_frame_all():
 
     frames = Entry.from_file(path).get_saveframes_by_category("nef_molecular_system")
 
-    sequence = sequence_from_frame(frames[0])
+    sequence = sequences_from_frames(frames[0])
 
     EXPECTED = [
         SequenceResidue(chain_code="A", sequence_code=3, residue_name="HIS"),

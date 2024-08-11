@@ -10,8 +10,8 @@ from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_erro
 from nef_pipelines.lib.sequence_lib import (
     frame_to_chains,
     get_chain_code_iter,
-    sequence_from_frame,
     sequence_to_nef_frame,
+    sequences_from_frames,
 )
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.chains import chains_app
@@ -58,7 +58,7 @@ def clone(
 
     molecular_system = molecular_system[0]
 
-    sequence = sequence_from_frame(molecular_system)
+    sequence = sequences_from_frames(molecular_system)
 
     # this should come from a sequence not a frame...
     existing_chain_codes = frame_to_chains(molecular_system)
