@@ -413,12 +413,15 @@ def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
     """
 
     chains = set()
-    for loop in sequence_frame.loop_dict.values():
-        for row in loop_row_namespace_iter(loop):
-            chains.add(row.chain_code)
+    sequences = sequences_from_frames(sequence_frame)
+    for residue in sequences:
+        chains.add(residue.chain_code)
 
     if NEF_UNKNOWN in chains:
         chains.remove(NEF_UNKNOWN)
+
+    if None in chains:
+        chains.remove(None)
 
     chains = sorted(chains)
 
