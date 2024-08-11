@@ -61,7 +61,9 @@ def insert(
     stream_entry = _create_entry_from_stdin_or_exit(current_function())
 
     for nef_file_path in nef_file_paths:
-        external_entry = Entry.from_file(nef_file_path.open())
+        with nef_file_path.open() as nef_file:
+            external_entry = Entry.from_file(nef_file)
+
         for external_frame in external_entry:
 
             ok_external_frame = False
