@@ -647,55 +647,49 @@ def _filter_partially_or_unassigned_residues(residues):
 
 def _parse_loops_residues(loop, chain_codes_to_select):
 
-    residues = []
-
     offsets = [f"_{index}" for index in range(1, 16)]
     offsets.insert(0, "")
     index_sets = []
     for offset in offsets:
         if offset == "":
-            linking_tag = f"{offset}linking"
+            linking_tag = f"linking{offset}"
             linking_index = (
                 loop.tag_index(linking_tag) if linking_tag in loop.tags else None
             )
 
-            residue_variant_tag = f"{offset}residue_variant"
+            residue_variant_tag = f"residue_variant{offset}"
             residue_variant_index = (
                 loop.tag_index(residue_variant_tag)
                 if residue_variant_tag in loop.tags
                 else None
             )
 
-            cis_peptide_tag = f"{offset}cis_peptide"
+            cis_peptide_tag = f"cis_peptide{offset}"
             cis_peptide_index = (
                 loop.tag_index(cis_peptide_tag)
                 if cis_peptide_tag in loop.tags
                 else None
             )
 
-        chain_code_tag = f"{offset}chain_code"
+        chain_code_tag = f"chain_code{offset}"
         chain_code_index = (
             loop.tag_index(chain_code_tag) if chain_code_tag in loop.tags else None
         )
 
-        sequence_code_tag = f"{offset}sequence_code"
+        sequence_code_tag = f"sequence_code{offset}"
         sequence_code_index = (
             loop.tag_index(sequence_code_tag)
             if sequence_code_tag in loop.tags
             else None
         )
 
-        residue_name_tag = f"{offset}residue_name"
+        residue_name_tag = f"residue_name{offset}"
         residue_name_index = (
             loop.tag_index(residue_name_tag) if residue_name_tag in loop.tags else None
         )
 
-        if (
-            chain_code_index is None
-            and sequence_code_index is None
-            and residue_name_index is None
-        ):
-            break
+        if chain_code_index is None and sequence_code_index is None:
+            continue
 
         index_set = {
             "chain_code_index": chain_code_index,
@@ -707,6 +701,8 @@ def _parse_loops_residues(loop, chain_codes_to_select):
         }
 
         index_sets.append(index_set)
+
+    residues = []
     for line in loop:
 
         for index_set in index_sets:
@@ -717,7 +713,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
             residue_variant_index = index_set["residue_variant_index"]
             cis_peptide_index = index_set["cis_peptide_index"]
 
-            if chain_code_index:
+            if chain_code_index is not None:
                 chain_code = line[chain_code_index]
                 if chain_code == UNUSED:
                     continue
@@ -730,7 +726,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
             else:
                 continue
 
-            if sequence_code_index:
+            if sequence_code_index is not None:
                 sequence_code = line[sequence_code_index]
                 sequence_code = (
                     int(sequence_code) if is_int(sequence_code) else sequence_code
@@ -740,7 +736,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
 
             residue_name = line[residue_name_index] if residue_name_index else None
 
-            if linking_index:
+            if linking_index is not None:
                 linking = (
                     Linking[line[linking_index].upper()]
                     if line[linking_index] != NEF_UNKNOWN
@@ -749,7 +745,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
             else:
                 linking = None
 
-            if cis_peptide_index:
+            if cis_peptide_index is not None:
                 cis_peptide = line[cis_peptide_index]
                 if cis_peptide == UNUSED:
                     cis_peptide = False
@@ -759,8 +755,10 @@ def _parse_loops_residues(loop, chain_codes_to_select):
                     cis_peptide = False
                 else:
                     cis_peptide = False
+            else:
+                cis_peptide = False
 
-            if residue_variant_index:
+            if residue_variant_index is not None:
                 residue_variants = line[residue_variant_index].split(",")
                 residue_variants = (
                     ()
@@ -781,7 +779,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
                 is_cis=cis_peptide,
                 variants=residue_variants,
             )
-            if residue.chain_code and residue.sequence_code and residue.residue_name:
+            if residue.chain_code and residue.sequence_code:
                 residues.append(residue)
 
     return residues
