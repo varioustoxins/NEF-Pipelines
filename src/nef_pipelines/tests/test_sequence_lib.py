@@ -265,6 +265,18 @@ def test_sequence_from_frame():
     assert sequence == EXPECTED
 
 
+def test_sequence_from_frame_empty():
+    path = path_in_test_data(__file__, "multi_chain.nef")
+
+    frames = Entry.from_file(path).get_saveframes_by_category("nef_molecular_system")
+
+    sequence = sequences_from_frames(frames[0], chain_codes_to_select=["D", "E"])
+
+    EXPECTED = []
+
+    assert sequence == EXPECTED
+
+
 def test_sequence_from_frame_all():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
