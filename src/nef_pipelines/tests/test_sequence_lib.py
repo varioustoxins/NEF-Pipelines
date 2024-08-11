@@ -6,8 +6,8 @@ from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
+    chains_from_frames,
     count_residues,
-    frame_to_chains,
     get_chain_code_iter,
     get_chain_starts,
     offset_chain_residues,
@@ -131,7 +131,7 @@ TEST_DATA_MULTI_CHAIN = """
 def test_list_chains():
 
     test_frame = Saveframe.from_string(TEST_DATA_MULTI_CHAIN)
-    chains = frame_to_chains(test_frame)
+    chains = chains_from_frames(test_frame)
 
     assert chains == list(["A", "B", "C"])
 
@@ -163,7 +163,7 @@ def test_list_chains_no_chains():
 
     """
     test_frame = Saveframe.from_string(TEST_DATA)
-    chains = frame_to_chains(test_frame)
+    chains = chains_from_frames(test_frame)
 
     assert chains == list([])
 

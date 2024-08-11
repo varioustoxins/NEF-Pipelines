@@ -13,7 +13,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.sequence_lib import count_residues, frame_to_chains
+from nef_pipelines.lib.sequence_lib import chains_from_frames, count_residues
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     STDIN,
@@ -169,7 +169,7 @@ def list(
 
                     # ccpn_compound_name
                     if verbose == 2 and frame.category == "nef_molecular_system":
-                        chains = frame_to_chains(frame)
+                        chains = chains_from_frames(frame)
 
                         print(f'    chains: {len(chains)} [{", ".join(chains)}]')
 

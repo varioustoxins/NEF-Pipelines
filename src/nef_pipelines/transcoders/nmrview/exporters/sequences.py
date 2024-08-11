@@ -12,7 +12,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
 )
 from nef_pipelines.lib.sequence_lib import (
-    frame_to_chains,
+    chains_from_frames,
     get_chain_starts,
     sequences_from_frames,
 )
@@ -57,12 +57,14 @@ def sequences(
     molecular_system_frame = entry.get_saveframes_by_category("nef_molecular_system")[0]
 
     chain_selectors = (
-        chain_selectors if chain_selectors else frame_to_chains(molecular_system_frame)
+        chain_selectors
+        if chain_selectors
+        else chains_from_frames(molecular_system_frame)
     )
 
     molecular_system_frame = molecular_system_from_entry_or_exit(entry)
 
-    chain_codes = frame_to_chains(molecular_system_frame)
+    chain_codes = chains_from_frames(molecular_system_frame)
 
     _exit_if_chain_selector_not_in_chain_codes(chain_codes, chain_selectors)
 

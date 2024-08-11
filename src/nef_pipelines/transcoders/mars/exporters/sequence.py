@@ -6,7 +6,7 @@ from nef_pipelines.lib.nef_lib import (
     molecular_system_from_entry_or_exit,
     read_entry_from_file_or_stdin_or_exit_error,
 )
-from nef_pipelines.lib.sequence_lib import frame_to_chains
+from nef_pipelines.lib.sequence_lib import chains_from_frames
 from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.transcoders.fasta.exporters.sequence import pipe as fasta_pipe
 from nef_pipelines.transcoders.mars import export_app
@@ -56,7 +56,7 @@ def sequence(
 
 def _get_single_chain_code_or_exit(chain_code_selector, molecular_system, input_file):
 
-    chain_codes = frame_to_chains(molecular_system)
+    chain_codes = chains_from_frames(molecular_system)
 
     _exit_if_no_chain_codes(chain_codes, input)
 

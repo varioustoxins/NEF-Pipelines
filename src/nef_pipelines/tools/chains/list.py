@@ -4,7 +4,7 @@ import typer
 from typer import Option
 
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.sequence_lib import frame_to_chains
+from nef_pipelines.lib.sequence_lib import chains_from_frames
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.chains import chains_app
 
@@ -34,7 +34,7 @@ def list(
 
     chains = []
     if len(sequence_frames) > 0:
-        chains = frame_to_chains(sequence_frames[0])
+        chains = chains_from_frames(sequence_frames[0])
 
     result = " ".join(chains)
     chains = "chain" if len(chains) == 1 else "chains"

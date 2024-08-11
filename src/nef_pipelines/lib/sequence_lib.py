@@ -404,18 +404,27 @@ def sequence_residues_to_sequence_3let(
     ]
 
 
-def frame_to_chains(sequence_frame: Saveframe) -> List[str]:
+def chains_from_frames(
+    sequence_frame_or_frames: Union[Saveframe, List[Saveframe]]
+) -> List[str]:
     """
      a nef molecular systems list the chains found
 
     :param sequence_frames: a nef molecular system save frame
     :return: a list of chain_codes
     """
+    if isinstance(sequence_frame_or_frames, Saveframe):
+        sequence_frames = [
+            sequence_frame_or_frames,
+        ]
+    else:
+        sequence_frames = sequence_frame_or_frames
 
     chains = set()
-    sequences = sequences_from_frames(sequence_frame)
-    for residue in sequences:
-        chains.add(residue.chain_code)
+    for sequence_frame in sequence_frames:
+        sequences = sequences_from_frames(sequence_frame)
+        for residue in sequences:
+            chains.add(residue.chain_code)
 
     if NEF_UNKNOWN in chains:
         chains.remove(NEF_UNKNOWN)

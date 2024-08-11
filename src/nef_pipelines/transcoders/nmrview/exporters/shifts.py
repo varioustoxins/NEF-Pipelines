@@ -12,7 +12,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
 )
 from nef_pipelines.lib.sequence_lib import (
-    frame_to_chains,
+    chains_from_frames,
     get_chain_starts,
     get_residue_name_from_lookup,
     sequence_from_entry_or_exit,
@@ -79,7 +79,7 @@ def shifts(
 
     molecular_system_frame = molecular_system_from_entry_or_exit(entry)
 
-    chain_codes = frame_to_chains(molecular_system_frame)
+    chain_codes = chains_from_frames(molecular_system_frame)
 
     _exit_if_chain_selector_not_in_chain_codes(chain_codes, chain_selectors)
 
