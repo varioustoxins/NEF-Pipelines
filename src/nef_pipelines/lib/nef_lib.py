@@ -463,7 +463,7 @@ def select_frames(
         ):
             result[frame.category, frame.name] = frame
 
-    return list(result.values())
+    return list(result.values()) if result else []
 
 
 def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
