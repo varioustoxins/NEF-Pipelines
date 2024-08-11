@@ -1,8 +1,11 @@
+from copy import copy
 from itertools import tee
 from pathlib import Path
+from textwrap import dedent
 from typing import List
 
 import typer
+from tabulate import tabulate
 from typer import Argument, Option
 
 from nef_pipelines.lib.nef_lib import (
@@ -12,9 +15,26 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.sequence_lib import sequence_from_frame
-from nef_pipelines.lib.util import chunks, end_with_ordinal, exit_error, is_int
+from nef_pipelines.lib.sequence_lib import (
+    chains_from_frames,
+    get_chain_starts,
+    select_best_residues_by_info_content,
+    sequences_from_frames,
+)
+from nef_pipelines.lib.util import (
+    chunks,
+    end_with_ordinal,
+    exit_error,
+    is_int,
+    strings_to_tabulated_terminal_sensitive,
+)
 from nef_pipelines.tools.chains import chains_app
+
+REFERENCE_FRAMES_HELP = """
+frames to find the starting residue of a chain for renumbering when using starts  you can have multiple reference
+frames and the lowest residue number found amongst them is used. The option can be repeated  or you can use comma
+separated lists of frame names [default: the molecular system frame if present otherwise all frames].
+"""
 
 app = typer.Typer()
 
@@ -26,11 +46,12 @@ SEQUENCE_CODE = "sequence_code"
 # noinspection PyUnusedLocal
 @chains_app.command()
 def renumber(
-    chain_offsets: List[str] = Argument(
+    chain_offsets_or_starts: List[str] = Argument(
         None,
         metavar="<CHAIN-CODE> <OFFSET/START>",
         help="chain-codes and offsets/starts for renumbering residue numbers, offsets are used by default and chain "
-        "starts are available using the --starts option",
+        "starts are available using the --starts option [default: no selections, no offets; do nothing...]",
+        show_default=False,
     ),
     input: Path = typer.Option(
         Path("-"),
@@ -46,6 +67,9 @@ def renumber(
         help=f"control how to select frames to renumber, can be one of: {SELECTORS_LOWER}. "
         "Any will match on names first and then if there is no match attempt to match on category",
     ),
+    reference_frame_selectors: List[str] = Option(
+        None, "--references", help=REFERENCE_FRAMES_HELP, show_default=False
+    ),
     starts: bool = Option(
         False,
         "-s",
@@ -60,28 +84,50 @@ def renumber(
         metavar="<FRAME-SELECTOR>",
         help="Limit changes to a particular frame by name or category [the selector], note: wildcards are "
         "allowed. Frames are selected by name and then category if the name doesn't match"
-        " [the option -t /--selector-type allows you to choose which selection type to use]. If no frame"
-        "selectors are provided all frames are renumbered",
+        "note: the option -t /--selector-type allows you to choose which selection type to use. "
+        "[default: all frames]",
+        show_default=False,
     ),
 ):
     """- renumber chains in a nef file"""
 
-    chain_offsets = get_chain_offset_pairs_or_exit(chain_offsets)
-
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    if starts:
-        molecular_system_frames = entry.get_saveframes_by_category(NEF_MOLECULAR_SYSTEM)
+    if not reference_frame_selectors:
+        reference_frames = []
 
-        exit_if_molecular_system_isnt_a_singleton(molecular_system_frames)
+    reference_frames = _select_reference_frames(entry, reference_frame_selectors)
 
-        molecular_system = molecular_system_frames[0]
+    _exit_error_if_no_reference_frames(
+        entry, reference_frame_selectors, reference_frames
+    )
 
-        chain_offsets = chain_starts_to_offsets(molecular_system, chain_offsets)
+    chain_offsets_or_starts = _get_chain_offset_pairs_or_exit_error(
+        chain_offsets_or_starts
+    )
+
+    _exit_error_if_no_chain_offsets(chain_offsets_or_starts, reference_frames, input)
 
     frames = select_frames(entry, frame_selectors, selector_type)
 
-    offset_chains_in_frames(frames, chain_offsets, starts)
+    _exit_if_selected_chain_not_in_frames(
+        "chain to renumber", frames, input, chain_offsets_or_starts.keys()
+    )
+
+    _exit_if_selected_chain_not_in_frames(
+        "reference_chain", reference_frames, input, chain_offsets_or_starts.keys()
+    )
+
+    if starts:
+        reference_chains_residues = sequences_from_frames(reference_frames)
+        reference_chain_starts = get_chain_starts(reference_chains_residues)
+        chain_offsets = _chain_starts_to_offsets(
+            reference_chain_starts, chain_offsets_or_starts
+        )
+    else:
+        chain_offsets = chain_offsets_or_starts
+
+    offset_chains_in_frames(frames, chain_offsets)
 
     print(entry)
 
@@ -92,18 +138,146 @@ def renumber(
     # print(typer_click_object.command()())
 
 
-def chain_starts_to_offsets(molecular_system, chain_offsets):
-    result = []
-    for chain, start in chain_offsets:
-        sorted_residues = sorted(sequence_from_frame(molecular_system, chain))
+def _exit_if_selected_chain_not_in_frames(chain_type, frames, input, chains):
+    frame_chains = set()
+    for frame in frames:
+        frame_chains.update(chains_from_frames(frame))
+    frame_chain_names = strings_to_tabulated_terminal_sensitive(frame_chains)
 
-        for residue in sorted_residues:
+    for chain in chains:
 
-            if is_int(residue.sequence_code):
-                start_sequence_code = int(sorted_residues[0].sequence_code)
-                break
+        selected_frames = strings_to_tabulated_terminal_sensitive(
+            [frame.name for frame in frames]
+        )
+        if chain not in frame_chains:
+            msg = """
+                using the input {input}
+                the {chain_type} '{chain}' is not in the frames selected for renumbering
 
-        result.append([chain, start - start_sequence_code])
+                the selected frames are:
+
+                {selected_frames}
+
+                which have the chains
+
+                {frame_chain_names}
+                """
+            msg = msg.format(
+                chain_type=chain_type,
+                input=input,
+                chain=chain,
+                selected_frames=selected_frames,
+                frame_chain_names=frame_chain_names,
+            )
+            exit_error(msg)
+
+
+def _exit_error_if_no_chain_offsets(chain_offsets, reference_frames, input):
+    if not chain_offsets:
+        sequences = [sequences_from_frames(frame) for frame in reference_frames]
+
+        all_residues = set()
+        for sequence in sequences:
+            all_residues.update(sequence)
+
+        all_residues = select_best_residues_by_info_content(all_residues)
+
+        chain_starts = [
+            [chain, start] for chain, start in get_chain_starts(all_residues).items()
+        ]
+
+        reference_frame_names = strings_to_tabulated_terminal_sensitive(
+            [frame.name for frame in reference_frames]
+        )
+
+        if chain_starts:
+            headings = "chain start".split()
+            table = tabulate(chain_starts, headings)
+            table_msg = (
+                "here are the starts for the chains in the selected reference frames"
+            )
+        else:
+            table = ""
+            table_msg = (
+                "also no chain starts were found in the selected reference frames"
+            )
+
+        msg = """
+                in the file {input}
+                you didn't provide any chains and offsets/starts
+                {table_msg}
+
+                {table}
+
+                the reference frames for sequences and chain starts were
+
+                {reference_frame_names}
+            """
+        msg = dedent(msg)
+        msg = msg.format(
+            input=input,
+            table=table,
+            table_msg=table_msg,
+            reference_frame_names=reference_frame_names,
+        )
+
+        exit_error(msg)
+
+
+def _exit_error_if_no_reference_frames(
+    entry, reference_frame_selectors, reference_frames
+):
+    if not reference_frames:
+        msg = """
+            no reference frames found using the selection:
+
+            {reference_frame_selectors}
+
+            possible frame names are
+
+            {frame_names}
+            """
+        msg = dedent(msg)
+        reference_frame_selectors = ", ".join(reference_frame_selectors)
+        reference_frame_selectors = strings_to_tabulated_terminal_sensitive(
+            reference_frame_selectors
+        )
+
+        frame_names = strings_to_tabulated_terminal_sensitive(
+            [frame.name for frame in entry.frame_list]
+        )
+        msg = msg.format(
+            reference_frame_selectors=reference_frame_selectors, frame_names=frame_names
+        )
+
+        exit_error(msg)
+
+
+def _select_reference_frames(entry, reference_frame_selectors):
+
+    if not reference_frame_selectors:
+        reference_frames = select_frames(
+            entry, NEF_MOLECULAR_SYSTEM, SelectionType.CATEGORY
+        )
+
+        if not reference_frames:
+            reference_frames = copy(entry.frame_list)
+    else:
+        reference_frames = []
+        for frame_selector in reference_frame_selectors:
+            reference_frames += select_frames(entry, frame_selector, SelectionType.ANY)
+
+    return reference_frames
+
+
+def _chain_starts_to_offsets(current_chains_starts, new_chain_starts):
+    result = {}
+
+    for chain, new_start in new_chain_starts.items():
+        old_start = current_chains_starts[chain]
+
+        offset = new_start - old_start
+        result[chain] = offset
 
     return result
 
@@ -132,16 +306,27 @@ def exit_if_molecular_system_isnt_a_singleton(molecular_system_frames):
         )
 
 
-def offset_chains_in_frames(frames, chain_offsets, starts):
+def offset_chains_in_frames(frames, chain_offsets):
     for frame in frames:
-        for chain, offset in chain_offsets:
-            offset_residue_numbers(frame, chain, offset)
+        for chain, offset in chain_offsets.items():
+            _offset_residue_numbers(frame, chain, offset)
 
 
-def get_chain_offset_pairs_or_exit(chain_offsets):
+def _exit_multiple_offsets_for_chain(chain, first_offset, second_offset):
+    msg = """
+        the chain {chain} has more than one offset/start to use for renumbering
 
-    if not chain_offsets:
-        exit_error("you didn't provide any chains and offsets/starts")
+        the first offset/start is {first_offset}
+        the second offset/start is {second_offset}
+        """
+    msg = msg.format(
+        input=input, chain=chain, first_offset=first_offset, second_offset=second_offset
+    )
+
+    exit_error(msg)
+
+
+def _get_chain_offset_pairs_or_exit_error(chain_offsets):
 
     # tee here as we use the chain_offsets generator twice
     chain_offsets_check, chain_offsets = tee(chunks(chain_offsets, 2))
@@ -160,14 +345,21 @@ def get_chain_offset_pairs_or_exit(chain_offsets):
             """
             exit_error(msg)
 
-    result = []
+    result = {}
+    seen_chains = set()
     for i, (chain, offset) in enumerate(chain_offsets, start=1):
 
         exit_if_offset_isnt_int(chain, offset, i)
 
         offset = int(offset)
 
-        result.append((chain, offset))
+        if chain in seen_chains:
+            _exit_multiple_offsets_for_chain(
+                chain=chain, first_offset=result[chain], second_offset=offset
+            )
+
+        seen_chains.add(chain)
+        result[chain] = offset
 
     return result
 
@@ -193,7 +385,7 @@ def exit_if_chains_and_offsets_dont_match(chains, offsets):
         exit_error(msg)
 
 
-def offset_residue_numbers(frame, chain, offset, starts=False):
+def _offset_residue_numbers(frame, chain, offset):
 
     for loop_data in frame.loop_dict.values():
         for tag in loop_data.tags:
