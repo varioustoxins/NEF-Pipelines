@@ -515,8 +515,7 @@ def sequence_from_frame(
     frame: Saveframe, chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN
 ) -> List[SequenceResidue]:
     """
-    read sequences from a nef molecular system save frame
-    can raise Exceptions
+    read sequences from a nef save frame with the maximal information content about the residues
 
     :param frame: the save frame to read residues from, must have category nef molecular system
     :param chain_code_to_select: the chain codes to select this can be either a string or list of strings,
@@ -537,53 +536,237 @@ def sequence_from_frame(
 
     residues = OrderedSet()
 
-    if frame.category != "nef_molecular_system":
-        raise Exception(
-            f"sequences can only be read from nef molecular system frames, the category of the provided frame "
-            f"was {frame.category}"
-        )
+    for loop in frame.loops:
+        residues.update(_parse_loops_residues(loop, chain_codes_to_select))
 
-    loop = frame.loops[0]
+    return _select_best_residues_by_info_content(residues)
 
-    chain_code_index = loop.tag_index("chain_code")
-    sequence_code_index = loop.tag_index("sequence_code")
-    residue_name_index = loop.tag_index("residue_name")
-    linking_index = loop.tag_index("linking")
-    residue_variant_index = loop.tag_index("residue_variant")
 
-    for line in loop:
-        chain_code = line[chain_code_index]
-        if chain_codes_to_select is ANY_CHAIN or chain_code in chain_codes_to_select:
-            sequence_code = line[sequence_code_index]
-            sequence_code = (
-                int(sequence_code) if is_int(sequence_code) else sequence_code
+def _select_best_residues_by_info_content(residues):
+    """
+    given a list of residues select the best residue definition for each chain code and sequence code
+    this removes formally unassigned residues [contain # or @ in sequence_code or chain_code] and favours a residue
+    with a residue name, the priority is then cis peptide > residue variants > linking though this shouldn't have an
+    effect unless there are errors in the definition of a molecular system
+
+    note if there are multiple residues with the same residue name they are both added...
+
+    :param residues: a list of residues
+
+    :return: a list of residues with the best description possible
+    """
+    residues = _filter_partially_or_unassigned_residues(residues)
+
+    residues_by_chain_code_sequence_code = {}
+    for residue in residues:
+        key = residue.chain_code, residue.sequence_code
+        residues_by_chain_code_sequence_code.setdefault(key, []).append(residue)
+
+    new_residues = []
+    for i, equivalent_residues in enumerate(
+        residues_by_chain_code_sequence_code.values()
+    ):
+
+        residues_and_scores = {}
+        score = 0
+        for equivalent_residue in equivalent_residues:
+            # somewhat arbitrary scoring system to pick the best residue
+            if equivalent_residue.residue_name not in (None, UNUSED):
+                score += 100000
+            if equivalent_residue.is_cis not in (None, UNUSED):
+                score += 10000
+            if equivalent_residue.variants not in (None, UNUSED):
+                score += 1000
+            if equivalent_residue.linking not in (None, UNUSED):
+                score += 100
+            residues_and_scores[score] = equivalent_residue
+
+        equivalent_residues = [
+            residues_and_scores[score] for score in sorted(residues_and_scores)
+        ]
+
+        new_equivalent_residues = []
+        if len(equivalent_residues) > 1:
+
+            seen_residue_names = set()
+            for equivalent_residue in equivalent_residues:
+                if equivalent_residue.residue_name not in (None, UNUSED):
+                    if equivalent_residue.residue_name not in seen_residue_names:
+                        new_equivalent_residues.append(equivalent_residue)
+                        seen_residue_names.add(equivalent_residue.residue_name)
+
+            if new_equivalent_residues:
+                new_equivalent_residues = [
+                    equivalent_residues[0],
+                ]
+        else:
+            new_equivalent_residues = [
+                equivalent_residues[0],
+            ]
+
+        new_residues.extend(new_equivalent_residues)
+    return new_residues
+
+
+def _filter_partially_or_unassigned_residues(residues):
+
+    result = []
+    for residue in residues:
+        if residue.chain_code in (None, UNUSED):
+            continue
+        if residue.sequence_code in (None, UNUSED):
+            continue
+        if isinstance(residue.chain_code, str) and residue.chain_code[0] in ("#", "@"):
+            continue
+        if isinstance(residue.sequence_code, str) and residue.sequence_code[0] in (
+            "#",
+            "@",
+        ):
+            continue
+        result.append(residue)
+    return result
+
+
+def _parse_loops_residues(loop, chain_codes_to_select):
+
+    residues = []
+
+    offsets = [f"_{index}" for index in range(1, 16)]
+    offsets.insert(0, "")
+    index_sets = []
+    for offset in offsets:
+        if offset == "":
+            linking_tag = f"{offset}linking"
+            linking_index = (
+                loop.tag_index(linking_tag) if linking_tag in loop.tags else None
             )
-            residue_name = line[residue_name_index]
-            linking = (
-                Linking[line[linking_index].upper()]
-                if line[linking_index] != NEF_UNKNOWN
+
+            residue_variant_tag = f"{offset}residue_variant"
+            residue_variant_index = (
+                loop.tag_index(residue_variant_tag)
+                if residue_variant_tag in loop.tags
                 else None
             )
-            residue_variants = line[residue_variant_index].split(",")
-            residue_variants = (
-                ()
-                if residue_variants
-                == [
-                    UNUSED,
-                ]
-                else tuple(residue_variants)
+
+            cis_peptide_tag = f"{offset}cis_peptide"
+            cis_peptide_index = (
+                loop.tag_index(cis_peptide_tag)
+                if cis_peptide_tag in loop.tags
+                else None
             )
+
+        chain_code_tag = f"{offset}chain_code"
+        chain_code_index = (
+            loop.tag_index(chain_code_tag) if chain_code_tag in loop.tags else None
+        )
+
+        sequence_code_tag = f"{offset}sequence_code"
+        sequence_code_index = (
+            loop.tag_index(sequence_code_tag)
+            if sequence_code_tag in loop.tags
+            else None
+        )
+
+        residue_name_tag = f"{offset}residue_name"
+        residue_name_index = (
+            loop.tag_index(residue_name_tag) if residue_name_tag in loop.tags else None
+        )
+
+        if (
+            chain_code_index is None
+            and sequence_code_index is None
+            and residue_name_index is None
+        ):
+            break
+
+        index_set = {
+            "chain_code_index": chain_code_index,
+            "sequence_code_index": sequence_code_index,
+            "residue_name_index": residue_name_index,
+            "linking_index": linking_index,
+            "residue_variant_index": residue_variant_index,
+            "cis_peptide_index": cis_peptide_index,
+        }
+
+        index_sets.append(index_set)
+    for line in loop:
+
+        for index_set in index_sets:
+            chain_code_index = index_set["chain_code_index"]
+            sequence_code_index = index_set["sequence_code_index"]
+            residue_name_index = index_set["residue_name_index"]
+            linking_index = index_set["linking_index"]
+            residue_variant_index = index_set["residue_variant_index"]
+            cis_peptide_index = index_set["cis_peptide_index"]
+
+            if chain_code_index:
+                chain_code = line[chain_code_index]
+                if chain_code == UNUSED:
+                    continue
+
+                if not (
+                    chain_codes_to_select is ANY_CHAIN
+                    or chain_code in chain_codes_to_select
+                ):
+                    continue
+            else:
+                continue
+
+            if sequence_code_index:
+                sequence_code = line[sequence_code_index]
+                sequence_code = (
+                    int(sequence_code) if is_int(sequence_code) else sequence_code
+                )
+            else:
+                sequence_code = None
+
+            residue_name = line[residue_name_index] if residue_name_index else None
+
+            if linking_index:
+                linking = (
+                    Linking[line[linking_index].upper()]
+                    if line[linking_index] != NEF_UNKNOWN
+                    else None
+                )
+            else:
+                linking = None
+
+            if cis_peptide_index:
+                cis_peptide = line[cis_peptide_index]
+                if cis_peptide == UNUSED:
+                    cis_peptide = False
+                elif cis_peptide.lower() == "true":
+                    cis_peptide = True
+                elif cis_peptide.lower() == "false":
+                    cis_peptide = False
+                else:
+                    cis_peptide = False
+
+            if residue_variant_index:
+                residue_variants = line[residue_variant_index].split(",")
+                residue_variants = (
+                    ()
+                    if residue_variants
+                    == [
+                        UNUSED,
+                    ]
+                    else tuple(residue_variants)
+                )
+            else:
+                residue_variants = ()
 
             residue = SequenceResidue(
                 chain_code=chain_code,
                 sequence_code=sequence_code,
                 residue_name=residue_name,
                 linking=linking,
+                is_cis=cis_peptide,
                 variants=residue_variants,
             )
-            residues.append(residue)
+            if residue.chain_code and residue.sequence_code and residue.residue_name:
+                residues.append(residue)
 
-    return list(residues)
+    return residues
 
 
 def sequence_3let_to_res(
