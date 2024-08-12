@@ -2,9 +2,10 @@ from copy import copy
 from itertools import tee
 from pathlib import Path
 from textwrap import dedent
-from typing import List
+from typing import Dict, List
 
 import typer
+from pynmrstar import Entry
 from tabulate import tabulate
 from typer import Argument, Option
 
@@ -96,26 +97,14 @@ def renumber(
     if not reference_frame_selectors:
         reference_frames = []
 
-    reference_frames = _select_reference_frames(entry, reference_frame_selectors)
-
-    _exit_error_if_no_reference_frames(
-        entry, reference_frame_selectors, reference_frames
-    )
-
     chain_offsets_or_starts = _get_chain_offset_pairs_or_exit_error(
         chain_offsets_or_starts
     )
 
-    _exit_error_if_no_chain_offsets(chain_offsets_or_starts, reference_frames, input)
+    reference_frames = _select_reference_frames(entry, reference_frame_selectors)
 
-    frames = select_frames(entry, frame_selectors, selector_type)
-
-    _exit_if_selected_chain_not_in_frames(
-        "chain to renumber", frames, input, chain_offsets_or_starts.keys()
-    )
-
-    _exit_if_selected_chain_not_in_frames(
-        "reference_chain", reference_frames, input, chain_offsets_or_starts.keys()
+    _exit_error_if_no_reference_frames(
+        entry, reference_frame_selectors, reference_frames
     )
 
     if starts:
@@ -127,15 +116,32 @@ def renumber(
     else:
         chain_offsets = chain_offsets_or_starts
 
-    offset_chains_in_frames(frames, chain_offsets)
+    _exit_if_selected_chain_not_in_frames(
+        "reference_chain", reference_frames, input, chain_offsets.keys()
+    )
+    _exit_error_if_no_chain_offsets(chain_offsets_or_starts, reference_frames, input)
+
+    entry = pipe(entry, frame_selectors, selector_type, chain_offsets)
 
     print(entry)
 
-    # # get_help()
-    #
-    # # typer_click_object = typer.main.get_command(chains_app)
-    # # print(chains_app.typer_instance)
-    # print(typer_click_object.command()())
+
+def pipe(
+    entry: Entry,
+    frame_selectors: List[str],
+    frame_selector_type: SelectionType,
+    offsets: Dict[str, int],
+) -> Entry:
+
+    frames = select_frames(entry, frame_selectors, frame_selector_type)
+
+    _exit_if_selected_chain_not_in_frames(
+        "chain to renumber", frames, input, offsets.keys()
+    )
+
+    offset_chains_in_frames(frames, offsets)
+
+    return entry
 
 
 def _exit_if_selected_chain_not_in_frames(chain_type, frames, input, chains):
