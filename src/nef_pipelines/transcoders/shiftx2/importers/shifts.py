@@ -1,6 +1,9 @@
+import os
 import re
+import tempfile
 from enum import Enum, auto
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import requests
 import typer
@@ -10,12 +13,16 @@ from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
+    SelectionType,
     read_or_create_entry_exit_error_on_bad_file,
 )
-from nef_pipelines.lib.sequence_lib import translate_1_to_3
+from nef_pipelines.lib.sequence_lib import sequences_from_frames, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
 from nef_pipelines.lib.util import STDIN, exit_error, is_int
+from nef_pipelines.tools.chains.renumber import pipe as renumber
+from nef_pipelines.tools.loops.trim import ChainBound
+from nef_pipelines.tools.loops.trim import pipe as trim
 from nef_pipelines.transcoders.shiftx2 import import_app
 
 
@@ -50,11 +57,15 @@ app = typer.Typer()
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def shifts(
-    pdb_code_or_file_name: str = typer.Argument(
-        None, help="file name to read shift data from or pdb code to fetch data for"
+    code_or_file_name: str = typer.Argument(
+        None,
+        help="file name to read shift data from or alphafold / pdb code to fetch data for",
     ),
-    pdb_chain: str = typer.Option(
-        None, help="chain in the pdb file to predict shift data for"
+    source_chain: str = typer.Option(
+        None, help="chain in the source coordinate file to predict shift data for"
+    ),
+    alphafold: bool = typer.Option(
+        False, "--alphafold", help="use alphafold to predict structure"
     ),
     chain: str = typer.Option(
         None, "-c", "--chain", help="chain to label output shift data with"
@@ -66,27 +77,74 @@ def shifts(
         help="input to read NEF data from [- is stdin]",
     ),
 ):
-    """- read a shiftx2 chemical shift prediction"""
+    """- read a shiftx2 chemical shift prediction [alpha]"""
     entry = read_or_create_entry_exit_error_on_bad_file(in_file, "shiftx2")
-    entry = pipe(entry, pdb_code_or_file_name, pdb_chain, chain)
+    entry = pipe(entry, code_or_file_name, source_chain, chain, alphafold)
     print(entry)
 
 
-def pipe(entry, pdb_code_or_filename, pdb_chain, chain) -> Entry:
-    file_path = Path(pdb_code_or_filename)
+def pipe(
+    entry: Entry, code_or_filename: str, pdb_chain: str, chain: str, alphafold: bool
+) -> Entry:
+
+    file_path = Path(code_or_filename)
     if file_path.exists():
         shifts = _read_shifts_from_file(file_path, chain)
     else:
-        if pdb_chain:
-            pdb_code_or_filename = f"{pdb_code_or_filename}{pdb_chain}"  # shiftx2 adds the chain to predict the end of
-            # the pdb code
-        if pdb_chain and not chain:
+
+        if alphafold:
+            code_or_filename, uniprot_start, pdb_start, length = (
+                _pdb_code_to_uniprot_id(code_or_filename)
+            )
+            use_file = True
+        else:
+            use_file = False
+
+        if not pdb_chain:
+            pdb_chain = "A"
+
+        if not chain:
             chain = pdb_chain
-        shifts = _get_shifts_from_server(pdb_code_or_filename, pdb_chain, chain)
+
+        if not use_file:
+            code_or_filename = f"{code_or_filename}{pdb_chain}"  # shiftx2 adds the chain to predict the end of
+            # the pdb code
+
+        shifts = _get_shifts_from_server(
+            code_or_filename, pdb_chain, chain, use_file=use_file
+        )
 
     shift_list = ShiftList(shifts)
     frame = shifts_to_nef_frame(shift_list, "shiftx2")
     entry.add_saveframe(frame)
+
+    sequence = sequences_from_frames(frame, chain)
+    sequence_start = min(
+        [residue.sequence_code for residue in sequence if is_int(residue.sequence_code)]
+    )
+    sequence_end = max(
+        [residue.sequence_code for residue in sequence if is_int(residue.sequence_code)]
+    )
+
+    if alphafold:
+        chain_bounds = []
+        if uniprot_start > pdb_start:
+
+            chain_bounds.append(ChainBound(chain, sequence_start, uniprot_start - 1))
+
+        if sequence_end > uniprot_start + length:
+            chain_bounds.append(
+                ChainBound(chain, uniprot_start + length + 1, sequence_end)
+            )
+
+        chain_bounds = {chain: chain_bounds}
+
+        entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
+
+        offset = pdb_start - uniprot_start + 1
+
+        entry = renumber(entry, "shiftx2", SelectionType.NAME, {chain: offset})
+
     return entry
 
 
@@ -262,9 +320,10 @@ def _tabular_lines_to_csv_layout(lines):
     return result
 
 
-def _get_shifts_from_server(pdb_code, chain_code, cli_chain_code):
+def _get_shifts_from_server(
+    pdb_file_or_code, chain_code, cli_chain_code, use_file=False
+):
 
-    pdb_code = f"{pdb_code}{chain_code}" if chain_code else pdb_code
     data = {
         "deuterate": 1,
         "ph": 7,
@@ -273,15 +332,32 @@ def _get_shifts_from_server(pdb_code, chain_code, cli_chain_code):
         "shifttype": 0,
         "format": 3,
         "shifty": 0,
-        "pdbid": pdb_code,
-        "filename": "",
+        "pdbid": "",
         "nonoverlap": 1,
     }
-    r = requests.request("POST", CGI_URL, data=data)
+    files = {}
+    fh = None
+    if use_file:
+        fh = open(pdb_file_or_code, "rb")
+        files = {"file": fh}
+    else:
+        pdb_file_or_code = (
+            f"{pdb_file_or_code}{chain_code}" if chain_code else pdb_file_or_code
+        )
+        data["pdbid"] = pdb_file_or_code
 
-    _exit_if_bad_html_request(pdb_code, r)
+    if use_file:
+        r = requests.request("POST", CGI_URL, data=data, files=files)
 
-    _exit_if_error_calculating_shifts(pdb_code, r)
+    else:
+        r = requests.request("POST", CGI_URL, data=data)
+
+    if fh:
+        fh.close()
+
+    _exit_if_bad_html_request(pdb_file_or_code, r)
+
+    _exit_if_error_calculating_shifts(pdb_file_or_code, r)
 
     soup = BeautifulSoup(r.text, features="html.parser")
     link = soup.find_all("a", href=True, string="download predictions")[0]["href"]
@@ -358,3 +434,95 @@ def _dedent_all(text):
 def _spaces_to_single(text):
     whitespace = re.compile(r"\s+")
     return " ".join(whitespace.split(text))
+
+
+def _get_filename_from_url(url=None):
+    if url is None:
+        return None
+    urlpath = urlsplit(url).path
+    return os.path.basename(urlpath)
+
+
+def _pdb_code_to_uniprot_id(code_or_filename):
+    url = f"https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/{code_or_filename}"
+    response = requests.get(url)
+
+    ok = True
+    if response.status_code != 200:
+        ok = False
+
+    if ok:
+        data = response.json()
+        if not data:
+            ok = False
+
+    if not ok:
+        msg = f"""
+        failed to get uniprot id from pdb code {code_or_filename}
+        is the network ok or could the pdb code be incorrect?
+        """
+        exit_error(msg)
+
+    uniprot_id = next(iter(data[code_or_filename]["UniProt"].keys()))
+    chain_info = data[code_or_filename]["UniProt"][uniprot_id]
+    first_mapping = next(iter(chain_info["mappings"]))
+
+    uniprot_start = int(first_mapping["unp_start"])
+    uniprot_end = int(first_mapping["unp_end"])
+    pdb_start = int(
+        first_mapping["start"]["residue_number"]
+    )  # as opposed to 'author_residue_number'
+    length = uniprot_end - uniprot_start
+
+    key = "AIzaSyCeurAJz7ZGjPQUtEaerUkBZ3TaBkXrY94"
+    alphafold_url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}?key={key}"
+
+    response = requests.get(alphafold_url)
+
+    ok = True
+    if response.status_code != 200:
+        ok = False
+
+    if ok:
+        data = response.json()
+        if not data:
+            ok = False
+
+    if not ok:
+        msg = f"""
+           failed to get uniprot structure using pdb code {code_or_filename}
+           is the network ok or could the pdb code be incorrect or for a structure not in the embl database?
+           """
+        exit_error(msg)
+
+    entry = data[0]
+    alphafold_pdb_url = entry["pdbUrl"]
+
+    # print(uniprot_id, data)
+
+    response = requests.get(alphafold_pdb_url)
+
+    ok = True
+    if response.status_code != 200:
+        ok = False
+
+    if ok:
+        data = response.text
+        if not data:
+            ok = False
+
+    if not ok:
+        msg = f"""
+               failed to get alphafold structure using pdb code {code_or_filename} mapped to uniprot id {uniprot_id}
+               is the network ok or could the pdb code be incorrect or for a structure not in the embl database?
+               """
+        exit_error(msg)
+
+    pdb_filename = _get_filename_from_url(alphafold_pdb_url)
+
+    tmpdirname = tempfile.mkdtemp()
+    file_path = Path(tmpdirname) / pdb_filename
+    with open(file_path, "w") as fp:
+        fp.write(data)
+
+    return file_path, uniprot_start, pdb_start, length
