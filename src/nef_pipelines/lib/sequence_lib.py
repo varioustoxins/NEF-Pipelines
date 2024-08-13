@@ -539,6 +539,13 @@ def sequences_from_frames(
     if chain_codes_to_select is not ANY_CHAIN and isinstance(
         chain_codes_to_select, str
     ):
+        chain_codes_to_select = [
+            chain_codes_to_select,
+        ]
+
+    if chain_codes_to_select is not ANY_CHAIN and isinstance(
+        chain_codes_to_select, str
+    ):
         chain_codes_to_select = set(
             [
                 chain_codes_to_select,
