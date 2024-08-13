@@ -2,7 +2,7 @@ from copy import copy
 from itertools import tee
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import typer
 from pynmrstar import Entry
@@ -128,7 +128,7 @@ def renumber(
 
 def pipe(
     entry: Entry,
-    frame_selectors: List[str],
+    frame_selectors: Union[str, List[str]],
     frame_selector_type: SelectionType,
     offsets: Dict[str, int],
 ) -> Entry:
@@ -288,19 +288,6 @@ def _chain_starts_to_offsets(current_chains_starts, new_chain_starts):
     return result
 
 
-# def chain_starts_to_offsets(molecular_system, chain_offsets):
-#     result = []
-#     for chain, start in chain_offsets:
-#         sorted_residues = sorted(sequence_from_frame(molecular_system, chain))
-#
-#         if len(sorted_residues) > 0:
-#             start_sequence_code = int(sorted_residues[0].sequence_code)
-#
-#             result.append([chain, start - start_sequence_code])
-#
-#     return result
-
-
 def exit_if_molecular_system_isnt_a_singleton(molecular_system_frames):
     number_of_molecular_system_frames = len(molecular_system_frames)
     if number_of_molecular_system_frames == 0:
@@ -355,7 +342,7 @@ def _get_chain_offset_pairs_or_exit_error(chain_offsets):
     seen_chains = set()
     for i, (chain, offset) in enumerate(chain_offsets, start=1):
 
-        exit_if_offset_isnt_int(chain, offset, i)
+        _exit_if_offset_isnt_int(chain, offset, i)
 
         offset = int(offset)
 
@@ -370,7 +357,7 @@ def _get_chain_offset_pairs_or_exit_error(chain_offsets):
     return result
 
 
-def exit_if_offset_isnt_int(chain, offset, i):
+def _exit_if_offset_isnt_int(chain, offset, i):
     if not is_int(offset):
         msg = f"""\
                 the offset/start {offset} in the {end_with_ordinal(i)} chain offset/start pair: {chain} {offset}
@@ -379,7 +366,7 @@ def exit_if_offset_isnt_int(chain, offset, i):
         exit_error(msg)
 
 
-def exit_if_chains_and_offsets_dont_match(chains, offsets):
+def _exit_if_chains_and_offsets_dont_match(chains, offsets):
     num_chains = len(chains)
     num_offsets = len(offsets)
     if num_chains != num_offsets:
@@ -395,10 +382,10 @@ def _offset_residue_numbers(frame, chain, offset):
 
     for loop_data in frame.loop_dict.values():
         for tag in loop_data.tags:
-            if tag_is_based_on(tag, SEQUENCE_CODE):
+            if _tag_is_based_on(tag, SEQUENCE_CODE):
                 sequence_index = loop_data.tag_index(tag)
 
-                chain_code_tag = tag_based_on(tag, SEQUENCE_CODE, CHAIN_CODE)
+                chain_code_tag = _tag_based_on(tag, SEQUENCE_CODE, CHAIN_CODE)
                 chain_code_index = loop_data.tag_index(chain_code_tag)
                 for line in loop_data:
                     if chain_code_index is not None and line[chain_code_index] == chain:
@@ -409,89 +396,11 @@ def _offset_residue_numbers(frame, chain, offset):
                             line[sequence_index] = str(sequence)
 
 
-def tag_based_on(tag, base, substitute):
+def _tag_based_on(tag, base, substitute):
     column_code = tag[len(base) :]
     new_tag = f"{substitute}{column_code}"
     return new_tag
 
 
-def tag_is_based_on(tag, base):
+def _tag_is_based_on(tag, base):
     return tag.startswith(base)
-
-
-#
-#
-# def read_args():
-#     global parser
-#     parser = argparse.ArgumentParser(
-#         description="Add chemical shift errors to a NEF file"
-#     )
-#     parser.add_argument(
-#         "-c",
-#         "--chain",
-#         metavar="CHAIN",
-#         type=str,
-#         default="A",
-#         dest="chain",
-#         help="chain in which to offset residue numbers",
-#     )
-#     parser.add_argument(
-#         "-o",
-#         "--offset",
-#         metavar="OFFSET",
-#         type=int,
-#         default=0,
-#         dest="offset",
-#         help="offset to add to residue numbers",
-#     )
-#     parser.add_argument(metavar="FILES", nargs=argparse.REMAINDER, dest="files")
-#
-#     return parser.parse_args()
-#
-#
-# def check_stream():
-#     # make stdin a non-blocking file
-#     fd = sys.stdin.fileno()
-#     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-#     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-#
-#     try:
-#         result = sys.stdin.read()
-#     except Exception:
-#         result = ""
-#
-#     return result
-#
-#
-# if __name__ == "__main__":
-#
-#     args = read_args()
-#
-#     is_tty = sys.stdin.isatty()
-#
-#     if is_tty and len(args.files) == 0:
-#         parser.print_help()
-#         print()
-#         msg = """I require at least 1 argument or input stream with a chemical_shift_list frame"""
-#
-#         exit_error(msg)
-#
-#     entries = []
-#     try:
-#         if len(args.files) == 0:
-#             lines = check_stream()
-#             if len(lines) != 0:
-#                 entries.append(Entry.from_string(lines))
-#             else:
-#                 exit_error("Error: input appears to be empty")
-#         else:
-#             for file in args.files:
-#                 entries.append(Entry.from_file(file))
-#     except OSError as e:
-#         msg = f"couldn't open target nef file because {e}"
-#         exit_error(msg)
-#
-#     for entry in entries:
-#         offset_residue_numbers(entry, args.chain, args.offset)
-#
-#         # print(entry)
