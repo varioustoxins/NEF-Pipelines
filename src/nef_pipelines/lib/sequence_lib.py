@@ -972,6 +972,7 @@ def get_residue_name_from_lookup(
     return residue_name
 
 
+# TODO sequence codes should be ints if they look like ints (currently fails tests)
 def sequence_to_residue_name_lookup(
     sequence: List[SequenceResidue],
 ) -> Dict[Tuple[str, int], str]:
