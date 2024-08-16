@@ -197,6 +197,7 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
             there were no frames in the entry to rename
         """
     else:
+        # TODO whahats happening here????
         category_msg = (
             "" if target_category == "*" else f" with category {target_category}"
         )
