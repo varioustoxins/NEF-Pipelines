@@ -383,7 +383,7 @@ def _exit_if_error_calculating_shifts(pdb_code, r):
 
     if "Error in Calculating Chemical Shifts" in r.text:
         soup = BeautifulSoup(r.text, features="html.parser")
-        texts = soup.findAll(text=True)
+        texts = soup.findAll(string=True)
         visible_texts = filter(tag_visible, texts)
         text = " ".join(t.strip() for t in visible_texts)
         text = _spaces_to_single(text)
