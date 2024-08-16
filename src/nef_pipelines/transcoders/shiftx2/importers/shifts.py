@@ -463,6 +463,8 @@ def _pdb_code_to_uniprot_id(code_or_filename):
         """
         exit_error(msg)
 
+    # more validation needed here
+    code_or_filename = code_or_filename.lower()
     uniprot_id = next(iter(data[code_or_filename]["UniProt"].keys()))
     chain_info = data[code_or_filename]["UniProt"][uniprot_id]
     first_mapping = next(iter(chain_info["mappings"]))
