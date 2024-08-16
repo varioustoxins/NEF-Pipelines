@@ -383,3 +383,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - better handling of residue names that don't match the read sequence
 - fixed a bug in python 3.8 where annotations were stopping the nmrstar plugin loading
 - added a github actions test to check that the main entry point runs and all plugins are loaded
+
+## version 0.1.83
+- shiftx2 reader can read all formats output by shiftx2
+- chains can now be renumber using pipes in python
+- shiftx2 can now calculate shifts using an alphafold structure looked up from a pdb code
+- added chains align command which can align the sequence of one frame to another frame by offsetting its sequence codes
