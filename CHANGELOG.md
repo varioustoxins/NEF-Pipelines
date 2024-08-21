@@ -389,3 +389,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - chains can now be renumber using pipes in python
 - shiftx2 can now calculate shifts using an alphafold structure looked up from a pdb code
 - added chains align command which can align the sequence of one frame to another frame by offsetting its sequence codes
+
+## version 0.1.84
+- remove bad debug code which was killing pipelines from align
