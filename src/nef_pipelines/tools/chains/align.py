@@ -191,12 +191,6 @@ def align(
         target_sequences_by_chain,
     ) in target_sequence_by_frames_and_chains.items():
         for target_chain, target_sequence in target_sequences_by_chain.items():
-            print(
-                target_frame_name,
-                target_chain,
-                target_sequence,
-                len(target_sequence.sequence),
-            )
 
             reference_sequence = reference_sequences_by_chains[target_chain]
             matcher = SequenceMatcher(
