@@ -198,7 +198,7 @@ def align(
                 continue
 
             matcher = SequenceMatcher(
-                a=reference_sequence.sequence, b=target_sequence.sequence
+                a=reference_sequence.sequence, b=target_sequence.sequence, autojunk=False
             )
             # result = matcher.find_longest_match(0, None, 0, None)
 
