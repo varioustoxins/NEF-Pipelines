@@ -193,6 +193,10 @@ def align(
         for target_chain, target_sequence in target_sequences_by_chain.items():
 
             reference_sequence = reference_sequences_by_chains[target_chain]
+
+            if (not reference_sequence.sequence) or (not target_sequence.sequence):
+                continue
+
             matcher = SequenceMatcher(
                 a=reference_sequence.sequence, b=target_sequence.sequence
             )
@@ -254,6 +258,19 @@ def align_seqs(seq, newseq, wildcard="***"):
         newseq = newseq[0 : len(seq)]
 
     return newseq
+
+
+def _warn_if_no_match(offset, reference_frames, target_frame):
+    if offset is None:
+        reference_frame_names = ", ".join(
+            [reference_frame.name for reference_frame in reference_frames]
+        )
+        msg = f"""
+                WARNING: couldn't align the frame {target_frame.name} to the sequences in {reference_frame_names}
+                         this frame was ignored
+                """
+        msg = dedent(msg)
+        print(msg, file=sys.stderr)
 
     # if not reference_frame_selectors:
     #     reference_frames = []
