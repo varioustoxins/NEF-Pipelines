@@ -536,6 +536,7 @@ def sequences_from_frames(
     :return: a list of parsed residues and chains, in the order they were read
     """
 
+    # TODO: check chain code for validity
     if chain_codes_to_select is not ANY_CHAIN and isinstance(
         chain_codes_to_select, str
     ):
