@@ -84,7 +84,7 @@ def shifts(
 
 
 def pipe(
-    entry: Entry, code_or_filename: str, pdb_chain: str, chain: str, alphafold: bool
+    entry: Entry, code_or_filename: str, source_chain: str, chain: str, alphafold: bool
 ) -> Entry:
 
     file_path = Path(code_or_filename)
@@ -100,23 +100,21 @@ def pipe(
         else:
             use_file = False
 
-        if not pdb_chain:
-            pdb_chain = "A"
-
-        if not chain:
-            chain = pdb_chain
-
-        if not use_file:
-            code_or_filename = f"{code_or_filename}{pdb_chain}"  # shiftx2 adds the chain to predict the end of
-            # the pdb code
-
+        if not chain and source_chain:
+            chain = source_chain
         shifts = _get_shifts_from_server(
-            code_or_filename, pdb_chain, chain, use_file=use_file
+            code_or_filename, source_chain, chain, use_file=use_file
         )
 
     shift_list = ShiftList(shifts)
     frame = shifts_to_nef_frame(shift_list, "shiftx2")
     entry.add_saveframe(frame)
+
+    if not chain and source_chain:
+        chain = source_chain
+
+    if not chain and not source_chain:
+        chain = "A"
 
     sequence = sequences_from_frames(frame, chain)
     sequence_start = min(
