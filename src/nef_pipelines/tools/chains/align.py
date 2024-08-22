@@ -154,13 +154,9 @@ def align(
 
     reference_sequences = sequences_from_frames(reference_frames)
 
-    # print(reference_sequences)
-
     reference_sequences_by_chains = _build_per_chain_alignment_sequences(
         reference_sequences, reference_chains
     )
-
-    # print(reference_sequences_by_chains)
 
     if not frame_selectors:
         frame_selectors = ["*"]
@@ -280,37 +276,6 @@ def _warn_if_no_match(offset, reference_frames, target_frame):
                 """
         msg = dedent(msg)
         print(msg, file=sys.stderr)
-
-    # if not reference_frame_selectors:
-    #     reference_frames = []
-    #
-    # chain_offsets_or_starts = _get_chain_offset_pairs_or_exit_error(
-    #     chain_offsets_or_starts
-    # )
-    #
-    # reference_frames = _select_reference_frames(entry, reference_frame_selectors)
-    #
-    # _exit_error_if_no_reference_frames(
-    #     entry, reference_frame_selectors, reference_frames
-    # )
-    #
-    # if starts:
-    #     reference_chains_residues = sequences_from_frames(reference_frames)
-    #     reference_chain_starts = get_chain_starts(reference_chains_residues)
-    #     chain_offsets = _chain_starts_to_offsets(
-    #         reference_chain_starts, chain_offsets_or_starts
-    #     )
-    # else:
-    #     chain_offsets = chain_offsets_or_starts
-    #
-    # _exit_if_selected_chain_not_in_frames(
-    #     "reference_chain", reference_frames, input, chain_offsets.keys()
-    # )
-    # _exit_error_if_no_chain_offsets(chain_offsets_or_starts, reference_frames, input)
-    #
-    # entry = pipe(entry, frame_selectors, selector_type, chain_offsets)
-    #
-    # print(entry)
 
 
 def _build_per_chain_alignment_sequences(target_sequence, reference_chains):
