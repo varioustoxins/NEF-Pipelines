@@ -198,21 +198,17 @@ def align(
                 continue
 
             matcher = SequenceMatcher(
-                a=reference_sequence.sequence, b=target_sequence.sequence, autojunk=False
+                a=reference_sequence.sequence,
+                b=target_sequence.sequence,
+                autojunk=False,
             )
-            # result = matcher.find_longest_match(0, None, 0, None)
 
-            # print(reference_sequence, len(reference_sequence.sequence))
-            # print('result',result)
+            offset = _get_offset_or_none(matcher)
 
-            offset = None
-            for elem in matcher.get_opcodes():
+            _warn_if_no_match(offset, reference_frames, target_frame)
 
-                if elem[0] in ("replace", "delete", "insert"):
-                    continue
-                elif elem[0] == "equal":
-                    offset = elem[1] - elem[3]
-                    break
+            if offset is None:
+                continue
 
             entry = renumber(
                 entry,
@@ -222,6 +218,18 @@ def align(
             )
 
     print(entry)
+
+
+def _get_offset_or_none(matcher):
+    offset = None
+    op_codes = matcher.get_opcodes()
+    for elem in op_codes:
+        if elem[0] in ("replace", "delete", "insert"):
+            continue
+        elif elem[0] == "equal":
+            offset = elem[1] - elem[3]
+            break
+    return offset
 
 
 #
