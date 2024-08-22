@@ -392,3 +392,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.84
 - remove bad debug code which was killing pipelines from align
+
+## version 0.1.85
+- align wasn't aligning sub-sequences correctly
+- improvements to the shiftx2 readers chain handling
