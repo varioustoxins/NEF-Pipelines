@@ -220,12 +220,18 @@ def align(
 def _get_offset_or_none(matcher):
     offset = None
     op_codes = matcher.get_opcodes()
+
+    equal_elem_offsets_by_length = {}
     for elem in op_codes:
         if elem[0] in ("replace", "delete", "insert"):
             continue
         elif elem[0] == "equal":
             offset = elem[1] - elem[3]
-            break
+            equal_elem_offsets_by_length[elem[1] - elem[1]] = offset
+            continue
+
+    if equal_elem_offsets_by_length:
+        offset = equal_elem_offsets_by_length[max(equal_elem_offsets_by_length)]
     return offset
 
 
