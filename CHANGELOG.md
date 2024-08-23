@@ -396,3 +396,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 ## version 0.1.85
 - align wasn't aligning sub-sequences correctly
 - improvements to the shiftx2 readers chain handling
+
+## version 0.1.86
+- align is now more robust: it matches to the longest matching element not the first!
