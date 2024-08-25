@@ -272,9 +272,16 @@ def _make_spectrum(
         prefix = sequence_code[0] if sequence_code.startswith("@") else ""
         sequence_code = sequence_code.lstrip("@")
 
+        # TODO not sure this is the best way to do it, seperators are only relevant if the sequence code starts with @
         found_separator = False
         for separator in ["-", "+"]:
-            if separator in sequence_code:
+            if sequence_code.startswith(separator):
+                sequence_sign = sequence_code[0]
+                sequence_code = sequence_code[1:]
+            else:
+                sequence_sign = ""
+
+            if separator in sequence_code and not sequence_code[0] == separator:
                 sequence_code_fields = sequence_code.split(separator)
                 if len(sequence_code_fields) != 2:
                     updated_shifts.append(shift)
@@ -287,7 +294,9 @@ def _make_spectrum(
                     prefix = "@"
 
                 sequence_code_int = (
-                    int(sequence_code) if is_int(sequence_code) else None
+                    int(f"{sequence_sign}{sequence_code}")
+                    if is_int(sequence_code)
+                    else None
                 )
                 offset_int = int(offset) if is_int(offset) else None
 
