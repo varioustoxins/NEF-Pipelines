@@ -44,14 +44,14 @@ loop_
     _nef_peak.ccpn_figure_of_merit
 
 
-    0   0   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    1   1   A   2   GLN   CA   A   2   GLN   N   A   2   GLN   H   55.215   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    2   2   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
-    3   3   A   3   ILE   CA   A   3   ILE   N   A   3   ILE   H   59.616   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
-    4   4   A   3   ILE   CA   A   4   PHE   N   A   4   PHE   H   59.599   .   118.73    .   8.614   .   .   .   .   .      merit=H   1.0
-    5   5   A   4   PHE   CA   A   4   PHE   N   A   4   PHE   H   55.138   .   118.73    .   8.614   .   .   .   .   .      merit=H   1.0
-    6   6   A   4   PHE   CA   A   5   VAL   N   A   5   VAL   H   55.142   .   121.424   .   9.307   .   .   .   .   .      merit=H   1.0
-    7   7   A   5   VAL   CA   A   5   VAL   N   A   5   VAL   H   60.412   .   121.424   .   9.307   .   .   .   .   .      merit=H   1.0
+    1   1   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    2   2   A   2   GLN   CA   A   2   GLN   N   A   2   GLN   H   55.215   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    3   3   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    4   4   A   3   ILE   CA   A   3   ILE   N   A   3   ILE   H   59.616   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    5   5   A   3   ILE   CA   A   4   PHE   N   A   4   PHE   H   59.599   .   118.73    .   8.614   .   .   .   .   .      merit=H   1.0
+    6   6   A   4   PHE   CA   A   4   PHE   N   A   4   PHE   H   55.138   .   118.73    .   8.614   .   .   .   .   .      merit=H   1.0
+    7   7   A   4   PHE   CA   A   5   VAL   N   A   5   VAL   H   55.142   .   121.424   .   9.307   .   .   .   .   .      merit=H   1.0
+    8   8   A   5   VAL   CA   A   5   VAL   N   A   5   VAL   H   60.412   .   121.424   .   9.307   .   .   .   .   .      merit=H   1.0
 
 stop_
 """.replace(
@@ -89,10 +89,10 @@ loop_
     _nef_peak.ccpn_figure_of_merit
 
 
-    0   0   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .     merit=M   0.75
-    1   1   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .     merit=M   0.75
-    2   2   A   3   ILE   CA   A   4   PHE   N   A   4   PHE   H   59.599   .   118.73    .   8.614   .   .   .   .   .     merit=H   1.0
-    3   3   A   4   PHE   CA   A   5   VAL   N   A   5   VAL   H   55.142   .   121.424   .   9.307   .   .   .   .   .     merit=H   1.0
+    1   1   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .     merit=M   0.75
+    2   2   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .     merit=M   0.75
+    3   3   A   3   ILE   CA   A   4   PHE   N   A   4   PHE   H   59.599   .   118.73    .   8.614   .   .   .   .   .     merit=H   1.0
+    4   4   A   4   PHE   CA   A   5   VAL   N   A   5   VAL   H   55.142   .   121.424   .   9.307   .   .   .   .   .     merit=H   1.0
 stop_
 """.replace(
     NOQUA_E501, ""
@@ -130,14 +130,14 @@ loop_
     _nef_peak.ccpn_figure_of_merit
 
 
-    0   0   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    1   1   A   1   MET   CB   A   2   GLN   N   A   2   GLN   H   33.279   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    2   2   A   2   GLN   CA   A   2   GLN   N   A   2   GLN   H   55.215   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    3   3   A   2   GLN   CB   A   2   GLN   N   A   2   GLN   H   30.606   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
-    4   4   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
-    5   5   A   2   GLN   CB   A   3   ILE   N   A   3   ILE   H   30.582   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
-    6   6   A   3   ILE   CA   A   3   ILE   N   A   3   ILE   H   59.616   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
-    7   7   A   3   ILE   CB   A   3   ILE   N   A   3   ILE   H   42.025   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    1   1   A   1   MET   CA   A   2   GLN   N   A   2   GLN   H   54.608   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    2   2   A   1   MET   CB   A   2   GLN   N   A   2   GLN   H   33.279   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    3   3   A   2   GLN   CA   A   2   GLN   N   A   2   GLN   H   55.215   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    4   4   A   2   GLN   CB   A   2   GLN   N   A   2   GLN   H   30.606   .   122.899   .   8.907   .   .   .   .   .      merit=M   0.75
+    5   5   A   2   GLN   CA   A   3   ILE   N   A   3   ILE   H   55.057   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    6   6   A   2   GLN   CB   A   3   ILE   N   A   3   ILE   H   30.582   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    7   7   A   3   ILE   CA   A   3   ILE   N   A   3   ILE   H   59.616   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
+    8   8   A   3   ILE   CB   A   3   ILE   N   A   3   ILE   H   42.025   .   115.127   .   8.318   .   .   .   .   .      merit=M   0.75
 stop_
 """.replace(
     NOQUA_E501, ""

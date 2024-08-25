@@ -78,10 +78,10 @@ save_nef_nmr_spectrum_xeasy_basic                                  # noqa: E501
       _nef_peak.volume_uncertainty
       _nef_peak.ccpn_comment
 
-     0   1   A   2   MET   H   A   3   ARG   H     A   4   GLN   N   8.731   .   8.723   .   115.265   .   .   .   5.5   0.0   'MAP    403'
-     1   2   .   .   .     .   .   .   .     .     .   .   .     .   8.731   .   4.61    .   115.275   .   .   .   5.5   0.0   .
-     2   3   A   5   THR   H   A   6   MET   HA2   A   7   LEU   N   8.732   .   4.192   .   115.254   .   .   .   5.5   0.0   'MAP    404'
-     3   3   A   5   THR   H   A   6   MET   HA3   A   7   LEU   N   8.732   .   4.192   .   115.254   .   .   .   5.5   0.0   'MAP    405'
+     1   1   A   2   MET   H   A   3   ARG   H     A   4   GLN   N   8.731   .   8.723   .   115.265   .   .   .   5.5   0.0   'MAP    403'
+     2   2   .   .   .     .   .   .   .     .     .   .   .     .   8.731   .   4.61    .   115.275   .   .   .   5.5   0.0   .
+     3   3   A   5   THR   H   A   6   MET   HA2   A   7   LEU   N   8.732   .   4.192   .   115.254   .   .   .   5.5   0.0   'MAP    404'
+     4   3   A   5   THR   H   A   6   MET   HA3   A   7   LEU   N   8.732   .   4.192   .   115.254   .   .   .   5.5   0.0   'MAP    405'
 
    stop_
 

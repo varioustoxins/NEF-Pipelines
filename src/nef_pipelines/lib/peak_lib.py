@@ -333,7 +333,7 @@ def peaks_to_frame(
 
     peak_loop.add_tag(peak_loop_tags)
 
-    for index, peak in enumerate(peaks):
+    for index, peak in enumerate(peaks, start=1):
         peak_data = {
             INDEX: index,
             PEAK_ID: index if peak.id is None else peak.id,

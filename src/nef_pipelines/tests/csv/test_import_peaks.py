@@ -74,10 +74,10 @@ def test_short_csv():
               _nef_peak.volume
               _nef_peak.volume_uncertainty
 
-             0   0   A   2   GLN   N   A   2   GLN   H   123.22   .   8.9    .   .   .   .   .
-             1   1   A   3   ILE   N   A   3   ILE   H   115.34   .   8.32   .   .   .   .   .
-             2   2   A   4   PHE   N   A   4   PHE   H   118.11   .   8.61   .   .   .   .   .
-             3   3   A   5   VAL   N   A   5   VAL   H   121.0    .   9.3    .   .   .   .   .
+             1   1   A   2   GLN   N   A   2   GLN   H   123.22   .   8.9    .   .   .   .   .
+             2   2   A   3   ILE   N   A   3   ILE   H   115.34   .   8.32   .   .   .   .   .
+             3   3   A   4   PHE   N   A   4   PHE   H   118.11   .   8.61   .   .   .   .   .
+             4   4   A   5   VAL   N   A   5   VAL   H   121.0    .   9.3    .   .   .   .   .
 
            stop_
 

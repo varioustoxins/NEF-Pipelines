@@ -37,13 +37,13 @@ loop_
    _nef_peak.ccpn_figure_of_merit
    _nef_peak.ccpn_comment
 
-  0    0    A   10   ALA   N   A   10   ALA   H   122.836   .   7.826   .   .   .   .   .   6.03818   'large violation!'
-  1    1    A   11   ALA   N   A   11   ALA   H   118.678   .   8.063   .   .   .   .   .   6.36477   'large violation!'
-  2    2    A   12   ALA   N   A   12   ALA   H   119.301   .   7.842   .   .   .   .   .   4.6192    'large violation!'
-  3    3    A   13   ALA   N   A   13   ALA   H   122.946   .   8.232   .   .   .   .   .   3.63582   'large violation!'
-  4    4    A   14   ALA   N   A   14   ALA   H   120.475   .   8.948   .   .   .   .   .   3.07293   .
-  5    5    A   15   ALA   N   A   15   ALA   H   118.138   .   8.798   .   .   .   .   .   2.89933   .
-  6    6    A   16   ALA   N   A   16   ALA   H   120.784   .   8.035   .   .   .   .   .   3.00885   .
+  1    1    A   10   ALA   N   A   10   ALA   H   122.836   .   7.826   .   .   .   .   .   6.03818   'large violation!'
+  2    2    A   11   ALA   N   A   11   ALA   H   118.678   .   8.063   .   .   .   .   .   6.36477   'large violation!'
+  3    3    A   12   ALA   N   A   12   ALA   H   119.301   .   7.842   .   .   .   .   .   4.6192    'large violation!'
+  4    4    A   13   ALA   N   A   13   ALA   H   122.946   .   8.232   .   .   .   .   .   3.63582   'large violation!'
+  5    5    A   14   ALA   N   A   14   ALA   H   120.475   .   8.948   .   .   .   .   .   3.07293   .
+  6    6    A   15   ALA   N   A   15   ALA   H   118.138   .   8.798   .   .   .   .   .   2.89933   .
+  7    7    A   16   ALA   N   A   16   ALA   H   120.784   .   8.035   .   .   .   .   .   3.00885   .
 stop_
 """
 
