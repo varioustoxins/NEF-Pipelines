@@ -127,9 +127,9 @@ def pipe(
 
     nef_entry.name = entry_name
 
-    entities = nmrstar_entry.get_saveframes_by_category("entity")
+    entity_saveframes = nmrstar_entry.get_saveframes_by_category("entity")
 
-    num_entities = len(entities)
+    num_entities = len(entity_saveframes)
     if num_entities == 0:
         msg = f"""
             No sequences (entities) found in {file_path}.
@@ -137,20 +137,26 @@ def pipe(
 
         exit_error(msg)
 
-    entity_ids = [entity.get_tag("_Entity.ID")[0] for entity in entities]
+    entity_saveframe_ids = [
+        entity.get_tag("_Entity.ID")[0] for entity in entity_saveframes
+    ]
     chain_code_iter = get_chain_code_iter(chain_codes)
     entity_id_to_chain_code = {
         int(entity_id): chain_code
-        for entity_id, chain_code in zip(entity_ids, chain_code_iter)
+        for entity_id, chain_code in zip(entity_saveframe_ids, chain_code_iter)
     }
     # print(entity_id_to_chain_code)
     # import sys
     # sys.exit()
 
     sequence_residues = []
-    for entity in entities:
+    for entity_saveframe in entity_saveframes:
 
-        sequence_loop = entity.get_loop("_Entity_comp_index")
+        try:
+            sequence_loop = entity_saveframe.get_loop("_Entity_comp_index")
+        except KeyError:
+            # not all entity saveframes have a comp_index loop cf bmr4115 2 [E2]
+            continue
 
         # TODO: add ability to skip unknown chem comps
         # TODO add warnings and check all required fields are present
