@@ -834,6 +834,30 @@ def get_chain_starts(residues: List[SequenceResidue]) -> Dict[str, int]:
     }
 
 
+def get_chain_ends(residues: List[SequenceResidue]) -> Dict[str, int]:
+    """
+    from a list of residues get the highest residue number for each chain ignoring any sequence codes that
+    can't be converted to an integer
+
+    :param residues:  a list of residues from one or more chains
+    :return: a dictionary of chain starts by chain_code
+    """
+
+    chain_residue_numbers = {}
+
+    for residue in residues:
+
+        if is_int(residue_number := residue.sequence_code):
+            chain_residue_numbers.setdefault(residue.chain_code, []).append(
+                residue_number
+            )
+
+    return {
+        chain_code: max(residue_numbers)
+        for chain_code, residue_numbers in chain_residue_numbers.items()
+    }
+
+
 def sequence_to_chains(residues: List[SequenceResidue]) -> List[str]:
     """
     from a list of residues get chain_codes
