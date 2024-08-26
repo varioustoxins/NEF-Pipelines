@@ -143,7 +143,7 @@ def align(
         help="display verbose alignment information [default: false]",
     ),
 ):
-    """- align chains in the frames in a nef file so they match those in a reference frame"""
+    """- align chains in the frames in a nef file so they match those in a reference frame [alpha]"""
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
