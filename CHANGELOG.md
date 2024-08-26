@@ -399,3 +399,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.86
 - align is now more robust: it matches to the longest matching element not the first!
+
+## version 0.1.87
+- align now supports triming to the chain extents in a reference molecular frame
+- peak list indices now start from 1 not 0
+- bug fix in nmrstar sequence importer [entitys without sequences no longer crash the importer]
