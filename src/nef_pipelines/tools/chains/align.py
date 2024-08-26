@@ -137,6 +137,11 @@ def align(
         help=f"control how to select frames to renumber, can be one of: {SELECTORS_LOWER}. "
         "Any will match on names first and then if there is no match attempt to match on category",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="display verbose alignment information [default: false]",
+    ),
 ):
     """- align chains in the frames in a nef file so they match those in a reference frame"""
 
@@ -199,6 +204,15 @@ def align(
                 b=target_sequence.sequence,
                 autojunk=False,
             )
+
+            if verbose:
+                entry_id = entry.entry_id
+                ref_chain_code = reference_sequence.chain_code
+                ratio = f"{matcher.ratio():7.3f}"
+                print(
+                    f"[{entry_id}] align chain {target_chain} {target_frame_name} -> {ref_chain_code} ratio: {ratio}",
+                    file=sys.stderr,
+                )
 
             offset = _get_offset_or_none(matcher)
 
