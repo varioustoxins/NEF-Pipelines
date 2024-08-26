@@ -10,13 +10,19 @@ from strenum import LowercaseStrEnum
 from typer import Argument, Option
 
 from nef_pipelines.lib.nef_lib import (
+    NEF_MOLECULAR_SYSTEM,
     SELECTORS_LOWER,
     SelectionType,
     loop_row_dict_iter,
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.sequence_lib import chains_from_frames
+from nef_pipelines.lib.sequence_lib import (
+    chains_from_frames,
+    get_chain_ends,
+    get_chain_starts,
+    sequences_from_frames,
+)
 from nef_pipelines.lib.util import (
     chunks,
     exit_error,
@@ -45,10 +51,17 @@ class ChainBound:
 def trim(
     chain_bounds: List[str] = Argument(
         None,
-        metavar="<CHAIN-CODE> <START> <END>",
+        metavar="<CHAIN-CODE> <START> <END> | <FRAME_SELECTOR>",
         help="""chain-codes and inclusive chain starts and ends to trim the chain to
-                [default: no chains, no bounds; do nothing...]""",
+                or a list of reference frames to find chain bounds from
+                [default: use the molecular system.]""",
         show_default=False,
+    ),
+    reference_selector_type: SelectionType = typer.Option(
+        SelectionType.ANY,
+        "-t",
+        "--reference-selector-type",
+        help=f"control how to select reference frames to find chain bounds, can be one of: {SELECTORS_LOWER}. ",
     ),
     input: Path = typer.Option(
         Path("-"),
@@ -61,7 +74,7 @@ def trim(
         SelectionType.ANY,
         "-s",
         "--selector",
-        help=f"control how to select frames to renumber, can be one of: {SELECTORS_LOWER}. "
+        help=f"control how to select frames to trim, can be one of: {SELECTORS_LOWER}. "
         "Any will match on names first and then if there is no match attempt to match on category",
     ),
     # invert: bool = Option(False,  "--invert", help="invert the selection"),
@@ -89,11 +102,21 @@ def trim(
 
     chain_bounds = parse_comma_separated_options(chain_bounds)
 
+    if not chain_bounds:
+        chain_bounds = [
+            NEF_MOLECULAR_SYSTEM,
+        ]
+
     chains = chains_from_frames(entry.frame_list)
 
-    chain_bounds = _parse_chain_bounds_exit_if_bad(chain_bounds, chains)
+    reference_frames = _find_reference_frames(
+        entry, chain_bounds, reference_selector_type
+    )
 
-    _exit_error_if_no_chain_bounds(chain_bounds)
+    if reference_frames:
+        chain_bounds = _chain_bounds_from_frames(reference_frames)
+    else:
+        chain_bounds = _parse_chain_bounds_exit_if_bad(chain_bounds, chains)
 
     entry = pipe(entry, frame_selectors, selector_type, chain_bounds)
 
@@ -111,13 +134,29 @@ def pipe(
 
     target_chains = chain_bounds.keys()
 
-    _exit_if_selected_chain_not_in_frames(
-        "chain to trimr", frames, input, target_chains
-    )
+    _exit_if_selected_chain_not_in_frames("chain to trim", frames, input, target_chains)
 
     _trim_chains_in_frames(frames, chain_bounds)
 
     return entry
+
+
+def _find_reference_frames(entry, chain_bounds, reference_selector_type):
+    return select_frames(entry, chain_bounds, reference_selector_type)
+
+
+def _chain_bounds_from_frames(reference_frames):
+    sequences = sequences_from_frames(reference_frames)
+    chain_starts = get_chain_starts(sequences)
+    chain_ends = get_chain_ends(sequences)
+
+    result = {}
+    for chain in chain_starts:
+        result[chain] = [
+            ChainBound(chain, chain_starts[chain], chain_ends[chain]),
+        ]
+
+    return result
 
 
 def _trim_chains_in_frames(frames, chain_bounds):
@@ -143,8 +182,8 @@ def _trim_chains_in_frames(frames, chain_bounds):
 
                         for chain_bound in chain_bounds[chain_code]:
                             if (
-                                sequence_code >= chain_bound.start
-                                and sequence_code <= chain_bound.end
+                                sequence_code < chain_bound.start
+                                or sequence_code > chain_bound.end
                             ):
                                 rows_to_remove.add(i)
 
@@ -156,6 +195,9 @@ def _trim_chains_in_frames(frames, chain_bounds):
         loop.clear_data()
 
         loop.add_data(rows_to_keep)
+
+        if "index" in loop.tags:
+            loop.renumber_rows("index")
 
 
 def _exit_error_if_no_chain_bounds(chain_bounds):
