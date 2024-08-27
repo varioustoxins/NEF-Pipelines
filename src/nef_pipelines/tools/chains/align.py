@@ -241,7 +241,7 @@ def _get_offset_or_none(matcher):
             continue
         elif elem[0] == "equal":
             offset = elem[1] - elem[3]
-            equal_elem_offsets_by_length[elem[1] - elem[1]] = offset
+            equal_elem_offsets_by_length[elem[2] - elem[1]] = offset
             continue
 
     if equal_elem_offsets_by_length:
