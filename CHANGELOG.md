@@ -404,3 +404,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - align now supports triming to the chain extents in a reference molecular frame
 - peak list indices now start from 1 not 0
 - bug fix in nmrstar sequence importer [entitys without sequences no longer crash the importer]
+
+## version 0.1.88
+- fix a maths error in which wasn't aligning on the longest matching sequence
