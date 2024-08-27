@@ -29,7 +29,7 @@ app = typer.Typer()
 
 # TODO: name translations
 # TODO: correct weights
-# TODO: move utuilities to lib
+# TODO: move utilities to lib
 # TODO: support multiple chains
 
 NEF_RDC_RESTRAINT_FRAME_CATEGORY = "nef_rdc_restraint_list"
