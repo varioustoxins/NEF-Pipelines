@@ -112,91 +112,6 @@ def peaks(
     print(entry)
 
 
-def _strs_to_experiment_types_or_exit_error(spectra):
-    result = []
-    spectrum_names = set([experiment.value for experiment in ExperimentType])
-    for spectum in spectra:
-
-        found = False
-        if spectum in spectrum_names:
-            result.append(ExperimentType[spectum])
-            found = True
-
-        experiment_types_upper = [
-            experiment_type.name.upper() for experiment_type in ExperimentType
-        ]
-        upper_experiments_to_experiments = {
-            experiment_type.name.upper(): experiment_type
-            for experiment_type in ExperimentType
-        }
-        counts = Counter(experiment_types_upper)
-
-        if not found:
-            spectrum_upper = spectum.upper()
-            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] == 1:
-                result.append(upper_experiments_to_experiments[spectrum_upper])
-                found = True
-            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] > 1:
-                degenerate_spectra = [
-                    experiment_type.name
-                    for experiment_type in ExperimentType
-                    if experiment_type.upper() == spectrum_upper
-                ]
-                _exit_degnerate_spectrum_type(
-                    spectum, list(ExperimentType), degenerate_spectra
-                )
-
-        if not found:
-            _exit_bad_spectrum_type(spectum, list(ExperimentType))
-
-    return result
-
-
-def _update_spectra_with_groups(spectra):
-
-    spectra = set(spectra)
-    to_update = []
-    for experiment_type in spectra:
-        if experiment_type in EXPERIMENT_GROUPS:
-            to_update.append(experiment_type)
-
-    for experiment_type in to_update:
-        spectra.update(EXPERIMENT_GROUPS[experiment_type])
-        spectra.remove(experiment_type)
-
-    return spectra
-
-
-def _exit_bad_spectrum_type(spectrum, known_spectra):
-    msg = """
-        the spectrum type {spectrum} is not know, available spectrum types are
-
-        {spectrum_types}
-    """
-    msg = dedent(msg)
-
-    spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
-    spectrum_types = indent(spectrum_types, FOUR_SPACES)
-
-    exit_error(f(msg))
-
-
-def _exit_degnerate_spectrum_type(spectrum, known_spectra, degenerate_spectra):
-    degenerate_spectra = ", ".join(degenerate_spectra)
-    msg = """
-            the spectrum type {spectrum} doesn't exactly match a spectrum type in the list below
-            and has more than possible match when case is ignored [{degenerate_spectra}]
-
-            {spectrum_types}
-        """
-    msg = dedent(msg)
-
-    spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
-    spectrum_types = indent(spectrum_types, FOUR_SPACES)
-
-    exit_error(f(msg))
-
-
 def pipe(
     entry: Entry,
     shift_frame_selectors: List[str],
@@ -266,6 +181,7 @@ def _make_spectrum(
     # note this is not very sophisticated and doesn't cover side-chains... we ought to port the ccpn code
 
     updated_shifts = []
+
     for shift in shifts:
 
         sequence_code = str(shift.atom.residue.sequence_code)
@@ -407,3 +323,89 @@ def _make_spectrum(
                 peaks.append(new_peak)
 
     return peaks
+
+
+def _strs_to_experiment_types_or_exit_error(spectra):
+    result = []
+    spectrum_names = set([experiment.value for experiment in ExperimentType])
+    for spectum in spectra:
+
+        found = False
+        if spectum in spectrum_names:
+            result.append(ExperimentType[spectum])
+            found = True
+
+        experiment_types_upper = [
+            experiment_type.name.upper() for experiment_type in ExperimentType
+        ]
+        upper_experiments_to_experiments = {
+            experiment_type.name.upper(): experiment_type
+            for experiment_type in ExperimentType
+        }
+        counts = Counter(experiment_types_upper)
+
+        if not found:
+            spectrum_upper = spectum.upper()
+            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] == 1:
+                result.append(upper_experiments_to_experiments[spectrum_upper])
+                found = True
+            if spectrum_upper in experiment_types_upper and counts[spectrum_upper] > 1:
+                degenerate_spectra = [
+                    experiment_type.name
+                    for experiment_type in ExperimentType
+                    if experiment_type.upper() == spectrum_upper
+                ]
+                _exit_degnerate_spectrum_type(
+                    spectum, list(ExperimentType), degenerate_spectra
+                )
+
+        if not found:
+            _exit_bad_spectrum_type(spectum, list(ExperimentType))
+
+    return result
+
+
+def _update_spectra_with_groups(spectra):
+
+    spectra = set(spectra)
+    to_update = []
+    for experiment_type in spectra:
+        if experiment_type in EXPERIMENT_GROUPS:
+            to_update.append(experiment_type)
+
+    for experiment_type in to_update:
+        spectra.update(EXPERIMENT_GROUPS[experiment_type])
+        spectra.remove(experiment_type)
+
+    return spectra
+
+
+def _exit_bad_spectrum_type(spectrum, known_spectra):
+    msg = """
+        the spectrum type {spectrum} is not know, available spectrum types are
+
+        {spectrum_types}
+    """
+    msg = dedent(msg)
+
+    spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
+    spectrum_types = indent(spectrum_types, FOUR_SPACES)
+
+    exit_error(f(msg))
+
+
+def _exit_degnerate_spectrum_type(spectrum, known_spectra, degenerate_spectra):
+    degenerate_spectra = ", ".join(degenerate_spectra)
+
+    spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
+    spectrum_types = indent(spectrum_types, FOUR_SPACES)
+
+    msg = f"""
+            the spectrum type {spectrum} doesn't exactly match a spectrum type in the list below
+            and has more than possible match when case is ignored [{degenerate_spectra}]
+
+            {spectrum_types}
+        """
+    msg = dedent(msg)
+
+    exit_error(f(msg))
