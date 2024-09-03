@@ -45,7 +45,7 @@ SPECTRUM_NAME_TEMPLATE = "synthetic_{spectrum}"
 SHIFT_FRAMES_HELP = """\
     the names of the shift frames to use, this can be a comma separated list of name or the option can be called
     called multiple times. Wild cards are allowed. If no match is found wild cards are checked as well unless
-    --exact is set
+    --exact is set. If no shift frames are selected the default chemical shift list frame is used
 """
 
 SPECTRA_HELP = f"""
@@ -87,7 +87,7 @@ def peaks(
 
     shift_frame_selectors = (
         [
-            "*",
+            "nef_chemical_shift_list_default",
         ]
         if not shift_frame_selectors
         else parse_comma_separated_options(shift_frame_selectors)
