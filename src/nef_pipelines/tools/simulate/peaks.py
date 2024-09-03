@@ -78,7 +78,7 @@ def peaks(
     spectra: List[str] = typer.Argument(None, help=SPECTRA_HELP),
 ):
     """-  make a set of peaks for an hsqc, 13C direct detect or triple resonance spectrum from a list of shifts
-    [alpha for non cpn peak lists and 13C detect]"""
+    [alpha for non ccpn peak lists and 13C detect]"""
 
     spectra = [spectrum.replace("-", "_") for spectrum in spectra]
     if not spectra:
