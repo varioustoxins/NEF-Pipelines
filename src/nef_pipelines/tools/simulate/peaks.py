@@ -14,6 +14,7 @@ from nef_pipelines.lib.nef_frames_lib import (
     SHIFT_LIST_FRAME_CATEGORY,
 )
 from nef_pipelines.lib.nef_lib import (
+    UNUSED,
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames_by_name,
 )
@@ -174,6 +175,30 @@ def _sign_of_value(value):
     return result
 
 
+def _average_atom_set_shifts(atom_set_shifts):
+    shifts_by_atom = {}
+    for atom_set_shift in atom_set_shifts:
+        residue = atom_set_shift.atom.residue
+        atom_key = (
+            residue.chain_code,
+            residue.sequence_code,
+            residue.offset,
+            atom_set_shift.atom.atom_name,
+        )
+        shifts_by_atom.setdefault(atom_key, []).append(atom_set_shift)
+
+    result = []
+    for key, values in shifts_by_atom.items():
+        if len(values) == 1:
+            result.append(values[0])
+            continue
+        else:
+            value = sum([shift.value for shift in values]) / len(values)
+            result.append(ShiftData(values[0].atom, round(value, 3), UNUSED))
+
+    return result
+
+
 def _make_spectrum(
     shifts: List[ShiftData], info: PeakInfo, height: int = 1_000_000
 ) -> List[NewPeak]:
@@ -291,7 +316,9 @@ def _make_spectrum(
                     if shift.atom.atom_name == atom_name_required:
                         atom_set_shifts.append(shift)
 
-            if len(atom_set_shifts) != len(atom_set):
+            atom_set_shifts = _average_atom_set_shifts(atom_set_shifts)
+
+            if len(atom_set_shifts) > len(atom_set):
                 continue
 
             for i, shift in enumerate(atom_set_shifts):
