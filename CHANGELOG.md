@@ -410,3 +410,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.89
 - simulate un-labelling now select frames in a better manner and has better defaults
+
+## version 0.1.90
+- improvements to simulating peak lists from shifts
+  - the default chemical shift list is used by default rather than all shift lists this can avoid \
+    accidental averaging with for example a predicted chemical shift lists
+  - if mutiple shifts are selected for the same atom they are now properly averaged
