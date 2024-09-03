@@ -23,7 +23,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames_by_name,
 )
 from nef_pipelines.lib.peak_lib import frame_to_peaks, peaks_to_frame
-from nef_pipelines.lib.sequence_lib import sequence_from_entry_or_exit
+from nef_pipelines.lib.sequence_lib import sequences_from_frames
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
 from nef_pipelines.lib.spectra_lib import (
     EXPERIMENT_CLASSIFICATION_TO_SYNONYM,
@@ -141,10 +141,13 @@ UNLABELLED_AMINO_ACIDS_AND_SETS_HELP = """\
     The default is NO_CB_CLEAN
 """
 
-SHIFT_FRAMES_HELP = """\
-    the names of the shift frames to use, this can be a comma separated list of name or the option can be called
-    called multiple times. Wild cards are allowed. If no match is found wild cards are checked as well unless
-    --exact is set. If no selections are made the default is to use the first shift frame found.
+
+FRAME_SELECTORS_HELP = """\
+    the names of the frames to use to create the unlabelling, this can be a comma separated list of frame names or
+    the option can be called called multiple times. Wild cards are allowed. If no match is found wild cards are checked
+    as well  unless --exact is set. Frames can be from any category if --residue-types is used otherwise they should be
+    nmr_spetra [aka peak lists]. If no frames are selected and --residue-types is set the default chemical shift list is
+    used otherwise all peak lists are used.
 """
 
 NAME_TEMPLATE_HELP = """
@@ -608,11 +611,8 @@ def unlabelling(
         metavar="NEF-FILE",
         help="where to read NEF data from either a file or stdin '-'",
     ),
-    peak_frame_selectors: List[str] = typer.Option(
-        None, "--peak-frames", metavar=None, help="the names of the peak frames to use"
-    ),
-    shift_frame_selectors: List[str] = typer.Option(
-        None, "--shift-frames", help=SHIFT_FRAMES_HELP
+    frame_selectors: List[str] = typer.Option(
+        None, "--peak-selected_frames", metavar=None, help=FRAME_SELECTORS_HELP
     ),
     exact: bool = typer.Option(False, "--exact", help="match the frame names exactly"),
     name_template: str = typer.Option(
@@ -660,25 +660,29 @@ def unlabelling(
     if not unlabelled_amino_acids_and_sets:
         unlabelled_amino_acids_and_sets = NO_OBV_CLEAN_SET
 
-    if not peak_frame_selectors and not shift_frame_selectors:
-        peak_frames = []
-        shift_frames = select_frames(
-            entry, "chemical_shift_list", SelectionType.CATEGORY
-        )
-        if not shift_frames:
-            peak_frames = select_frames(entry, "*nmr_spectrum*", SelectionType.CATEGORY)
+    if not frame_selectors:
+        # TODO exact is not used here!
+        if residue_types:
+            selected_frames = select_frames(
+                entry, "nef_chemical_shift_list_default", SelectionType.NAME
+            )
+        else:
+            selected_frames = select_frames(
+                entry, "nef_nmr_spectrum", SelectionType.CATEGORY
+            )
 
     else:
-        peak_frames = select_frames_by_name(entry, peak_frame_selectors, exact=exact)
-        shift_frames = select_frames_by_name(entry, shift_frame_selectors, exact=exact)
+        selected_frames = select_frames_by_name(entry, frame_selectors, exact=exact)
 
-    if peak_frames and shift_frames:
-        exit_error("please specify either peak frames or shift frames not both")
+        msg = f"""
+            using the selectors {', '.join(frame_selectors)} and with residue_types {residue_types}
+            I couldn't find any frames to use in the entry {entry.entry_id}
+        """
+        exit_error(msg)
 
     entry = pipe(
         entry,
-        shift_frames,
-        peak_frames,
+        selected_frames,
         unlabelled_amino_acids_and_sets,
         name_template,
         output_residue_typing=residue_types,
@@ -689,20 +693,35 @@ def unlabelling(
 
 def pipe(
     entry: Entry,
-    shift_frames: List[Saveframe],
-    peak_frames: List[Saveframe],
+    selected_frames: List[Saveframe],
     unlabelled_residues: List[str],
     name_template_string: str,
     output_residue_typing: bool = False,
 ) -> Entry:
 
+    # this could be almost anyting that has a sequence code and a residue name
+    shift_frames = [
+        frame
+        for frame in selected_frames
+        if frame.category in {"nef_chemical_shift_list", "nef_molecular_system"}
+    ]
+    peak_frames = [
+        frame for frame in selected_frames if frame.category == "nef_nmr_spectrum"
+    ]
+
     if not shift_frames and not peak_frames:
-        exit_error("working with peak frames not implimented yet..., bug gary!")
+        exit_error("working with peak frames not implemented yet..., bug gary!")
 
     frames = []
 
     if output_residue_typing:
-        frames.append(_make_residue_typing_table(entry, frames, unlabelled_residues))
+        if peak_frames:
+            msg = """
+                I can't output residue types from peak frames currently (bug gary!)
+            """
+            exit_error(msg)
+
+        frames.append(_make_residue_typing_table(shift_frames, unlabelled_residues))
 
     else:
         if shift_frames:
@@ -754,7 +773,7 @@ def pipe(
     return entry
 
 
-def _make_residue_typing_table(entry, frames, unlabelled_residues):
+def _make_residue_typing_table(selected_frames, unlabelled_residues):
 
     frame = create_nef_save_frame(f"{NEF_PIPELINES_PREFIX}_residue_types", "default")
 
@@ -764,7 +783,7 @@ def _make_residue_typing_table(entry, frames, unlabelled_residues):
         loop.add_tag(tag)
 
     frame.add_loop(loop)
-    sequence = sequence_from_entry_or_exit(entry)
+    sequence = sequences_from_frames(selected_frames)
     residues_to_list = []
 
     for residue in sequence:
@@ -774,8 +793,8 @@ def _make_residue_typing_table(entry, frames, unlabelled_residues):
     for index, residue in enumerate(residues_to_list, start=1):
         row = {
             "index": index,
-            "chain_code": "@-",
-            "sequence_code": f"@{residue.sequence_code}",
+            "chain_code": residue.chain_code,
+            "sequence_code": residue.sequence_code,
             "residue_type": residue.residue_name,
             "probability": UNUSED,
         }
