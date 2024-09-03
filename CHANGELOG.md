@@ -407,3 +407,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.88
 - fix a maths error in which wasn't aligning on the longest matching sequence
+
+## version 0.1.89
+- simulate un-labelling now select frames in a better manner and has better defaults
