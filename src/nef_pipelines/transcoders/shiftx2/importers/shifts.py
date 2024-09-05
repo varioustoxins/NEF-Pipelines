@@ -20,7 +20,6 @@ from nef_pipelines.lib.sequence_lib import sequences_from_frames, translate_1_to
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
 from nef_pipelines.lib.util import STDIN, exit_error, is_int
-from nef_pipelines.tools.chains.renumber import pipe as renumber
 from nef_pipelines.tools.loops.trim import ChainBound
 from nef_pipelines.tools.loops.trim import pipe as trim
 from nef_pipelines.transcoders.shiftx2 import import_app
@@ -70,6 +69,7 @@ def shifts(
     chain: str = typer.Option(
         None, "-c", "--chain", help="chain to label output shift data with"
     ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="verbose output"),
     in_file: Path = typer.Option(
         STDIN,
         "-i",
@@ -79,12 +79,17 @@ def shifts(
 ):
     """- read a shiftx2 chemical shift prediction [alpha]"""
     entry = read_or_create_entry_exit_error_on_bad_file(in_file, "shiftx2")
-    entry = pipe(entry, code_or_file_name, source_chain, chain, alphafold)
+    entry = pipe(entry, code_or_file_name, source_chain, chain, alphafold, verbose)
     print(entry)
 
 
 def pipe(
-    entry: Entry, code_or_filename: str, source_chain: str, chain: str, alphafold: bool
+    entry: Entry,
+    code_or_filename: str,
+    source_chain: str,
+    chain: str,
+    alphafold: bool,
+    verbose: bool,
 ) -> Entry:
 
     file_path = Path(code_or_filename)
@@ -93,9 +98,12 @@ def pipe(
     else:
 
         if alphafold:
-            code_or_filename, uniprot_start, pdb_start, length = (
-                _pdb_code_to_uniprot_id(code_or_filename)
-            )
+            (
+                code_or_filename,
+                pdb_uniprot_start,
+                pdb_uniprot_length,
+                pdb_start_residue,
+            ) = _pdb_code_to_uniprot_id(code_or_filename, verbose)
             use_file = True
         else:
             use_file = False
@@ -108,6 +116,7 @@ def pipe(
 
     shift_list = ShiftList(shifts)
     frame = shifts_to_nef_frame(shift_list, "shiftx2")
+
     entry.add_saveframe(frame)
 
     if not chain and source_chain:
@@ -116,32 +125,47 @@ def pipe(
     if not chain and not source_chain:
         chain = "A"
 
-    sequence = sequences_from_frames(frame, chain)
-    sequence_start = min(
-        [residue.sequence_code for residue in sequence if is_int(residue.sequence_code)]
-    )
-    sequence_end = max(
-        [residue.sequence_code for residue in sequence if is_int(residue.sequence_code)]
-    )
-
     if alphafold:
-        chain_bounds = []
-        if uniprot_start > pdb_start:
+        sequence = sequences_from_frames(frame, chain)
+        shiftx2_uniprot_start = min(
+            [
+                residue.sequence_code
+                for residue in sequence
+                if is_int(residue.sequence_code)
+            ]
+        )
+        shiftx2_uniprot_end = max(
+            [
+                residue.sequence_code
+                for residue in sequence
+                if is_int(residue.sequence_code)
+            ]
+        )
+        # shiftx2_uniprot_length = shiftx2_uniprot_end - shiftx2_uniprot_start
 
-            chain_bounds.append(ChainBound(chain, sequence_start, uniprot_start - 1))
+        pdb_uniprot_end = pdb_uniprot_start + pdb_uniprot_length
 
-        if sequence_end > uniprot_start + length:
-            chain_bounds.append(
-                ChainBound(chain, uniprot_start + length + 1, sequence_end)
-            )
+        start = pdb_uniprot_start
+        end = pdb_uniprot_end
 
-        chain_bounds = {chain: chain_bounds}
+        run_trim = False
+        if pdb_uniprot_start > shiftx2_uniprot_start:
+            start = pdb_uniprot_start
+            run_trim = True
+        if pdb_uniprot_start < shiftx2_uniprot_end:
+            end = pdb_uniprot_end
+            run_trim = True
 
-        entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
+        if run_trim:
+            chain_bounds = [ChainBound(chain, start, end)]
 
-        offset = pdb_start - uniprot_start + 1
+            chain_bounds = {chain: chain_bounds}
 
-        entry = renumber(entry, "shiftx2", SelectionType.NAME, {chain: offset})
+            entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
+
+            # offset = pdb_start - uniprot_start + 1
+            #
+            # entry = renumber(entry, "shiftx2", SelectionType.NAME, {chain: offset})
 
     return entry
 
@@ -173,6 +197,7 @@ def _read_shifts_from_file(file_path, cli_chain_code):
 
 
 def _parse_text_to_shifts(text, cli_chain_code, source):
+
     lines = []
     for i, line in enumerate(text.split("\n")):
         if i == 0:
@@ -441,7 +466,8 @@ def _get_filename_from_url(url=None):
     return os.path.basename(urlpath)
 
 
-def _pdb_code_to_uniprot_id(code_or_filename):
+def _pdb_code_to_uniprot_id(code_or_filename, verbose):
+    msg = [f"# alphafold: {code_or_filename}->"]
     url = f"https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/{code_or_filename}"
     response = requests.get(url)
 
@@ -464,15 +490,16 @@ def _pdb_code_to_uniprot_id(code_or_filename):
     # more validation needed here
     code_or_filename = code_or_filename.lower()
     uniprot_id = next(iter(data[code_or_filename]["UniProt"].keys()))
+    msg.append(f"{uniprot_id}->")
     chain_info = data[code_or_filename]["UniProt"][uniprot_id]
     first_mapping = next(iter(chain_info["mappings"]))
 
-    uniprot_start = int(first_mapping["unp_start"])
-    uniprot_end = int(first_mapping["unp_end"])
-    pdb_start = int(
+    pdb_uniprot_start = int(first_mapping["unp_start"])
+    pdb_uniprot_end = int(first_mapping["unp_end"])
+    pdb_start_residue = int(
         first_mapping["start"]["residue_number"]
     )  # as opposed to 'author_residue_number'
-    length = uniprot_end - uniprot_start
+    pdb_uniprot_length = pdb_uniprot_end - pdb_uniprot_start
 
     key = "AIzaSyCeurAJz7ZGjPQUtEaerUkBZ3TaBkXrY94"
     alphafold_url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}?key={key}"
@@ -497,8 +524,10 @@ def _pdb_code_to_uniprot_id(code_or_filename):
 
     entry = data[0]
     alphafold_pdb_url = entry["pdbUrl"]
+    alphafold_entry_id = entry["entryId"]
 
-    # print(uniprot_id, data)
+    if verbose:
+        msg.append(alphafold_entry_id)
 
     response = requests.get(alphafold_pdb_url)
 
@@ -525,4 +554,7 @@ def _pdb_code_to_uniprot_id(code_or_filename):
     with open(file_path, "w") as fp:
         fp.write(data)
 
-    return file_path, uniprot_start, pdb_start, length
+    if verbose:
+        print("".join(msg), alphafold_url)
+
+    return file_path, pdb_uniprot_start, pdb_uniprot_length, pdb_start_residue
