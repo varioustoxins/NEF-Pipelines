@@ -416,3 +416,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
   - the default chemical shift list is used by default rather than all shift lists this can avoid \
     accidental averaging with for example a predicted chemical shift lists
   - if mutiple shifts are selected for the same atom they are now properly averaged
+
+## version 0.1.91
+- shiftx2 wasn't trimming the output shifts to the initial PDB files sequence
