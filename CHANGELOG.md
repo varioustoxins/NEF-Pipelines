@@ -419,3 +419,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.91
 - shiftx2 wasn't trimming the output shifts to the initial PDB files sequence
+
+## version 0.1.92
+- attempt to connect to shiftx2 multiple times as it sometimes fails
+- correct a error where float values in a star file Saveframe which had already been parsed from a \
+  str->float were getting narrowed unintentionally back to int
