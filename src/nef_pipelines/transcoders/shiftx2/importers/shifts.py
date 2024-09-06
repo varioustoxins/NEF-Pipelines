@@ -2,9 +2,11 @@ import os
 import re
 import sys
 import tempfile
+from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from textwrap import dedent
+from typing import Optional
 from urllib.parse import urlsplit
 
 import requests
@@ -26,6 +28,61 @@ from nef_pipelines.lib.util import STDIN, exit_error, is_int
 from nef_pipelines.tools.loops.trim import ChainBound
 from nef_pipelines.tools.loops.trim import pipe as trim
 from nef_pipelines.transcoders.shiftx2 import import_app
+
+NETWORK_200_OK = 200
+
+PDB_UNIPROT_MAPPING_URL_TEMPLATE = (
+    "https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/{code_or_filename}"
+)
+ALPHA_FOLD_KEY = "AIzaSyCeurAJz7ZGjPQUtEaerUkBZ3TaBkXrY94"
+ALPHA_FOLD_URL_TEMPLATE = (
+    "https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}?key={alphafold_key}"
+)
+
+SHIFTX2_RETRY_COUNT = 10
+
+
+@dataclass
+class NetworkResult:
+    network_ok: bool
+
+
+@dataclass
+class PdbAndUniprotIDs:
+    uniprot_id: str
+    pdb_code: str
+    chain_code: str
+
+
+@dataclass
+class PbdUniprotChainMapping:
+    pdb_uniprot_start: Optional[int]
+    pdb_uniprot_end: Optional[int]
+    pdb_start_residue: Optional[int]
+
+    @property
+    def pdb_uniprot_length(self):
+        return self.pdb_uniprot_end - self.pdb_uniprot_start
+
+
+@dataclass
+class PdbUniprotMapping(NetworkResult, PdbAndUniprotIDs, PbdUniprotChainMapping):
+    raw_data: Optional[dict]
+
+
+@dataclass
+class AlphafoldResult(NetworkResult, PdbAndUniprotIDs, PbdUniprotChainMapping):
+    pdb_url: Optional[str]
+    alphafold_id: Optional[str]
+    raw_data: Optional[dict]
+
+
+@dataclass
+class PDBDownloadResult(NetworkResult, PdbAndUniprotIDs, PbdUniprotChainMapping):
+    file_system_ok: bool
+    pdb_url: str
+    alphafold_id: str
+    pdb_file_path: Optional[Path]
 
 
 def tag_visible(element):
@@ -94,7 +151,6 @@ def pipe(
     alphafold: bool,
     verbose: bool,
 ) -> Entry:
-    RETRY_COUNT = 10
 
     file_path = Path(code_or_filename)
     if file_path.exists():
@@ -102,12 +158,10 @@ def pipe(
     else:
 
         if alphafold:
-            (
-                code_or_filename,
-                pdb_uniprot_start,
-                pdb_uniprot_length,
-                pdb_start_residue,
-            ) = _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose)
+            pdb_file_info = _pdb_code_to_alphafold_pdb_file(
+                code_or_filename, source_chain, verbose
+            )
+            code_or_filename = pdb_file_info.pdb_file_path
             use_file = True
         else:
             use_file = False
@@ -115,7 +169,7 @@ def pipe(
         if not chain and source_chain:
             chain = source_chain
 
-        for i in range(1, RETRY_COUNT + 1):
+        for i in range(1, SHIFTX2_RETRY_COUNT + 1):
             shifts = _get_shifts_from_server(
                 code_or_filename, source_chain, chain, use_file=use_file
             )
@@ -124,7 +178,9 @@ def pipe(
             elif verbose:
                 print(f"retrying shiftx2 ...[{i}]", file=sys.stderr)
 
-        _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUNT)
+        _exit_if_too_many_attempted_connections(
+            shifts, code_or_filename, SHIFTX2_RETRY_COUNT
+        )
 
     shift_list = ShiftList(shifts)
     frame = shifts_to_nef_frame(shift_list, "shiftx2")
@@ -153,19 +209,13 @@ def pipe(
                 if is_int(residue.sequence_code)
             ]
         )
-        # shiftx2_uniprot_length = shiftx2_uniprot_end - shiftx2_uniprot_start
-
-        pdb_uniprot_end = pdb_uniprot_start + pdb_uniprot_length
-
-        start = pdb_uniprot_start
-        end = pdb_uniprot_end
 
         run_trim = False
-        if pdb_uniprot_start > shiftx2_uniprot_start:
-            start = pdb_uniprot_start
+        if pdb_file_info.pdb_uniprot_start > shiftx2_uniprot_start:
+            start = pdb_file_info.pdb_uniprot_start
             run_trim = True
-        if pdb_uniprot_start < shiftx2_uniprot_end:
-            end = pdb_uniprot_end
+        if pdb_file_info.pdb_uniprot_start < shiftx2_uniprot_end:
+            end = pdb_file_info.pdb_uniprot_end
             run_trim = True
 
         if run_trim:
@@ -485,118 +535,218 @@ def _get_filename_from_url(url=None):
     return os.path.basename(urlpath)
 
 
-def _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose):
-    msg = [f"# alphafold: {code_or_filename}->"]
-    url = f"https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/{code_or_filename}"
-    response = requests.get(url)
-
-    ok = True
-    if response.status_code != 200:
-        ok = False
-
-    if ok:
-        data = response.json()
-        if not data:
-            ok = False
-
-    if not ok:
+def _exit_if_alphafold_network_bad(alphafold_result):
+    if not alphafold_result.network_ok:
         msg = f"""
-        failed to get uniprot id from pdb code {code_or_filename}
-        is the network ok or could the pdb code be incorrect?
+           failed to get alphafold structure url using uniprot id {alphafold_result.uniprot_id} which was
+           mapped from pdb code {alphafold_result.pdb_code}. The url
+           {ALPHA_FOLD_URL_TEMPLATE.format(uniprot_id=alphafold_result.uniprot_id, alphafold_key=ALPHA_FOLD_KEY)}
+           could not be accessed is there a network problem?
         """
+
         exit_error(msg)
 
-    code_or_filename = code_or_filename.lower()
-    uniprot_id = None
-    for putative_uniprot_id, mapping_element in data[code_or_filename][
-        "UniProt"
-    ].items():
-        for mapping in mapping_element["mappings"]:
-            if mapping["chain_id"] == source_chain:
-                uniprot_id = putative_uniprot_id
-                break
 
-    msg = _exit_error_if_pdb_to_uniprot_mapping_fails(
-        uniprot_id, code_or_filename, source_chain, data
+def _exit_if_pdb_download_bad(pdb_file_data: PDBDownloadResult):
+
+    msg = None
+    if not pdb_file_data.network_ok:
+        msg = f"""
+            The alphafold structure {pdb_file_data.alphafold_id} derived from {pdb_file_data.pdb_code} with chain
+            {pdb_file_data.chain_code} could not be download from the url:
+            {pdb_file_data.pdb_url}
+            is there a network problem
+            """
+
+    if not pdb_file_data.file_system_ok:
+        msg = f"""
+            The pdb file for the alphafold structure {pdb_file_data.alphafold_id} derived from {pdb_file_data.pdb_code}
+            with chain  {pdb_file_data.chain_code} could not be saved to the file system at the path, is your disk full?
+            """
+
+    if msg:
+        exit_error(msg)
+
+
+def _pdb_code_to_alphafold_pdb_file(code_or_filename, source_chain, verbose):
+    msg = [f"# alphafold: {code_or_filename}->"]
+
+    mapping = _convert_pdb_code_to_uniprot_id(code_or_filename, source_chain)
+
+    _exit_if_pdb_to_uniprot_network_failure(mapping)
+    _exit_if_pdb_to_uniprot_mapping_fails(mapping)
+
+    msg.append(f"{mapping.uniprot_id}->")
+
+    alphafold_result = _get_alphafold_pdb_url_from_uniprot_id(mapping)
+
+    _exit_if_alphafold_network_bad(alphafold_result)
+    _exit_if_alphafold_uniprot_to_pdb_url_fails(alphafold_result)
+
+    msg.append(alphafold_result.alphafold_id)
+
+    pdb_file_data = _download_pdb_file(alphafold_result)
+
+    _exit_if_pdb_download_bad(pdb_file_data)
+
+    if verbose:
+        print(
+            "".join(msg),
+            f"[{ALPHA_FOLD_URL_TEMPLATE.format(uniprot_id=mapping.uniprot_id, alphafold_key=ALPHA_FOLD_KEY)}]",
+        )
+
+    return pdb_file_data
+
+
+def _download_pdb_file(alphafold_result: AlphafoldResult) -> PDBDownloadResult:
+
+    response = requests.get(alphafold_result.pdb_url)
+
+    network_ok = response.status_code == NETWORK_200_OK
+
+    data = response.text
+
+    if data:
+        pdb_filename = _get_filename_from_url(alphafold_result.pdb_url)
+        tmpdirname = tempfile.mkdtemp()
+        file_path = Path(tmpdirname) / pdb_filename
+        with open(file_path, "w") as fp:
+            fp.write(data)
+
+    result = PDBDownloadResult(
+        network_ok=network_ok,
+        file_system_ok=file_path.is_file(),
+        pdb_url=alphafold_result.pdb_url,
+        pdb_code=alphafold_result.pdb_code,
+        chain_code=alphafold_result.chain_code,
+        uniprot_id=alphafold_result.uniprot_id,
+        alphafold_id=alphafold_result.alphafold_id,
+        pdb_file_path=file_path,
+        pdb_uniprot_start=alphafold_result.pdb_uniprot_start,
+        pdb_uniprot_end=alphafold_result.pdb_uniprot_end,
+        pdb_start_residue=alphafold_result.pdb_start_residue,
     )
+    return result
 
-    msg.append(f"{uniprot_id}->")
-    chain_info = data[code_or_filename]["UniProt"][uniprot_id]
-    first_mapping = next(iter(chain_info["mappings"]))
 
-    pdb_uniprot_start = int(first_mapping["unp_start"])
-    pdb_uniprot_end = int(first_mapping["unp_end"])
-    pdb_start_residue = int(
-        first_mapping["start"]["residue_number"]
-    )  # as opposed to 'author_residue_number'
-    pdb_uniprot_length = pdb_uniprot_end - pdb_uniprot_start
+def _get_alphafold_pdb_url_from_uniprot_id(
+    mapping: PdbUniprotMapping,
+) -> AlphafoldResult:
 
-    key = "AIzaSyCeurAJz7ZGjPQUtEaerUkBZ3TaBkXrY94"
-    alphafold_url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}?key={key}"
+    alphafold_url = ALPHA_FOLD_URL_TEMPLATE.format(
+        uniprot_id=mapping.uniprot_id, alphafold_key=ALPHA_FOLD_KEY
+    )
 
     response = requests.get(alphafold_url)
 
-    ok = True
-    if response.status_code != 200:
-        ok = False
+    network_ok = response.status_code == NETWORK_200_OK
 
-    if ok:
-        data = response.json()
-        if not data:
-            ok = False
+    raw_data = response.json() if network_ok and response.text else None
 
-    if not ok:
+    uniprot_id = mapping.uniprot_id
+    entry = None
+    alphafold_pdb_url = None
+    alphafold_entry_id = None
+    if raw_data:
+        entry = raw_data[0]
+        alphafold_pdb_url = entry["pdbUrl"]
+        alphafold_entry_id = entry["entryId"]
+
+    alphafold_result = AlphafoldResult(
+        network_ok=network_ok,
+        pdb_url=alphafold_pdb_url,
+        uniprot_id=uniprot_id,
+        pdb_code=mapping.pdb_code,
+        chain_code=mapping.chain_code,
+        raw_data=entry,
+        alphafold_id=alphafold_entry_id,
+        pdb_uniprot_start=mapping.pdb_uniprot_start,
+        pdb_uniprot_end=mapping.pdb_uniprot_end,
+        pdb_start_residue=mapping.pdb_start_residue,
+    )
+
+    return alphafold_result
+
+
+def _exit_if_alphafold_uniprot_to_pdb_url_fails(alphafold_result):
+    if not alphafold_result.pdb_url:
         msg = f"""
-           failed to get alphafold structure using uniprot id {uniprot_id} mapped from pdb code {code_or_filename}
-           is for a structure not in the embl database [eg a virus] or is the network bad
-           or could the pdb code be incorrect?
+           failed to get alphafold structure url using uniprot id {alphafold_result.uniprot_id} which was
+           mapped from pdb code {alphafold_result.pdb_code}. Is thisfor a structure not in the embl database
+           [eg a virus, or a bacterium like E.coli]?
            """
         exit_error(msg)
 
-    entry = data[0]
-    alphafold_pdb_url = entry["pdbUrl"]
-    alphafold_entry_id = entry["entryId"]
 
-    if verbose:
-        msg.append(alphafold_entry_id)
+def _convert_pdb_code_to_uniprot_id(
+    code_or_filename, source_chain
+) -> PdbUniprotMapping:
 
-    response = requests.get(alphafold_pdb_url)
+    response = requests.get(
+        PDB_UNIPROT_MAPPING_URL_TEMPLATE.format(code_or_filename=code_or_filename)
+    )
 
-    ok = True
-    if response.status_code != 200:
-        ok = False
+    network_ok = response.status_code == NETWORK_200_OK
 
-    if ok:
-        data = response.text
-        if not data:
-            ok = False
+    raw_mapping_data = response.json() if network_ok and response.text else None
 
-    if not ok:
+    uniprot_id = None
+    if raw_mapping_data:
+        code_or_filename = code_or_filename.lower()
+
+        for putative_uniprot_id, mapping_element in raw_mapping_data[code_or_filename][
+            "UniProt"
+        ].items():
+            for mapping in mapping_element["mappings"]:
+                if mapping["chain_id"] == source_chain:
+                    uniprot_id = putative_uniprot_id
+                    break
+
+    pdb_uniprot_start = None
+    pdb_uniprot_end = None
+    pdb_start_residue = None
+    if uniprot_id:
+
+        chain_info = raw_mapping_data[code_or_filename]["UniProt"][uniprot_id]
+        first_mapping = next(iter(chain_info["mappings"]))
+
+        pdb_uniprot_start = int(first_mapping["unp_start"])
+        pdb_uniprot_end = int(first_mapping["unp_end"])
+        pdb_start_residue = int(
+            first_mapping["start"]["residue_number"]
+        )  # as opposed to 'author_residue_number'
+
+    result = PdbUniprotMapping(
+        network_ok=network_ok,
+        pdb_code=code_or_filename,
+        chain_code=code_or_filename,
+        uniprot_id=uniprot_id,
+        pdb_uniprot_start=pdb_uniprot_start,
+        pdb_uniprot_end=pdb_uniprot_end,
+        pdb_start_residue=pdb_start_residue,
+        raw_data=raw_mapping_data,
+    )
+
+    return result
+
+
+def _exit_if_pdb_to_uniprot_network_failure(mapping: PdbUniprotMapping):
+
+    if not mapping.network_ok:
         msg = f"""
-               failed to get alphafold structure using pdb code {code_or_filename} mapped to uniprot id {uniprot_id}
-               is the network ok or could the pdb code be incorrect or for a structure not in the embl database?
-               """
+        failed to get uniprot id from pdb code {mapping.pdb_code}
+        it appears there was a network problem accessing the url:
+
+        {PDB_UNIPROT_MAPPING_URL_TEMPLATE.format(code_or_filename=mapping.pdb_code)}
+        """
         exit_error(msg)
 
-    pdb_filename = _get_filename_from_url(alphafold_pdb_url)
 
-    tmpdirname = tempfile.mkdtemp()
-    file_path = Path(tmpdirname) / pdb_filename
-    with open(file_path, "w") as fp:
-        fp.write(data)
+def _exit_if_pdb_to_uniprot_mapping_fails(mapping: PdbUniprotMapping):
 
-    if verbose:
-        print("".join(msg), alphafold_url)
-
-    return file_path, pdb_uniprot_start, pdb_uniprot_length, pdb_start_residue
-
-
-def _exit_error_if_pdb_to_uniprot_mapping_fails(
-    uniprot_id, code_or_filename, source_chain, data
-):
-    if uniprot_id is None:
+    if mapping.uniprot_id is None:
         mapping_table = []
-        for putative_uniprot_id, mapping_element in data[code_or_filename][
+        for putative_uniprot_id, mapping_element in mapping.raw_data[mapping.pdb_code][
             "UniProt"
         ].items():
             for mapping in mapping_element["mappings"]:
@@ -608,7 +758,6 @@ def _exit_error_if_pdb_to_uniprot_mapping_fails(
                         mapping["unp_end"],
                     )
                 )
-                print(putative_uniprot_id, mapping_element)
 
         headings = [
             "uniprot id",
@@ -626,9 +775,8 @@ def _exit_error_if_pdb_to_uniprot_mapping_fails(
             """
         msg = dedent(msg)
         msg = msg.format(
-            code_or_filename=code_or_filename.upper(),
-            source_chain=source_chain,
+            code_or_filename=mapping.pdb_code.upper(),
+            source_chain=mapping.chain_code,
             mapping_table=mapping_table,
         )
         exit_error(msg)
-    return msg
