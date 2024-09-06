@@ -386,14 +386,17 @@ def do_reasonable_type_conversions(value: str) -> Union[str, float, int]:
     :param value: the string to convert
     :return: value converted from str to int or float if possible
     """
-    if is_int(value):
-        value = int(value)
-    elif is_float(value):
-        value = float(value)
-    elif value.lower() == NEF_FALSE:
-        value = False
-    elif value.lower() == NEF_TRUE:
-        value = True
+
+    # only apply conversions to strings otherwise you get nice unexpected conversions like float -> int
+    if isinstance(value, str):
+        if is_int(value):
+            value = int(value)
+        elif is_float(value):
+            value = float(value)
+        elif value.lower() == NEF_FALSE:
+            value = False
+        elif value.lower() == NEF_TRUE:
+            value = True
     return value
 
 
