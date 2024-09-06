@@ -105,7 +105,7 @@ def pipe(
                 pdb_uniprot_start,
                 pdb_uniprot_length,
                 pdb_start_residue,
-            ) = _pdb_code_to_uniprot_id(code_or_filename, verbose)
+            ) = _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose)
             use_file = True
         else:
             use_file = False
@@ -481,7 +481,7 @@ def _get_filename_from_url(url=None):
     return os.path.basename(urlpath)
 
 
-def _pdb_code_to_uniprot_id(code_or_filename, verbose):
+def _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose):
     msg = [f"# alphafold: {code_or_filename}->"]
     url = f"https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/{code_or_filename}"
     response = requests.get(url)
