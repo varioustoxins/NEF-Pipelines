@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import tempfile
 from enum import Enum, auto
 from pathlib import Path
@@ -91,6 +92,7 @@ def pipe(
     alphafold: bool,
     verbose: bool,
 ) -> Entry:
+    RETRY_COUNT = 10
 
     file_path = Path(code_or_filename)
     if file_path.exists():
@@ -110,9 +112,17 @@ def pipe(
 
         if not chain and source_chain:
             chain = source_chain
-        shifts = _get_shifts_from_server(
-            code_or_filename, source_chain, chain, use_file=use_file
-        )
+
+        for i in range(1, RETRY_COUNT + 1):
+            shifts = _get_shifts_from_server(
+                code_or_filename, source_chain, chain, use_file=use_file
+            )
+            if shifts:
+                break
+            elif verbose:
+                print(f"retrying shiftx2 ...[{i}]", file=sys.stderr)
+
+        _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUNT)
 
     shift_list = ShiftList(shifts)
     frame = shifts_to_nef_frame(shift_list, "shiftx2")
@@ -163,11 +173,16 @@ def pipe(
 
             entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
 
-            # offset = pdb_start - uniprot_start + 1
-            #
-            # entry = renumber(entry, "shiftx2", SelectionType.NAME, {chain: offset})
 
     return entry
+
+
+def _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUNT):
+    if not shifts:
+        msg = f"""
+            couldn't get a shiftx2 prediction for {code_or_filename} after {RETRY_COUNT} retries
+            """
+        exit_error(msg)
 
 
 class ShiftFormat(Enum):
