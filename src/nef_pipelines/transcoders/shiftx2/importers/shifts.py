@@ -4,6 +4,7 @@ import sys
 import tempfile
 from enum import Enum, auto
 from pathlib import Path
+from textwrap import dedent
 from urllib.parse import urlsplit
 
 import requests
@@ -11,6 +12,7 @@ import typer
 from bs4 import BeautifulSoup
 from bs4.element import Comment
 from pynmrstar import Entry
+from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
@@ -172,7 +174,6 @@ def pipe(
             chain_bounds = {chain: chain_bounds}
 
             entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
-
 
     return entry
 
@@ -398,12 +399,15 @@ def _get_shifts_from_server(
     _exit_if_error_calculating_shifts(pdb_file_or_code, r)
 
     soup = BeautifulSoup(r.text, features="html.parser")
-    link = soup.find_all("a", href=True, string="download predictions")[0]["href"]
-    data_url = f"{ROOT_URL}/{link}"
-    data_r = requests.get(data_url)
-    text = data_r.text
+    shifts = ""
+    putative_links = soup.find_all("a", href=True, string="download predictions")
+    if putative_links:
+        link = putative_links[0]["href"]
+        data_url = f"{ROOT_URL}/{link}"
+        data_r = requests.get(data_url)
+        text = data_r.text
 
-    shifts = _parse_text_to_shifts(text, cli_chain_code, CGI_URL)
+        shifts = _parse_text_to_shifts(text, cli_chain_code, CGI_URL)
 
     return shifts
 
@@ -502,9 +506,20 @@ def _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose):
         """
         exit_error(msg)
 
-    # more validation needed here
     code_or_filename = code_or_filename.lower()
-    uniprot_id = next(iter(data[code_or_filename]["UniProt"].keys()))
+    uniprot_id = None
+    for putative_uniprot_id, mapping_element in data[code_or_filename][
+        "UniProt"
+    ].items():
+        for mapping in mapping_element["mappings"]:
+            if mapping["chain_id"] == source_chain:
+                uniprot_id = putative_uniprot_id
+                break
+
+    msg = _exit_error_if_pdb_to_uniprot_mapping_fails(
+        uniprot_id, code_or_filename, source_chain, data
+    )
+
     msg.append(f"{uniprot_id}->")
     chain_info = data[code_or_filename]["UniProt"][uniprot_id]
     first_mapping = next(iter(chain_info["mappings"]))
@@ -532,8 +547,9 @@ def _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose):
 
     if not ok:
         msg = f"""
-           failed to get uniprot structure using pdb code {code_or_filename}
-           is the network ok or could the pdb code be incorrect or for a structure not in the embl database?
+           failed to get alphafold structure using uniprot id {uniprot_id} mapped from pdb code {code_or_filename}
+           is for a structure not in the embl database [eg a virus] or is the network bad
+           or could the pdb code be incorrect?
            """
         exit_error(msg)
 
@@ -573,3 +589,46 @@ def _pdb_code_to_uniprot_id(code_or_filename, source_chain, verbose):
         print("".join(msg), alphafold_url)
 
     return file_path, pdb_uniprot_start, pdb_uniprot_length, pdb_start_residue
+
+
+def _exit_error_if_pdb_to_uniprot_mapping_fails(
+    uniprot_id, code_or_filename, source_chain, data
+):
+    if uniprot_id is None:
+        mapping_table = []
+        for putative_uniprot_id, mapping_element in data[code_or_filename][
+            "UniProt"
+        ].items():
+            for mapping in mapping_element["mappings"]:
+                mapping_table.append(
+                    (
+                        putative_uniprot_id,
+                        mapping["chain_id"],
+                        mapping["unp_start"],
+                        mapping["unp_end"],
+                    )
+                )
+                print(putative_uniprot_id, mapping_element)
+
+        headings = [
+            "uniprot id",
+            "chain code",
+            "sequence code start",
+            "sequence code end",
+        ]
+        mapping_table = tabulate(mapping_table, headers=headings)
+
+        msg = """
+            using pdb code {code_or_filename} and chain {source_chain} I couldn't find a mapping,
+            the available mappings are
+
+            {mapping_table}
+            """
+        msg = dedent(msg)
+        msg = msg.format(
+            code_or_filename=code_or_filename.upper(),
+            source_chain=source_chain,
+            mapping_table=mapping_table,
+        )
+        exit_error(msg)
+    return msg
