@@ -424,3 +424,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - attempt to connect to shiftx2 multiple times as it sometimes fails
 - correct a error where float values in a star file Saveframe which had already been parsed from a \
   str->float were getting narrowed unintentionally back to int
+
+## version 0.1.93
+- bug fixes in mars export of shifts and unassign
