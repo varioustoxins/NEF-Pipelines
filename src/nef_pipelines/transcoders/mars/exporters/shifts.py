@@ -135,6 +135,18 @@ def shifts(
         print(entry)
 
 
+def _assigned_shifts_filter_non_numeric_sequence_codes(assigned_shifts):
+    new_assigned_shifts = set()
+
+    for assigned_shift in assigned_shifts:
+        if not is_int(assigned_shift.atom.residue.sequence_code):
+            continue
+        else:
+            new_assigned_shifts.add(assigned_shift)
+
+    return new_assigned_shifts
+
+
 def pipe(
     entry: Entry,
     shift_frame_selectors: List[str],
@@ -154,6 +166,9 @@ def pipe(
 
     # TODO: filter shifts which have odd assignments
     # TODO: issue a warning if there are shifts which are not defined
+    assigned_shifts = _assigned_shifts_filter_non_numeric_sequence_codes(
+        assigned_shifts
+    )
 
     shift_chains = shifts_to_chains([*assigned_shifts, *unassigned_shifts])
 
