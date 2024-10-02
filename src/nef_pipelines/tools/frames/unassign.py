@@ -740,18 +740,19 @@ def _offset_sequence_codes_in_triple(frame, targets):
                     if is_int(sequence_code):
                         sequence_codes.add(int(sequence_code))
 
-            max_sequence_code = max(sequence_codes)
-            max_sequence_code_m1 = max_sequence_code - 1
+            if sequence_codes:
+                max_sequence_code = max(sequence_codes)
+                max_sequence_code_m1 = max_sequence_code - 1
 
-            for i in range(1, 16):
-                key = f"{'sequence_code'}_{i}"
-                if key in row:
-                    sequence_code = row[key]
-                    if is_int(sequence_code):
-                        sequence_code = int(sequence_code)
-                        if sequence_code == max_sequence_code_m1:
-                            sequence_code = f"{max_sequence_code}-1"
-                            row[key] = sequence_code
+                for i in range(1, 16):
+                    key = f"{'sequence_code'}_{i}"
+                    if key in row:
+                        sequence_code = row[key]
+                        if is_int(sequence_code):
+                            sequence_code = int(sequence_code)
+                            if sequence_code == max_sequence_code_m1:
+                                sequence_code = f"{max_sequence_code}-1"
+                                row[key] = sequence_code
 
 
 def _unoffset_sequence_codes_in_triple(frame, targets):
