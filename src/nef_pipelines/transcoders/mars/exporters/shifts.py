@@ -292,7 +292,7 @@ def _exit_on_sequence_and_shift_residue_name_mismatch(shifts, residue_name_looku
             frame_headers[0] = f"#{frame_headers[0]}"
             line_info = tabulate([frame_headers, frame_row], tablefmt="plain")
             msg = f"""
-                    error for atom {shift.atom.name} in chain {shift.atom.residue.chain_code}
+                    error for atom {shift.atom.atom_name} in chain {shift.atom.residue.chain_code}
                     the residue type in the sequence doesn't match residue type in shifts
 
                     sequence residue name {sequence_residue_name}
