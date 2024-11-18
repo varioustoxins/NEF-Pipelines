@@ -419,40 +419,40 @@ def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namesp
 # TODO this partially overlaps with select_frames_by_name in this file, combine and simplify!
 def select_frames(
     entry: Entry,
-    filters: Union[str, List[str]],
+    predicate: Union[str, List[str]],
     selector_type: SelectionType = SelectionType.ANY,
 ) -> List[Saveframe]:
     """
-    select a list of frames by name of either category or name
+    select a list of frames by name of either category or name, if no predicates are provided all frames are selected
 
     :param entry: the entry in which frames are looked for
-    :param filters: a string or list of strings to use as filters as defined by fnmatch
+    :param predicate: a string or list of strings to use as filters as defined by fnmatch
     :param selector_type: the matching type frame.name or frame.category or both [default, search order
            frame.name frame.category]
     :return: a list of selected saveframes
     """
 
-    if isinstance(filters, str):
-        filters = [
-            filters,
+    if isinstance(predicate, str):
+        predicate = [
+            predicate,
         ]
-    if not filters:
-        filters = ["*"]
+    if not predicate:
+        predicate = ["*"]
 
-    star_filters = [f"*{filter}*" for filter in filters]
-    filters = list(filters)
-    filters.extend(star_filters)
+    star_filters = [f"*{filter}*" for filter in predicate]
+    predicate = list(predicate)
+    predicate.extend(star_filters)
 
     result = {}
     for frame in entry.frame_dict.values():
 
         if frame.category is not None:
             accept_frame_category = any(
-                [fnmatch(frame.category, filter) for filter in filters]
+                [fnmatch(frame.category, filter) for filter in predicate]
             )
         else:
             accept_frame_category = False
-        accept_frame_name = any([fnmatch(frame.name, filter) for filter in filters])
+        accept_frame_name = any([fnmatch(frame.name, filter) for filter in predicate])
 
         if (
             selector_type in (SelectionType.NAME, SelectionType.ANY)
