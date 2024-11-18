@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from typing import Iterable, List
 
+# TODO: better support for assigned residues, improved handling of chains
 import typer
 
 from nef_pipelines.lib.nef_lib import (
