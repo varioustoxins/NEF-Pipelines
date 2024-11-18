@@ -382,7 +382,8 @@ def _split_pseudo_residue(pseudo_residue):
 def _exit_if_pseudo_residue_number_missing(
     pseudo_residue_number, pseudo_residue, line_info
 ):
-    if not is_int(pseudo_residue):
+
+    if not is_int(pseudo_residue_number):
         msg = f"""
             At line {line_info.line} in the file {line_info.file_name} the pseudo residue should include a number,
             I got {pseudo_residue_number} from the {pseudo_residue} which should have the format {PSEUDO_RESIDUE_FORMAT}
