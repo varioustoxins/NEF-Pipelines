@@ -50,44 +50,6 @@ CHAIN_CODE = "chain_code"
 SEQUENCE_CODE = "sequence_code"
 
 
-# noinspection PyUnusedLocal
-def _parse_target_chains_and_reference_frames_or_exit_error(
-    reference_chains_and_frames, entry, reference_selector_type
-):
-
-    sequences = sequences_from_frames(entry.frame_list)
-    chains = set(sequence_to_chains(sequences))
-
-    chains = set()
-    frames = set()
-
-    if not reference_chains_and_frames:
-        chains = "A"
-        frames = select_frames(entry, NEF_MOLECULAR_SYSTEM, SelectionType.CATEGORY)
-    else:
-        for elem in reference_chains_and_frames:
-
-            if elem.startswith("#"):
-                chain = elem.lstrip("#")
-                if chain not in chains:
-                    msg = f"""
-                        when selecting chains to align to, the chain {chain} is not in the chains in the read frames
-                        {', '.join(sorted(chains))}
-                        """
-                    exit_error(msg)
-                chains.add(elem)
-                continue
-            elif elem in chains:
-                chains.add(elem)
-                continue
-
-            frames.update(select_frames(entry, elem, reference_selector_type))
-
-    chains = sorted(chains)
-
-    return chains, frames  # chains = chains_from_entry(entry)
-
-
 @dataclass
 class Sequence:
     chain_code: str
@@ -612,3 +574,45 @@ def _tag_based_on(tag, base, substitute):
 
 def _tag_is_based_on(tag, base):
     return tag.startswith(base)
+
+
+# noinspection PyUnusedLocal
+def _parse_target_chains_and_reference_frames_or_exit_error(
+    reference_chains_and_frames, entry, reference_selector_type
+):
+
+    sequences = sequences_from_frames(entry.frame_list)
+    chains = set(sequence_to_chains(sequences))
+
+    chains = set()
+    frames = {}
+
+    if not reference_chains_and_frames:
+        selected_frames = select_frames(
+            entry, NEF_MOLECULAR_SYSTEM, SelectionType.CATEGORY
+        )
+        frames = {frame.name: frame for frame in selected_frames}
+        chains = chains_from_frames(frames.values())
+    else:
+        for elem in reference_chains_and_frames:
+
+            if elem.startswith("#"):
+                chain = elem.lstrip("#")
+                if chain not in chains:
+                    msg = f"""
+                        when selecting chains to align to, the chain {chain} is not in the chains in the read frames
+                        {', '.join(sorted(chains))}
+                        """
+                    exit_error(msg)
+                chains.add(elem)
+                continue
+            elif elem in chains:
+                chains.add(elem)
+                continue
+
+            for frame in select_frames(entry, elem, reference_selector_type):
+                frames[frame.name] = frame
+
+    chains = sorted(chains)
+
+    return chains, frames.values()  # chains = chains_from_entry(entry)
