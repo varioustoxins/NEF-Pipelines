@@ -42,7 +42,7 @@ N = "N"
 HA = "HA"
 CA = "CA"
 CB = "CB"
-C = "C"
+C = "CO"
 
 EXPECTED_HEADINGS = {H, N, HA, CA, f"{CA}-1", CB, f"{CB}-1", C, f"{C}-1"}
 
