@@ -35,7 +35,7 @@ from nef_pipelines.lib.util import (
 from nef_pipelines.transcoders.mars import import_app
 
 DEFAULT_PSEUDO_RESIDUE_PREFIX = "PR_"
-SEPARATORS = ["_", "-"]
+SEPARATORS = "_-"
 
 PSEUDO_RESIDUE = "PSEUDO_RESIDUE"
 
@@ -367,9 +367,14 @@ def _warn_multiple_residues(residue_names, line_info):
 
 def _split_pseudo_residue(pseudo_residue):
     first_characters = _get_starting_alpha(pseudo_residue)
+
+    first_characters = first_characters.rstrip(SEPARATORS)
+
     pseudo_residue = _removeprefix(pseudo_residue, first_characters)
     numbers = get_starting_number(pseudo_residue)
+
     last_characters = _removeprefix(pseudo_residue, numbers)
+    last_characters = last_characters.lstrip(SEPARATORS)
 
     return first_characters, numbers, last_characters
 
