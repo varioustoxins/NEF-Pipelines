@@ -35,6 +35,7 @@ from nef_pipelines.lib.util import (
 from nef_pipelines.transcoders.mars import import_app
 
 DEFAULT_PSEUDO_RESIDUE_PREFIX = "PR_"
+SEPARATORS = ["_", "-"]
 
 PSEUDO_RESIDUE = "PSEUDO_RESIDUE"
 
@@ -440,7 +441,7 @@ def line_to_headings(line):
 def _get_starting_alpha(group):
     result = []
     for char in group:
-        if char.isalpha():
+        if char.isalpha() or char in SEPARATORS:
             result.append(char)
         else:
             break
