@@ -589,6 +589,7 @@ def _pdb_code_to_alphafold_pdb_file(code_or_filename, source_chain, verbose):
 
     _exit_if_pdb_download_bad(pdb_file_data)
 
+    # TODO: why does this corrupt a NEF stream i printed to stdout rather than stderr...
     if verbose:
         print(
             "".join(msg),
