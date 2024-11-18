@@ -117,7 +117,15 @@ def shifts(
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
-    pipe(entry, chain_codes, frame_name, file_names, prefix_to_strip, parse_residues)
+    pipe(
+        entry,
+        chain_codes,
+        frame_name,
+        file_names,
+        prefix_to_strip,
+        parse_residues,
+        treat_as_unassigned,
+    )
 
 
 def pipe(
