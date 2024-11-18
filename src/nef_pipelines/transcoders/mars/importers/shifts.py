@@ -44,7 +44,7 @@ CA = "CA"
 CB = "CB"
 C = "CO"
 
-EXPECTED_HEADINGS = {H, N, HA, CA, f"{CA}-1", CB, f"{CB}-1", C, f"{C}-1"}
+EXPECTED_HEADINGS = {H, N, HA, CA, f"{CA}-1", CB, f"{CB}-1", C, f"{C}-1", f"{HA}-1"}
 
 MARS_UNDEFINED = "-"
 app = typer.Typer()
