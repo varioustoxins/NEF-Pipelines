@@ -427,7 +427,7 @@ def _exit_if_bad_header(line_info):
     if not set(headings).issubset(EXPECTED_HEADINGS):
         msg = f"""\
                     the file {line_info.file_name} doesn't look like a sparky file"
-                    line 1 should contain the the standard sparky heading:
+                    line 1 should contain the standard sparky heading:
 
                     {' '.join(EXPECTED_HEADINGS)}
 
