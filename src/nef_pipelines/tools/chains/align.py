@@ -225,7 +225,13 @@ def align(
                 entry,
                 target_frame_name,
                 SelectionType.NAME,
-                {target_chain: -target_sequence.start + offset + 1},
+                {
+                    target_chain: reference_sequence.start
+                    - 1
+                    - target_sequence.start
+                    + offset
+                    + 1
+                },
             )
 
     print(entry)
