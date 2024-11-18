@@ -594,6 +594,7 @@ def _pdb_code_to_alphafold_pdb_file(code_or_filename, source_chain, verbose):
         print(
             "".join(msg),
             f"[{ALPHA_FOLD_URL_TEMPLATE.format(uniprot_id=mapping.uniprot_id, alphafold_key=ALPHA_FOLD_KEY)}]",
+            file=sys.stderr,
         )
 
     return pdb_file_data
