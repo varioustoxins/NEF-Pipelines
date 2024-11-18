@@ -94,6 +94,11 @@ def shifts(
         "--parse-residues",
         help=RECOGNISE_RESIDUES_HELP,
     ),
+    treat_as_unassigned: bool = typer.Option(
+        False,
+        "--unassigned",
+        help="treat all shifts as unassigned shifts",
+    ),
     input: Path = typer.Option(
         STDIN,
         "-i",
@@ -121,6 +126,7 @@ def pipe(
     file_names,
     prefix_to_strip=DEFAULT_PSEUDO_RESIDUE_PREFIX,
     parse_residues=True,
+    treat_as_unassigned=False,
 ):
 
     sparky_frames = []
@@ -136,6 +142,7 @@ def pipe(
                 file_name=file_name,
                 prefix_to_strip=prefix_to_strip,
                 parse_residues=parse_residues,
+                treat_as_unassigned=treat_as_unassigned,
             )
 
             frame = shifts_to_nef_frame(sparky_shifts, frame_name)
@@ -187,6 +194,7 @@ def _parse_shifts(
     file_name="unknown",
     prefix_to_strip=DEFAULT_PSEUDO_RESIDUE_PREFIX,
     parse_residues=True,
+    treat_as_unassigned=False,
 ) -> ShiftList:
 
     heading_indices = {}
@@ -207,7 +215,12 @@ def _parse_shifts(
             continue
         else:
             shifts = _parse_line(
-                line_info, heading_indices, chain_code, prefix_to_strip, parse_residues
+                line_info,
+                heading_indices,
+                chain_code,
+                prefix_to_strip,
+                parse_residues,
+                treat_as_unassigned,
             )
 
             read_shifts.extend(shifts)
@@ -251,7 +264,12 @@ def _removesuffix(target: str, suffix: str) -> str:
 
 
 def _parse_line(
-    line_info, heading_indices, chain_code, prefix_to_strip, parse_residues
+    line_info,
+    heading_indices,
+    chain_code,
+    prefix_to_strip,
+    parse_residues,
+    treat_as_unassigned,
 ):
     results = []
 
@@ -288,11 +306,23 @@ def _parse_line(
                 residue_name = UNUSED if not residue_names else residue_names[0]
                 atom_name, offset = _split_heading(heading)
 
-                residue = SequenceResidue(
-                    chain_code=f"@{chain_code}",
-                    sequence_code=f"@{pseudo_residue}{offset}",
-                    residue_name=residue_name,
-                )
+                if pseudo_residue.startswith("AR_") and not treat_as_unassigned:
+                    if offset == "":
+                        residue = SequenceResidue(
+                            chain_code=chain_code,
+                            sequence_code=pseudo_residue_number,
+                            residue_name=residue_name,
+                        )
+                    else:
+                        continue
+                else:
+                    if treat_as_unassigned:
+                        chain_code = "-"
+                    residue = SequenceResidue(
+                        chain_code=f"@{chain_code}",
+                        sequence_code=f"@{pseudo_residue_number}{offset}",
+                        residue_name=UNUSED,
+                    )
                 atom = AtomLabel(residue, atom_name=atom_name)
 
                 shift = ShiftData(atom=atom, value=value)
