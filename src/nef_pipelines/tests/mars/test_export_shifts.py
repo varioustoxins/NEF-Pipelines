@@ -44,3 +44,24 @@ def test_export_shifts_pete_co():
     """
 
     assert_lines_match(result.stdout, EXPECTED, squash_spaces=True)
+
+
+def test_export_shifts_david_bad_residue_name():
+
+    input = read_test_data("sec5_short_bad_res_name.neff", __file__)
+
+    result = run_and_report(
+        app, "--out -".split(), input=input, expected_exit_code=1
+    )  # , separate_stderr=True)
+
+    # TODO: this should check in stderr not stdout but see note in test_lib: its currently not possible to capture
+    # the stdout and stderr streams separately
+    EXPECTED_ERROR_STRINGS = [
+        "error for atom H in chain A",
+        "the residue type in the sequence doesn't match residue type in shifts",
+        "sequence residue name .",
+        "frame name nef_chemical_shift_list_default",
+        "row number 27",
+    ]
+    for error_string in EXPECTED_ERROR_STRINGS:
+        assert error_string in result.stdout
