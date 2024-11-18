@@ -1,0 +1,67 @@
+data_garyt
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+
+         1   A   1   GLY   start    .   .
+         2   A   2   ALA   middle   .   .
+         3   A   3   ARG   middle   .   .
+         4   A   4   TYR   middle   .   .
+         5   A   5   THR   end      .   .
+
+       stop_
+    save_
+
+    save_nef_chemical_shift_list_default
+
+      _nef_chemical_shift_list.sf_category               nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
+      _nef_chemical_shift_list.ccpn_serial   1
+      _nef_chemical_shift_list.ccpn_auto_update  true
+      _nef_chemical_shift_list.ccpn_is_simulated  false
+      _nef_chemical_shift_list.ccpn_comment  .
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.value_uncertainty
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+         _nef_chemical_shift.ccpn_figure_of_merit
+         _nef_chemical_shift.ccpn_comment
+
+         A    1       GLY     CA     59.2910981   0.06838093507    C  13  1  .
+         A    1       GLY     CA     61.15890745  0.04984668485    C  13  1  .
+         A    1       GLY     H      8.594157925  0.004001007677   H  1   1  .
+         A    1       GLY     N      133.2518548  0.00350665307    N  15  1  .
+         A    2       ALA     CA     60.73499003  0.1470013689     C  13  1  .
+         A    2       ALA     CB     39.79234525  0                C  13  1  .
+         A    2       ALA     H      9.670664987  0.003198271597   H  1   1  .
+         A    2       ALA     N      130.697831   0.03102873519    N  15  1  .
+         A    3       PHE     CA     53.74443738  0.01513105492    C  13  1  .
+         A    3       PHE     CB     43.20655536  0                C  13  1  .
+         A    3       PHE     H      8.185310831  0.003776189957   H  1   1  .
+         A    3       PHE     N      128.8944946  0.02744609442    N  15  1  .
+         A    4       TYR     CA     56.29161719  0.04898685757    C  13  1  .
+         A    4       TYR     CB     32.96392503  0                C  13  1  .
+         A    4       TYR     H      8.548229108  0.003464407895   H  1   1  .
+         A    4       TYR     N      128.0897373  0.04592203519    N  15  1  .
+         A    5       THR     CA     57.29161719  0.04898685757    C  13  1  .
+         A    5       THR     CB     33.96392503  0                C  13  1  .
+         A    5       THR     H      9.548229108  0.003464407895   H  1   1  .
+         A    5       THR     N      129.0897373  0.04592203519    N  15  1  .
+
+      stop_
+   save_

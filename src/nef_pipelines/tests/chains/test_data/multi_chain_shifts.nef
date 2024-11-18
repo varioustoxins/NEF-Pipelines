@@ -24,30 +24,3 @@ data_test
 
        stop_
     save_
-
-      save_ccpn_residue_assignments_test
-         _ccpn_residue_assignments_test.sf_category                      ccpn_residue_assignments
-         _ccpn_residue_assignments_test.sf_frame_code                    ccpn_residue_assignments_test
-         _ccpn_residue_assignments_test.ccpn_assignment_program          mars
-         _ccpn_residue_assignments_test.ccpn_assignment_program_version  .
-         _ccpn_residue_assignments_test.ccpn_assignment_source           .
-
-
-        loop_
-           _ccpn_residue_assignments_test.serial
-           _ccpn_residue_assignments_test.chain_code
-           _ccpn_residue_assignments_test.residue_number
-           _ccpn_residue_assignments_test.residue_type
-           _ccpn_residue_assignments_test.assignment_serial
-           _ccpn_residue_assignments_test.assignment
-           _ccpn_residue_assignments_test.merit
-           _ccpn_residue_assignments_test.fixed
-
-           0    A   1    HIS   .    .     .      .
-           1    A   2    MET   0    30    0.2    False
-           1    A   2    MET   1    48    0.18   False
-           1    B   2    MET   2    50    0.13   False
-           1    B   2    MET   3    51    0.15   False
-           1    B   2    MET   4    56    0.15   False
-         stop_
-      save_
