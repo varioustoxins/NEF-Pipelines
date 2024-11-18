@@ -326,6 +326,7 @@ def run_and_report(
     args: List[str],
     input: IO[AnyStr] = None,
     expected_exit_code: int = 0,
+    # separate_stderr = False # see below
 ) -> Result:
     """
     run a typer app in the typer test harness and report exceptions and stdout to screen if there is an error
@@ -333,10 +334,14 @@ def run_and_report(
     :param args: command line arguments for the app
     :param input: an input stream if required
     :param expected_exit_code: what exit code to expect if the app is expected to end with an error
+    # :param separate_stderr: report STDERR in a separate stream  # see below
     :return: results object
     """
 
-    runner = CliRunner()
+    # TODO: mix_stderr appears to be being ignored in typers/clicks test_lib, add a ticket!
+    # my_mix_stderr = separate_stderr != True
+    runner = CliRunner()  # mix_stderr=my_mix_stderr)
+
     result = runner.invoke(typer_app, args, input=input)
 
     if result.exit_code != expected_exit_code:
