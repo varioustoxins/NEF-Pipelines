@@ -58,6 +58,7 @@ NAME_TEMPLATE_HELP = """
 """
 
 
+# TODO: add a flag to list spectra and groups...
 @simulate_app.command()
 def peaks(
     shift_frame_selectors: List[str] = typer.Option(
