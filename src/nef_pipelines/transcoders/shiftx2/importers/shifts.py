@@ -214,9 +214,14 @@ def pipe(
         if pdb_file_info.pdb_uniprot_start > shiftx2_uniprot_start:
             start = pdb_file_info.pdb_uniprot_start
             run_trim = True
+        else:
+            start = shiftx2_uniprot_start
+
         if pdb_file_info.pdb_uniprot_start < shiftx2_uniprot_end:
             end = pdb_file_info.pdb_uniprot_end
             run_trim = True
+        else:
+            end = shiftx2_uniprot_end
 
         if run_trim:
             chain_bounds = [ChainBound(chain, start, end)]
