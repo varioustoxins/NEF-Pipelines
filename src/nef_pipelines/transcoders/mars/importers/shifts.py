@@ -435,7 +435,7 @@ def _exit_if_bad_header(line_info):
                     {line_info.line}
 
                     note: the heading maybe a subset of the headings and typically should include at least H and N
-                          and one of CA + CA-1, or CB + CB-1 or C + C-1
+                          and (typically) more than one of CA + CA-1, or CB + CB-1 or C + C-1
                 """
         exit_error(msg)
 
