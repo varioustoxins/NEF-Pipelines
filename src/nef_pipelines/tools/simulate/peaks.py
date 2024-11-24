@@ -214,7 +214,7 @@ def _make_spectrum(
         prefix = sequence_code[0] if sequence_code.startswith("@") else ""
         sequence_code = sequence_code.lstrip("@")
 
-        # TODO not sure this is the best way to do it, seperators are only relevant if the sequence code starts with @
+        # TODO not sure this is the best way to do it, separators are only relevant if the sequence code starts with @
         found_separator = False
         for separator in ["-", "+"]:
             if sequence_code.startswith(separator):
