@@ -9,7 +9,7 @@ if nef_app.app:
     nef_app.app.add_typer(
         peaks_app,
         name="peaks",
-        help="-  carry out operations on nef peaks",
+        help="- carry out operations on nef peaks",
     )
 
     # import of specific importers must be after app creation to avoid circular imports

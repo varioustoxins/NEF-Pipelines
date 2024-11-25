@@ -11,11 +11,11 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="nmrview",
-        help="-  read and write nmrview [peaks, sequences & shifts]",
+        help="- read and write nmrview [peaks, sequences & shifts]",
     )
 
     app.add_typer(
-        import_app, name="import", help="-  import nmrview [peaks, sequences & shifts]"
+        import_app, name="import", help="- import nmrview [peaks, sequences & shifts]"
     )
     app.add_typer(
         export_app, name="export", help="-  export nmrview [peaks, sequences & shifts]"

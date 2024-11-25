@@ -8,7 +8,7 @@ export_app = typer.Typer()
 
 if nef_app.app:
 
-    nef_app.app.add_typer(app, name="rpf", help="-  write rpf shifts")
+    nef_app.app.add_typer(app, name="rpf", help="- write rpf shifts")
 
     # app.add_typer(import_app, name="import", help="- import fasta sequences")
     app.add_typer(export_app, name="export", help="- export rpf shifts")

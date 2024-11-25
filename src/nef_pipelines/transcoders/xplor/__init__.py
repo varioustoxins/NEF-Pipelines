@@ -11,19 +11,19 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="xplor",
-        help="-  read xplor [sequences, dihedral & distance restraints]",
+        help="- read xplor [sequences, dihedral & distance restraints]",
     )
 
     app.add_typer(
         import_app,
         name="import",
-        help="-  import xplor [sequences, dihedral & distance restraints]",
+        help="- import xplor [sequences, dihedral & distance restraints]",
     )
 
     app.add_typer(
         export_app,
         name="export",
-        help="-  export xplor [rdcs]",
+        help="- export xplor [rdcs]",
     )
 
     # import of specific importers must be after app creation to avoid circular imports

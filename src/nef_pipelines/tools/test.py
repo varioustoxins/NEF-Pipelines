@@ -29,7 +29,7 @@ def test(
     # native_tracebacks: bool = typer.Option(False, '-n', '--native-tracebacks', help='use standard python tracebacks'),
     targets: List[str] = typer.Argument(None, help=TARGET_HELP),
 ):
-    """-  run the test suite"""
+    """- run the test suite"""
 
     from pytest import main
 

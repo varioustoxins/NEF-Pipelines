@@ -12,12 +12,10 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="talos",
-        help="-  read and write talos files [shifts & restraints]",
+        help="- read and write talos files [shifts & restraints]",
     )
 
-    app.add_typer(
-        import_app, name="import", help="-  import talos dihderal restraints "
-    )
+    app.add_typer(import_app, name="import", help="- import talos dihderal restraints ")
     app.add_typer(
         export_app, name="export", help="-  export talos [shifts (& sequence)]"
     )

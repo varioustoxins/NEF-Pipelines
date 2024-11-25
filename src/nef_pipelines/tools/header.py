@@ -13,7 +13,7 @@ from nef_pipelines.lib.util import get_version, script_name
 def header(
     name: str = typer.Argument("nef", help="name for the entry", metavar="<ENTRY-NAME>")
 ):
-    """-  add a header to the stream"""
+    """- add a header to the stream"""
     args = get_args()
 
     entry = build_meta_data(args)
