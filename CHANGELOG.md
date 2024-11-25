@@ -427,3 +427,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.93
 - bug fixes in mars export of shifts and unassign
+
+## version 0.1.94
+- bug fixes for frames align and mars export
+- add tests for frames align
