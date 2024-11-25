@@ -360,9 +360,15 @@ def peaks_to_frame(
             peak_data[POSITION__DIMENSION_INDEX.format(dimension_index=dim_index)] = (
                 shift.value
             )
+
+            # note ccpn [3.2.8] analysis currently doesn't accept 0.0 as an uncertainty, though later versions will
+            # this can be removed when that version is defunct!
+            uncertainty = shift.value_uncertainty
+            if is_int(uncertainty) and uncertainty == 0.0:
+                uncertainty = UNUSED
             peak_data[
                 POSITION_UNCERTAINTY__DIMENSION_INDEX.format(dimension_index=dim_index)
-            ] = shift.value_uncertainty
+            ] = uncertainty
 
             if have_comments:
                 peak_data[CCPN_COMMENT] = (
