@@ -1,10 +1,9 @@
-from enum import auto
 from pathlib import Path
 from typing import List
 
 import typer
+from lazy_import import lazy_module
 from pynmrstar import Entry, Saveframe
-from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import (
     NEF_PIPELINES_PREFIX,
@@ -21,21 +20,20 @@ from nef_pipelines.tools.fit.fit_lib import (
     _series_frame_to_id_series_data,
 )
 
-streamfitter_install_failure = None
+stream_fitter_module = lazy_module("streamfitter")
 try:
-    from streamfitter.fitter import ErrorPropogation, fitter
 
-    stream_fitter = fitter
+    from streamfitter.error_propogation import ErrorPropogation
 
-except ImportError as e:
-    streamfitter_intall_failure = e
+except ImportError:
 
-    # this is partial copy of the enum to avoid errors
+    from enum import StrEnum, auto
+
     class ErrorPropogation(StrEnum):
-        PROPOGATION = "error stream fitter package not installed"
-        ERROR_STREAM_FITTER_NOT_INSTALLED = auto()
+        PROPOGATION = auto()
+        JACKNIFE = auto()
+        BOOTSTRAP = auto()
 
-    stream_fitter = None
 
 NAMESPACE = NEF_PIPELINES_PREFIX
 
@@ -111,10 +109,13 @@ def pipe(
     seed: int,
 ) -> Entry:
 
-    if stream_fitter is None:
+    try:
+        fitter = stream_fitter_module.fitter
+    except ImportError as e:
+
         msg = f"""
                 error the package streamfitter is not installed or is not importing properly
-                the error was {streamfitter_intall_failure}
+                the error was {e}
             """
 
         exit_error(msg)
@@ -129,7 +130,7 @@ def pipe(
             for id, series_datum in id_series_data.items()
         }
 
-        results = stream_fitter(id_xy_data, error_method, cycles, noise_level, seed)
+        results = fitter(id_xy_data, error_method, cycles, noise_level, seed)
 
         fits = results["fits"]
         monte_carlo_errors = results["monte_carlo_errors"]
