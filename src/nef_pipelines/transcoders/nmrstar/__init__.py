@@ -19,6 +19,6 @@ if nef_app.app:
     )
 
     # import of specific importers must be after app creation to avoid circular imports
-    import nef_pipelines.transcoders.nmrstar.importers.project  # noqa: F401
+    import nef_pipelines.transcoders.nmrstar.importers.project_cli  # noqa: F401
     import nef_pipelines.transcoders.nmrstar.importers.sequence  # noqa: F401
     import nef_pipelines.transcoders.nmrstar.importers.shifts  # noqa: F401
