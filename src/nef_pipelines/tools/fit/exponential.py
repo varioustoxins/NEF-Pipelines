@@ -26,8 +26,9 @@ try:
     from streamfitter.error_propogation import ErrorPropogation
 
 except ImportError:
+    from enum import auto
 
-    from enum import StrEnum, auto
+    from strenum import StrEnum
 
     class ErrorPropogation(StrEnum):
         PROPOGATION = auto()
