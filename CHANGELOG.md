@@ -431,3 +431,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 ## version 0.1.94
 - bug fixes for frames align and mars export
 - add tests for frames align
+
+## version 0.1.95
+- updated to pynmrstar 3.3.3 to avoid problems building pytnmrstar.cnmrstar
+- installation now possible with uv tool including centos 7
+- added lazy loading of some module to improve startup times
