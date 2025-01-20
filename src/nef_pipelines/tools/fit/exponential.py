@@ -2,7 +2,8 @@ from pathlib import Path
 from typing import List
 
 import typer
-from lazy_import import lazy_module
+
+# from lazy_import import lazy_module
 from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.nef_lib import (
@@ -20,12 +21,11 @@ from nef_pipelines.tools.fit.fit_lib import (
     _series_frame_to_id_series_data,
 )
 
-stream_fitter_module = lazy_module("streamfitter")
 try:
 
     from streamfitter.error_propogation import ErrorPropogation
 
-except ImportError:
+except ImportError as e:
     from enum import auto
 
     from strenum import StrEnum
@@ -34,6 +34,9 @@ except ImportError:
         PROPOGATION = auto()
         JACKNIFE = auto()
         BOOTSTRAP = auto()
+
+    streamfitter = None
+    stream_fitter_import_error = str(e)
 
 
 NAMESPACE = NEF_PIPELINES_PREFIX
@@ -111,7 +114,10 @@ def pipe(
 ) -> Entry:
 
     try:
-        fitter = stream_fitter_module.fitter
+        if streamfitter:
+            fitter = streamfitter.fitter
+        else:
+            raise ImportError(stream_fitter_import_error)
     except ImportError as e:
 
         msg = f"""
