@@ -52,7 +52,7 @@ def exponential(
         ErrorPropogation.PROPOGATION,
         "-e",
         "--error-method",
-        help="error propogation method",
+        help="error propagation method",
     ),
     cycles: int = typer.Option(
         1000,
