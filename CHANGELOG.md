@@ -436,3 +436,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - updated to pynmrstar 3.3.3 to avoid problems building pytnmrstar.cnmrstar
 - installation now possible with uv tool including centos 7
 - added lazy loading of some module to improve startup times
+
+## version 0.1.96
+- back out lazy loading of exponential fit as the current strategy doesn't work
