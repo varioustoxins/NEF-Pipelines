@@ -439,3 +439,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.96
 - back out lazy loading of exponential fit as the current strategy doesn't work
+
+## version 0.1.97
+- add support for import of PALES output
+- about outputs to stdout not stderr
+- bug fixes in gdb [nmrpipe data file] reader
