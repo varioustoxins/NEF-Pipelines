@@ -5,7 +5,7 @@ from typing import List
 
 import typer
 from pynmrstar import Loop, Saveframe
-from strenum import StrEnum
+from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
     NEF_PIPELINES_PREFIX,
@@ -58,13 +58,13 @@ _PALES_RDCS_EXPECTED_FIELDS = (
 )
 
 
-class RestraintOrigin(StrEnum):
+class RestraintOrigin(LowercaseStrEnum):
     MEASURED = auto()
     PREDICTED = auto()
     BACK_CALCULATED = auto()
 
 
-class PalesDataType(StrEnum):
+class PalesDataType(LowercaseStrEnum):
     OBSERVED = auto()
     PREDICTED = auto()
     BACK_CALCULATED = auto()
