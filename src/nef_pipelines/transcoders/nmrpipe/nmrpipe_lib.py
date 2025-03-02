@@ -69,7 +69,7 @@ class DbFile:
 
 def _raise_data_before_format(line_info):
     msg = f"""\
-            this is a bad nmrpipe db file, a data line was seen before VAR and FORMAT
+            this is a bad nmrpipe db file, a data line was seen before VARS and FORMAT
             file: {line_info.file_name}'
             line no: {line_info.line_no}
             line: {line_info.line}
