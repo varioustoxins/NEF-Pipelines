@@ -521,7 +521,11 @@ def _get_axis_labels(gdb_file):
 
 
 def get_gdb_columns(gdb_file: DbFile) -> List[str]:
-    return select_records(gdb_file, VARS)[0].values
+    result = ()
+    raw_columns = select_records(gdb_file, VARS)
+    if raw_columns:
+        result = raw_columns[0].values
+    return result
 
 
 def check_is_peak_file(gdb_file):

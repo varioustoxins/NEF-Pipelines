@@ -381,6 +381,21 @@ def test_columns():
     )
 
 
+def test_columns_no_data():
+    TEST_DATA = """\
+                DATA SEQUENCE MQIFVKTLTG
+                """
+
+    TEST_DATA = dedent(TEST_DATA)
+
+    gdb_stream = io.StringIO(TEST_DATA)
+    gdb_records = read_db_file_records(gdb_stream)
+
+    columns = get_gdb_columns(gdb_records)
+
+    assert len(columns) == 0
+
+
 def test_column_indices():
     TEST_DATA = """\
                         DATA SEQUENCE MQIFVKTLTG KTITLEVEPS DTIENVKAKI QDKEGIPPDQ QRLIFAGKQL
