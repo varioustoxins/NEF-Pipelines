@@ -1,0 +1,43 @@
+data_pales
+
+save_nef_rdc_restraint_list_anA_observed
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_anA_observed
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.restraint_origin  measured
+
+save_
+
+save_nef_rdc_restraint_list_anA_predicted
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_anA_predicted
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.magnitude         0.001
+   _nef_rdc_restraint_list.rhombicity        0.0001
+   _nef_rdc_restraint_list.restraint_origin  .
+   _nef_rdc_restraint_list.nefl_comment
+;
+simulation data:
+
+ACTION: sub
+C1: 1.000
+C2: 1.000
+;
+
+   loop_
+      _nefpls_tensor.index
+      _nefpls_tensor.ex_x
+      _nefpls_tensor.ex_y
+      _nefpls_tensor.ex_z
+      _nefpls_tensor.ey_x
+      _nefpls_tensor.ey_y
+      _nefpls_tensor.ey_z
+      _nefpls_tensor.ez_x
+      _nefpls_tensor.ez_y
+      _nefpls_tensor.ez_z
+
+     1   0.86424   -0.10027   0.49298   -0.48248   0.11233   0.86868   0.14248   0.9886   -0.048707
+
+   stop_
+
+save_

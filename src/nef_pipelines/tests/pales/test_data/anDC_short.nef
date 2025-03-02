@@ -1,0 +1,67 @@
+data_pales
+
+save_nef_rdc_restraint_list_anDC_short_observed
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_anDC_short_observed
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.restraint_origin  measured
+
+   loop_
+      _nef_rdc_restraint.index
+      _nef_rdc_restraint.restraint_id
+      _nef_rdc_restraint.chain_code_1
+      _nef_rdc_restraint.sequence_code_1
+      _nef_rdc_restraint.residue_name_1
+      _nef_rdc_restraint.atom_name_1
+      _nef_rdc_restraint.chain_code_2
+      _nef_rdc_restraint.sequence_code_2
+      _nef_rdc_restraint.residue_name_2
+      _nef_rdc_restraint.atom_name_2
+      _nef_rdc_restraint.target_value
+      _nef_rdc_restraint.target_value_uncertainty
+      _nef_rdc_restraint.scale
+
+     1   1   A   20   ALA   HN   A   20   ALA   N   4.173    .   1.0
+     2   2   A   21   VAL   HN   A   21   VAL   N   4.799    .   1.0
+     3   3   A   22   ASP   HN   A   22   ASP   N   -4.294   .   1.0
+
+   stop_
+
+save_
+
+save_nef_rdc_restraint_list_anDC_short_predicted
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_anDC_short_predicted
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.restraint_origin  .
+   _nef_rdc_restraint_list.nefl_comment
+;
+simulation data:
+
+ACTION: add
+C1: 0.000
+C2: 1.000
+;
+
+   loop_
+      _nef_rdc_restraint.index
+      _nef_rdc_restraint.restraint_id
+      _nef_rdc_restraint.chain_code_1
+      _nef_rdc_restraint.sequence_code_1
+      _nef_rdc_restraint.residue_name_1
+      _nef_rdc_restraint.atom_name_1
+      _nef_rdc_restraint.chain_code_2
+      _nef_rdc_restraint.sequence_code_2
+      _nef_rdc_restraint.residue_name_2
+      _nef_rdc_restraint.atom_name_2
+      _nef_rdc_restraint.target_value
+      _nef_rdc_restraint.target_value_uncertainty
+      _nef_rdc_restraint.scale
+
+     1   1   A   20   ALA   HN   A   20   ALA   N   4.173    1.0   1.0
+     2   2   A   21   VAL   HN   A   21   VAL   N   4.799    1.0   1.0
+     3   3   A   22   ASP   HN   A   22   ASP   N   -4.294   1.0   1.0
+
+   stop_
+
+save_

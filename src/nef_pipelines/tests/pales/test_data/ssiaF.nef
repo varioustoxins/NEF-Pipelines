@@ -1,0 +1,42 @@
+data_pales
+
+save_nef_rdc_restraint_list_ssiaF_predicted
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_ssiaF_predicted
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.magnitude         0.001
+   _nef_rdc_restraint_list.rhombicity        0.0001
+   _nef_rdc_restraint_list.restraint_origin  predicted
+   _nef_rdc_restraint_list.nefl_comment
+;
+simulation data:
+
+LC_TYPE: wall
+LC_CONCENTRATION: 0.030
+ORIENT_SPHERE: 133
+ORIENT_PSI: 23
+GRID_SPACING: 0.300
+MODEL_RADIUS: 33.000
+LC_ORDER: 0.830
+ATOM_RADIUS: 0.300
+SEL_SIMPLE_FLAG: 1
+SURF_FLAG: 0
+;
+
+   loop_
+      _nefpls_tensor.index
+      _nefpls_tensor.ex_x
+      _nefpls_tensor.ex_y
+      _nefpls_tensor.ex_z
+      _nefpls_tensor.ey_x
+      _nefpls_tensor.ey_y
+      _nefpls_tensor.ey_z
+      _nefpls_tensor.ez_x
+      _nefpls_tensor.ez_y
+      _nefpls_tensor.ez_z
+
+     1   0.044681   0.73068   0.68126   0.8535   0.32648   -0.40614   -0.51917   0.5996   -0.60905
+
+   stop_
+
+save_

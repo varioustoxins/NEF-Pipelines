@@ -1,0 +1,63 @@
+data_pales
+
+save_nef_rdc_restraint_list_ssia_short_predicted
+   _nef_rdc_restraint_list.sf_category       nef_rdc_restraint_list
+   _nef_rdc_restraint_list.sf_framecode      nef_rdc_restraint_list_ssia_short_predicted
+   _nef_rdc_restraint_list.potential_type    .
+   _nef_rdc_restraint_list.magnitude         -0.0004124083
+   _nef_rdc_restraint_list.rhombicity        -6.901216e-05
+   _nef_rdc_restraint_list.restraint_origin  predicted
+   _nef_rdc_restraint_list.nefl_comment
+;
+simulation data:
+
+LC_TYPE: wall
+LC_CONCENTRATION: 0.050
+ORIENT_SPHERE: 100
+ORIENT_PSI: 18
+GRID_SPACING: 0.200
+MODEL_RADIUS: 20.000
+LC_ORDER: 0.800
+ATOM_RADIUS: 0.000
+SEL_SIMPLE_FLAG: 0
+SURF_FLAG: 1
+;
+
+   loop_
+      _nef_rdc_restraint.index
+      _nef_rdc_restraint.restraint_id
+      _nef_rdc_restraint.chain_code_1
+      _nef_rdc_restraint.sequence_code_1
+      _nef_rdc_restraint.residue_name_1
+      _nef_rdc_restraint.atom_name_1
+      _nef_rdc_restraint.chain_code_2
+      _nef_rdc_restraint.sequence_code_2
+      _nef_rdc_restraint.residue_name_2
+      _nef_rdc_restraint.atom_name_2
+      _nef_rdc_restraint.target_value
+      _nef_rdc_restraint.target_value_uncertainty
+      _nef_rdc_restraint.scale
+
+     1   1   A   2   THR   HN   A   2   THR   N   0.0857   1.0   1.0
+     2   2   A   3   TYR   HN   A   3   TYR   N   7.834    1.0   1.0
+     3   3   A   4   LYS   HN   A   4   LYS   N   7.3118   1.0   1.0
+
+   stop_
+
+   loop_
+      _nefpls_tensor.index
+      _nefpls_tensor.ex_x
+      _nefpls_tensor.ex_y
+      _nefpls_tensor.ex_z
+      _nefpls_tensor.ey_x
+      _nefpls_tensor.ey_y
+      _nefpls_tensor.ey_z
+      _nefpls_tensor.ez_x
+      _nefpls_tensor.ez_y
+      _nefpls_tensor.ez_z
+
+     1   0.12036   0.76741   0.62976   0.85264   0.245   -0.4615   -0.50845   0.5925   -0.62483
+
+   stop_
+
+save_

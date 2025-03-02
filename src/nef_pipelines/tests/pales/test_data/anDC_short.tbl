@@ -1,0 +1,33 @@
+REMARK Molecular Alignment Simulation.
+
+REMARK Simulation parameters.
+
+DATA PALES_MODE DC_CP
+
+DATA PALES ACTION    add
+DATA PALES C1      0.000
+DATA PALES C2      1.000
+
+
+REMARK Order matrix.
+
+DATA SAUPE   0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00  0.0000e+00
+
+
+REMARK Dipolar couplings.
+
+DATA N                    17
+DATA RMS                  0.000
+DATA Chi2                 0.000
+DATA CORR R               1.000
+DATA CORNILESCU Q         0.000
+DATA REGRESSION OFFSET    -0.000 +/- 0.000 [Hz]
+DATA REGRESSION SLOPE     1.000 +/- 0.000 [Hz]
+DATA REGRESSION BAX SLOPE 1.000 +/- 0.000 [Hz]
+
+VARS    RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J DI D_OBS D D_DIFF DD W
+FORMAT  %4d %4s %4s %4d %4s %4s %9.2f %9.3f %9.3f %9.3f %.2f %.2f
+
+   20  ALA   HN   20  ALA    N      0.00    4.1730    4.1730    0.0000  1.0000 1.00
+   21  VAL   HN   21  VAL    N      0.00    4.7990    4.7990    0.0000  1.0000 1.00
+   22  ASP   HN   22  ASP    N      0.00   -4.2940   -4.2940    0.0000  1.0000 1.00

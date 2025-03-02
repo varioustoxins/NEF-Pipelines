@@ -1,6 +1,7 @@
+import math
 from dataclasses import dataclass, field
 from enum import auto
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, TypeAlias, Union
 
 from strenum import LowercaseStrEnum, StrEnum
 
@@ -21,7 +22,7 @@ class SequenceResidue: ...  # noqa: E701
 class Residue: ...  # noqa: E701
 
 
-# something like this migh be nice
+# something like this might be nice
 # but we would need updates...
 # class ResidueAssignmentState(StrEnum):
 #     UNASSIGNED = auto()
@@ -297,6 +298,29 @@ class DiffusionModel(StrEnum):
     SPHEROID_PROLATE = auto()
     SPHEROID_OBLATE = auto()
     ELLIPSOID = auto()
+
+
+Vector3D: TypeAlias = Tuple[float, float, float]
+
+
+@dataclass(frozen=True)
+class RdcTensorFrameData:
+    da: float
+    dr: float
+
+    eigen_vector_x: Vector3D
+    eigen_vector_y: Vector3D
+    eigen_vector_z: Vector3D
+
+    def is_defined(self):
+        da_ok = not math.isnan(self.da)
+        dr_ok = not math.isnan(self.dr)
+        eigen_x_ok = not any(math.isnan(elem) for elem in self.eigen_vector_x)
+        eigen_y_ok = not any(math.isnan(elem) for elem in self.eigen_vector_y)
+        eigen_z_ok = not any(math.isnan(elem) for elem in self.eigen_vector_z)
+        eigen_ok = eigen_x_ok and eigen_y_ok and eigen_z_ok
+
+        return da_ok and dr_ok and eigen_ok
 
 
 @dataclass(frozen=True)
