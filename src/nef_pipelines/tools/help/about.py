@@ -24,7 +24,7 @@ def about(
 ):
     "- info about this NEF-Pipelines installation"
 
-    print(cmd(version, verbose), file=sys.stderr)
+    print(cmd(version, verbose))
 
 
 def cmd(version, verbose=False):
