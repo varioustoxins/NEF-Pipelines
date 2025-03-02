@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass, field
 from enum import auto
-from typing import Dict, List, Optional, Tuple, TypeAlias, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from strenum import LowercaseStrEnum, StrEnum
 
@@ -300,7 +300,11 @@ class DiffusionModel(StrEnum):
     ELLIPSOID = auto()
 
 
-Vector3D: TypeAlias = Tuple[float, float, float]
+# when we get beyond 3.9 support this should change to
+# Vector3D: TypeAlias = Tuple[float, float, float]
+# and when we get beyon 3.11 support this should change to
+# type Vector3D = Tuple[float, float, float]
+Vector3D = Tuple[float, float, float]
 
 
 @dataclass(frozen=True)
