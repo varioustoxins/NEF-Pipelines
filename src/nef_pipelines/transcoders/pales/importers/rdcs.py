@@ -112,36 +112,6 @@ def rdcs(
     print(entry)
 
 
-def _parse_pales_simulation_data(db_records):
-    simulation_data = {}
-    for db_record in select_data_records(db_records, "PALES"):
-        simulation_data[db_record.values[1]] = " ".join(db_record.values[2:])
-    return simulation_data
-
-
-def _add_data_origin_to_frame(nef_rdc_frame, data_origin):
-    nef_rdc_frame.add_tag("restraint_origin", data_origin)
-    return nef_rdc_frame
-
-
-def _add_da_and_dr_to_frame(nef_rdc_frame, tensor_data):
-    if tensor_data.is_defined():
-        nef_rdc_frame.add_tag("magnitude", tensor_data.da)
-        nef_rdc_frame.add_tag("rhombicity", tensor_data.dr)
-    return nef_rdc_frame
-
-
-def _add_simulation_data_to_frame(nef_rdc_frame, simulation_data):
-    if simulation_data:
-        simulation_data_string = "\n".join(
-            [f"{key}: {value}" for key, value in simulation_data.items()]
-        )
-        simulation_data_string = f"simulation data:\n\n{simulation_data_string}"
-
-        nef_rdc_frame.add_tag("nefl_comment", simulation_data_string)
-    return nef_rdc_frame
-
-
 def pipe(entry, pales_input_files, chain_codes, frame_name_template):
 
     for file_path, chain_code in zip(pales_input_files, chain_codes):
@@ -180,6 +150,36 @@ def pipe(entry, pales_input_files, chain_codes, frame_name_template):
         entry.add_saveframe(nef_calculated_rdc_frame)
 
     return entry
+
+
+def _parse_pales_simulation_data(db_records):
+    simulation_data = {}
+    for db_record in select_data_records(db_records, "PALES"):
+        simulation_data[db_record.values[1]] = " ".join(db_record.values[2:])
+    return simulation_data
+
+
+def _add_data_origin_to_frame(nef_rdc_frame, data_origin):
+    nef_rdc_frame.add_tag("restraint_origin", data_origin)
+    return nef_rdc_frame
+
+
+def _add_da_and_dr_to_frame(nef_rdc_frame, tensor_data):
+    if tensor_data.is_defined():
+        nef_rdc_frame.add_tag("magnitude", tensor_data.da)
+        nef_rdc_frame.add_tag("rhombicity", tensor_data.dr)
+    return nef_rdc_frame
+
+
+def _add_simulation_data_to_frame(nef_rdc_frame, simulation_data):
+    if simulation_data:
+        simulation_data_string = "\n".join(
+            [f"{key}: {value}" for key, value in simulation_data.items()]
+        )
+        simulation_data_string = f"simulation data:\n\n{simulation_data_string}"
+
+        nef_rdc_frame.add_tag("nefl_comment", simulation_data_string)
+    return nef_rdc_frame
 
 
 def _make_frame_names(data_origin, file_path, frame_name_template):
