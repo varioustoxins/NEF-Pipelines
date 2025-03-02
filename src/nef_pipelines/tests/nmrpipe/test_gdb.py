@@ -279,7 +279,7 @@ def test_data_before_format():
     gdb_stream = io.StringIO(DATA_BEFORE_FORMAT)
 
     msgs = """\
-            bad nmrpipe db file, data seen before VAR and FORMAT
+            bad nmrpipe db file, a data line was seen before VARS and FORMAT
             file: unknown
             line no: 1
             line: 2    GLN
