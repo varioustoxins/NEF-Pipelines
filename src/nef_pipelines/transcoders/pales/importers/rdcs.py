@@ -1,10 +1,11 @@
 from collections import Counter
-from enum import StrEnum, auto
+from enum import auto
 from pathlib import Path
 from typing import List
 
 import typer
 from pynmrstar import Loop, Saveframe
+from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import (
     NEF_PIPELINES_PREFIX,
