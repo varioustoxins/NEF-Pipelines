@@ -444,3 +444,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - add support for import of PALES output
 - about outputs to stdout not stderr
 - bug fixes in gdb [nmrpipe data file] reader
+
+## version 0.1.98
+- fixed error in pales tensor frame parsing, older file versions were not being read
