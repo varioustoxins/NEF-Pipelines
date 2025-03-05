@@ -32,6 +32,7 @@ app.command()(rdcs)
         "ssiaC_short",
         "ssia_short",
         "svd_short",
+        "1AKI_pales_short",
     ],
 )
 def test_rdcs(test_name):

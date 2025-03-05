@@ -46,6 +46,8 @@ _CHAINS_HELP = """\
     be one chain per file if a single chain is provides for multiple files it is applied to all files
 """
 
+PALES_EIGENVECTOR_AXIS_LIST = "XAXIS YAXIS ZAXIS".split()
+
 app = typer.Typer()
 
 
@@ -336,10 +338,11 @@ def _parse_rdc_tensor(db_records):
     dr = float(raw_dr[0].values[1]) if raw_dr else FLOAT_NAN
 
     raw_eigen_vectors = select_data_records(db_records, "EIGENVECTORS")
+
     raw_eigen_vectors = {
         vector.values[1]: [float(elem) for elem in vector.values[2:]]
         for vector in raw_eigen_vectors
-        if len(vector.values) > 1
+        if len(vector.values) > 1 and vector.values[1] in PALES_EIGENVECTOR_AXIS_LIST
     }
 
     eigen_vectors = [

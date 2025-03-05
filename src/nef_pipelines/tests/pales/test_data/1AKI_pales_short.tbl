@@ -1,0 +1,85 @@
+REMARK Molecular Alignment Simulation.
+
+REMARK Simulation parameters.
+
+DATA PALES_MODE STERIC
+
+DATA PALES LC_TYPE             wall
+DATA PALES LC_CONCENTRATION    0.050
+DATA PALES ORIENT_SPHERE       100
+DATA PALES ORIENT_PSI          18
+DATA PALES GRID_SPACING        0.200
+DATA PALES MODEL_RADIUS        20.000
+DATA PALES LC_ORDER            0.800
+DATA PALES ATOM_RADIUS         0.000
+DATA PALES SEL_SIMPLE_FLAG     1
+DATA PALES SURF_FLAG           1
+
+
+REMARK Order matrix.
+
+DATA SAUPE_MATRIX     S(zz)       S(xx-yy)      S(xy)      S(xz)      S(yz)
+DATA SAUPE         5.1354e-04  5.5185e-04  7.9791e-04 -2.9475e-04  5.4580e-04
+
+DATA IRREDUCIBLE_REP    A0          A1R          A1I         A2R         A2I
+DATA IRREDUCIBLE     8.1413e-04  3.8153e-04  7.0649e-04  3.5716e-04 -1.0328e-03
+DATA IRREDUCIBLE GENERAL_MAGNITUDE   2.0834e-03
+
+
+REMARK Mapping of coordinates.
+
+DATA MAPPING_COOR   Szz_d(x)  Szz_d(y)  Syy_d(x)  Syy_d(y)  Sxx_d(x)  Sxx_d(y)
+DATA MAPPING        2.06135  -0.32616   0.61413   1.05357  -2.47736   0.38615
+DATA MAPPING INV   -0.91462   0.32616  -0.93931  -1.05357   0.43291  -0.38615
+
+
+REMARK Eigensystem & Euler angles for clockwise rotation about z, y', z''.
+
+DATA EIGENVALUES (Sxx_d,Syy_d,Szz_d)    5.5600e-04  7.5326e-04 -1.3093e-03
+DATA EIGENVECTORS          (x_coor      y_coor      z_coor)
+DATA EIGENVECTORS X_AXIS -8.2704e-01 -4.1732e-01  3.7662e-01
+DATA EIGENVECTORS Y_AXIS  1.5967e-01  4.6799e-01  8.6919e-01
+DATA EIGENVECTORS Z_AXIS -5.3899e-01  7.7899e-01 -3.2041e-01
+
+DATA Q_EULER_SOLUTIONS    ALPHA     BETA    GAMMA
+DATA Q_EULER_ANGLES  1    66.57   108.69    55.32
+DATA Q_EULER_ANGLES  2   246.57   108.69    55.32
+DATA Q_EULER_ANGLES  3   113.43    71.31   235.32
+DATA Q_EULER_ANGLES  4   293.43    71.31   235.32
+
+
+REMARK Euler angles (psi/theta/phi) for rotation about x, y, z.
+
+DATA EULER_SOLUTIONS 2
+DATA EULER_ANGLES  112.36   32.61  -10.93
+DATA EULER_ANGLES  -67.64  147.39  169.07
+
+DATA Da -6.546303e-04
+DATA Dr -6.575086e-05
+
+
+DATA Aa -1.309261e-03
+DATA Ar -1.315017e-04
+
+
+DATA Da_HN      -1.413033e+01
+DATA Rhombicity  1.004397e-01
+
+
+REMARK Dipolar couplings.
+
+DATA N                    126
+DATA RMS                  12.037
+DATA Chi2                 18256.539
+DATA CORR R               0.000
+DATA Q SAUPE              0.671
+DATA REGRESSION OFFSET    -nan +/- -nan [Hz]
+DATA REGRESSION SLOPE     -nan +/- -nan [Hz]
+DATA REGRESSION BAX SLOPE 0.000 +/- 0.000 [Hz]
+
+VARS    RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J DI D_OBS D D_DIFF DD W
+FORMAT  %4d %4s %4s %4d %4s %4s %9.2f %9.3f %9.3f %9.3f %.2f %.2f
+
+    2  VAL    H    2  VAL    N -21585.20    0.0000    6.2050   -6.2050  0.0000 1.00
+    3  PHE    H    3  PHE    N -21585.20    0.0000  -12.4346   12.4346  0.0000 1.00
+    4  GLY    H    4  GLY    N -21585.20    0.0000    7.3766   -7.3766  0.0000 1.00
