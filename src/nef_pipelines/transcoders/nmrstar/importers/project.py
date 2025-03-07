@@ -40,16 +40,6 @@ def pipe(
         use_author,
     )
 
-    # def pipe(
-    #         nef_entry: Entry,
-    #         chain_codes: List[str],
-    #         frame_name: str,
-    #         nmrstar_entry: Entry,
-    #         file_name: Path,
-    #         use_author: bool,
-    #         stereo_mode: StereoAssignmentHandling,
-    # ):
-
     nef_entry = shift_pipe(
         nef_entry, [], entry_id, nmrstar_entry, file_path, use_author, stereo_mode
     )
