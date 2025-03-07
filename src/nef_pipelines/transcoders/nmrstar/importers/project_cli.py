@@ -56,6 +56,10 @@ the file to read, if it is is one of the shortcuts {SHORTCUT_NAMES}, of the form
 appears to be a url the program will attempt to fetch the entry from the bmrb or the web first before looking
 for a file on disc unless this behaviour overridden by the --source option
 """
+ENTRY_HELP = """\
+a name for the entry (the default is default. To use the brmb entry number if downloading from the BMRB use a template
+that contains the entry number as template parameter {entry_number} such as bmr{entry_number})"
+"""
 
 
 @import_app.command()
@@ -79,9 +83,7 @@ def project(
     ),
     use_author: bool = typer.Option(False, help="use author field for sequence codes"),
     stereo_mode: StereoAssignmentHandling = typer.Option("auto", help=STEREO_HELP),
-    entry_name: str = typer.Option(
-        None, help="a name for the entry (defaults to the bmr{entry_number})"
-    ),
+    entry_name: str = typer.Option(None, help=ENTRY_HELP),
     input: Path = typer.Option(
         STDIN,
         "-i",
@@ -146,8 +148,11 @@ def project(
             msg = f"could not read entry from {file_path}"
             exit_error(msg)
 
-        entry_name = nmrstar_entry.entry_id if not entry_name else entry_name
-        entry_name = f"bmr{entry_name}" if is_bmrb else entry_name
+        if not entry_name:
+            entry_name = "default"
+        if "{entry_name}" in entry_name:
+            entry_name = entry_name.format(entry_name=nmrstar_entry.entry_id)
+
         nef_entry = read_or_create_entry_exit_error_on_bad_file(
             input, entry_name=entry_name
         )
