@@ -447,3 +447,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.98
 - fixed error in pales tensor frame parsing, older file versions were not being read
+
+## version 0.1.99
+- add a new install script based on UV
