@@ -100,7 +100,10 @@ ABBREVIATED_HEADINGS = {
     "ccpn_figure_of_merit": "merit",
     "ccpn_annotation": "ann",
     "ccpn_peak_list_serial": "ccpn-serial",
-    "atom-name": "atom",
+    "atom_name": "atom",
+    "isotope_number": "iso",
+    "value_uncertainty": "err",
+    "element": "elem",
 }
 SELECT_HELP = """
     a list of columns to select for output, to specify multiple columns specify the option multiple times or use a comma
@@ -393,7 +396,9 @@ def _output_loop(loop_data, frame_id, frame_category, entry_id, args, seen_files
                 file=out_file,
             )
 
-        if out_type != OutputFormat.STDOUT:
+        if out_type == OutputFormat.STDOUT:
+            print()
+        else:
             out_file.close()
 
 
