@@ -18,7 +18,6 @@ app.command()(tabulate)
 EXPECTED_BASIC = """
           nef_sequence
           ------------
-
       index  chain_code      sequence_code  residue_name    linking
          1            A             10               GLU    start
          2            A             11               TYR    middle
@@ -96,8 +95,8 @@ def test_frame_and_loop_selection_text_exact():
 
 
 EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY = """
-    nef_spectrum_dimension
-    ----------------------
+    simnoe [nef_spectrum_dimension]
+    -------------------------------
 
     dimension-id
                1
@@ -106,8 +105,8 @@ EXPECTED_SPECTRUM_DIMENSIONS_DIM_ONLY = """
     """
 
 EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH = """
-    nef_spectrum_dimension
-    ----------------------
+    simnoe [nef_spectrum_dimension]
+    -------------------------------
       dimension-id    spectral-width
                  1          11.0113
                  2          11.06
@@ -115,8 +114,8 @@ EXPECTED_DIMENSION_ID_SPECTRAL_WIDTH = """
     """
 
 EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH = """
-    nef_spectrum_dimension
-    ----------------------
+    simnoe [nef_spectrum_dimension]
+    -------------------------------
       axis-unit    axis-code      spectrometer-frequency    folding    absolute-peak-positions
       ppm          1H                            800.133    circular   true
       ppm          1H                            800.133    circular   true
@@ -124,8 +123,8 @@ EXPECTED_EXCLUDE_DIMENSION_ID_SPECTRAL_WIDTH = """
 
     """
 EXPECTED_DATA_ALL = """  # noqa: E501
-    nef_spectrum_dimension
-    ----------------------
+    simnoe [nef_spectrum_dimension]
+    -------------------------------
       dimension-id  axis-unit    axis-code      spectrometer-frequency    spectral-width  folding    absolute-peak-positions
                  1  ppm          1H                            800.133           11.0113  circular   true
                  2  ppm          1H                            800.133           11.06    circular   true

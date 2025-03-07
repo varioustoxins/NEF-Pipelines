@@ -178,6 +178,8 @@ def tabulate(
 
     args.select_columns = _build_column_selections(args.select_columns, args.exact)
 
+    args.frame_loop_selectors = parse_comma_separated_options(args.frame_loop_selectors)
+
     entry = read_or_create_entry_exit_error_on_bad_file(args.input_file)
 
     tabulate_frames(entry, args)
@@ -378,8 +380,12 @@ def _output_loop(loop_data, frame_id, frame_category, entry_id, args, seen_files
             used_headers = _abbreviate_headers(used_headers, ABBREVIATED_HEADINGS)
 
         if not args.no_title:
-            print(frame_category)
-            print("-" * len(frame_category))
+            if len(frame_id.strip()) == 0:
+                title = f"{frame_category}"
+            else:
+                title = f"{frame_id} [{frame_category}]"
+            print(title)
+            print("-" * len(title))
             print()
 
         if args.out_format in ["csv", ""]:
