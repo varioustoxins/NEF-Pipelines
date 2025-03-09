@@ -69,45 +69,91 @@ def _parse_text_to_star_or_none(possible_entry):
     return nmrstar_entry
 
 
-def _get_bmrb_entry_from_web_or_none(url, exit_on_error=True):
+def _get_bmrb_entry_from_web_or_none(
+    urls, exit_on_error=True, verbose=False, timeout=10
+):
     possible_entry = None
-    error = False
-    exception = None
-    if url:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            possible_entry = response.content
-        except HTTPError as http_err:
-            msg = f"while trying to download the url {url} there was an http error {http_err}"
-            exception = http_err
-        except Exception as err:
-            msg = f"while trying to download the url {url} there was an error {err}"
-            exception = err
 
-    if error:
+    have_data = False
+    if urls:
+
+        for i, url in enumerate(urls, start=1):
+            error = False
+            if verbose:
+                print(f"{i}. trying to from download {url}", file=sys.stderr)
+            try:
+                try:
+                    response = requests.get(url, timeout=timeout)
+                    response.raise_for_status()
+                    possible_entry = response.content
+                except requests.exceptions.SSLError:
+                    print(
+                        f"NOTE: using weaker SSL key as long keys not supported by some mirrors [{url}]",
+                        file=sys.stderr,
+                    )
+                    requests.packages.urllib3.disable_warnings()
+                    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += (
+                        "HIGH:!DH:!aNULL"
+                    )
+                    try:
+                        requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += (
+                            "HIGH:!DH:!aNULL"
+                        )
+                    except AttributeError:
+                        # no pyopenssl support used / needed / available
+                        pass
+                    response = requests.get(url, verify=False, timeout=timeout)
+                    response.raise_for_status()
+                    possible_entry = response.content
+
+            except HTTPError as http_err:
+                if verbose:
+                    msg = f"WARNING: while trying to download the url {url} there was an http error {http_err}"
+                    print(msg, file=sys.stderr)
+                    error = True
+
+            except Exception as err:
+                if verbose:
+                    msg = f"WARNING: while trying to download the url {url} there was an error {err}"
+                    print(msg, file=sys.stderr)
+                    error = True
+
+            if not error:
+                have_data = True
+                break
+
+    if not have_data:
         if exit_on_error:
-            exit_error(msg, exception)
-        else:
-            print(f"WARNING: {msg}, trying to read as a local file", file=sys.stderr)
+            urls = " /n".join(urls)
+            msg = f"""\
+            could not download the entry from
+
+            {urls}
+            """
+            exit_error(msg)
 
     return possible_entry
 
 
-def _get_path_as_url_or_none(file_path, url_template):
-    url = None
+def _get_path_as_url_or_none(file_path, url_templates):
+    urls = []
     is_bmrb = False
     if file_path.startswith("https://"):
-        url = file_path
+        urls = [
+            file_path,
+        ]
     elif file_path.startswith("bmr"):
         entry_number = file_path[3:]
         entry_check = entry_number.lstrip(string.digits)
         if len(entry_check) == 0:
-            url = f(url_template)
+            urls = [
+                url_template.format(entry_number=entry_number)
+                for url_template in url_templates
+            ]
             is_bmrb = True
     elif is_int(file_path):
         entry_number = file_path
-        url = f(url_template)
+        urls = [f(url_template) for url_template in url_templates]
         is_bmrb = True
 
-    return url, is_bmrb
+    return urls, is_bmrb

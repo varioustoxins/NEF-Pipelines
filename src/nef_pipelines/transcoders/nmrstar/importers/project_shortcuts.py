@@ -1,4 +1,7 @@
+BMRB_AUTO_MIRROR = "**auto**"
 BMRB_URL_TEMPLATE = "https://bmrb.io/ftp/pub/bmrb/entry_directories/bmr{entry_number}/bmr{entry_number}_3.str"
+BMRB_JAPAN_URL_TEMPLATE =  "https://bmrb.pdbj.org/ftp/pub/bmrb/entry_lists/nmr-star3.1/bmr{entry_number}.str"
+BMRB_ITALY_URL_TEMPLATE = "https://bmrb.cerm.unifi.it/ftp/pub/bmrb/entry_directories/bmr{entry_number}/bmr{entry_number}_3.str"
 
 # TODO these should be in a resource file?
 SHORTCUTS = {

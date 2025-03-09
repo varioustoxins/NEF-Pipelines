@@ -14,6 +14,9 @@ from nef_pipelines.lib.sequence_lib import get_chain_code_iter
 from nef_pipelines.lib.util import STDIN, exit_error, parse_comma_separated_options
 from nef_pipelines.transcoders.nmrstar import import_app
 from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
+    BMRB_AUTO_MIRROR,
+    BMRB_ITALY_URL_TEMPLATE,
+    BMRB_JAPAN_URL_TEMPLATE,
     BMRB_URL_TEMPLATE,
     SHORTCUT_NAMES,
     SHORTCUTS,
@@ -56,9 +59,35 @@ the file to read, if it is is one of the shortcuts {SHORTCUT_NAMES}, of the form
 appears to be a url the program will attempt to fetch the entry from the bmrb or the web first before looking
 for a file on disc unless this behaviour overridden by the --source option
 """
-ENTRY_HELP = """\
-a name for the entry (the default is default. To use the brmb entry number if downloading from the BMRB use a template
-that contains the entry number as template parameter {entry_number} such as bmr{entry_number})"
+
+
+class Mirror(LowercaseStrEnum):
+    AUTO = auto()
+    USA = auto()
+    JAPAN = auto()
+    ITALY = auto()
+    EUROPE = auto()
+    ASIA = auto()
+
+
+MIRROR_URLS = {
+    Mirror.AUTO: BMRB_AUTO_MIRROR,
+    Mirror.USA: BMRB_URL_TEMPLATE,
+    Mirror.JAPAN: BMRB_JAPAN_URL_TEMPLATE,
+    Mirror.ITALY: BMRB_ITALY_URL_TEMPLATE,
+    Mirror.EUROPE: BMRB_ITALY_URL_TEMPLATE,
+    Mirror.ASIA: BMRB_JAPAN_URL_TEMPLATE,
+}
+
+AUTO_MIRRORS = (
+    MIRROR_URLS[Mirror.USA],
+    MIRROR_URLS[Mirror.EUROPE],
+    MIRROR_URLS[Mirror.ASIA],
+)
+
+URL_HELP = f"""
+template for the bmrb url [default {BMRB_URL_TEMPLATE}],
+note if a mirror is chose than overrides a custom url
 """
 
 
@@ -83,7 +112,9 @@ def project(
     ),
     use_author: bool = typer.Option(False, help="use author field for sequence codes"),
     stereo_mode: StereoAssignmentHandling = typer.Option("auto", help=STEREO_HELP),
-    entry_name: str = typer.Option(None, help=ENTRY_HELP),
+    entry_name: str = typer.Option(
+        None, help="a name for the entry (defaults to the bmr{entry_number})"
+    ),
     input: Path = typer.Option(
         STDIN,
         "-i",
@@ -91,12 +122,15 @@ def project(
         help="file to read NEF data from [- is stdin; defaults is stdin]",
     ),
     url_template: str = typer.Option(
-        BMRB_URL_TEMPLATE,
-        help=f"template for the bmrb url [default {BMRB_URL_TEMPLATE}]",
+        None,
+        help=URL_HELP,
     ),
     list_shortcuts: bool = typer.Option(
         False, "--list-shortcuts", help="list the available shortcuts and exit"
     ),
+    mirror: Mirror = typer.Option(None, help="select the mirror website to use"),
+    verbose: bool = typer.Option(False, help="print verbose output"),
+    timeout: int = typer.Option(10, help="timeout (seconds)  for http responses"),
     file_paths: List[str] = typer.Argument(None, help=FILE_PATH_HELP),
 ):
     """- convert as much as possible from an NMR-STAR file to NEF [shifts & sequences] [alpha]"""
@@ -114,6 +148,25 @@ def project(
         typer.echo(ctx.get_help())
         exit_error("missing file path argument")
 
+    if not url_template and not mirror:
+        mirror = Mirror.AUTO
+
+    if url_template and mirror:
+        exit_error("cannot set both a url template and a mirror")
+    elif mirror == Mirror.AUTO:
+        url_templates = AUTO_MIRRORS
+    elif mirror:
+        if mirror not in MIRROR_URLS:
+            msg = f"mirror must be one of {MIRROR_URLS.keys()}, i got {mirror}"
+            exit_error(msg)
+        url_templates = [
+            MIRROR_URLS[mirror],
+        ]
+    else:
+        url_templates = [
+            MIRROR_URLS[Mirror.USA],
+        ]
+
     for file_path in file_paths:
         chain_codes = parse_comma_separated_options(chain_codes)
         chain_codes = get_chain_code_iter(chain_codes)
@@ -128,13 +181,14 @@ def project(
 
         is_bmrb = False
         if source in (EntrySource.AUTO, EntrySource.WEB):
-            url, is_bmrb = project_module._get_path_as_url_or_none(
-                file_path, url_template
+            urls, is_bmrb = project_module._get_path_as_url_or_none(
+                file_path, url_templates
             )
 
             exit_on_error = True if source == EntrySource.WEB else False
+
             possible_entry = project_module._get_bmrb_entry_from_web_or_none(
-                url, exit_on_error
+                urls, exit_on_error, verbose=verbose, timeout=timeout
             )
 
             nmrstar_entry = project_module._parse_text_to_star_or_none(possible_entry)
@@ -148,11 +202,8 @@ def project(
             msg = f"could not read entry from {file_path}"
             exit_error(msg)
 
-        if not entry_name:
-            entry_name = "default"
-        if "{entry_name}" in entry_name:
-            entry_name = entry_name.format(entry_name=nmrstar_entry.entry_id)
-
+        entry_name = nmrstar_entry.entry_id if not entry_name else entry_name
+        entry_name = f"bmr{entry_name}" if is_bmrb else entry_name
         nef_entry = read_or_create_entry_exit_error_on_bad_file(
             input, entry_name=entry_name
         )
