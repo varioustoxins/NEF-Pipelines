@@ -41,7 +41,7 @@ def pipe(
     )
 
     nef_entry = shift_pipe(
-        nef_entry, [], entry_id, nmrstar_entry, file_path, use_author, stereo_mode
+        nef_entry, [], None, nmrstar_entry, file_path, use_author, stereo_mode
     )
 
     return nef_entry
