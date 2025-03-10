@@ -55,6 +55,15 @@ STEREO_HELP = """\
     - auto: use as assigned if some geminal stereo assignments are present, otherwise assume all are ambiguous
 """
 
+FRAME_NAME_HELP = """\
+a name for the frame, the default is default. If you want to use the id of the nmrstar entry you can use a template
+which includes {entry_id} to also add the name of the shift frame use {indentifier}
+e.g. bmr{entry_id}__{identifier} with an entry id of 1234  and and identifier of shift_list_1
+would give bmr1234__shift_list_1
+use double brace to escape the templates e.g. bmr{{entry_id}}__{{identifier}} woudl give
+bmr{entry_id}__{identifier}
+"""
+
 
 @import_app.command()
 def shifts(
@@ -64,16 +73,13 @@ def shifts(
         help="chain codes as a list of names separated by commas, repeated calls will add further chains [default A]",
         metavar="<CHAIN-CODES>",
     ),
-    frame_name: str = typer.Option(
-        None,
-        "-f",
-        "--frame-name",
-        help="a name for the frame, default is the name nmrstar entry",
+    frame_name_template: str = typer.Option(
+        None, "-f", "--frame-name", help=FRAME_NAME_HELP
     ),
     input: Path = typer.Option(
         STDIN,
         "-i",
-        "--input",
+        "--in",
         metavar="|PIPE|",
         help="file to read NEF data from [- is stdin; defaults is stdin]]",
     ),
@@ -96,7 +102,7 @@ def shifts(
     nef_entry = pipe(
         nef_entry,
         chain_codes,
-        frame_name,
+        frame_name_template,
         nmrstar_entry,
         file_path,
         use_author,
@@ -109,7 +115,7 @@ def shifts(
 def pipe(
     nef_entry: Entry,
     chain_codes: List[str],
-    frame_name: str,
+    frame_name_template: str,
     nmrstar_entry: Entry,
     file_name: Path,
     use_author: bool,
@@ -182,8 +188,15 @@ def pipe(
         )
     )
 
-    if not frame_name:
-        frame_name = name_info.entry_id + "__" + str(name_info.identifier)
+    if frame_name_template:
+        if "{entry_id}" in frame_name_template or "{identifier}" in frame_name_template:
+            frame_name = frame_name_template.format(
+                entry_id=name_info.entry_id, identifier=name_info.identifier
+            )
+        else:
+            frame_name = frame_name_template
+    else:
+        frame_name = "default"
 
     shifts_frame = shifts_to_nef_frame(ShiftList(all_shifts), frame_name)
 
@@ -568,9 +581,8 @@ def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
     denormalised_shifts = []
 
     frame_code = shift_lists[0].get_tag("Sf_framecode")[0]
-    category = shift_lists[0].get_tag("Sf_category")[0]
     entry_id = shift_lists[0].get_tag("Entry_ID")[0]
-    list_identifier = frame_code[len(category) + 1 :].lstrip("_")
+    list_identifier = frame_code.lstrip("_")
     name_info = ShiftListNameInfo(entry_id, list_identifier)
 
     for i, shift_list in enumerate(shift_lists):
