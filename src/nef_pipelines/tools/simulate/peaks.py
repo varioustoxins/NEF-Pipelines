@@ -138,7 +138,7 @@ def pipe(
         elif spectrum_info.lower() in EXPERIMENT_INFO:
             spectrum_info = EXPERIMENT_INFO[spectrum.lower()]
 
-        peaks = _make_spectrum(shifts, spectrum_info)
+        peaks = _make_peak_list(shifts, spectrum_info)
 
         if len(peaks) == 0:
             continue
@@ -200,7 +200,7 @@ def _average_atom_set_shifts(atom_set_shifts):
     return result
 
 
-def _make_spectrum(
+def _make_peak_list(
     shifts: List[ShiftData], info: PeakInfo, height: int = 1_000_000
 ) -> List[NewPeak]:
 
