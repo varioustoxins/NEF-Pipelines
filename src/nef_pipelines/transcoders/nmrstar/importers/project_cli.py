@@ -87,7 +87,7 @@ AUTO_MIRRORS = (
 
 URL_HELP = f"""
 template for the bmrb url [default {BMRB_URL_TEMPLATE}],
-note if a mirror is chose than overrides a custom url
+note if a mirror is chosen than overrides a custom url
 """
 
 
