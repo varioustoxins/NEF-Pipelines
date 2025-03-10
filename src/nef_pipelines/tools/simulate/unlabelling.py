@@ -34,7 +34,7 @@ from nef_pipelines.lib.spectra_lib import (
 )
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.simulate import simulate_app
-from nef_pipelines.tools.simulate.peaks import _make_spectrum
+from nef_pipelines.tools.simulate.peaks import _make_peak_list
 
 SPECTRUM_TYPE_NHSQC = ExperimentType.N_HSQC
 
@@ -612,7 +612,7 @@ def unlabelling(
         help="where to read NEF data from either a file or stdin '-'",
     ),
     frame_selectors: List[str] = typer.Option(
-        None, "--peak-selected_frames", metavar=None, help=FRAME_SELECTORS_HELP
+        None, "--frames", metavar=None, help=FRAME_SELECTORS_HELP
     ),
     exact: bool = typer.Option(False, "--exact", help="match the frame names exactly"),
     name_template: str = typer.Option(
@@ -724,44 +724,45 @@ def pipe(
         frames.append(_make_residue_typing_table(shift_frames, unlabelled_residues))
 
     else:
+        peak_lists = {}
+        spectrum_info = EXPERIMENT_INFO[SPECTRUM_TYPE_NHSQC]
         if shift_frames:
-            # TODO different naming for peaks and shifts frame functions
+            # TODO different naming for peak_lists and shifts frame functions
             shifts = nef_frames_to_shifts(shift_frames)
 
             shifts = [shift for shift in shifts if shift.atom.atom_name in ["H", "N"]]
 
             shifts = _average_equivalent_shifts(shifts)
 
-            spectrum_info = EXPERIMENT_INFO[SPECTRUM_TYPE_NHSQC]
-
-            peaks = _make_spectrum(shifts, spectrum_info)
+            peak_lists["shifts"] = _make_peak_list(shifts, spectrum_info)
 
         elif peak_frames:
-
-            peaks = frame_to_peaks(peak_frames)
+            for peak_frame in peak_frames:
+                peak_lists[peak_frame.name] = frame_to_peaks(peak_frame)
         else:
             msg = """
-                No peaks or frames were selected to base the ¹H-¹⁵N HSQC to unlabelled spectrum on
+                No peak_lists or frames were selected to base the ¹H-¹⁵N HSQC to unlabelled spectrum on
             """
             exit_error(msg)
 
         # todo check there are some 1H 15N pairs
 
-        if peaks:
-            for target_residue in unlabelled_residues:
-                # for template expansion
-                residues = target_residue  # noqa: F841
-                spectrum = entry.entry_id  # noqa: F841
-                frame_name = f(name_template_string)
+        if peak_lists:
+            for peak_list_name, peak_list in peak_lists.items():
+                for target_residue in unlabelled_residues:
+                    # for template expansion
+                    residues = target_residue  # noqa: F841
+                    spectrum = peak_list_name  # noqa: F841
+                    frame_name = f(name_template_string)
 
-                frames.append(
-                    _make_spectrum_frame(
-                        peaks, target_residue, spectrum_info, frame_name
+                    frames.append(
+                        _make_spectrum_frame(
+                            peak_list, target_residue, spectrum_info, frame_name
+                        )
                     )
-                )
         else:
 
-            cause = "shifts" if shift_frames else "peaks"
+            cause = "shifts" if shift_frames else "peak_lists"
 
             exit_error(
                 f"couldn't build a ¹H-¹⁵N HSQC to unlabel because i couldn't find any {cause}"
