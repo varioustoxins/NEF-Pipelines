@@ -213,6 +213,9 @@ class RdcRestraint:
     value: float
     value_uncertainty: float
     weight: Optional[float] = None
+    lower_bound: Optional[float] = None
+    upper_bound: Optional[float] = None
+    bond_length: Optional[float] = None
 
 
 class PeakFitMethod(LowercaseStrEnum):
