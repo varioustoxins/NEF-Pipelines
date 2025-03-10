@@ -450,3 +450,10 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.99
 - add a new install script based on UV
+
+## 0.1.100
+- add support for reading RDC restraints from NMRStar files
+- add support for download from bmrb mirrors including an auto mirror option [try all mirrors in turn] with a timeout of 10 seconds
+- the shift frame read from an nmrstar file is now called default
+- better frame headers in frames tabulate
+- more abbreviations in frames tabulate
