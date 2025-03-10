@@ -192,6 +192,16 @@ def _report_warnings(warnings):
         msg = dedent(msg)
         print(msg, file=sys.stderr)
 
+    # # to get rid of messages about broken pipes when SIGPIPE is recieved
+    # Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
+    # BrokenPipeError: [Errno 32] Broken pipe
+    # https://stackoverflow.com/questions/26692284/how-to-prevent-brokenpipeerror-when-doing-a-flush-in-python
+    # note: https://docs.python.org/3/library/signal.html#note-on-sigpipe
+    #      doesn't appear to work for us, not quite sure why
+    # note: I added a flush of stderr to remove any dangling output
+    sys.stderr.flush()
+    sys.stderr.close()
+
 
 if __name__ == "__main__":
     main()
