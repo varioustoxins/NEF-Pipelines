@@ -321,21 +321,29 @@ def translate_1_to_3(
 
 
 def translate_3_to_1(
-    sequence: List[str], molecule_type=MoleculeTypes.PROTEIN
+    sequence: Union[str, List[str]], molecule_type=MoleculeTypes.PROTEIN
 ) -> List[str]:
     """
 
-    Translate a 3 letter sequence to a 1 letter sequence
+    Translate a 3 letter sequence to a 1 letter sequence. If a single string is supplied it
+    is trabnslated and returned as a sinle residue
     Args:
-        sequence (str): 3 letter sequence
+        sequence (str|List[str]): 3 letter sequence code or 3 letter sequence
         molecule_type (MoleculeTypes): type of molecule to translate residue types
 
-    Returns List[str]:
-        a list of 1 residue codes
+    Returns str|List[str]:
+        a list of 1 residue codes or a single 1 letter residue code
 
     :param sequence:
     :return:
     """
+
+    single_aa = False
+    if isinstance(sequence, str):
+        sequence = [
+            str,
+        ]
+        single_aa = True
 
     translations = TRANSLATIONS_3_1[molecule_type]
 
@@ -361,6 +369,9 @@ def translate_3_to_1(
             at residue number {i}
             """
             exit_error(msg)
+
+    if single_aa:
+        result = result[0]
 
     return result
 
@@ -523,6 +534,7 @@ def sequence_from_entry(entry) -> List[SequenceResidue]:
     return result
 
 
+# TODO: check how this deals with sequences with repeats e.g. a sequence with A.3.ALA amd A.3.GLY etc
 def sequences_from_frames(
     frame_or_frames: Union[Saveframe, List[Saveframe]],
     chain_codes_to_select: Union[str, List[str]] = ANY_CHAIN,
@@ -597,6 +609,7 @@ def select_best_residues_by_info_content(residues):
         score = 0
         for equivalent_residue in equivalent_residues:
             # somewhat arbitrary scoring system to pick the best residue
+            # TODO should we merge if there is missing info...
             if equivalent_residue.residue_name not in (None, UNUSED):
                 score += 100000
             if equivalent_residue.is_cis not in (None, UNUSED):
