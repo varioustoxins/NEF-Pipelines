@@ -460,3 +460,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.101
 - now using pynmrstar >= 3.3.4 to avoid problems compiling cnmrstar during installation
+- yanked
+-
+## version 0.1.102
+- try again to use pynmrstar >= 3.3.4
