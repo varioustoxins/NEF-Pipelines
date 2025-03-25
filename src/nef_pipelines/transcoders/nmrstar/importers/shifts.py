@@ -18,7 +18,7 @@ from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
     loop_row_namespace_iter,
     read_entry_from_file_or_exit_error,
-    read_entry_from_file_or_stdin_or_exit_error,
+    read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import (
     get_chain_code_iter,
@@ -87,6 +87,9 @@ def shifts(
     use_author: bool = typer.Option(
         False, help="use author fields for chain_code, sequence_code and residue_name"
     ),
+    entry_name: str = typer.Option(
+        "nmrpipe", "-e", "--entry", help="entry name", metavar="<entry-name>"
+    ),
     file_path: Path = typer.Argument(
         ..., help="input files of type shifts.txt", metavar="<NMR-STAR-shifts>.str"
     ),
@@ -97,7 +100,9 @@ def shifts(
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
-    nef_entry = read_entry_from_file_or_stdin_or_exit_error(input)
+    nef_entry = read_or_create_entry_exit_error_on_bad_file(
+        input, entry_name=entry_name
+    )
 
     nef_entry = pipe(
         nef_entry,
