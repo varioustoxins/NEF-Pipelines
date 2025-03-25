@@ -612,8 +612,10 @@ def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
                 comp_id = row.Auth_comp_ID
             else:
                 atom_id = row.Atom_ID
-                seq_id = row.Seq_ID
+                seq_id = row.Seq_ID if hasattr(row, "Seq_ID") else None
                 comp_id = row.Comp_ID
+                if not seq_id and hasattr(row, "Comp_index_ID"):
+                    seq_id = row.Comp_index_ID
 
             if atom_id == UNUSED and use_author:
                 atom_id = row.Atom_ID
@@ -624,9 +626,9 @@ def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
 
             shift = row.Val
             sdev = row.Val_err
-            element = row.Atom_type
+            element = row.Atom_type if hasattr(row, "Atom_type") else None
             isotope = row.Atom_isotope_number
-            ambiguity_code = row.Ambiguity_code
+            ambiguity_code = row.Ambiguity_code if hasattr(row, "Ambiguity_code") else 1
 
             residue = Residue(chain_code, seq_id, comp_id)
             atom = AtomLabel(residue, atom_id, element, isotope)
