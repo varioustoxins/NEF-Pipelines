@@ -1,0 +1,11 @@
+[versionner]
+file=src/nef_pipelines/VERSION
+
+[file:pyproject.toml]
+enabled = true
+search = ^\s*version\s*=.*$
+replace = version = '%(version)s'
+date_format = %Y-%m-%d
+match = line
+search_flags =
+encoding = utf-8

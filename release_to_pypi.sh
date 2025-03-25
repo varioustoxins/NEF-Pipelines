@@ -31,6 +31,7 @@ VERSION=`ver --file $VERSION_FILE |  awk '{print $3}'`
 
 # update the version  in the repo
 git add src/nef_pipelines/VERSION
+git add pyproject.toml
 git commit -m "updated version to $VERSION" --no-verify
 
 ver  --file $VERSION_FILE tag
