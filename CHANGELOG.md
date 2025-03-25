@@ -457,3 +457,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - the shift frame read from an nmrstar file is now called default
 - better frame headers in frames tabulate
 - more abbreviations in frames tabulate
+
+## version 0.1.101
+- now using pynmrstar >= 3.3.4 to avoid problems compiling cnmrstar during installation
