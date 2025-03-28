@@ -460,7 +460,13 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.101
 - now using pynmrstar >= 3.3.4 to avoid problems compiling cnmrstar during installation
-- yanked
--
+
 ## version 0.1.102
 - try again to use pynmrstar >= 3.3.4
+
+## version 0.1.103
+- nmrstar import shifts can create its own entry
+- valid nmrstar shift files with a more minimal set of columns are supported (for mike w)
+
+## version 0.1.104
+- changes to allow installation on windows
