@@ -10,10 +10,10 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_entry, sequence_to_nef_frame
 from nef_pipelines.lib.util import (
+    exit_error,
     get_text_from_file_or_exit,
     parse_comma_separated_options,
 )
-from nef_pipelines.tools.offset_shifts import exit_error
 from nef_pipelines.transcoders.xplor import import_app
 from nef_pipelines.transcoders.xplor.psf_lib import parse_xplor_PSF
 
