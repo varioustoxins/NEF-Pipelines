@@ -2,10 +2,11 @@ import os
 import re
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import Optional
 from urllib.parse import urlsplit
 
@@ -40,6 +41,7 @@ ALPHA_FOLD_URL_TEMPLATE = (
 )
 
 SHIFTX2_RETRY_COUNT = 10
+DEFAULT_TIMEOUT = 2
 
 
 @dataclass
@@ -169,14 +171,27 @@ def pipe(
         if not chain and source_chain:
             chain = source_chain
 
+        timeout = DEFAULT_TIMEOUT
         for i in range(1, SHIFTX2_RETRY_COUNT + 1):
-            shifts = _get_shifts_from_server(
+            shifts, request = _get_shifts_from_server(
                 code_or_filename, source_chain, chain, use_file=use_file
             )
+            time.sleep(timeout)
             if shifts:
                 break
             elif verbose:
+                _note_if_bad_html_request(code_or_filename, request)
+                _note_if_error_calculating_shifts(code_or_filename, request)
                 print(f"retrying shiftx2 ...[{i}]", file=sys.stderr)
+            if "server" in request.text.lower() and "busy" in request.text.lower():
+                old_timeout = timeout
+                if timeout == 0:
+                    timeout = 1
+                else:
+                    timeout = timeout * 2
+                if verbose:
+                    msg = f"timeout too short increase timeout from {old_timeout}s -> {timeout}"
+                    _warn(msg)
 
         _exit_if_too_many_attempted_connections(
             shifts, code_or_filename, SHIFTX2_RETRY_COUNT
@@ -235,7 +250,7 @@ def pipe(
 
 def _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUNT):
     if not shifts:
-        msg = f"""
+        msg = f"""\
             couldn't get a shiftx2 prediction for {code_or_filename} after {RETRY_COUNT} retries
             """
         exit_error(msg)
@@ -441,19 +456,15 @@ def _get_shifts_from_server(
         data["pdbid"] = pdb_file_or_code
 
     if use_file:
-        r = requests.request("POST", CGI_URL, data=data, files=files)
+        request = requests.request("POST", CGI_URL, data=data, files=files)
 
     else:
-        r = requests.request("POST", CGI_URL, data=data)
+        request = requests.request("POST", CGI_URL, data=data)
 
     if fh:
         fh.close()
 
-    _exit_if_bad_html_request(pdb_file_or_code, r)
-
-    _exit_if_error_calculating_shifts(pdb_file_or_code, r)
-
-    soup = BeautifulSoup(r.text, features="html.parser")
+    soup = BeautifulSoup(request.text, features="html.parser")
     shifts = ""
     putative_links = soup.find_all("a", href=True, string="download predictions")
     if putative_links:
@@ -464,35 +475,42 @@ def _get_shifts_from_server(
 
         shifts = _parse_text_to_shifts(text, cli_chain_code, CGI_URL)
 
-    return shifts
+    return shifts, request
 
 
-def _exit_if_bad_html_request(pdb_code, r):
-    if r.status_code != 200:
-        msg = f"""
+def _warn(msg):
+    msg = dedent(msg)
+    msg = f"WARNING: {msg}"
+    msg = indent(msg, "   ")
+    print(msg, file=sys.stderr)
+
+
+def _note_if_bad_html_request(pdb_code, request):
+    if request.status_code != 200:
+        msg = f"""\
         failed to download shifts from {CGI_URL} for pdb code {pdb_code}
         is you network connection working?
         """
-        exit_error(msg)
+        _warn(msg)
 
 
-def _exit_if_error_calculating_shifts(pdb_code, r):
+def _note_if_error_calculating_shifts(pdb_code, request):
 
-    if "Error in Calculating Chemical Shifts" in r.text:
-        soup = BeautifulSoup(r.text, features="html.parser")
+    if "Error" in request.text:
+        soup = BeautifulSoup(request.text, features="html.parser")
         texts = soup.findAll(string=True)
         visible_texts = filter(tag_visible, texts)
         text = " ".join(t.strip() for t in visible_texts)
         text = _spaces_to_single(text)
         text = _dedent_all(text)
         text = _select_text_between(text, "SHIFTX2 PREDICTIONS", "Please try again")
-        msg = f"""
+        msg = f"""\
         failed to calculate shifts from {CGI_URL} for pdb code {pdb_code}
         the msg was:
 
-        {text}
+       {text}
         """
-        exit_error(msg)
+        _warn(msg)
 
 
 def _exit_if_pdb_code_bad(pdb_code):
@@ -579,7 +597,7 @@ def _pdb_code_to_alphafold_pdb_file(code_or_filename, source_chain, verbose):
     mapping = _convert_pdb_code_to_uniprot_id(code_or_filename, source_chain)
 
     _exit_if_pdb_to_uniprot_network_failure(mapping)
-    _exit_if_pdb_to_uniprot_mapping_fails(mapping)
+    _exit_if_pdb_to_uniprot_mapping_fails(code_or_filename, mapping)
 
     msg.append(f"{mapping.uniprot_id}->")
 
@@ -749,8 +767,9 @@ def _exit_if_pdb_to_uniprot_network_failure(mapping: PdbUniprotMapping):
         exit_error(msg)
 
 
-def _exit_if_pdb_to_uniprot_mapping_fails(mapping: PdbUniprotMapping):
+def _exit_if_pdb_to_uniprot_mapping_fails(code, mapping: PdbUniprotMapping):
 
+    print(mapping)
     if mapping.uniprot_id is None:
         mapping_table = []
         for putative_uniprot_id, mapping_element in mapping.raw_data[mapping.pdb_code][
@@ -782,8 +801,8 @@ def _exit_if_pdb_to_uniprot_mapping_fails(mapping: PdbUniprotMapping):
             """
         msg = dedent(msg)
         msg = msg.format(
-            code_or_filename=mapping.pdb_code.upper(),
-            source_chain=mapping.chain_code,
+            code_or_filename=code.upper(),
+            source_chain=mapping["chain_id"],
             mapping_table=mapping_table,
         )
         exit_error(msg)
