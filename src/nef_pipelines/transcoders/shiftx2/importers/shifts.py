@@ -504,13 +504,8 @@ def _note(msg, verbose):
     if verbose:
         msg = f"NOTE: {msg}"
         out_file = sys.stderr
-    else:
-        msg = f"# {msg}"
-        out_file = sys.stdout
-
-    msg = dedent(msg)
-
-    print(msg, file=out_file)
+        msg = dedent(msg)
+        print(msg, file=out_file)
 
 
 def _note_if_bad_html_request(pdb_code, request):
@@ -620,35 +615,39 @@ def _exit_if_pdb_download_bad(pdb_file_data: PDBDownloadResult):
 
 
 def _pdb_code_to_alphafold_pdb_file(code_or_filename, source_chain, verbose):
-    msg = [f"# alphafold: {code_or_filename}->"]
 
     mapping = _convert_pdb_code_to_uniprot_id(code_or_filename, source_chain)
 
     _exit_if_pdb_to_uniprot_network_failure(mapping)
     _exit_if_pdb_to_uniprot_mapping_fails(code_or_filename, mapping)
 
-    msg.append(f"{mapping.uniprot_id}->")
-
     alphafold_result = _get_alphafold_pdb_url_from_uniprot_id(mapping)
 
     _exit_if_alphafold_network_bad(alphafold_result)
     _exit_if_alphafold_uniprot_to_pdb_url_fails(alphafold_result)
 
-    msg.append(alphafold_result.alphafold_id)
+    _note_uniprot_mapping_if_verbose(alphafold_result, verbose)
 
     pdb_file_data = _download_pdb_file(alphafold_result)
 
     _exit_if_pdb_download_bad(pdb_file_data)
 
-    # TODO: why does this corrupt a NEF stream i printed to stdout rather than stderr...
-    if verbose:
-        print(
-            "".join(msg),
-            f"[{ALPHA_FOLD_URL_TEMPLATE.format(uniprot_id=mapping.uniprot_id, alphafold_key=ALPHA_FOLD_KEY)}]",
-            file=sys.stderr,
+    return pdb_file_data
+
+
+def _note_uniprot_mapping_if_verbose(mapping, verbose):
+    if mapping:
+        pdb_start = mapping.pdb_start_residue
+        uniprot_start = mapping.pdb_uniprot_start
+        msg = (
+            f"uniprot mapping, pdb:{mapping.pdb_code}:{pdb_start} -> uniprot:{mapping.uniprot_id}:{uniprot_start}"
+            " ->  alphafold:{mapping.alphafold_id}:{uniprot_start}"
         )
 
-    return pdb_file_data
+        _note(msg, verbose)
+
+        if not verbose:
+            print(f"# shiftx2 {msg}")
 
 
 def _download_pdb_file(alphafold_result: AlphafoldResult) -> PDBDownloadResult:
@@ -751,7 +750,11 @@ def _convert_pdb_code_to_uniprot_id(
             "UniProt"
         ].items():
             for mapping in mapping_element["mappings"]:
-                if mapping["chain_id"] == source_chain:
+                if (
+                    mapping["chain_id"]
+                    and source_chain
+                    and (mapping["chain_id"].lower() == source_chain.lower())
+                ):
                     uniprot_id = putative_uniprot_id
                     break
 
@@ -797,7 +800,6 @@ def _exit_if_pdb_to_uniprot_network_failure(mapping: PdbUniprotMapping):
 
 def _exit_if_pdb_to_uniprot_mapping_fails(code, mapping: PdbUniprotMapping):
 
-    print(mapping)
     if mapping.uniprot_id is None:
         mapping_table = []
         for putative_uniprot_id, mapping_element in mapping.raw_data[mapping.pdb_code][
