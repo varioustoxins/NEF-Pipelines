@@ -470,3 +470,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.104
 - changes to allow installation on windows
+
+## version 0.1.105
+- improvements to error handling and reporting in shiftx2 importer
