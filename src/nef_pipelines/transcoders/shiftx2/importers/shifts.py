@@ -190,13 +190,14 @@ def pipe(
             elif verbose:
                 _note_if_bad_html_request(code_or_filename, request)
                 _note_if_error_calculating_shifts(code_or_filename, request)
-                print(f"retrying shiftx2 ...[{i}]", file=sys.stderr)
+                _warn(f"retrying shiftx2 ...[{i}]")
             if "server" in request.text.lower() and "busy" in request.text.lower():
                 old_timeout = timeout
                 timeout = _increment_timeout(timeout)
                 if verbose:
-                    msg = f"timeout too short increase timeout from {old_timeout}s -> {timeout}"
-                    _warn(msg)
+                    _warn(
+                        f"timeout too short increase timeout from {old_timeout}s -> {timeout}"
+                    )
 
         _exit_if_too_many_attempted_connections(
             shifts, code_or_filename, SHIFTX2_RETRY_COUNT
