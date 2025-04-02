@@ -140,7 +140,15 @@ def shifts(
     ),
 ):
     """- read a shiftx2 chemical shift prediction [alpha]"""
+
+    if not source_chain:
+        source_chain = "A"
+
+    if not chain:
+        chain = source_chain
+
     entry = read_or_create_entry_exit_error_on_bad_file(in_file, "shiftx2")
+
     entry = pipe(entry, code_or_file_name, source_chain, chain, alphafold, verbose)
     print(entry)
 
@@ -153,6 +161,9 @@ def pipe(
     alphafold: bool,
     verbose: bool,
 ) -> Entry:
+
+    if not chain and source_chain:
+        chain = source_chain
 
     file_path = Path(code_or_filename)
     if file_path.exists():
@@ -167,9 +178,6 @@ def pipe(
             use_file = True
         else:
             use_file = False
-
-        if not chain and source_chain:
-            chain = source_chain
 
         timeout = DEFAULT_TIMEOUT
         for i in range(1, SHIFTX2_RETRY_COUNT + 1):
