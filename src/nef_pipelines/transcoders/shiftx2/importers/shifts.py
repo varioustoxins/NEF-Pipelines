@@ -193,10 +193,7 @@ def pipe(
                 print(f"retrying shiftx2 ...[{i}]", file=sys.stderr)
             if "server" in request.text.lower() and "busy" in request.text.lower():
                 old_timeout = timeout
-                if timeout == 0:
-                    timeout = 1
-                else:
-                    timeout = timeout * 2
+                timeout = _increment_timeout(timeout)
                 if verbose:
                     msg = f"timeout too short increase timeout from {old_timeout}s -> {timeout}"
                     _warn(msg)
@@ -254,6 +251,14 @@ def pipe(
             entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
 
     return entry
+
+
+def _increment_timeout(timeout):
+    if timeout == 0:
+        timeout = 1
+    else:
+        timeout = timeout * 2
+    return timeout
 
 
 def _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUNT):
