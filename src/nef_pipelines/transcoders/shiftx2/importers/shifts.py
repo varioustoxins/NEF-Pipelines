@@ -267,7 +267,7 @@ def _exit_if_too_many_attempted_connections(shifts, code_or_filename, RETRY_COUN
         msg = f"""\
             couldn't get a shiftx2 prediction for {code_or_filename} after {RETRY_COUNT} retries
             """
-        exit_error(msg)
+        exit_error(msg.strip())
 
 
 class ShiftFormat(Enum):
