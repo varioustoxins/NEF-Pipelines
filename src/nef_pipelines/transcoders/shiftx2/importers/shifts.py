@@ -498,6 +498,20 @@ def _warn(msg):
     print(msg, file=sys.stderr)
 
 
+def _note(msg, verbose):
+
+    if verbose:
+        msg = f"NOTE: {msg}"
+        out_file = sys.stderr
+    else:
+        msg = f"# {msg}"
+        out_file = sys.stdout
+
+    msg = dedent(msg)
+
+    print(msg, file=out_file)
+
+
 def _note_if_bad_html_request(pdb_code, request):
     if request.status_code != 200:
         msg = f"""\
