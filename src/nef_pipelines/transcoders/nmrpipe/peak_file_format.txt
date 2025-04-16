@@ -1,0 +1,63 @@
+       INDEX
+           the unique peak ID number. [%5d] - mandatory?
+
+      X_AXIS ...
+           the position of the peak in points, by parabolic inter-
+           polation. [%9.3f] - mandatory?
+
+      DX ...
+           estimate of the error in peak position  due  to  random
+           noise, in points. [%6.3f]
+
+      X_PPM ...
+           the position of the peak in PPM, by parabolic  interpo-
+           lation. [%8.3f]
+
+      X_HZ ...
+           the position of the peak in Hz, by parabolic interpola-
+           tion. [%9.3f]
+
+      XW ...
+           the full width at half height in points,  estimated  by
+           parabolic interpolation. [%7.3f]
+
+      XW_HZ ...
+           the full width at half height in Hz, estimated by para-
+           bolic interpolation. [%8.3f]
+
+      X1/X3 ...
+           coords of the bounding region surrounding the  peak  or
+           its cluster in points. [%d] - mandatory?
+
+      HEIGHT
+           the peak height, estimated by parabolic interpolation. - mandatory?
+
+      DHEIGHT
+           the error peak height due to random noise, estimated by
+           parabolic interpolation.
+
+      VOL  the peak volume, estimated as the sum of intensities in
+           the  neighborhood  (bounds  given  by X1/X3 etc) of the
+           peak maximum.
+
+      ASS  location to hold assignment data. - mandatory?
+
+      PCHI2
+           the chi-square probability for the peak (i.e. probabil-
+           ity that the peak could be due to random noise alone).
+
+      CLUSTID
+           identifies the cluster of peaks that a given peak over-
+           laps.  Peaks with the same CLUSTID value are considered
+           to be in one overlapped group.
+
+      MEMCNT
+           the total number of peaks which are in a  given  peak's
+           cluster (i.e. peaks which have the same CLUSTID value).
+
+      TYPE An  integer   describing   the   peak   classification;
+           currently  1  =  Peak, 2 = Random Noise, 3 = Truncation
+           artifact.
+
+ VARS   INDEX X_AXIS Y_AXIS DX    DY    X_PPM Y_PPM X_HZ  Y_HZ  XW    YW    XW_HZ YW_HZ X1  X3  Y1  Y3  HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
+ FORMAT %5d   %9.3f  %9.3f  %6.3f %6.3f %8.3f %8.3f %9.3f %9.3f %7.3f %7.3f %8.3f %8.3f %4d %4d %4d %4d %+e    %+e     %+e %.5f  %d   %s  %4d     %4d                 # PEAK TABLE PARAMETERS
