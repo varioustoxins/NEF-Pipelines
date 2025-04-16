@@ -387,7 +387,7 @@ def peaks_to_frame(
     return frame
 
 
-# TODO: test empt frames and loops
+# TODO: test empty frames and loops
 def frame_to_peaks(frame: Saveframe, source="unknown") -> List[NewPeak]:
     """
     convert a NEF spectrum frame to a list of peaks
