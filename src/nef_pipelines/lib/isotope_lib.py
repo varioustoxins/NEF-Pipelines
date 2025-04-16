@@ -3,6 +3,9 @@ from enum import auto
 
 from strenum import UppercaseStrEnum
 
+ROUND_1H_FREQUENCIES = [i * 100.0 for i in range(4, 20)]
+TYPICAL_1H_FREQUENCIES = [*ROUND_1H_FREQUENCIES, 750.0, 850.0, 950.0]
+
 # from https://www.kherb.io/docs/nmr_table.html
 # The values are taken from the IAEA's table of recommended nuclear magnetic moments and have been converted to
 # gyromagnetic ratios using the 2018 CODATA recommended values for the nuclear magneton and Planck's constant.
