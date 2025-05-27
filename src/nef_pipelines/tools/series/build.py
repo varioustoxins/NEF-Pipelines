@@ -12,8 +12,8 @@ from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
 from tabulate import tabulate
 
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     NEF_RELAXATION_VERSION,
     UNUSED,
     SelectionType,
@@ -30,8 +30,6 @@ from nef_pipelines.lib.util import (
     strings_to_tabulated_terminal_sensitive,
 )
 from nef_pipelines.tools.series import series_app
-
-NAMESPACE = NEF_PIPELINES_PREFIX
 
 FRAMES_AND_TIMES_HELP = "the list of frame selectors and their values"
 
@@ -216,7 +214,7 @@ def pipe(
     experiment_type: str,
 ) -> Entry:
 
-    series_frame = create_nef_save_frame(f"{NAMESPACE}_series_list", name)
+    series_frame = create_nef_save_frame(f"{NEF_PIPELINES_NAMESPACE}_series_list", name)
 
     series_variable_type = EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE[
         RelaxationExperimentType[experiment_type]
@@ -250,7 +248,9 @@ def pipe(
     series_frame.add_tags(tags)
 
     # TODO: pynmstar doesn't catch prepended spaces here it just gives and obscure error report!
-    series_experiment_loop = Loop.from_scratch(f"{NAMESPACE}_series_experiment")
+    series_experiment_loop = Loop.from_scratch(
+        f"{NEF_PIPELINES_NAMESPACE}_series_experiment"
+    )
     series_frame.add_loop(series_experiment_loop)
     series_experiment_loop.add_tag(
         [

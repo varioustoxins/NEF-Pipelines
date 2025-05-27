@@ -8,8 +8,8 @@ from pynmrstar import Entry
 from tabulate import tabulate
 
 from nef_pipelines.lib.isotope_lib import MAGNETOGYRIC_RATIO_1H
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     SelectionType,
     loop_row_namespace_iter,
     read_entry_from_file_or_stdin_or_exit_error,
@@ -25,7 +25,7 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.transcoders.modelfree import export_app
 
-NAMESPACE = NEF_PIPELINES_PREFIX
+NAMESPACE = NEF_PIPELINES_NAMESPACE
 
 MODELFREE_TYPES = "R1 R2 NOE".split()
 RELAXATION_EXPERIMENT_TYPES_TO_MODELFREE_TYPES = {

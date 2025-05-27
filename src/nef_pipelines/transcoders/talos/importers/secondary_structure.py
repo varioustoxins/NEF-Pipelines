@@ -5,8 +5,8 @@ import typer
 from fyeah import f
 from pynmrstar import Entry, Loop
 
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     UNUSED,
     create_nef_save_frame,
     read_file_or_exit,
@@ -22,7 +22,9 @@ from nef_pipelines.transcoders.talos.talos_lib import read_talos_secondary_struc
 
 app = typer.Typer()
 
-PIPELINES_SECONDARY_STRUCTURE_CATEGORY = f"{NEF_PIPELINES_PREFIX}_secondary_structure"
+PIPELINES_SECONDARY_STRUCTURE_CATEGORY = (
+    f"{NEF_PIPELINES_NAMESPACE}_secondary_structure"
+)
 DEFAULT_SEPARATOR = "::"
 DEFAULT_END = ""
 
@@ -99,7 +101,7 @@ def pipe(
     for tag, value in extra_tags.items():
         frame.add_tag(tag, value)
 
-    data_loop = Loop.from_scratch(f"{NEF_PIPELINES_PREFIX}_secondary_structure")
+    data_loop = Loop.from_scratch(f"{NEF_PIPELINES_NAMESPACE}_secondary_structure")
 
     tags = """
         index

@@ -6,10 +6,8 @@ import typer
 # from lazy_import import lazy_module
 from pynmrstar import Entry, Saveframe
 
-from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
-    read_entry_from_file_or_stdin_or_exit_error,
-)
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
@@ -37,9 +35,6 @@ except ImportError as e:
 
     streamfitter = None
     stream_fitter_import_error = str(e)
-
-
-NAMESPACE = NEF_PIPELINES_PREFIX
 
 
 @fit_app.command()
@@ -129,7 +124,7 @@ def pipe(
 
     for series_frame in series_frames:
         id_series_data = _series_frame_to_id_series_data(
-            series_frame, NEF_PIPELINES_PREFIX, entry
+            series_frame, NEF_PIPELINES_NAMESPACE, entry
         )
 
         id_xy_data = {
@@ -148,7 +143,7 @@ def pipe(
 
         frame = _fit_results_as_frame(
             series_frame,
-            NAMESPACE,
+            NEF_PIPELINES_NAMESPACE,
             entry,
             fits,
             monte_carlo_errors,

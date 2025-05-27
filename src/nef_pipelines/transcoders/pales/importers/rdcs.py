@@ -7,8 +7,8 @@ import typer
 from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum
 
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     create_nef_save_frame,
     read_or_create_entry_exit_error_on_bad_file,
 )
@@ -53,7 +53,7 @@ app = typer.Typer()
 
 _NEF_RDC_RESTRAINT_FRAME_CATEGORY = "nef_rdc_restraint_list"
 _NEF_RDC_RESTRAINT_CATEGORY = "nef_rdc_restraint"
-_NEFL_RDC_TENSOR_FRAME_FRAME_CATEGORY = NEF_PIPELINES_PREFIX + "_rdc_tensor"
+_NEFL_RDC_TENSOR_FRAME_FRAME_CATEGORY = NEF_PIPELINES_NAMESPACE + "_rdc_tensor"
 
 _PALES_RDCS_EXPECTED_FIELDS = (
     "RESID_I RESNAME_I ATOMNAME_I RESID_J RESNAME_J ATOMNAME_J DI D".split()

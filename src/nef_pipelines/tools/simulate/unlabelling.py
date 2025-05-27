@@ -12,9 +12,12 @@ from strenum import StrEnum
 from tabulate import tabulate
 from uncertainties import ufloat
 
-from nef_pipelines.lib.nef_frames_lib import EXPERIMENT_CLASSIFICATION, EXPERIMENT_TYPE
+from nef_pipelines.lib.nef_frames_lib import (
+    EXPERIMENT_CLASSIFICATION,
+    EXPERIMENT_TYPE,
+    NEF_PIPELINES_NAMESPACE,
+)
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     UNUSED,
     SelectionType,
     create_nef_save_frame,
@@ -776,9 +779,9 @@ def pipe(
 
 def _make_residue_typing_table(selected_frames, unlabelled_residues):
 
-    frame = create_nef_save_frame(f"{NEF_PIPELINES_PREFIX}_residue_types", "default")
+    frame = create_nef_save_frame(f"{NEF_PIPELINES_NAMESPACE}_residue_types", "default")
 
-    loop = Loop.from_scratch(f"{NEF_PIPELINES_PREFIX}_residue_type")
+    loop = Loop.from_scratch(f"{NEF_PIPELINES_NAMESPACE}_residue_type")
 
     for tag in ["index", "chain_code", "sequence_code", "residue_type", "probability"]:
         loop.add_tag(tag)

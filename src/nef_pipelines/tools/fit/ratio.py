@@ -5,8 +5,8 @@ import typer
 from pynmrstar import Entry, Loop, Saveframe
 from uncertainties import ufloat
 
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     NEF_RELAXATION_VERSION,
     UNUSED,
     create_nef_save_frame,
@@ -87,7 +87,7 @@ def pipe(
 
     for series_frame in series_frames:
         id_series_data = _series_frame_to_id_series_data(
-            series_frame, NEF_PIPELINES_PREFIX, entry
+            series_frame, NEF_PIPELINES_NAMESPACE, entry
         )
 
         id_xy_data = {
@@ -101,7 +101,7 @@ def pipe(
         errors = {id: result[0] for id, result in results.items()}
 
         results_frame = _ratio_results_as_frame(
-            series_frame, NEF_PIPELINES_PREFIX, entry, ratios, errors, noise_level
+            series_frame, NEF_PIPELINES_NAMESPACE, entry, ratios, errors, noise_level
         )
 
         entry.add_saveframe(results_frame)

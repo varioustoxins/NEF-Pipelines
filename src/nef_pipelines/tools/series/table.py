@@ -6,8 +6,8 @@ import typer
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
 
+from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_PIPELINES_PREFIX,
     NEF_RELAXATION_VERSION,
     UNUSED,
     SelectionType,
@@ -25,7 +25,7 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 from nef_pipelines.tools.series import series_app
 
-NAMESPACE = NEF_PIPELINES_PREFIX
+NAMESPACE = NEF_PIPELINES_NAMESPACE
 
 
 class SeriesSelectionMethod(StrEnum):
