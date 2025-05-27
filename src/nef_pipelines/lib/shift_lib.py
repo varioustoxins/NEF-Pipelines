@@ -37,7 +37,10 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
     ]
     for frame in frames:
 
-        loop = frame.get_loop(NEF_CHEMICAL_SHIFT_LOOP)
+        try:
+            loop = frame.get_loop(NEF_CHEMICAL_SHIFT_LOOP)
+        except KeyError:
+            continue
 
         for i, row in enumerate(loop_row_namespace_iter(loop), start=1):
 
