@@ -19,9 +19,12 @@ EXPERIMENT_CLASSIFICATION = "experiment_classification"
 CCPN_COMMENT = "ccpn_comment"
 CCPN_MERIT = "ccpn_figure_of_merit"
 
-NEF_NAMESPACE  = "nef"
+NEF_NAMESPACE = "nef"
 CCPN_NAMESPACE = "ccpn"
 NEF_PIPELINES_NAMESPACE = "nefpls"
+
+NEF_CHEMICAL_SHIFT_LIST = f"{NEF}_{CHEMICAL_SHIFT_LIST}"
+
 SPECTRUM_FRAME_TAGS = (
     SF_CATEGORY,
     SF_FRAMECODE,
