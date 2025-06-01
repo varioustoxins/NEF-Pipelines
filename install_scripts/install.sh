@@ -136,7 +136,7 @@ if $NEF_PIPELINES_EXISTS and  ; then
   new_version=$( nefl help about  --version )
   echo $current_version -> $new_version
 else
-  uv tool install nef-pipelines --with streamfitter --with rich --python3.11
+  uv tool install nef-pipelines --with streamfitter --with rich --python 3.11
 fi
   # check if nef pipelines exists
   NEF_PIPELINES_EXISTS=false
