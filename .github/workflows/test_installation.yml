@@ -1,0 +1,34 @@
+
+name: NEF-Pipelines Installation Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master" ]
+  pull_request:
+  schedule:
+    # Run roughly every 15 days at 00:00 UTC
+    # (useful to check if updates on dependencies break the package)
+    - cron: '0 0 1,16 * *'
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [ "3.8" , "3.9", "3.10", "3.11", "3.12"] #, "3.13-beta.1" ]
+        os: [ubuntu-latest] #, macos-latest] #windows-latest]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+#      - name: Support longpaths
+#        run: git config --system core.longpaths true
+
+      - name: Install using script
+        run: |
+          curl -sL https://github.com/varioustoxins/NEF-Pipelines/blob/master/install_scripts/install.sh | sh
+
+      - name: Check installation
+        run: |
+          nef help about --version
