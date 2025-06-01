@@ -28,6 +28,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: Make the script files executable
+        run: chmod +x ./install_scripts/basic_install.sh
+
       - name: Install using script
         run: |
          ./install_scripts/basic_install.sh
