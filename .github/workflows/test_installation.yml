@@ -27,7 +27,7 @@ jobs:
 
       - name: Install using script
         run: |
-          curl -sL https://github.com/varioustoxins/NEF-Pipelines/blob/master/install_scripts/install.sh  \
+          curl -sL https://raw.githubusercontent.com/varioustoxins/NEF-Pipelines/refs/heads/master/install_scripts/install.sh  \
           sh
 
 #      - name: Check installation
