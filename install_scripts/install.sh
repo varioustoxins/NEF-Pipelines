@@ -7,7 +7,6 @@ UV_MIN_VERSION=0.5.20
 
 yes="${NEF_PIPELINES_AUTO_INSTALL:-no}"
 
-
 while [[ $# -gt 0 ]]; do
   case $1 in
     -y|--yes)
@@ -36,7 +35,8 @@ if [[ $yes == "no" ]] ; then
   echo "This script will install or update UV and then use UV to install and update NEF-Pipelines,"
   echo "would you like to go ahead Y[es]/N[o] default=Y[es]?"
   read answer
-  if ! [[ "$answer" != "${answer#[Yy]}"  || "$answer" == "" ]]  ; then
+
+  if [[ "$answer" != "${answer#[Nn]}" && "$answer" != "" ]] ; then
       echo installation cancelled...
       exit $USER_CANCELLED
   fi
