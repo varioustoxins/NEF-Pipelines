@@ -4,13 +4,14 @@
 [![Built Status](https://api.cirrus-ci.com/github/<USER>/nef_pipelines.svg?branch=main)](https://cirrus-ci.com/github/<USER>/nef_pipelines)
 [![ReadTheDocs](https://readthedocs.org/projects/nef_pipelines/badge/?version=latest)](https://nef_pipelines.readthedocs.io/en/stable/)
 [![Coveralls](https://img.shields.io/coveralls/github/<USER>/nef_pipelines/main.svg)](https://coveralls.io/r/<USER>/nef_pipelines)
-[![PyPI-Server](https://img.shields.io/pypi/v/nef_pipelines.svg)](https://pypi.org/project/nef_pipelines/)
 [![Conda-Forge](https://img.shields.io/conda/vn/conda-forge/nef_pipelines.svg)](https://anaconda.org/conda-forge/nef_pipelines)
-[![Monthly Downloads](https://pepy.tech/badge/nef_pipelines/month)](https://pepy.tech/project/nef_pipelines)
 [![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Twitter)](https://twitter.com/nef_pipelines)
 -->
 
+[![PyPI-Server](https://img.shields.io/pypi/v/nef_pipelines.svg)](https://pypi.org/project/nef_pipelines/)
+[![Monthly Downloads](https://pepy.tech/badge/nef_pipelines/month)](https://pepy.tech/project/nef_pipelines)
 [![Project generated with PyScaffold](https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold)](https://pyscaffold.org/)
+
 
 # NEF-Pipelines
 
