@@ -101,23 +101,23 @@ echo "* updating and installing nef-pipelines"
 echo
 
 if ! $UV_EXISTS ; then
-  echo failed to install UV please contact the the developers at the nef-pipelines
-  echo github repository https://github.com/varioustoxins/NEF-Pipelines and
-  echo create an issue
+  echo "!! failed to install UV please contact the the developers at the nef-pipelines"
+  echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
+  echo "!! create an issue"
 
   exit $NO_UV
 fi
 
 UV_VERSION=$(uv --version | cut -d' ' -f2)
 if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
-    echo uv version is outdated, updating...
+    echo "* uv version is outdated, updating..."
     uv self update
 
     UV_VERSION=$(uv --version | cut -d' ' -f2)
     if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
-        echo uv failed to update please contact the the developers at the nef-pipelines
-        echo github repository https://github.com/varioustoxins/NEF-Pipelines and
-        echo create an issue
+        echo "!! uv failed to update please contact the the developers at the nef-pipelines"
+        echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
+        echo "!! create an issue"
         exit $UV_DIDNT_UPDATE
     fi
 fi
@@ -129,13 +129,14 @@ if command -v nef &> /dev/null ; then
 fi
 
 if $NEF_PIPELINES_EXISTS and  ; then
-  echo nef pipelines is installed, trying to update nef pipelines...
+  echo "* nef pipelines is installed, trying to update nef pipelines..."
   current_version=$( nefl help about  --version )
-  uv tool update nef-pipelines
+  output="$(uv tool update nef-pipelines 2>&1)"
+  echo "* $output"
   new_version=$( nefl help about  --version )
   echo $current_version -> $new_version
 else
-  uv tool install nef-pipelines --with streamfitter --with rich
+  uv tool install nef-pipelines --with streamfitter --with rich --python3.11
 fi
   # check if nef pipelines exists
   NEF_PIPELINES_EXISTS=false
@@ -144,12 +145,12 @@ fi
   fi
 
   if ! $NEF_PIPELINES_EXISTS ; then
-    echo nef-pipelines failed to install please contact the the developers at the nef-pipelines
-    echo github repository https://github.com/varioustoxins/NEF-Pipelines and
-    echo create an issue
+    echo "!! nef-pipelines failed to install please contact the the developers at the nef-pipelines"
+    echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
+    echo "!! create an issue"
 
     exit $NEF_PIPELINES_DIDNT_INSTALL
 fi
 
 current_version=$( nefl help about  --version )
-echo nef pipelines shoud be installed and upto date at $current_version
+echo "* nef pipelines shoud be installed and upto date at $current_version"
