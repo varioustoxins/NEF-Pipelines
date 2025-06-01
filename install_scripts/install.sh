@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if ! [[ $yes == "yes" ]] ; then
+if [[ $yes == "no" ]] ; then
   # check if the user wants to go ahead
   echo "This script will install or update UV and then use UV to install and update NEF-Pipelines,"
   echo "would you like to go ahead Y[es]/N[o] default=Y[es]?"
