@@ -31,6 +31,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+echo yes "$yes"
+exit 0
 
 if ! [[ $yes == "yes" ]] ; then
   # check if the user wants to go ahead
