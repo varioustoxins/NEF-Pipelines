@@ -35,6 +35,6 @@ jobs:
         run: |
          ./install_scripts/basic_install.sh
 
-#      - name: Check installation
-#        run: |
-#          nef help about --version
+      - name: Check installation
+        run: |
+          nef help about --version
