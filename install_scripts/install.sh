@@ -34,7 +34,13 @@ if [[ $yes == "no" ]] ; then
   # check if the user wants to go ahead
   echo "This script will install or update UV and then use UV to install and update NEF-Pipelines,"
   echo "would you like to go ahead Y[es]/N[o] default=Y[es]?"
-  read answer
+
+  if ! [ -t 0 ]; then
+    echo "Not running in a terminal, since there is no user interaction the answer is no"
+    answer=no
+  else
+    read answer
+  fi
 
   if [[ "$answer" != "${answer#[Nn]}" && "$answer" != "" ]] ; then
       echo installation cancelled...
