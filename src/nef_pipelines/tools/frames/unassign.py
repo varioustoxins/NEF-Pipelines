@@ -161,43 +161,6 @@ class ResidueRange:
     end: int
 
 
-def _build_residue_ranges(raw_residue_ranges: List[str]) -> List[ResidueRange]:
-
-    results = []
-    for elem in raw_residue_ranges:
-        if ":" in elem:
-            chain_code, range_str = elem.split(":")
-        else:
-            chain_code = ANY
-            range_str = elem
-
-        range_fields = range_str.split("-")
-
-        if len(range_fields) != 2:
-            msg = f"""
-                residue ranges must be in the form <START>-<END> [2 elements], i got {elem} [{len(range_fields)}]
-            """
-            exit_error(msg)
-
-        for i, field in enumerate(range_fields):
-            if not is_int(field):
-                msg = f"""
-                    residue ranges must be integers, i got {field} for element {i} in {elem}
-                """
-                exit_error(msg)
-
-            range_fields[i] = int(field)
-
-        start, end = range_fields
-
-        if end >= start:
-            results.append(ResidueRange(chain_code, start, end))
-
-    if not results:
-        results.append(ResidueRange(ANY, -sys.maxsize, sys.maxsize))
-    return results
-
-
 @frames_app.command()
 def unassign(
     selector_type: SelectionType = typer.Option(
@@ -349,6 +312,43 @@ def pipe(
             _unoffset_sequence_codes_in_triple(frame, targets)
 
     return entry
+
+
+def _build_residue_ranges(raw_residue_ranges: List[str]) -> List[ResidueRange]:
+
+    results = []
+    for elem in raw_residue_ranges:
+        if ":" in elem:
+            chain_code, range_str = elem.split(":")
+        else:
+            chain_code = ANY
+            range_str = elem
+
+        range_fields = range_str.split("-")
+
+        if len(range_fields) != 2:
+            msg = f"""
+                residue ranges must be in the form <START>-<END> [2 elements], i got {elem} [{len(range_fields)}]
+            """
+            exit_error(msg)
+
+        for i, field in enumerate(range_fields):
+            if not is_int(field):
+                msg = f"""
+                    residue ranges must be integers, i got {field} for element {i} in {elem}
+                """
+                exit_error(msg)
+
+            range_fields[i] = int(field)
+
+        start, end = range_fields
+
+        if end >= start:
+            results.append(ResidueRange(chain_code, start, end))
+
+    if not results:
+        results.append(ResidueRange(ANY, -sys.maxsize, sys.maxsize))
+    return results
 
 
 def _select_assignments_to_remove_by_residue_ranges(
