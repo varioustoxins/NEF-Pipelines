@@ -236,7 +236,7 @@ def _create_entry_names_from_template_if_required(
     return new_entry_names
 
 
-def read_raw_peaks(
+def _read_raw_peaks(
     lines,
     chain_code,
     sequence_lookup,
@@ -511,7 +511,10 @@ def _read_atom_label(
     residue_handling,
     line_info,
 ):
-    label = value[0] if value else "?"
+    if isinstance(value, str):
+        label = value
+    else:
+        label = value[0] if value else "?"
     label = label.strip()
 
     if "." in label and len(label.split(".")) == 2:
