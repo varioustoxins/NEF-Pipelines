@@ -461,8 +461,12 @@ def _read_axis_for_peak(
     axis_values = []
     for axis_field in list("LPWBEJU"):
         header = f"{axis}.{axis_field}"
-        field_index = heading_indices[header]
-        value = tcl_list[field_index]
+
+        if header in heading_indices:
+            field_index = heading_indices[header]
+            value = tcl_list[field_index]
+        else:
+            value = None
         if axis_field == "L":
             axis_values.append(
                 _read_atom_label(
