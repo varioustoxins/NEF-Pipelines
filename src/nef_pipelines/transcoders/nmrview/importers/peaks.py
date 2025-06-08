@@ -561,6 +561,17 @@ def _read_atom_label(
 
     residue_handling = residue_handling.pop()
 
+    if file_residue_name:
+        three_letter_file_residue_name = (
+            translate_1_to_3(file_residue_name, molecule_type)[0]
+            if len(file_residue_name) == 1
+            else file_residue_name
+        )
+
+        if three_letter_file_residue_name and sequence_residue_name:
+            if three_letter_file_residue_name.lower() == sequence_residue_name.lower():
+                file_residue_name = three_letter_file_residue_name
+
     if (
         file_residue_name
         and sequence_residue_name
