@@ -6,7 +6,7 @@ from nef_pipelines.lib.test_lib import (
     path_in_test_data,
     run_and_report,
 )
-from nef_pipelines.transcoders.csv.importers.peaks import peaks
+from nef_pipelines.transcoders.csv.importers._peaks_cli import peaks
 
 app = typer.Typer()
 app.command()(peaks)

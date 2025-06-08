@@ -8,7 +8,7 @@ from nef_pipelines.lib.test_lib import (
     read_test_data,
     run_and_report,
 )
-from nef_pipelines.transcoders.csv.importers.rdcs import rdcs
+from nef_pipelines.transcoders.csv.importers._rdcs_cli import rdcs
 
 app = typer.Typer()
 app.command()(rdcs)
