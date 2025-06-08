@@ -7,6 +7,8 @@ from strenum import LowercaseStrEnum, StrEnum
 
 # TODO: to avoid circular import, move to constants
 UNUSED = "."
+CCPN_PSEUDO = "@"
+CCPN_UNSASSIGNED_CHAIN = "-"
 
 
 class Linking(StrEnum):
@@ -37,6 +39,7 @@ class Residue:
     sequence_code: Union[int, str]
     residue_name: str
     sequence_code_prefix: str = ""
+    chain_code_prefix: str = ""
     offset: int = 0
     # assignmnet_state:ResidueAssignmentState  add as property
 
