@@ -871,6 +871,27 @@ def get_chain_ends(residues: List[SequenceResidue]) -> Dict[str, int]:
     }
 
 
+def get_chain_starts_and_ends(
+    residues: List[SequenceResidue],
+) -> Dict[str, Tuple[int, int]]:
+    """
+    from a list of residues get the lowest highest residue number for each chain ignoring any sequence codes that
+    can't be converted to an integer
+
+    :param residues:  a list of residues from one or more chains
+    :return: a dictionary of chain starts and ends as a tuple by chain_code
+    """
+
+    chain_starts = get_chain_starts(residues)
+    chain_ends = get_chain_ends(residues)
+
+    result = {}
+    for chain in chain_starts:
+        result[chain] = (chain_starts[chain], chain_ends[chain])
+
+    return result
+
+
 def sequence_to_chains(residues: List[SequenceResidue]) -> List[str]:
     """
     from a list of residues get chain_codes
