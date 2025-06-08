@@ -535,7 +535,6 @@ def _read_peak_data(
                     molecule_type,
                     residue_name_type,
                     residue_name_handling,
-                    residue_number_handling,
                     line_info,
                 )
 
