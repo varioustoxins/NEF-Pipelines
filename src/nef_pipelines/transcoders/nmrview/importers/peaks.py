@@ -9,9 +9,12 @@
 import itertools
 import string
 import sys
+import traceback
 from collections import Counter, OrderedDict
+from dataclasses import replace
 from enum import auto
 from pathlib import Path
+from textwrap import dedent
 from typing import Dict, List, Tuple
 
 import typer
@@ -28,11 +31,14 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import (
     MoleculeType,
+    get_chain_starts_and_ends,
     get_residue_name_from_lookup,
     sequence_from_entry,
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import (
+    CCPN_PSEUDO,
+    CCPN_UNSASSIGNED_CHAIN,
     UNUSED,
     AtomLabel,
     LineInfo,
@@ -40,7 +46,6 @@ from nef_pipelines.lib.structures import (
     PeakList,
     PeakListData,
     PeakValues,
-    Residue,
     SequenceResidue,
 )
 from nef_pipelines.lib.util import (
@@ -59,15 +64,19 @@ from ..nmrview_lib import parse_float_list, parse_tcl
 app = typer.Typer()
 
 
-class ResidueHandlingOption(LowercaseStrEnum):
+class ResidueNameHandlingOption(LowercaseStrEnum):
 
     STOP = auto()  # stop processing
     PSEUDO = (
         auto()
     )  # continue processing but the residue becomes a pseudo residue with sequence code @xxx
-    UNASSSIGN = (
+    SEQUENCE = auto()  # use the residue type in the read sequence instead
+    UNASSIGN = (
         auto()
     )  # set the chain_code, sequence code and  residue type to . and continue
+    COMMENT = (
+        auto()
+    )  # save the assignment information for the peak as a comment in the NEF file
     CONTINUE = auto()  # don't change anything take whats in the file
 
     CASE = (
@@ -76,18 +85,67 @@ class ResidueHandlingOption(LowercaseStrEnum):
     WARN = auto()  # report the peak with missing residue information
 
 
-RESIDUE_HANDLING_HELP = """
-what to do when the residue for a peak isn't defined in the sequence (if read) but it has a chain and residue number and
-the residue name doesn't match the one in the sequence. Choices are
+class ResidueNumberHandlingOption(LowercaseStrEnum):
+
+    STOP = auto()  # stop processing
+    PSEUDO = (
+        auto()
+    )  # continue processing but the residue becomes a pseudo residue with sequence code @xxx
+    UNASSIGN = (
+        auto()
+    )  # set the chain_code, sequence code and  residue type to . and continue
+    COMMENT = (
+        auto()
+    )  # save the assignment information for the peak in a comment field in NEF
+    CONTINUE = auto()  # don't change anything, take whats in the file
+
+    WARN = auto()  # report each peak with missing residue information
+    GLOBAL_WARN = (
+        auto()
+    )  # issue an overall warning that there are residues outside the sequence
+
+
+PSEUDO_OPTION_INFO = """\
+   continue processing but the residue becomes a pseudo residue with its sequence code replaced by a pseudo residue
+   (xxx -> @xxx)
+"""
+UNASSIGN_OPTION_INFO = "remove the assignment: set the chain_code, sequence code and  residue type to . and continue"
+
+RESIDUE_NUMBER_HANDLING_OPTION_EXPLANATIONS = {
+    ResidueNumberHandlingOption.STOP: "stop processing",
+    ResidueNumberHandlingOption.PSEUDO: PSEUDO_OPTION_INFO,
+    ResidueNumberHandlingOption.UNASSIGN: UNASSIGN_OPTION_INFO,
+    ResidueNumberHandlingOption.COMMENT: "place the information about the assignment in a comment and unassign it",
+    ResidueNumberHandlingOption.CONTINUE: "don't change anything, take whats in the file",
+    ResidueNumberHandlingOption.WARN: "report the peak with missing residue information",
+}
+RESIDUE_NAME_HANDLING_HELP = """
+what to do when the residue name for an assignment isn't defined in the sequence (if read) but it has a chain and
+residue number and the residue name doesn't match the one in the sequence. Choices are
 stop: stop processing if the residue name isn't defined or is mismatched
 pseudo: continue processing but the residue becomes a pseudo residue with sequence_code @xxx and the residue name read
-unassign: set the chain_code, sequence code and  residue type to . and continue without warning
+sequence: continue processing but the residue becomes the residue name read from the sequence
+unassign: set the chain_code, sequence code and residue type to . and continue without warning
+comment: put all the assignment information in the peak comment and continue
 continue: leave everything it as it is
 
 two modifiers can be added to the choice by adding them as extra options
 
 warn: report the peak with mismatched residue information on STDERR, use the read values and continue processing
 case: if the residue name matches the sequence but the case is different correct it and continue
+"""
+
+RESIDUE_NUMBER_HANDLING_HELP = """
+what to do when the residue number for an assignment isn't defined in the sequence. Choices are:
+stop: stop processing if the residue name isn't defined or is mismatched
+pseudo: continue processing but the residue becomes a pseudo residue with sequence_code @xxx
+unassign: set the chain_code, sequence code and residue type to . and continue without warning
+comment: put all the assignment information in the peak comment and continue
+continue: leave everything it as it is
+
+one modifiers can be added to the choice by adding it as an extra option
+
+warn: report the peak with mismatched residue information on STDERR, use the read values and continue processing
 """
 
 
@@ -112,8 +170,11 @@ def peaks(
     chain_codes: List[str] = typer.Option(
         None, "--chain", help="chain code", metavar="<chain-code>"
     ),
-    residue_handling: List[ResidueHandlingOption] = typer.Option(
-        None, "--residue-handling", help=RESIDUE_HANDLING_HELP
+    residue_name_handling: List[str] = typer.Option(
+        None, "--residue-name-handling", help=RESIDUE_NAME_HANDLING_HELP
+    ),
+    residue_number_handling: List[str] = typer.Option(
+        None, "--residue-number-handling", help=RESIDUE_NUMBER_HANDLING_HELP
     ),
     residue_name_type: ResidueNameTypeOption = typer.Option(
         ResidueNameTypeOption.AUTO, "--residue-name-type", help=RESIDUE_NAME_TYPE_HELP
@@ -130,7 +191,7 @@ def peaks(
         ..., help="input peak files", metavar="<peak-file.xpk>"
     ),
 ):
-    """convert nmrview peak file <nmrview>.xpk files to NEF [alpha for new residue handling]"""
+    """convert nmrview peak file <nmrview>.xpk files to NEF [alpha for new residue name and sequence code handling]"""
 
     if not chain_codes:
         chain_codes = ["A"] * len(file_names)
@@ -146,9 +207,15 @@ def peaks(
 
     _exit_if_num_chains_and_files_dont_match(chain_codes, file_names)
 
-    residue_handling = parse_comma_separated_options(residue_handling)
+    residue_name_handling = parse_comma_separated_options(residue_name_handling)
 
-    residue_handling = _fixup_residue_handling_or_exit_bad(residue_handling)
+    residue_name_handling = _fixup_residue_handling_or_exit_bad(residue_name_handling)
+
+    residue_number_handling = parse_comma_separated_options(residue_number_handling)
+
+    residue_number_handling = _fixup_residue_number_handling_or_exit_bad(
+        residue_number_handling
+    )
 
     entry = pipe(
         entry,
@@ -157,7 +224,8 @@ def peaks(
         sequence,
         molecule_type,
         residue_name_type,
-        residue_handling,
+        residue_name_handling,
+        residue_number_handling,
     )
 
     print(entry)
@@ -165,28 +233,29 @@ def peaks(
 
 def pipe(
     entry: Entry,
-    file_names: List[str],
+    file_names: List[Path],
     chain_codes: List[str],
-    sequence: List[Residue],
+    sequence: List[SequenceResidue],
     molecule_type: MoleculeType,
     residue_name_type: ResidueNameTypeOption,
-    residue_handling: ResidueHandlingOption,
+    residue_name_handling: ResidueNameHandlingOption,
+    residue_number_handling: ResidueNumberHandlingOption,
 ) -> Entry:
 
     frames = []
-    sequence_lookup = _sequence_to_residue_type_lookup(sequence)
 
     frame_names_and_peak_lists = []
     for file_name, chain_code in zip(file_names, chain_codes):
         with open(file_name, "r") as lines:
-            peaks_list = read_raw_peaks(
+            peaks_list = _read_raw_peaks(
                 lines,
                 chain_code,
-                sequence_lookup,
+                sequence,
                 file_name,
                 molecule_type,
                 residue_name_type,
-                residue_handling,
+                residue_name_handling,
+                residue_number_handling,
             )
 
         frame_name = _make_peak_list_frame_name(peaks_list)
@@ -201,6 +270,155 @@ def pipe(
         frames.append(_create_spectrum_frame(frame_name, peaks_list, chain_code))
 
     return add_frames_to_entry(entry, frames)
+
+
+def _warn(msg):
+    msg = dedent(msg)
+    print(f"WARNING: {msg}", file=sys.stderr)
+
+
+def _sequence_code_out_of_range(peak, axis, chain_starts_and_ends):
+    atom_labels = peak[axis].atom_labels
+    sequence_code = atom_labels.residue.sequence_code
+    chain_code = atom_labels.residue.chain_code
+    chain_start_and_end = chain_starts_and_ends[chain_code]
+
+    if is_int(sequence_code):
+        out_of_range = (
+            sequence_code < chain_start_and_end[0]
+            or sequence_code > chain_start_and_end[-1]
+        )
+    else:
+        out_of_range = False
+
+    return out_of_range
+
+
+def _fix_up_peak_labels(peak, axis, residue_number_handling):
+
+    atom_labels = peak[axis].atom_labels
+    residue = atom_labels.residue
+
+    if ResidueNumberHandlingOption.PSEUDO in residue_number_handling:
+        residue = replace(
+            residue,
+            sequence_code_prefix=CCPN_PSEUDO,
+            chain_code_prefix=CCPN_PSEUDO,
+            chain_code=CCPN_UNSASSIGNED_CHAIN,
+        )
+        atom_labels = replace(atom_labels, residue=residue)
+    elif ResidueNumberHandlingOption.UNASSIGN in residue_number_handling:
+        residue = replace(
+            residue,
+            chain_code=UNUSED,
+            sequence_code=UNUSED,
+            residue_name=UNUSED,
+            sequence_code_prefix="",
+            offset=0,
+        )
+        atom_labels = replace(atom_labels, residue=residue)
+        atom_labels = replace(atom_labels, atom_name=UNUSED)
+
+    peak[axis] = replace(peak[axis], atom_labels=atom_labels)
+    return peak
+
+
+def _copy_assignment_to_comments(peak, axis, peak_number_handling):
+
+    atom_labels = peak[axis].atom_labels
+    peak_comment = peak["values"].comment
+
+    WARNING = "WARNING: some residue sequence codes are out of range:"
+    if ResidueNumberHandlingOption.COMMENT in peak_number_handling:
+        if WARNING not in peak_comment:
+            peak_comment = f"{WARNING}\n{peak_comment}"
+        residue = atom_labels.residue
+        atom_name = atom_labels.atom_name if atom_labels.atom_name != UNUSED else ""
+        sequence_code = residue.sequence_code if residue.sequence_code != UNUSED else ""
+        chain_code = residue.chain_code if residue.chain_code != UNUSED else ""
+        residue_name = residue.residue_name if residue.residue_name != UNUSED else ""
+
+        assignment_items = [chain_code, sequence_code, residue_name, atom_name]
+        assignment_items = [str(item) for item in assignment_items]
+        assignment = ".".join(assignment_items)
+        peak_comment = f"{peak_comment}\nassignment with sequence_code out of range [axis {axis+1}]: {assignment}"
+
+        peak["values"] = replace(peak["values"], comment=peak_comment)
+
+    return peak
+
+
+def _handle_bad_sequence_codes(
+    peak, chain_starts_and_ends, peak_number_handling, line_info
+):
+
+    for item_id in peak:
+        # this is because we are using dicts use a dataclass!
+        if not isinstance(item_id, int):
+            continue
+        axis = item_id
+
+        # TODO we should be iterating over peak labels
+        chain_code = peak[axis].atom_labels.residue.chain_code
+
+        sequence_out_of_range = False
+        if chain_code in chain_starts_and_ends:
+            chain_start_and_end = chain_starts_and_ends[chain_code]
+
+            if sequence_out_of_range := _sequence_code_out_of_range(
+                peak, axis, chain_starts_and_ends
+            ):
+
+                _warn_or_exit_for_sequence_code_out_of_range(
+                    peak, axis, chain_start_and_end, line_info, peak_number_handling
+                )
+
+                if ResidueNumberHandlingOption.CONTINUE not in peak_number_handling:
+                    peak = _copy_assignment_to_comments(
+                        peak, axis, peak_number_handling
+                    )
+                    peak = _fix_up_peak_labels(peak, axis, peak_number_handling)
+
+            # else:
+            # its just a string leave it as it is...
+
+    return sequence_out_of_range
+
+
+def _warn_or_exit_for_sequence_code_out_of_range(
+    peak, axis, chain_start_and_end, line_info, peak_number_handling
+):
+    atom_labels = peak[axis].atom_labels
+    chain_code = atom_labels.residue.chain_code
+    sequence_code = atom_labels.residue.sequence_code
+
+    if (do_warn := ResidueNumberHandlingOption.WARN in peak_number_handling) or (
+        do_stop := ResidueNumberHandlingOption.STOP in peak_number_handling
+    ):
+
+        if do_warn:
+            handling_options = set(peak_number_handling)
+            if ResidueNumberHandlingOption.WARN in handling_options:
+                handling_options.remove(ResidueNumberHandlingOption.WARN)
+            action_taken = list(handling_options)[0]
+            action = f"action taken: {RESIDUE_NUMBER_HANDLING_OPTION_EXPLANATIONS[action_taken]}"
+        elif do_stop:
+            action = ""
+
+        msg = f"""\
+                at line number {line_info.line_no} in file {line_info.file_name} with the value:
+
+                '{line_info.line.strip()}'
+
+                on axis {axis + 1} the residue number {sequence_code} is outside the bounds of it's
+                chain {chain_code} [{chain_start_and_end[0]} - {chain_start_and_end[1]}]
+                {action}
+              """
+
+        if do_warn:
+            _warn(msg)
+        elif do_stop:
+            exit_error(msg)
 
 
 def _disambiguate_frame_names(peak_lists_and_entry_names):
@@ -239,11 +457,12 @@ def _create_entry_names_from_template_if_required(
 def _read_raw_peaks(
     lines,
     chain_code,
-    sequence_lookup,
+    sequence,
     file_name,
     molecule_type,
     residue_name_type,
-    residue_handling,
+    residue_name_handling,
+    residue_number_handling,
 ):
 
     header = get_header_or_exit(lines)
@@ -257,14 +476,23 @@ def _read_raw_peaks(
         header_data,
         column_indices,
         chain_code,
-        sequence_lookup,
+        sequence,
         file_name,
         molecule_type,
         residue_name_type,
-        residue_handling,
+        residue_name_handling,
+        residue_number_handling,
     )
 
     return PeakList(header_data, raw_peaks)
+
+
+def _dedent_all(text):
+    lines = []
+    for line in text.split("\n"):
+        lines.append(line.lstrip())
+
+    return "\n".join(lines)
 
 
 def _read_peak_data(
@@ -272,15 +500,21 @@ def _read_peak_data(
     header_data,
     column_indices,
     chain_code,
-    sequence_lookup,
+    sequence,
     file_name,
     molecule_type,
     residue_name_type,
-    residue_handling,
+    residue_name_handling,
+    residue_number_handling,
 ):
+    sequence_lookup = _sequence_to_residue_type_lookup(sequence)
+    chain_starts_and_ends = get_chain_starts_and_ends(sequence)
+
     raw_peaks = []
     field = None
-    axis_index = None
+
+    bad_peak_serials = []
+
     for line_no, raw_line in enumerate(lines):
         line_info = LineInfo(file_name, line_no, raw_line)
         if not len(raw_line.strip()):
@@ -289,7 +523,7 @@ def _read_peak_data(
             peak = {}
             tcl_list = parse_tcl(raw_line)
             # TODO validate and report errors
-            peak_index = int(tcl_list[0])
+            peak_serial = int(tcl_list[0])
 
             for axis_index, axis in enumerate(header_data.axis_labels):
                 axis_values = _read_axis_for_peak(
@@ -300,25 +534,71 @@ def _read_peak_data(
                     sequence_lookup,
                     molecule_type,
                     residue_name_type,
-                    residue_handling,
+                    residue_name_handling,
+                    residue_number_handling,
                     line_info,
                 )
 
                 peak[axis_index] = PeakAxis(*axis_values)
 
             raw_values = _read_values_for_peak(tcl_list, column_indices)
-            peak["values"] = PeakValues(peak_index, **raw_values)
+            peak["values"] = PeakValues(peak_serial, **raw_values)
+
+            sequence_code_out_of_range = _handle_bad_sequence_codes(
+                peak, chain_starts_and_ends, residue_number_handling, line_info
+            )
+
+            if sequence_code_out_of_range:
+                bad_peak_serials.append(peak_serial)
 
             raw_peaks.append(peak)
 
         except Exception as e:
-            field = str(field) if field else "unknown"
-            msg = (
-                f"failed to parse the line {line_no} with input: '{raw_line.strip()}' field: {field}  axis: "
-                f"  {axis_index + 1} exception: {e}"
-            )
-            exit_error(msg)
+            _report_parsing_exception_and_exit(e, axis_index, field, line_info)
+
+    if ResidueNumberHandlingOption.GLOBAL_WARN in residue_number_handling:
+        _globally_report_bad_sequence_code_if_present(bad_peak_serials, file_name)
+
     return raw_peaks
+
+
+def _report_parsing_exception_and_exit(e, axis_index, field, line_info):
+    field = str(field) if field else "unknown"
+    traceback_text = traceback.format_exc()
+    msg_text = f"""\
+        There was an unexpected error parsing the NMRView Peak (xpk) file data
+        at line {line_info.line_no} in the file {line_info.file_name}
+        with input: '{line_info.line.strip()}'
+        field: {field}  axis: {axis_index + 1}
+        reason: {e}
+        please contact the developers with your data file and this message
+    """
+    msg_text = dedent(msg_text).strip()
+    msg = f"""{traceback_text}\n{msg_text}"""
+    exit_error(msg)
+
+
+def _globally_report_bad_sequence_code_if_present(bad_peak_serials, file_name):
+    if bad_peak_serials:
+        bad_peak_serials = [
+            str(bad_peak_serial) for bad_peak_serial in bad_peak_serials
+        ]
+        bad_peak_serials_msg = ", ".join(bad_peak_serials)
+        msg = f"""
+                For the NMRView peak list file [xpk]: {file_name}
+                some sequence codes didn't match the read molecular system, see comments on peaks in the NEF stream.
+                The NMRView peak serials were
+
+                {bad_peak_serials_msg}
+
+                to hide this message and choose processing options use
+                    nmrview import peaks --peak-number-handling
+
+                note: typical values are stop, warn, comment, pseudo, and unassign which maybe be combined as a commma
+                      separated list
+            """
+        msg = dedent(msg).strip()
+        _warn(msg)
 
 
 def _exit_if_num_chains_and_files_dont_match(chain_codes, file_names):
@@ -454,10 +734,10 @@ def _read_axis_for_peak(
     sequence_lookup,
     molecule_type,
     residue_name_type,
-    residue_handling,
+    residue_name_handling,
     line_info,
 ):
-    # print(line_info.line, ':', axis, heading_indices)
+
     axis_values = []
     for axis_field in list("LPWBEJU"):
         header = f"{axis}.{axis_field}"
@@ -475,7 +755,7 @@ def _read_axis_for_peak(
                     sequence_lookup,
                     molecule_type,
                     residue_name_type,
-                    residue_handling,
+                    residue_name_handling,
                     line_info,
                 )
             )
@@ -556,7 +836,8 @@ def _read_atom_label(
     residue_handling = [
         option
         for option in residue_handling
-        if option not in {ResidueHandlingOption.CASE, ResidueHandlingOption.WARN}
+        if option
+        not in {ResidueNameHandlingOption.CASE, ResidueNameHandlingOption.WARN}
     ]
 
     residue_handling = residue_handling.pop()
@@ -577,22 +858,22 @@ def _read_atom_label(
         and sequence_residue_name
         and (sequence_residue_name != file_residue_name)
     ):
-        if residue_handling == ResidueHandlingOption.STOP:
+        if residue_handling == ResidueNameHandlingOption.STOP:
             _exit_residue_name_mismatch(
                 file_residue_name, sequence_residue_name, line_info
             )
             residue_name = sequence_residue_name
-        elif residue_handling == ResidueHandlingOption.PSEUDO:
+        elif residue_handling == ResidueNameHandlingOption.PSEUDO:
             residue_name = file_residue_name
             sequence_code = f"@{sequence_code}"
-        elif residue_handling == ResidueHandlingOption.UNASSIGN:
+        elif residue_handling == ResidueNameHandlingOption.UNASSIGN:
             residue_name = None
             sequence_code = None
             chain_code = None
             atom_name = None
-        elif residue_handling == ResidueHandlingOption.SEQUENCE:
+        elif residue_handling == ResidueNameHandlingOption.SEQUENCE:
             residue_name = sequence_residue_name
-        elif residue_handling == ResidueHandlingOption.CONTINUE:
+        elif residue_handling == ResidueNameHandlingOption.CONTINUE:
             residue_name = file_residue_name
         else:
             raise Exception("unexpected")
@@ -617,7 +898,7 @@ def _read_atom_label(
 def _warn_of_residue_name_mismatch_if_required(
     file_residue_name, sequence_residue_name, residue_handling, line_info
 ):
-    if ResidueHandlingOption.WARN in residue_handling:
+    if ResidueNameHandlingOption.WARN in residue_handling:
         msg = (
             f"WARNING: at line {line_info.line_no} in file {line_info.file_name} the residue name "
             + f"{file_residue_name} doesn't match the sequence residue name {sequence_residue_name}"
@@ -628,7 +909,7 @@ def _warn_of_residue_name_mismatch_if_required(
 def _correct_residue_name_case_if_required(
     residue_handling, file_residue_name, sequence_residue_name
 ):
-    if ResidueHandlingOption.CASE in residue_handling:
+    if ResidueNameHandlingOption.CASE in residue_handling:
         if (
             sequence_residue_name
             and file_residue_name
@@ -707,15 +988,21 @@ def _exit_if_sequence_code_not_in_the_sequence(
 def _read_values_for_peak(line, heading_indices):
     peak_values = {}
     for value_field in ["vol", "int", "stat", "comment", "flag0"]:
-        field_index = heading_indices[value_field]
-        value = line[field_index]
+        if value_field in heading_indices:
+            field_index = heading_indices[value_field]
+            value = line[field_index]
+        else:
+            value = None
 
         if value_field == "vol":
             peak_values["volume"] = float(value)
         elif value_field == "int":
             peak_values["height"] = float(value)
         elif value_field == "stat":
-            peak_values["deleted"] = int(value) < 0
+            if value is None:
+                peak_values["deleted"] = False
+            else:
+                peak_values["deleted"] = int(value) < 0
         elif value_field == "comment":
             comment = value[0].strip("'") if value else ""
             peak_values["comment"] = comment
@@ -788,6 +1075,7 @@ def _spectrometer_frequencies_to_axis_codes(spectrometer_frequency, peak_list):
     return isotopes
 
 
+# TODO this should use peak_lib peaks_to_frame instead
 def _create_spectrum_frame(entry_name, peak_list, chain_code):
 
     spectrometer_frequency = _guess_spectrometer_frequency(peak_list)
@@ -887,17 +1175,24 @@ def _create_spectrum_frame(entry_name, peak_list, chain_code):
         for tag in tags:
             if tag.split("_")[:2] == ["chain", "code"]:
                 index = int(tag.split("_")[-1]) - 1
-                chain_code = peak[index].atom_labels.residue.chain_code
+                residue = peak[index].atom_labels.residue
+                chain_code = residue.chain_code
                 chain_code = chain_code if chain_code is not None else chain_code
                 chain_code = chain_code if chain_code else "."
+                chain_code_prefix = residue.chain_code_prefix
+                chain_code = f"{chain_code_prefix}{chain_code}"
+
                 chain_codes[tag] = chain_code
 
         sequence_codes = {}
         for tag in tags:
             if tag.split("_")[:2] == ["sequence", "code"]:
                 index = int(tag.split("_")[-1]) - 1
-                sequence_code = peak[index].atom_labels.residue.sequence_code
+                residue = peak[index].atom_labels.residue
+                sequence_code = residue.sequence_code
                 sequence_code = sequence_code if sequence_code else "."
+                sequence_code_prefix = residue.sequence_code_prefix
+                sequence_code = f"{sequence_code_prefix}{sequence_code}"
                 sequence_codes[tag] = sequence_code
 
         residue_names = {}
@@ -962,7 +1257,7 @@ def _fixup_residue_handling_or_exit_bad(residue_handling):
     number_residue_handling_options = len(residue_handling)
     if number_residue_handling_options == 0:
         residue_handling = [
-            ResidueHandlingOption.STOP,
+            ResidueNameHandlingOption.STOP,
         ]
 
     active_residue_options = _remove_residue_handling_modifiers(residue_handling)
@@ -971,11 +1266,42 @@ def _fixup_residue_handling_or_exit_bad(residue_handling):
     return residue_handling
 
 
+def _fixup_residue_number_handling_or_exit_bad(residue_number_handling):
+
+    number_residue_handling_options = len(residue_number_handling)
+    if number_residue_handling_options == 0:
+        residue_number_handling = [
+            ResidueNameHandlingOption.PSEUDO,
+            ResidueNumberHandlingOption.GLOBAL_WARN,
+            ResidueNumberHandlingOption.COMMENT,
+        ]
+
+    active_residue_options = _remove_residue_number_handling_modifiers(
+        residue_number_handling
+    )
+    if len(active_residue_options) > 2:
+        _exit_too_many_residue_handling_options(residue_number_handling)
+    return residue_number_handling
+
+
+def _remove_residue_number_handling_modifiers(residue_number_handling):
+    return [
+        option
+        for option in residue_number_handling
+        if option
+        not in {
+            ResidueNumberHandlingOption.WARN,
+            ResidueNumberHandlingOption.GLOBAL_WARN,
+        }
+    ]
+
+
 def _remove_residue_handling_modifiers(residue_handling):
     return [
         option
         for option in residue_handling
-        if option not in {ResidueHandlingOption.CASE, ResidueHandlingOption.WARN}
+        if option
+        not in {ResidueNameHandlingOption.CASE, ResidueNameHandlingOption.WARN}
     ]
 
 
