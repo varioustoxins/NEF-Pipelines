@@ -1,13 +1,15 @@
 import sys
+from enum import auto
 from fnmatch import fnmatch
 from typing import List
 
 import typer
 from ordered_set import OrderedSet
+from strenum import KebabCaseStrEnum
 from treelib import Tree
 from typer import Context
 
-from nef_pipelines.lib.util import parse_comma_separated_options
+from nef_pipelines.lib.util import chunks, parse_comma_separated_options
 from nef_pipelines.tools.help import help_app
 
 VERBOSE_HELP = """\
@@ -16,10 +18,18 @@ VERBOSE_HELP = """\
 """
 
 
+class CommandFormat(KebabCaseStrEnum):
+    Tree = auto()
+    HTML_Table = auto()
+
+
 # noinspection PyUnusedLocal
 @help_app.command()
 def commands(
     context: Context,
+    format: CommandFormat = typer.Option(
+        CommandFormat.Tree, help="the format to output"
+    ),
     matchers: List[str] = typer.Argument(
         None,
         help="select commands to display multiple items, wildcards and comma separated lists are allowed",
@@ -36,6 +46,77 @@ def commands(
         ]
 
     tree = cmd(context, matchers)
+
+    table_info = {}
+    for elem in tree.all_nodes_itr():
+        if elem.is_leaf():
+            elem_name, *tags = elem.tag.split()
+            tags = [tag.strip("[]") for tag in tags]
+
+            parent = tree.parent(elem.identifier)
+            parent_2 = tree.parent(parent.identifier)
+
+            node_type = parent.tag.strip()
+
+            node_owner = parent_2.tag.strip() if parent_2 else "global"
+
+            translations = {"import": "R", "export": "W"}
+            node_type = translations.get(node_type, "C")
+            tags.insert(0, node_type)
+            tags = [tag if tag != "P" else "🐍" for tag in tags]
+
+            table_info.setdefault(node_owner, []).append((elem_name, tags))
+
+    for node_owner, node_types in table_info.items():
+        by_type = {}
+        for node_type, node_info in node_types:
+            by_type.setdefault(node_type, set()).update(set(node_info))
+
+        for node_type, node_info in by_type.items():
+            if "R" in node_info and "W" in node_info:
+                node_info.remove("R")
+                node_info.remove("W")
+                node_info.add("RW")
+
+        table_info[node_owner] = by_type
+
+    SPACE_STRING = " "
+    items = []
+    for node_owner, node_info in table_info.items():
+        item = [node_owner, ""]
+        for node_type, node_tags in node_info.items():
+            item.append(f"{node_type} {SPACE_STRING.join(sorted(node_tags))}")
+        items.append(item)
+
+    columns = 5
+    column_width = 100 / columns
+
+    # print(items)
+    rows = chunks(items, columns)
+
+    print('<table style="width:100%;table-layout=fixed">')
+    print("<tbody>")
+    for i, row in enumerate(rows):
+        style = "" if i > 0 else f' style="width:{column_width:4.2f}%"'
+        print(r" <tr>")
+
+        max_num_lines = max([len(column) for column in row])
+        for column in row:
+            print(f"  <td{style}>")
+            num_lines = len(column)
+
+            for i, line in enumerate(column):
+                bold_start = "<b>" if i == 0 else ""
+                bold_end = "</b>" if i == 0 else ""
+
+                print(f"    {bold_start}{line}{bold_end}<br>")
+            for _ in range(max_num_lines - num_lines):
+                print("    <br>")
+            print("  </td>")
+        print(" </tr>")
+    print("</tbody>")
+    print("</table>")
+    sys.exit()
 
     if len(tree) != 0:
         print(tree.show(stdout=False), file=sys.stderr)
