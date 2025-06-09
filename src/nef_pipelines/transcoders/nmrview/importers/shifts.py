@@ -100,7 +100,8 @@ def add_frames_to_entry(
 
     Args:
         entry: an entry to add the save frames to
-        frames: a set of save frames to add, they must have different names to those present already
+        frames: a frame or list of save frames to add to the entry, if they have names that are already in the entry
+                they will be disambiguated ny adding an index and a warning is issued
 
 
     Returns:
