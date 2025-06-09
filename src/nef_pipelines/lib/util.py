@@ -391,6 +391,12 @@ def exit_error(msg, exception=None):
     sys.exit(EXIT_ERROR)
 
 
+def warn(msg):
+    """print a warning to stderr prefixed with WARNING:"""
+    msg = dedent(msg)
+    print(f"WARNING: {msg}", file=sys.stderr)
+
+
 def process_stream_and_add_frames(
     frames: List[Saveframe], input_args: Namespace
 ) -> Entry:
