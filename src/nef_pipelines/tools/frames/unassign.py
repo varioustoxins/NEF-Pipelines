@@ -37,6 +37,7 @@ from nef_pipelines.lib.util import (
 from nef_pipelines.tools.frames import frames_app
 
 # TODO: add the ability to do inverted assignments with ^
+# TODO add possibility of using complete instead of all... rather than having complete as an extra option?
 RESIDUE_RANGES_HELP = """
     residue ranges to unassign, can be defined as comma separated pairs of ranges e.g 1-10,11-24
     or can also have a colon separated chain_code e.g A:1-10,B:14-32. Multiple selections are combined
@@ -106,7 +107,8 @@ TARGETS_HELP = f"""
     choose what to de-assign it can be a comma separated list or called multiple times. Possible values are:
     {', '.join([e.value for e in Targets])}.
     all and not_atom are combinations, all is: chain_code + sequence_code + residue_name + atom_name and
-    not_atom is: chain_code + sequence_code + residue_name.
+    not_atom is: chain_code + sequence_code + residue_name. Complete makes assignments go back to completely empty
+    assignments as opposed to pseudo atoms.
 """
 
 
@@ -161,6 +163,9 @@ class ResidueRange:
     end: int
 
 
+COMPLETE_HELP = "if set completely unassign to undefined rather than a pseudo residue"
+
+
 @frames_app.command()
 def unassign(
     selector_type: SelectionType = typer.Option(
@@ -191,12 +196,13 @@ def unassign(
         "--residue-ranges",
         help=RESIDUE_RANGES_HELP,
     ),
+    complete: bool = typer.Option(False, help=COMPLETE_HELP),
     frame_selectors: List[str] = typer.Argument(
         None,
         help=SELECTOR_HELP,
     ),
 ):
-    """- unassign frames in the current input [alpha]"""
+    """- unassign frames in the current input [alpha] either to pseudo residues or completely [option --complete]"""
 
     entry = read_or_create_entry_exit_error_on_bad_file(input)
 
@@ -259,6 +265,7 @@ def unassign(
         chain_mappings,
         residue_ranges,
         use_residue_offsets,
+        complete,
     )
 
     print(entry)
@@ -276,6 +283,7 @@ def pipe(
     chain_mappings,
     residue_ranges,
     use_residue_offsets,
+    complete,
 ):
 
     all_assignments = OrderedSet()
@@ -300,7 +308,7 @@ def pipe(
         assignments_to_remove = sorted(assignments_to_remove, key=atom_sort_key)
 
     assignment_map = _map_assignments(
-        assignments_to_remove, targets, sequence_mode, chain_mappings
+        assignments_to_remove, targets, sequence_mode, chain_mappings, complete
     )
 
     for frame in target_frames:
@@ -548,22 +556,26 @@ def _is_triple_resonance_frame(frame: Saveframe):
 
 
 def _map_assignments(
-    assignments: List[AtomLabel], targets, sequence_mode, chain_mappings
+    assignments: List[AtomLabel], targets, sequence_mode, chain_mappings, complete
 ) -> Dict[AtomLabel, AtomLabel]:
 
     assignment_map = {}
     if Targets.CHAIN_CODE in targets:
         for assignment in assignments:
 
-            if sequence_mode == SequenceMode.UNUSED:
-                new_chain_code = "."
-            elif len(chain_mappings) == 1 and list(chain_mappings.keys())[0] == ANY:
-                new_chain_code = list(chain_mappings.values())[0]
+            if complete:
+                new_chain_code = UNUSED
             else:
-                target_chain_code = assignment.residue.chain_code
-                new_chain_code = target_chain_code
-                if assignment.residue.chain_code in chain_mappings:
-                    new_chain_code = chain_mappings[target_chain_code]
+                if sequence_mode == SequenceMode.UNUSED:
+
+                    new_chain_code = "."
+                elif len(chain_mappings) == 1 and list(chain_mappings.keys())[0] == ANY:
+                    new_chain_code = list(chain_mappings.values())[0]
+                else:
+                    target_chain_code = assignment.residue.chain_code
+                    new_chain_code = target_chain_code
+                    if assignment.residue.chain_code in chain_mappings:
+                        new_chain_code = chain_mappings[target_chain_code]
 
             new_residue = replace(assignment.residue, chain_code=new_chain_code)
             new_assignment = replace(assignment, residue=new_residue)
@@ -586,143 +598,153 @@ def _map_assignments(
             assignment_map[assignment] = new_assignment
 
     if Targets.SEQUENCE_CODE in targets:
-        new_assignment_by_chain = {}
-        for assignment, new_assignment in assignment_map.items():
-            chain_code = new_assignment.residue.chain_code
-            new_assignment_by_chain.setdefault(chain_code, []).append(
-                (assignment, new_assignment)
-            )
 
-        sequence_code_map = {}
+        if complete:
+            for assignment, new_assignment in assignment_map.items():
 
-        if len(new_assignment_by_chain) > 1:
-            msg = """
-                !WARNING! there is more than one chain present, this code hasn't been tested with multiple chains...
-            """
-            print(msg, file=sys.stderr)
+                new_residue = replace(new_assignment.residue, sequence_code=UNUSED)
+                new_assignment = replace(new_assignment, residue=new_residue)
 
-        for chain, assignments in new_assignment_by_chain.items():
-            old_sequence_codes = OrderedSet()
-            for old_assignment, new_assignment in assignments:
+                assignment_map[assignment] = new_assignment
+        else:
+            new_assignment_by_chain = {}
+            for assignment, new_assignment in assignment_map.items():
 
-                sequence_code = str(new_assignment.residue.sequence_code)
+                chain_code = new_assignment.residue.chain_code
+                new_assignment_by_chain.setdefault(chain_code, []).append(
+                    (assignment, new_assignment)
+                )
 
-                old_sequence_codes.add(sequence_code)
+            sequence_code_map = {}
 
-            if sequence_mode == SequenceMode.UNUSED:
-                for old_sequence_code in old_sequence_codes:
-                    sequence_code_map[old_sequence_code] = UNUSED
+            if len(new_assignment_by_chain) > 1:
+                msg = """
+                    !WARNING! there is more than one chain present, this code hasn't been tested with multiple chains...
+                """
+                print(msg, file=sys.stderr)
 
-            elif sequence_mode in (
-                SequenceMode.INDEX,
-                SequenceMode.RANDOM,
-                SequenceMode.ORDERED,
-            ):
-                # pull out unassigned sequence_codes
-                used_pseudo_residue_sequence_codes = [
-                    sequence_code
-                    for sequence_code in old_sequence_codes
-                    if sequence_code[0] not in string.digits
-                ]
-                old_sequence_codes = [
-                    sequence_code
-                    for sequence_code in old_sequence_codes
-                    if sequence_code[0] in string.digits
-                ]
+            for chain, assignments in new_assignment_by_chain.items():
+                old_sequence_codes = OrderedSet()
+                for old_assignment, new_assignment in assignments:
 
-                new_sequence_code_counter = itertools.count(1)
-                new_sequence_codes = []
-                for _ in old_sequence_codes:
+                    sequence_code = str(new_assignment.residue.sequence_code)
 
-                    putative_sequence_code = next(new_sequence_code_counter)
-                    while (
-                        f"@{putative_sequence_code}"
-                        in used_pseudo_residue_sequence_codes
-                    ):
+                    old_sequence_codes.add(sequence_code)
+
+                if sequence_mode == SequenceMode.UNUSED:
+                    for old_sequence_code in old_sequence_codes:
+                        sequence_code_map[old_sequence_code] = UNUSED
+
+                elif sequence_mode in (
+                    SequenceMode.INDEX,
+                    SequenceMode.RANDOM,
+                    SequenceMode.ORDERED,
+                ):
+                    # pull out unassigned sequence_codes
+                    used_pseudo_residue_sequence_codes = [
+                        sequence_code
+                        for sequence_code in old_sequence_codes
+                        if sequence_code[0] not in string.digits
+                    ]
+                    old_sequence_codes = [
+                        sequence_code
+                        for sequence_code in old_sequence_codes
+                        if sequence_code[0] in string.digits
+                    ]
+
+                    new_sequence_code_counter = itertools.count(1)
+                    new_sequence_codes = []
+                    for _ in old_sequence_codes:
+
                         putative_sequence_code = next(new_sequence_code_counter)
-
-                    new_sequence_codes.append(f"@{putative_sequence_code}")
-
-                if sequence_mode == SequenceMode.RANDOM:
-                    shuffle(new_sequence_codes)
-
-                for i, old_sequence_code in enumerate(old_sequence_codes):
-                    sequence_code_map[old_sequence_code] = new_sequence_codes[i]
-
-                for sequence_code in used_pseudo_residue_sequence_codes:
-                    sequence_code_map[sequence_code] = sequence_code
-
-            elif sequence_mode == SequenceMode.PRESERVE:
-
-                # TODO: note there is a subtle difference here to above can this be removed
-                used_pseudo_residue_sequence_codes = [
-                    sequence_code
-                    for sequence_code in old_sequence_codes
-                    if not is_int(sequence_code)
-                ]
-                old_sequence_codes = [
-                    sequence_code
-                    for sequence_code in old_sequence_codes
-                    if is_int(sequence_code)
-                ]
-
-                sequence_code_map = {}
-
-                for sequence_code in old_sequence_codes:
-                    sequence_code_map[sequence_code] = f"@{sequence_code}"
-
-                possible_new_sequence_codes = {}
-                for used_sequence_code in used_pseudo_residue_sequence_codes:
-                    if used_sequence_code == UNUSED:
-                        possible_new_sequence_codes[UNUSED] = UNUSED
-                    else:
-                        for i in itertools.chain(
-                            [
-                                "",
-                            ],
-                            itertools.count(1),
+                        while (
+                            f"@{putative_sequence_code}"
+                            in used_pseudo_residue_sequence_codes
                         ):
+                            putative_sequence_code = next(new_sequence_code_counter)
 
-                            prefix, sequence_code = strip_characters_left(
-                                used_sequence_code, string.ascii_letters + "@#"
-                            )
+                        new_sequence_codes.append(f"@{putative_sequence_code}")
 
-                            new_sequence_code = f"{prefix}PR_{i}{sequence_code}"
-                            if new_sequence_code in sequence_code_map:
-                                continue
+                    if sequence_mode == SequenceMode.RANDOM:
+                        shuffle(new_sequence_codes)
 
-                            possible_new_sequence_codes[used_sequence_code] = (
-                                new_sequence_code
-                            )
-                            break
+                    for i, old_sequence_code in enumerate(old_sequence_codes):
+                        sequence_code_map[old_sequence_code] = new_sequence_codes[i]
 
-                sequence_code_map.update(possible_new_sequence_codes)
+                    for sequence_code in used_pseudo_residue_sequence_codes:
+                        sequence_code_map[sequence_code] = sequence_code
 
-        for assignment, new_assignment in assignment_map.items():
-            old_sequence_code = str(new_assignment.residue.sequence_code)
-            offset = None
-            if "-" in old_sequence_code:
-                fields = old_sequence_code.split("-")
-                if is_int(fields[-1]):
-                    offset = fields[-1]
-                    old_sequence_code = "-".join(fields[:-1])
+                elif sequence_mode == SequenceMode.PRESERVE:
 
-            new_sequence_code = sequence_code_map[old_sequence_code]
-            if sequence_mode == SequenceMode.UNUSED:
-                new_sequence_code = UNUSED
-            elif offset is not None:
-                new_sequence_code = f"{new_sequence_code}-{offset}"
+                    # TODO: note there is a subtle difference here to above can this be removed
+                    used_pseudo_residue_sequence_codes = [
+                        sequence_code
+                        for sequence_code in old_sequence_codes
+                        if not is_int(sequence_code)
+                    ]
+                    old_sequence_codes = [
+                        sequence_code
+                        for sequence_code in old_sequence_codes
+                        if is_int(sequence_code)
+                    ]
 
-            updated_residue = replace(
-                new_assignment.residue, sequence_code=new_sequence_code
-            )
+                    sequence_code_map = {}
 
-            if updated_residue.sequence_code == UNUSED:
-                updated_residue = replace(updated_residue, chain_code=UNUSED)
+                    for sequence_code in old_sequence_codes:
+                        sequence_code_map[sequence_code] = f"@{sequence_code}"
 
-            updated_atom_label = replace(new_assignment, residue=updated_residue)
+                    possible_new_sequence_codes = {}
+                    for used_sequence_code in used_pseudo_residue_sequence_codes:
+                        if used_sequence_code == UNUSED:
+                            possible_new_sequence_codes[UNUSED] = UNUSED
+                        else:
+                            for i in itertools.chain(
+                                [
+                                    "",
+                                ],
+                                itertools.count(1),
+                            ):
 
-            assignment_map[assignment] = updated_atom_label
+                                prefix, sequence_code = strip_characters_left(
+                                    used_sequence_code, string.ascii_letters + "@#"
+                                )
+
+                                new_sequence_code = f"{prefix}PR_{i}{sequence_code}"
+                                if new_sequence_code in sequence_code_map:
+                                    continue
+
+                                possible_new_sequence_codes[used_sequence_code] = (
+                                    new_sequence_code
+                                )
+                                break
+
+                    sequence_code_map.update(possible_new_sequence_codes)
+
+            for assignment, new_assignment in assignment_map.items():
+                old_sequence_code = str(new_assignment.residue.sequence_code)
+                offset = None
+                if "-" in old_sequence_code:
+                    fields = old_sequence_code.split("-")
+                    if is_int(fields[-1]):
+                        offset = fields[-1]
+                        old_sequence_code = "-".join(fields[:-1])
+
+                new_sequence_code = sequence_code_map[old_sequence_code]
+                if sequence_mode == SequenceMode.UNUSED:
+                    new_sequence_code = UNUSED
+                elif offset is not None:
+                    new_sequence_code = f"{new_sequence_code}-{offset}"
+
+                updated_residue = replace(
+                    new_assignment.residue, sequence_code=new_sequence_code
+                )
+
+                if updated_residue.sequence_code == UNUSED:
+                    updated_residue = replace(updated_residue, chain_code=UNUSED)
+
+                updated_atom_label = replace(new_assignment, residue=updated_residue)
+
+                assignment_map[assignment] = updated_atom_label
 
     return assignment_map
 
