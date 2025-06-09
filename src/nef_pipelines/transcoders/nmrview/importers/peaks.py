@@ -1255,11 +1255,15 @@ def _remove_suffix(string: str, suffix: str) -> str:
     return result
 
 
-def _make_peak_list_frame_name(peaks_list):
-    entry_name = peaks_list.peak_list_data.data_set.replace(" ", "_")
-    entry_name = _remove_suffix(entry_name, ".nv")
-    entry_name = entry_name.replace(".", "_")
-    return entry_name
+def _make_peak_list_frame_name(peaks_list, file_name, frame_name_source):
+    if frame_name_source == FrameNameOption.SPECTRUM:
+        frame_name = peaks_list.peak_list_data.data_set.replace(" ", "_")
+        frame_name = _remove_suffix(frame_name, ".nv")
+        frame_name = frame_name.replace(".", "_")
+    else:
+        file_name = Path(file_name).stem
+        frame_name = file_name.replace(" ", "_")
+    return frame_name
 
 
 def _fixup_residue_handling_or_exit_bad(residue_handling):
