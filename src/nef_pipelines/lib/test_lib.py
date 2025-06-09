@@ -166,14 +166,14 @@ def assert_lines_match(
     zip_lines = zip_longest(lines_expected, lines_reported, fillvalue="")
     for i, (expected_line, reported_line) in enumerate(zip_lines, start=1):
 
-        expected_line_stripped = expected_line.strip()
-        reported_line_stripped = reported_line.strip()
-
         if squash_spaces:
-            expected_line_stripped = " ".join(expected_line_stripped.split())
-            reported_line_stripped = " ".join(reported_line_stripped.split())
+            expected_line = " ".join(expected_line.split())
+            reported_line = " ".join(reported_line.split())
 
-        if reported_line_stripped != expected_line_stripped:
+        expected_line = expected_line.strip()
+        reported_line = reported_line.strip()
+
+        if reported_line != expected_line:
 
             for line_no, line in enumerate(lines_expected, start=1):
                 print(f"exp|{line_no}|{line}")
@@ -186,10 +186,10 @@ def assert_lines_match(
             print("line that caused the error:")
             print()
 
-            print(f"exp|{i}| {expected_line.strip()}|")
-            print(f"rep|{i}| {reported_line.strip()}|")
+            print(f"exp|{i}| {expected_line}|")
+            print(f"rep|{i}| {reported_line}|")
 
-        assert reported_line_stripped == expected_line_stripped
+        assert reported_line == expected_line
 
 
 def isolate_frame(target: str, frame_name: str) -> Optional[str]:
