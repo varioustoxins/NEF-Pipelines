@@ -1226,7 +1226,7 @@ def _create_spectrum_frame(entry_name, peak_list, chain_code):
 
         row_dict = {
             "index": i + 1,
-            "peak_id": peak_values.serial,
+            "peak_id": peak_values.serial + 1,
             **chain_codes,
             **sequence_codes,
             **residue_names,
