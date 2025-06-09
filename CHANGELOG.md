@@ -473,3 +473,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.105
 - improvements to error handling and reporting in shiftx2 importer
+
+## version 0.1.106
+- github landing page and isntallation instructions much improved
+- added an installation script on github for macos and linux
+- improved nmrview peak importing
+- improved peak matching consevrative CSP matching
