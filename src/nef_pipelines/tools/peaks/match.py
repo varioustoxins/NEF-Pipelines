@@ -1,19 +1,27 @@
 import sys
 from math import sqrt
+from textwrap import dedent
 from typing import Dict, List
 
 import typer
-from pynmrstar import Saveframe
-from tabulate import tabulate
+from pynmrstar import Loop, Saveframe
 
 from nef_pipelines.lib.nef_lib import (
+    UNUSED,
+    create_nef_save_frame,
     loop_row_dict_iter,
     read_entry_from_stdin_or_exit,
     select_frames_by_name,
 )
+from nef_pipelines.lib.peak_lib import frame_to_peaks
 from nef_pipelines.lib.structures import AtomLabel, NewPeak, SequenceResidue, ShiftData
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.util import exit_error, flatten
 from nef_pipelines.tools.peaks import peaks_app
+from nef_pipelines.transcoders.nmrview.importers.shifts import add_frames_to_entry
+
+# CF M P Williamson PROGRESS IN NUCLEAR MAGNETIC RESONANCE SPECTROSCOPY 2014
+# Using chemical shift perturbation to characterise ligand binding” [Prog. Nucl. Magn. Reson. Spectrosc. 73C (2013) 1–16
+DEFAULT_ISOTOPE_WEIGHTS = weights = {"1H": 1.0, "15N": 7.0, "13C": 3.333333}
 
 
 @peaks_app.command()
@@ -29,7 +37,7 @@ def match(
     """- match one list of peaks against another [alpha]"""
 
     print(
-        "*** WARNING *** this command [shifts make_peaks] is only lightly tested use at your own risk!",
+        "*** WARNING *** this command [peaks match] is only lightly tested use at your own risk!",
         file=sys.stderr,
     )
 
@@ -45,7 +53,11 @@ def match(
 
     # amide_search_region = {'H': amide_search_region[0], 'N': amide_search_region[1]}
 
-    match_peaks(frame_1, frames_2)
+    match_frame = match_peaks(frame_1, frames_2)
+
+    add_frames_to_entry(entry, match_frame)
+
+    print(entry)
 
 
 def _nef_frames_to_peak_shifts(frame: Saveframe) -> Dict[str, Dict[str, float]]:
@@ -63,9 +75,8 @@ def _nef_frames_to_peak_shifts(frame: Saveframe) -> Dict[str, Dict[str, float]]:
         peak_atom_shifts[key] = atom_shifts
         for index in indices:
             shift = row[f"position_{index}"]
-            atom_name = row[f"atom_name_{index}"]
 
-            atom_shifts[atom_name] = shift
+            atom_shifts[index - 1] = shift
 
     return peak_atom_shifts
 
@@ -76,49 +87,28 @@ def _find_best_match(
     weights=Dict[str, float],
 ):
 
-    weight_values_1 = _get_weighted_terms(shifts, weights)
+    weighted_values_1 = _get_weighted_terms(shifts, weights)
 
     result = {}
 
     for peak_id, match_shifts in match_shifts.items():
-        weight_values_2 = _get_weighted_terms(match_shifts, weights)
+        weighted_values_2 = _get_weighted_terms(match_shifts, weights)
 
-        len_values_1 = len(weight_values_1)
-        len_values_2 = len(weight_values_2)
+        terms = []
 
-        if len_values_1 != len_values_2:
-            continue
-
-        names_1 = set(weight_values_1.keys())
-        names_2 = set(weight_values_2.keys())
-
-        if names_1 != names_2:
-            continue
-
-        axis_distances = []
-
-        for atom_name in names_1:
-            axis_distances.append(
-                (weight_values_1[atom_name] - weight_values_2[atom_name]) ** 2
-            )
-        distance = sqrt(sum(axis_distances))
+        for dim in weighted_values_1:
+            terms.append((weighted_values_1[dim] - weighted_values_2[dim]) ** 2)
+        distance = sqrt(sum(terms))
 
         result.setdefault(distance, []).append(peak_id)
 
-    return result
-    #     distances = []
-    #     value_2
-    #     distances.append(value_1**2)
+    min_distance = min(result.keys())
+    return result[min_distance], min_distance
 
 
 def _get_weighted_terms(shifts, weights):
 
-    result = {}
-    for name, value in shifts.items():
-        weight_key = name[0]
-        weight = weights[weight_key]
-        result[name] = value / weight
-    return result
+    return {dim: shift / weights[dim] for dim, shift in shifts.items()}
 
 
 def _nef_frames_to_peak_by_id(frame):
@@ -177,106 +167,216 @@ def _get_assignment_string(peak: NewPeak):
     return "-".join(result)
 
 
+def _get_peak_frame_dimension_mapping(peak_frame_1, peak_frame_2):
+    axis_codes_1 = _get_spectrum_axis_codes(peak_frame_1)
+    axis_codes_2 = _get_spectrum_axis_codes(peak_frame_2)
+
+    mapping = []
+    for axis_code_1 in axis_codes_1:
+        mapping.append(
+            [i for i, code in enumerate(axis_codes_2) if code == axis_code_1]
+        )
+    return mapping
+
+
+def _get_spectrum_axis_codes(peak_frame):
+    return peak_frame.get_loop("nef_spectrum_dimension").get_tag("axis_code")
+
+
+def _exit_if_mappings_bad(mapping, peak_frame_1, peak_frame_2):
+    mappings_ok = [len(dim_mapping) == 1 for dim_mapping in mapping]
+
+    if not all(mappings_ok):
+        mapping_offset_by_1 = [
+            [str(dim_mapping + 1) for dim_mapping in mapping_list]
+            for mapping_list in mapping
+        ]
+        mapping_offset_by_1_joined = [
+            f"{', '.join(dim_mapping)}" for dim_mapping in mapping_offset_by_1
+        ]
+        mapping_by_dim = [
+            f"{dim} -> {dim_mapping}"
+            for dim, dim_mapping in enumerate(mapping_offset_by_1_joined, start=1)
+        ]
+        mappings_by_dim = "\n".join(mapping_by_dim)
+
+        msg = f"""
+            The dimension mappings of dimensions in {peak_frame_1.name} -> {peak_frame_2.name}
+            is not unique and singular, the mapping is:
+        """
+        msg = dedent(msg).strip()
+        msg = f"{msg}\n\n{mappings_by_dim}"
+
+        exit_error(msg)
+
+
+def _map_peak_shifts(shifts, mapping):
+
+    for peak_id, shifts_by_dim in shifts.items():
+
+        mapped_shifts = {mapping[dim]: shift for dim, shift in shifts_by_dim.items()}
+        shifts[peak_id] = mapped_shifts
+
+    return shifts
+
+
+def _get_dim_isotopes(peak_frame):
+
+    result = []
+    if "_nef_spectrum_dimension" in peak_frame:
+        spectrum_dimension_loop = peak_frame.get_loop("nef_spectrum_dimension")
+        if "axis_code" in spectrum_dimension_loop.tags:
+            result = spectrum_dimension_loop.get_tag("axis_code")
+
+    if not result:
+        result = [
+            None,
+        ] * int(peak_frame.get_tag("num_dimensions")[0])
+
+    return result
+
+
+def _get_dim_weights(peak_frame):
+    return {
+        dim: DEFAULT_ISOTOPE_WEIGHTS.get(isotope, None)
+        for dim, isotope in enumerate(_get_dim_isotopes(peak_frame))
+    }
+
+
+def _exit_if_dim_weights_not_defined(dim_weights, peak_frame_1, peak_frame_2):
+
+    bad_dim_indices = [
+        str(dim_index + 1)
+        for dim_index, weight in dim_weights.items()
+        if weight is None
+    ]
+    if bad_dim_indices:
+        bad_dim_indices = ", ".join(bad_dim_indices)
+
+        msg = f"""
+            for the frames {peak_frame_1.name} and {peak_frame_2.name} appropiate isotope weigts couldn't
+            be determined for the following dims {bad_dim_indices}
+        """
+        msg = dedent(msg).strip()
+        exit_error(msg)
+
+
+def _build_dim_assignments(peak):
+    result = {}
+    for dim_index, shift in enumerate(peak.shifts, start=1):
+        result["chain_code"] = shift.atom.residue.chain_code
+        result["sequence_code"] = shift.atom.residue.sequence_code
+        result["residue_name"] = shift.atom.residue.residue_name
+
+        # TODO this is hack because some internal routines use ? for unassigned not . [UNUSED]
+        atom_name = shift.atom.atom_name
+        atom_name = atom_name if atom_name != "?" else UNUSED
+        result["atom_name"] = atom_name
+
+    return result
+
+
 def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
 
-    num_dimensions = int(peak_frame_1.get_tag("num_dimensions")[0])
+    num_dimensions_1 = int(peak_frame_1.get_tag("num_dimensions")[0])
+
+    peak_list_1 = frame_to_peaks(peak_frame_1)
+
+    peak_list_1_by_id = {peak.id: peak for peak in peak_list_1}
+
+    # TODO move from frames to peak dataclass instances
+    _exit_if_peak_frame_dimensions_dont_match(peak_frame_1, peak_frame_2)
+
+    mapping = _get_peak_frame_dimension_mapping(peak_frame_1, peak_frame_2)
+
+    _exit_if_mappings_bad(mapping, peak_frame_1, peak_frame_2)
 
     shifts_1 = _nef_frames_to_peak_shifts(peak_frame_1)
     shifts_2 = _nef_frames_to_peak_shifts(peak_frame_2)
 
-    peaks_by_id_1 = _nef_frames_to_peak_by_id(peak_frame_1)
-    peaks_by_id_2 = _nef_frames_to_peak_by_id(peak_frame_2)
+    mapping = flatten(mapping)
 
-    info_by_assignment = {}
-    no_matches = []
-    for peak_1, target_shifts in shifts_1.items():
-        matches = _find_best_match(
-            target_shifts, shifts_2, weights={"H": 1.0, "N": 7.0, "C": 2.0, ".": 1.0}
-        )
+    shifts_2 = _map_peak_shifts(shifts_2, mapping)
 
-        if len(matches) > 0:
-            best_match = sorted(matches)[0]
-            peak_2 = matches[best_match]
-            peak_2_str = [str(match) for match in matches[best_match]]
-            info_string = [
-                peak_1,
-                ", ".join(peak_2_str),
-                len(peak_2),
-                best_match,
-                "",
-                *_get_assignment_tuple(peaks_by_id_1[peak_1]),
-                "",
-                *_get_assignment_tuple(peaks_by_id_2[peak_2[0]]),
-            ]
-            assignment = _get_assignment_tuple(peaks_by_id_2[peak_2[0]])
+    dim_weights = _get_dim_weights(peak_frame_1)
 
-            info_by_assignment[assignment] = info_string
-        else:
-            no_matches.append(peak_1)
+    _exit_if_dim_weights_not_defined(dim_weights, peak_frame_1, peak_frame_2)
 
-    table = []
-    for key in sorted(info_by_assignment):
-        table.append((info_by_assignment[key]))
+    result = {}
+    for peak_1_id, target_shifts in shifts_1.items():
 
-    # TODO: move to peaks table
-    # TODO: colorise matches?
-    # TODO: add better sorting
+        best_matches, distance = _find_best_match(target_shifts, shifts_2, dim_weights)
 
-    headings = "f1.pk f2.pks num dist".split()
-    for peak in 1, 2:
-        headings.append(f"f{peak}:")
-        for dim in range(1, num_dimensions + 1):
-            headings.extend(f"chn-{dim} seq-{dim} resn-{dim} atm-{dim}".split())
+        best_matches = [best_match for best_match in best_matches]
 
-    print(f"frame 1: {peak_frame_1.name}")
-    print(f"frame 2: {peak_frame_2.name}")
-    print()
-    if len(no_matches) > 0:
-        no_matches = ", ".join([str(peak) for peak in no_matches])
-        print(f"note no matches for the following peak-1's: {no_matches}")
-        print()
+        result[peak_1_id] = best_matches, distance
 
-    table.sort(key=lambda x: x[0])
-    print(tabulate(table, tablefmt="plain", headers=headings))
+    frame_category = "nefpls_chemical_shift_perturbations"
+    frame_id = f"from_{peak_frame_1.name}_to_{peak_frame_2.name}"
+    result_frame = create_nef_save_frame(frame_category, frame_id)
 
-    # residue_atom_shifts_1 = _peak_list_to_peak_shifts(shifts_1)
-    # residue_atom_shifts_2 = _peak_list_to_peak_shifts(shifts_2)
+    result_frame.add_tag("frame_name_1", peak_frame_1.name)
+    result_frame.add_tag("frame_name_2", peak_frame_2.name)
 
-    # table = []
-    #
-    # for (chain, residue), shifts in residue_atom_shifts_1.items():
-    #
-    #     ignored_atoms = set('H N'.split()) if ignore_amides else set()
-    #     matches = _find_best_match(shifts, residue_atom_shifts_2, ignored_atoms, amide_weight, amide_search_region)
-    #
-    #     ordered_matches = []
-    #     for key in sorted(matches.keys()):
-    #         name = f'{matches[key][0]}{matches[key][1]}'
-    #         value = f'{key:.3}'
-    #
-    #         ordered_matches.append(f'{name} {value}')
-    #
-    #     row = [f'{chain}{residue}', *ordered_matches[:5]]
-    #     table.append(row)
-    #
-    # lengths = []
-    # for row in table:
-    #     for column in row[1:]:
-    #         lengths.append(len(column))
-    #
-    # max_column_length = max(lengths) + 1
-    #
-    # for row in table:
-    #     for i, column in enumerate(row[1:], start=1):
-    #         column_length = len(column)
-    #         column_fields = column.split()
-    #         pad_length = max_column_length - column_length
-    #         pad = ' ' * pad_length
-    #         column = pad.join(column_fields)
-    #         row[i] = column
-    #
-    #
-    # print(tabulate(table, tablefmt='plain'))
+    matches_loop = Loop.from_scratch("nefpls_perturbations")
+
+    atom_id_tags = []
+    for comparison_id in range(1, 3):
+        for dimension_id in range(1, num_dimensions_1 + 1):
+            for atom_name_component in []:
+                atom_id_tags.append(
+                    f"{atom_name_component}_{comparison_id}_{dimension_id}"
+                )
+
+    loop_tags = (
+        "index",
+        "match_index",
+        "peak_id_1",
+        "peak_id_2",
+        "distance",
+        "chain_code",
+        "sequence_code",
+        "residue_name",
+        "atom_name",
+    )
+    matches_loop.add_tag(loop_tags)
+    result_frame.add_loop(matches_loop)
+
+    for index, (peak_1_id, (peak_2_ids, distance)) in enumerate(
+        result.items(), start=1
+    ):
+        assignments_peak_1 = _build_dim_assignments(peak_list_1_by_id[peak_1_id])
+        for match_index, peak_2_id in enumerate(peak_2_ids, start=1):
+
+            data = {
+                "index": index,
+                "match_index": match_index,
+                "peak_id_1": peak_1_id,
+                "peak_id_2": peak_2_id,
+                "distance": distance,
+                **assignments_peak_1,
+            }
+            matches_loop.add_data(
+                [
+                    data,
+                ]
+            )
+
+    return result_frame
+
+
+def _exit_if_peak_frame_dimensions_dont_match(peak_frame_1, peak_frame_2):
+    num_dimensions_1 = int(peak_frame_1.get_tag("num_dimensions")[0])
+    num_dimensions_2 = int(peak_frame_2.get_tag("num_dimensions")[0])
+
+    if num_dimensions_1 != num_dimensions_2:
+        msg = f"""
+            The number of dimensions in the peak lists to match mustbe the same I got
+
+                {peak_frame_1.name}: {num_dimensions_1}
+                {peak_frame_2.name}: {num_dimensions_2}
+        """
+        exit_error(dedent(msg).strip())
 
 
 def _shift_list_to_residue_atom_shifts(shifts_1):
