@@ -5,6 +5,7 @@ from enum import auto
 from fnmatch import fnmatch
 from itertools import zip_longest
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 # from pandas import DataFrame
@@ -24,6 +25,7 @@ from nef_pipelines.lib.util import (
     is_int,
     running_in_pycharm,
     script_name,
+    warn,
 )
 
 NEF_RELAXATION_VERSION = "0.1.0a"
@@ -641,14 +643,27 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
 
         new_frame_name = frame.name
 
-        frame_in_entry = is_save_frame_name_in_entry(entry, new_frame_name)
+        proposed_new_frame_name = new_frame_name
+        offset = ""
+        while is_save_frame_name_in_entry(entry, proposed_new_frame_name):
+            if offset == "":
+                offset = 1
+            else:
+                offset += 1
+            if offset != "":
+                proposed_new_frame_name = f"{new_frame_name}_{offset}"
 
-        if frame_in_entry:
-            msg = (
-                f"the frame named {new_frame_name} already exists in the stream, rename it or delete to add "
-                f"the new frame shift frame"
-            )
-            exit_error(msg)
+        if proposed_new_frame_name != new_frame_name:
+
+            msg = f"""
+                the frame named {new_frame_name} already exists in the stream, the frame name has been updated to
+                {proposed_new_frame_name}. if you want to replace the original frame named {new_frame_name} delete
+                it first!
+            """
+            msg = dedent(msg).strip()
+            warn(msg)
+
+        frame.name = proposed_new_frame_name
 
         entry.add_saveframe(frame)
 
