@@ -88,7 +88,7 @@ EXPECTED_JOE_CLIC = """\
             _nef_peak.residue_name_2
             _nef_peak.atom_name_2
 
-            1   0   0.254054695368   .   0.0368   .   8.15968   .   126.97411   .   A   2   ALA   H   A   2   ALA   N
+            1   1   0.254054695368   .   0.0368   .   8.15968   .   126.97411   .   A   2   ALA   H   A   2   ALA   N
 
         stop_
 

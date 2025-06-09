@@ -48,9 +48,9 @@ save_nef_nmr_spectrum_gb3_assigned_trunc
       _nef_peak.residue_name_2
       _nef_peak.atom_name_2
 
-     1   1   5793851000.0   .   83780660.0    .   8.299   .   123.811   .   A   2   GLN   HN   A   2   GLN   N
-     2   2   6822429000.0   .   157415000.0   .   8.992   .   124.724   .   A   3   TYR   HN   A   3   TYR   N
-     3   3   6632719000.0   .   151939100.0   .   9.019   .   123.166   .   A   4   LYS   HN   A   4   LYS   N
+     1   2   5793851000.0   .   83780660.0    .   8.299   .   123.811   .   A   2   GLN   HN   A   2   GLN   N
+     2   3   6822429000.0   .   157415000.0   .   8.992   .   124.724   .   A   3   TYR   HN   A   3   TYR   N
+     3   4   6632719000.0   .   151939100.0   .   9.019   .   123.166   .   A   4   LYS   HN   A   4   LYS   N
 
    stop_
 
