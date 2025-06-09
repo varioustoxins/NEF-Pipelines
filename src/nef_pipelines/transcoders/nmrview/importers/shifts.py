@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import typer
 from pynmrstar import Entry, Saveframe
@@ -90,7 +90,9 @@ def pipe(entry, chain_codes, sequence, entry_name, file_names):
     print(entry)
 
 
-def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
+def add_frames_to_entry(
+    entry: Entry, frames: Union[Saveframe, List[Saveframe]]
+) -> Entry:
     # TODO deal with merging esp wrt to molecular systems and possibly with other information
     # TODO add frame rename and frame delete
     """
@@ -104,6 +106,11 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
     Returns:
         the updated entry containing the frames
     """
+
+    if isinstance(frames, Saveframe):
+        frames = [
+            frames,
+        ]
 
     fixup_metadata(entry, NEF_PIPELINES, get_version(), script_name(__file__))
 
