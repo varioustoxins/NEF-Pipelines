@@ -20,7 +20,7 @@ app.command()(peaks)
 
 # noinspection PyUnusedLocal
 def test_peaks():
-    EXPECTED = read_test_data("gb3_assigned_trunc_expected.tab", __file__)
+    EXPECTED = read_test_data("gb3_assigned_trunc_expected.nef", __file__)
 
     path = path_in_test_data(__file__, "gb3_assigned_trunc.tab")
     result = run_and_report(app, [path], input=HEADER)
