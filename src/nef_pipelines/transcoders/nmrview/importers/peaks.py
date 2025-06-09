@@ -56,6 +56,7 @@ from nef_pipelines.lib.util import (
     is_int,
     parse_comma_separated_options,
     strip_characters_left,
+    warn,
 )
 from nef_pipelines.transcoders.nmrview import import_app
 
@@ -161,6 +162,14 @@ three: three letter or longer amino acid code
 """
 
 
+class FrameNameOption(LowercaseStrEnum):
+    SPECTRUM = auto()
+    FILE = auto()
+
+
+FRAME_NAME_SOURCE_HELP = """ where to get the frame name from"""
+
+
 # noinspection PyUnusedLocal
 @import_app.command(no_args_is_help=True)
 def peaks(
@@ -187,11 +196,14 @@ def peaks(
     entry_name: str = typer.Option(
         "nmrview", "-n", "--name", help="entry name", metavar="<entry-name>"
     ),
+    frame_name_source: FrameNameOption = typer.Option(
+        FrameNameOption.SPECTRUM, help=FRAME_NAME_SOURCE_HELP
+    ),
     file_names: List[Path] = typer.Argument(
         ..., help="input peak files", metavar="<peak-file.xpk>"
     ),
 ):
-    """convert nmrview peak file <nmrview>.xpk files to NEF [alpha for new residue name and sequence code handling]"""
+    """convert NMRView peak file <nmrview>.xpk files to NEF [alpha for new residue name and sequence code handling]"""
 
     if not chain_codes:
         chain_codes = ["A"] * len(file_names)
@@ -226,6 +238,7 @@ def peaks(
         residue_name_type,
         residue_name_handling,
         residue_number_handling,
+        frame_name_source,
     )
 
     print(entry)
@@ -240,6 +253,7 @@ def pipe(
     residue_name_type: ResidueNameTypeOption,
     residue_name_handling: ResidueNameHandlingOption,
     residue_number_handling: ResidueNumberHandlingOption,
+    frame_name_source: FrameNameOption,
 ) -> Entry:
 
     frames = []
@@ -258,7 +272,9 @@ def pipe(
                 residue_number_handling,
             )
 
-        frame_name = _make_peak_list_frame_name(peaks_list)
+        frame_name = _make_peak_list_frame_name(
+            peaks_list, file_name, frame_name_source
+        )
 
         frame_names_and_peak_lists.append((frame_name, peaks_list))
 
@@ -270,11 +286,6 @@ def pipe(
         frames.append(_create_spectrum_frame(frame_name, peaks_list, chain_code))
 
     return add_frames_to_entry(entry, frames)
-
-
-def _warn(msg):
-    msg = dedent(msg)
-    print(f"WARNING: {msg}", file=sys.stderr)
 
 
 def _sequence_code_out_of_range(peak, axis, chain_starts_and_ends):
@@ -416,7 +427,7 @@ def _warn_or_exit_for_sequence_code_out_of_range(
               """
 
         if do_warn:
-            _warn(msg)
+            warn(msg)
         elif do_stop:
             exit_error(msg)
 
@@ -597,7 +608,7 @@ def _globally_report_bad_sequence_code_if_present(bad_peak_serials, file_name):
                       separated list
             """
         msg = dedent(msg).strip()
-        _warn(msg)
+        warn(msg)
 
 
 def _exit_if_num_chains_and_files_dont_match(chain_codes, file_names):
