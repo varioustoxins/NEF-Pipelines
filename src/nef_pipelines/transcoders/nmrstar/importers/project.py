@@ -2,7 +2,6 @@ import string
 import sys
 
 import requests
-from fyeah import f
 from pynmrstar import Entry
 from requests.exceptions import HTTPError
 from tabulate import tabulate
@@ -153,7 +152,10 @@ def _get_path_as_url_or_none(file_path, url_templates):
             is_bmrb = True
     elif is_int(file_path):
         entry_number = file_path
-        urls = [f(url_template) for url_template in url_templates]
+        urls = [
+            url_template.format(entry_number=entry_number)
+            for url_template in url_templates
+        ]
         is_bmrb = True
 
     return urls, is_bmrb
