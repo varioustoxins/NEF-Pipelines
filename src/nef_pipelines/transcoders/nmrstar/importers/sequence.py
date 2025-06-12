@@ -186,8 +186,6 @@ def pipe(
 
     sequence_residues = offset_chain_residues(sequence_residues, offsets)
 
-    sequence_residues = sorted(sequence_residues)
-
     nmrstar_frame = sequence_to_nef_frame(
         sequence_residues, no_chain_starts, no_chain_ends
     )

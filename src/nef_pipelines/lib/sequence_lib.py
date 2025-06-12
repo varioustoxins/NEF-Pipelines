@@ -139,8 +139,6 @@ def sequence_to_nef_frame(
         Saveframe: a NEF saveframe
     """
 
-    sequences = sorted(sequences)
-
     category = "nef_molecular_system"
 
     frame_code = f"{category}"

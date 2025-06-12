@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List
 
 import typer
+from ordered_set import OrderedSet
 from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
@@ -63,7 +64,7 @@ def sequence(
     else:
         entry = Entry.from_scratch(entry_id=entry_name)
 
-    sequence_residues = set(sequence_from_entry(entry))
+    sequence_residues = OrderedSet(sequence_from_entry(entry))
 
     no_chain_starts = parse_comma_separated_options(no_chain_starts)
     no_chain_ends = parse_comma_separated_options(no_chain_ends)
