@@ -9,7 +9,6 @@ import hjson
 import typer
 from fyeah import f
 from lazy_import import lazy_module
-from ordered_set import OrderedSet
 from pynmrstar import Entry
 from tabulate import tabulate
 
@@ -31,6 +30,7 @@ from nef_pipelines.lib.util import (
     chunks,
     exit_error,
     flatten,
+    is_int,
     nef_pipelines_root,
     parse_comma_separated_options,
 )
@@ -142,12 +142,12 @@ def pipe(
 
     stereo_mode = _get_stereo_mode(ambiguities, stereo_mode)
 
-    entity_id_to_chain_code = _build_entity_ids_to_chain_codes(
-        chain_codes, denormalised_shifts
+    entity_ids_to_chain_codes = _build_entity_ids_to_chain_codes(
+        nmrstar_entry, chain_codes
     )
 
     denormalised_shifts = _replace_shift_entity_ids_with_chain_codes(
-        denormalised_shifts, entity_id_to_chain_code
+        denormalised_shifts, entity_ids_to_chain_codes
     )
 
     per_residue_and_atom_shifts = _organise_shifts_by_residue_and_atom_names(
@@ -163,7 +163,7 @@ def pipe(
     )
 
     ambiguities = _replace_atom_dict_entity_ids_with_chain_codes(
-        ambiguities, entity_id_to_chain_code
+        ambiguities, entity_ids_to_chain_codes
     )
 
     per_residue_ambiguities = _organise_ambiguities_by_residue(ambiguities)
@@ -702,18 +702,23 @@ def _replace_atom_dict_entity_ids_with_chain_codes(
     return result
 
 
-def _build_entity_ids_to_chain_codes(chain_codes, denormalised_shifts):
-    entity_ids = list(
-        OrderedSet(
-            sorted([shift.atom.residue.chain_code for shift in denormalised_shifts])
+def _build_entity_ids_to_chain_codes(nmrstar_entry, chain_codes):
+    entity_saveframes = nmrstar_entry.get_saveframes_by_category("entity")
+
+    result = {
+        entity_saveframe.get_tag("ID")[0]: chain_code
+        for entity_saveframe, chain_code in zip(
+            entity_saveframes, get_chain_code_iter(chain_codes)
         )
-    )
-    chain_code_iter = get_chain_code_iter(chain_codes)
-    entity_id_to_chain_code = {
-        entity_id: chain_code
-        for entity_id, chain_code in zip(entity_ids, chain_code_iter)
     }
-    return entity_id_to_chain_code
+
+    # things that look like ints are getting converted to ints on input
+    result = {
+        int(entity_id) if is_int(entity_id) else entity_id: chain_code
+        for entity_id, chain_code in result.items()
+    }
+
+    return result
 
 
 def _exit_error_if_missing_residues(residues, shift_residues, file_name):
