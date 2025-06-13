@@ -133,10 +133,7 @@ def pipe(
 
     for spectrum in spectra:
 
-        if spectrum in EXPERIMENT_INFO:
-            spectrum_info = EXPERIMENT_INFO[spectrum]
-        elif spectrum_info.lower() in EXPERIMENT_INFO:
-            spectrum_info = EXPERIMENT_INFO[spectrum.lower()]
+        spectrum_info = EXPERIMENT_INFO[spectrum.upper()]
 
         peaks = _make_peak_list(shifts, spectrum_info)
 
