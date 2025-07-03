@@ -7,7 +7,7 @@ from strenum import LowercaseStrEnum, StrEnum
 
 # TODO: to avoid circular import, move to constants
 UNUSED = "."
-CCPN_PSEUDO = "@"
+PSEUDO_PREFIX = "@"
 CCPN_UNSASSIGNED_CHAIN = "-"
 
 
@@ -73,6 +73,8 @@ class AtomLabel:
             self.residue.chain_code == UNUSED
             and self.residue.sequence_code == UNUSED
             and self.residue.residue_name == UNUSED
+            or self.residue.sequence_code_prefix == PSEUDO_PREFIX
+            or self.residue.chain_code_prefix == PSEUDO_PREFIX
         )
         return residue_unassigned and self.atom_name == UNUSED
 
