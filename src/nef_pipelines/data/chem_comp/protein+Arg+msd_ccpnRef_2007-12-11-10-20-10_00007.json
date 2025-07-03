@@ -5272,6 +5272,16 @@
                     "sysName": "OT2",
                     "namingSystem": null,
                     "parent": null
+                },
+                {
+                    "#" : "Added by GST",
+                    "ID": 361,
+                    "altSysName": null,
+                    "atomName": "NH*",
+                    "atomSubType": 1,
+                    "sysName": "NH#",
+                    "namingSystem": null,
+                    "parent": null
                 }
             ],
             "atomVariantSystems": null,

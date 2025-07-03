@@ -4572,6 +4572,26 @@
                     "sysName": "OT2",
                     "namingSystem": null,
                     "parent": null
+                },
+                {
+                    "#" : "Added by GST",
+                    "ID": 303,
+                    "altSysName": null,
+                    "atomName": "CD*",
+                    "atomSubType": 1,
+                    "sysName": "CD#",
+                    "namingSystem": null,
+                    "parent": null
+                },
+                {
+                    "#" : "Added by GST",
+                    "ID": 304,
+                    "altSysName": null,
+                    "atomName": "CE*",
+                    "atomSubType": 1,
+                    "sysName": "CE#",
+                    "namingSystem": null,
+                    "parent": null
                 }
             ],
             "atomVariantSystems": null,

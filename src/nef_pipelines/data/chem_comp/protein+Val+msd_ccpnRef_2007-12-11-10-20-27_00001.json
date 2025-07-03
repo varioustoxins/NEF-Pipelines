@@ -3421,6 +3421,16 @@
                     "sysName": "OT2",
                     "namingSystem": null,
                     "parent": null
+                },
+                {
+                    "#" : "Added by GST",
+                    "ID": 253,
+                    "altSysName": null,
+                    "atomName": "CG*",
+                    "atomSubType": 1,
+                    "sysName": "CG#",
+                    "namingSystem": null,
+                    "parent": null
                 }
             ],
             "atomVariantSystems": null,

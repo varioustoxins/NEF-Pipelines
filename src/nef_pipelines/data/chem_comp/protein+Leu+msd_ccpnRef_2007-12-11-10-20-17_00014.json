@@ -3810,6 +3810,16 @@
                     "sysName": "OT2",
                     "namingSystem": null,
                     "parent": null
+                },
+                {
+                    "#" : "Added by GST",
+                    "ID": 282,
+                    "altSysName": null,
+                    "atomName": "CD*",
+                    "atomSubType": 1,
+                    "sysName": "CD#",
+                    "namingSystem": null,
+                    "parent": null
                 }
             ],
             "atomVariantSystems": null,
