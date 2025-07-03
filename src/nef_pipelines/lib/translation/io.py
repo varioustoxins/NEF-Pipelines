@@ -1,5 +1,6 @@
 import json
 import traceback
+from json import JSONDecodeError
 from pathlib import Path
 from typing import List
 
@@ -9,6 +10,10 @@ from nef_pipelines.lib.nef_lib import UNUSED
 from nef_pipelines.lib.translation.chem_comp import ChemComp
 from nef_pipelines.lib.translation.object_iter import ObjectIter
 from nef_pipelines.lib.util import exit_error, nef_pipelines_root
+
+
+class ChemCompFormatException(Exception):
+    ...
 
 
 def _items_in(target):
@@ -313,7 +318,7 @@ class _RemoveNestedTypes:
                         and _type in target[container]
                     ):
 
-                        if type(target[container][_type]) == dict:
+                        if type(target[container][_type]) is dict:
                             new_contents.append(target[container][_type])
                         else:
                             new_contents.extend(target[container][_type])
@@ -606,17 +611,24 @@ def load_chem_comps():
     chem_comp_paths = find_chem_comps()
 
     for chem_comp_path in chem_comp_paths:
-        with open(chem_comp_path, "r") as f:
-            chemcomp_data = json.load(f)
-            chem_comp = ChemComp(**chemcomp_data)
-            mol_type = chem_comp.molType
-            MOL_TYPES.add(mol_type.upper())
-            key = (
-                chem_comp.code3Letter
-                if chem_comp.code3Letter != UNUSED
-                else chem_comp.ccpCode
-            )
-            CHEM_COMPS[key] = chem_comp
+        try:
+            with open(chem_comp_path, "r") as f:
+                chemcomp_data = json.load(f)
+                chem_comp = ChemComp(**chemcomp_data)
+                mol_type = chem_comp.molType
+                MOL_TYPES.add(mol_type.upper())
+                key = (
+                    chem_comp.code3Letter
+                    if chem_comp.code3Letter != UNUSED
+                    else chem_comp.ccpCode
+                )
+                CHEM_COMPS[key] = chem_comp
+        except JSONDecodeError as e:
+            msg = f"""\
+                while reading the chemical component {chem_comp_path} the following erro occured
+                {e}
+            """
+            raise ChemCompFormatException(msg)
 
 
 if __name__ == "__main__":
