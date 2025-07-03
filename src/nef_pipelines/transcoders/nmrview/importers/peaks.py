@@ -37,8 +37,8 @@ from nef_pipelines.lib.sequence_lib import (
     translate_1_to_3,
 )
 from nef_pipelines.lib.structures import (
-    CCPN_PSEUDO,
     CCPN_UNSASSIGNED_CHAIN,
+    PSEUDO_PREFIX,
     UNUSED,
     AtomLabel,
     LineInfo,
@@ -313,8 +313,8 @@ def _fix_up_peak_labels(peak, axis, residue_number_handling):
     if ResidueNumberHandlingOption.PSEUDO in residue_number_handling:
         residue = replace(
             residue,
-            sequence_code_prefix=CCPN_PSEUDO,
-            chain_code_prefix=CCPN_PSEUDO,
+            sequence_code_prefix=PSEUDO_PREFIX,
+            chain_code_prefix=PSEUDO_PREFIX,
             chain_code=CCPN_UNSASSIGNED_CHAIN,
         )
         atom_labels = replace(atom_labels, residue=residue)
