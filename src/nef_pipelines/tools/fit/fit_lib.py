@@ -450,10 +450,14 @@ def _get_noise_from_duplicated_values(xy_data) -> float:
         for combination in combinations(repetiton_set, 2):
             differences.append(combination[0] - combination[1])
 
-    replicates_stdev = stdev(differences)
-    replicates_stderr = replicates_stdev / len(differences) ** 0.5
+    replicates_stdev = stdev(differences) if differences else None
+    replicates_stderr = (
+        replicates_stdev / len(differences) ** 0.5 if differences else None
+    )
 
-    return replicates_stdev, replicates_stderr / replicates_stdev, len(differences)
+    stderr_div_stderr = replicates_stderr / replicates_stdev if differences else None
+
+    return replicates_stdev, stderr_div_stderr, len(differences)
 
 
 def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry: Entry):
