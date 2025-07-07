@@ -110,6 +110,9 @@ def pipe(
 
     try:
         if streamfitter:
+            function = streamfitter.fitter.get_fitter(
+                streamfitter.fitter.FITTER_EXPONENTIAL_DECAY_2_PAMETER
+            )
             fitter = streamfitter.fitter
         else:
             raise ImportError(stream_fitter_import_error)
@@ -132,7 +135,7 @@ def pipe(
             for id, series_datum in id_series_data.items()
         }
 
-        results = fitter(id_xy_data, error_method, cycles, noise_level, seed)
+        results = fitter(function, id_xy_data, error_method, cycles, noise_level, seed)
 
         fits = results["fits"]
         monte_carlo_errors = results["monte_carlo_errors"]
