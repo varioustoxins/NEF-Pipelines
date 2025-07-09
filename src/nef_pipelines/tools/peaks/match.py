@@ -5,6 +5,7 @@ from typing import Dict, List
 
 import typer
 from pynmrstar import Loop, Saveframe
+from pynmrstar.entry import Entry
 
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
@@ -30,6 +31,11 @@ def match(
     # amide_weight: float = typer.Option(1.0, help='weight for the amide shifts'),
     # amide_search_region: Tuple[float,float] = typer.Option((0.2, 0.2*7), help='region to search for amide shifts in
     # the order H N'),
+    assign: bool = typer.Option(
+        False,
+        "--assign",
+        help="assign the second peak list using closest matches from the first",
+    ),
     names: List[str] = typer.Argument(
         ..., help="pairs of shift frame names for the chemical shifts to compare"
     ),
@@ -53,9 +59,7 @@ def match(
 
     # amide_search_region = {'H': amide_search_region[0], 'N': amide_search_region[1]}
 
-    match_frame = match_peaks(frame_1, frames_2)
-
-    add_frames_to_entry(entry, match_frame)
+    entry = pipe(entry, frame_1, frames_2, assign)
 
     print(entry)
 
@@ -276,7 +280,12 @@ def _build_dim_assignments(peak):
     return result
 
 
-def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
+def _assign_frame(result, peak_frame_2):
+    for key, value in result.items():
+        print(key, value)
+
+
+def pipe(entry: Entry, peak_frame_1: Saveframe, peak_frame_2: Saveframe, assign=False):
 
     num_dimensions_1 = int(peak_frame_1.get_tag("num_dimensions")[0])
 
@@ -302,24 +311,66 @@ def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
 
     _exit_if_dim_weights_not_defined(dim_weights, peak_frame_1, peak_frame_2)
 
-    result = {}
+    results = {}
     for peak_1_id, target_shifts in shifts_1.items():
 
         best_matches, distance = _find_best_match(target_shifts, shifts_2, dim_weights)
 
         best_matches = [best_match for best_match in best_matches]
 
-        result[peak_1_id] = best_matches, distance
+        results[peak_1_id] = best_matches, distance
 
+    if assign:
+        print("ere")
+        _assign_frame(results, peak_frame_2)
+        target_peak_loop = peak_frame_2.get_loop("nef_peak")
+        print(target_peak_loop)
+        source_peak_loop = peak_frame_1.get_loop("nef_peak")
+
+        source_values_by_index = {
+            row["index"]: row for row in loop_row_dict_iter(source_peak_loop)
+        }
+
+        target_peak_new_values = {}
+        for list_1_index, [target_peaks, _] in results.items():
+            source_values = source_values_by_index[list_1_index]
+            source_values = {
+                source_name: source_value
+                for source_name, source_value in source_values.items()
+                if source_name.startswith("chain_code")
+                or source_name.startswith("sequence_code")
+                or source_name.startswith("residue_name")
+                or source_name.startswith("atom_name")
+            }
+
+            for target_peak in target_peaks:
+                target_peak_new_values[target_peak] = source_values
+
+        for target_peak in loop_row_dict_iter(target_peak_loop):
+            target_peak_index = target_peak["index"]
+            if target_peak_index in target_peak_new_values:
+                new_values = target_peak_new_values[target_peak_index]
+                for column_name, new_value in new_values.items():
+                    target_peak[column_name] = new_value
+
+    else:
+        result_frame = _make_result_frame(
+            num_dimensions_1, peak_frame_1, peak_frame_2, peak_list_1_by_id, results
+        )
+        add_frames_to_entry(entry, result_frame)
+
+    return entry
+
+
+def _make_result_frame(
+    num_dimensions_1, peak_frame_1, peak_frame_2, peak_list_1_by_id, result
+):
     frame_category = "nefpls_chemical_shift_perturbations"
     frame_id = f"from_{peak_frame_1.name}_to_{peak_frame_2.name}"
     result_frame = create_nef_save_frame(frame_category, frame_id)
-
     result_frame.add_tag("frame_name_1", peak_frame_1.name)
     result_frame.add_tag("frame_name_2", peak_frame_2.name)
-
     matches_loop = Loop.from_scratch("nefpls_perturbations")
-
     atom_id_tags = []
     for comparison_id in range(1, 3):
         for dimension_id in range(1, num_dimensions_1 + 1):
@@ -327,7 +378,6 @@ def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
                 atom_id_tags.append(
                     f"{atom_name_component}_{comparison_id}_{dimension_id}"
                 )
-
     loop_tags = (
         "index",
         "match_index",
@@ -341,13 +391,11 @@ def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
     )
     matches_loop.add_tag(loop_tags)
     result_frame.add_loop(matches_loop)
-
     for index, (peak_1_id, (peak_2_ids, distance)) in enumerate(
         result.items(), start=1
     ):
         assignments_peak_1 = _build_dim_assignments(peak_list_1_by_id[peak_1_id])
         for match_index, peak_2_id in enumerate(peak_2_ids, start=1):
-
             data = {
                 "index": index,
                 "match_index": match_index,
@@ -361,7 +409,6 @@ def match_peaks(peak_frame_1: Saveframe, peak_frame_2: Saveframe):
                     data,
                 ]
             )
-
     return result_frame
 
 
