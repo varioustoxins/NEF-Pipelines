@@ -479,3 +479,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - added an installation script on github for macos and linux
 - improved NMRView peak importing
 - improved peak matching conservative CSP matching
+
+## version 0.1.107
+- add the ability to assign matched peaks to peaks match
