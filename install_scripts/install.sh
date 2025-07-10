@@ -36,8 +36,8 @@ if [[ $yes == "no" ]] ; then
   echo "would you like to go ahead Y[es]/N[o] default=Y[es]?"
 
   if ! [ -t 0 ]; then
-    echo "Not running in a terminal, since there is no user interaction the answer is no"
-    answer=no
+    echo "Not running in a terminal, since there is no user interaction the answer is yes"
+    answer=yes
   else
     read answer
   fi
@@ -74,8 +74,9 @@ version_gt() {
 if $UV_EXISTS ; then
   UV_VERSION=$(uv --version | cut -d' ' -f2)
   if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
-    echo "uv version is outdated, please update to version $UV_MIN_VERSION or higher"
-    echo "to update use uv self update or reinstall if its not supported by you current uv version"
+    echo "!! uv version is outdated, please update to version $UV_MIN_VERSION or higher"
+    echo "!! to update use uv self update or reinstall if uv self update is not supported"
+    echo "!! by you current uv version"
     exit 1
   fi
 else
@@ -101,7 +102,9 @@ echo "* updating and installing nef-pipelines"
 echo
 
 if ! $UV_EXISTS ; then
-  echo "!! failed to install UV please contact the the developers at the nef-pipelines"
+  echo "!! failed to install uv, please try the installation a couple of times"
+  echo "!! more if your internet connections is poor!"
+  echo "!! if the problem persists please contact the the developers at the nef-pipelines"
   echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
   echo "!! create an issue"
 
@@ -115,7 +118,10 @@ if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
 
     UV_VERSION=$(uv --version | cut -d' ' -f2)
     if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
-        echo "!! uv failed to update please contact the the developers at the nef-pipelines"
+
+        echo "!! uv failed to update, please try the installation a couple of times"
+        echo "!! more if your internet connections is poor!"
+        echo "!! if the problem persists please contact the the developers at the nef-pipelines"
         echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
         echo "!! create an issue"
         exit $UV_DIDNT_UPDATE
@@ -145,7 +151,9 @@ fi
   fi
 
   if ! $NEF_PIPELINES_EXISTS ; then
-    echo "!! nef-pipelines failed to install please contact the the developers at the nef-pipelines"
+    echo "!! nef-pipelines failed to install, please try the installation a couple of times"
+    echo "!! more if your internet connections is poor!"
+    echo "!! if the problem persists please contact the the developers at the nef-pipelines"
     echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
     echo "!! create an issue"
 
