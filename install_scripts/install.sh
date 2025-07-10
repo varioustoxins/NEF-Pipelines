@@ -80,7 +80,7 @@ version_gt() {
 }
 
 DID_UV_INSTALL=false
-if $UV_EXISTS ; then
+if [[ $UV_EXISTS  == "true" ]] ; then
   UV_VERSION=$(uv --version | cut -d' ' -f2)
   if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
     echo "!! uv version is outdated, please update to version $UV_MIN_VERSION or higher"
@@ -92,9 +92,9 @@ else
   echo
   echo installing uv...
   echo
-  if $CURL_EXISTS ; then
+  if [[ $CURL_EXISTS == "true" ]]; then
       curl -LsSf https://astral.sh/uv/install.sh | sh
-  elif $WGET_EXISTS ; then
+  elif [[ $WGET_EXISTS == "true" ]]; then
       wget -qO- https://astral.sh/uv/install.sh | sh
   fi
 fi
@@ -103,16 +103,22 @@ fi
 UV_EXISTS=false
 if command -v uv &> /dev/null ; then
   UV_EXISTS=true
+  UV_PATH=`command -v uv`
 fi
 
-if ! $UV_EXISTS ; then
-  if [ -x $HOME/.local/bin/uv ] ; then
+if [[ $UV_EXISTS  == "false" ]] ; then
+  if [ -x ${HOME}/.local/bin/uv ] ; then
     UV_EXISTS=true
     UV_PATH=${HOME}/.local/bin/uv
   fi
 fi
 
-if $UV_EXISTS ; then
+if [[ $UV_EXISTS  == "false" ]] ; then
+  echo cannot find uv
+  exit $NO_UV
+fi
+
+if [[ $UV_EXISTS == "true" ]]; then
   echo
   echo "* uv installed"
   echo "* updating and installing nef-pipelines"
@@ -127,11 +133,12 @@ else
   exit $NO_UV
 fi
 
-if $DID_UV_INSTALL ; then
+if [[ $DID_UV_INSTALL  ==  "true" ]]; then
   echo * making sure uv is on the path using: uv tool update-shell
   $UV_PATH tool update-shell
 fi
-UV_VERSION=$($UV_PATH --version | cut -d' ' -f2)
+
+UV_VERSION=$( $UV_PATH --version | cut -d' ' -f2)
 if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
     echo "* uv version is outdated, updating..."
     $UV_PATH self update
@@ -155,12 +162,14 @@ if command -v nef &> /dev/null ; then
   NEF_PATH=`command -v nef`
 fi
 
-if [ -x ${HOME}/.local/bin/nef ] ; then
-  NEF_PIPELINES_EXISTS=true
-  NEF_PATH=${HOME}/.local/bin/nef
+if [[ $NEF_PIPELINES_EXISTS == "false" ]] ; then
+  if [ -x ${HOME}/.local/bin/nef ] ; then
+    NEF_PIPELINES_EXISTS=true
+    NEF_PATH=${HOME}/.local/bin/nef
+  fi
 fi
 
-if $NEF_PIPELINES_EXISTS  ; then
+if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   echo "* nef pipelines is installed, trying to update nef pipelines..."
   current_version=$( $NEF_PATH help about  --version )
   output="$($UV_PATH tool update nef-pipelines 2>&1)"
@@ -168,29 +177,31 @@ if $NEF_PIPELINES_EXISTS  ; then
   new_version=$( $NEF_PATH help about  --version )
   echo $current_version -> $new_version
 else
-  $UV_PATH tool install nef-pipelines --with streamfitter --with rich --python 3.11
+  $UV_PATH tool install nef-pipelines --with streamfitter --with rich --python 3.11 --force
 fi
-  # check if nef pipelines exists
-  NEF_PIPELINES_EXISTS=false
-  if command -v nef &> /dev/null ; then
-    NEF_PIPELINES_EXISTS=true
-    NEF_PATH=`command -v nef`
-  fi
 
+# check if nef pipelines exists
+NEF_PIPELINES_EXISTS=false
+if command -v nef &> /dev/null ; then
+  NEF_PIPELINES_EXISTS=true
+  NEF_PATH=`command -v nef`
+fi
+
+if [[ $NEF_PIPELINES_EXISTS != "true" ]] ; then
   if [ -x ${HOME}/.local/bin/nef ] ; then
     NEF_PIPELINES_EXISTS=true
     NEF_PATH=${HOME}/.local/bin/nef
   fi
+fi
 
+if ! $NEF_PIPELINES_EXISTS ; then
+  echo "!! nef-pipelines failed to install, please try the installation a couple of times"
+  echo "!! more if your internet connection is poor!"
+  echo "!! if the problem persists please contact the the developers at the nef-pipelines"
+  echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
+  echo "!! create an issue"
 
-  if ! $NEF_PIPELINES_EXISTS ; then
-    echo "!! nef-pipelines failed to install, please try the installation a couple of times"
-    echo "!! more if your internet connection is poor!"
-    echo "!! if the problem persists please contact the the developers at the nef-pipelines"
-    echo "!! github repository https://github.com/varioustoxins/NEF-Pipelines and"
-    echo "!! create an issue"
-
-    exit $NEF_PIPELINES_DIDNT_INSTALL
+  exit $NEF_PIPELINES_DIDNT_INSTALL
 fi
 
 current_version=$( $NEF_PATH help about  --version )
