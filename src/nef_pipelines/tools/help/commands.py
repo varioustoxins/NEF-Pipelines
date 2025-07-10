@@ -34,7 +34,11 @@ def commands(
         None,
         help="select commands to display multiple items, wildcards and comma separated lists are allowed",
     ),
-    # tree: bool = typer.Option(False, "--table", help="display the tree in a table format"),
+    table: bool = typer.Option(
+        False,
+        "--table",
+        help="display the tree in a html table format [mostly for internal use]",
+    ),
     # python: bool = typer.Option(False, "-v", "--python", help='show commands with python interfaces'),
 ):
     "- display and filter the help for the NEF-Pipelines commands [alpha]"
@@ -94,31 +98,30 @@ def commands(
     # print(items)
     rows = chunks(items, columns)
 
-    print('<table style="width:100%;table-layout=fixed">')
-    print("<tbody>")
-    for i, row in enumerate(rows):
-        style = "" if i > 0 else f' style="width:{column_width:4.2f}%"'
-        print(r" <tr>")
+    if table:
+        print('<table style="width:100%;table-layout=fixed">')
+        print("<tbody>")
+        for i, row in enumerate(rows):
+            style = "" if i > 0 else f' style="width:{column_width:4.2f}%"'
+            print(r" <tr>")
 
-        max_num_lines = max([len(column) for column in row])
-        for column in row:
-            print(f"  <td{style}>")
-            num_lines = len(column)
+            max_num_lines = max([len(column) for column in row])
+            for column in row:
+                print(f"  <td{style}>")
+                num_lines = len(column)
 
-            for i, line in enumerate(column):
-                bold_start = "<b>" if i == 0 else ""
-                bold_end = "</b>" if i == 0 else ""
+                for i, line in enumerate(column):
+                    bold_start = "<b>" if i == 0 else ""
+                    bold_end = "</b>" if i == 0 else ""
 
-                print(f"    {bold_start}{line}{bold_end}<br>")
-            for _ in range(max_num_lines - num_lines):
-                print("    <br>")
-            print("  </td>")
-        print(" </tr>")
-    print("</tbody>")
-    print("</table>")
-    sys.exit()
-
-    if len(tree) != 0:
+                    print(f"    {bold_start}{line}{bold_end}<br>")
+                for _ in range(max_num_lines - num_lines):
+                    print("    <br>")
+                print("  </td>")
+            print(" </tr>")
+        print("</tbody>")
+        print("</table>")
+    elif len(tree) != 0:
         print(tree.show(stdout=False), file=sys.stderr)
         print("key: [X] has a python function [P]ipe / [C]md", file=sys.stderr)
         print("     [α] alpha feature", file=sys.stderr)
