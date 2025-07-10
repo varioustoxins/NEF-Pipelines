@@ -81,7 +81,7 @@ version_gt() {
 
 DID_UV_INSTALL=false
 if [[ $UV_EXISTS  == "true" ]] ; then
-  UV_VERSION=$(uv --version | cut -d' ' -f2)
+  UV_VERSION=$( $UV_PATH --version | cut -d' ' -f2)
   if ! version_gt $UV_VERSION $UV_MIN_VERSION ; then
     echo "!! uv version is outdated, please update to version $UV_MIN_VERSION or higher"
     echo "!! to update use uv self update or reinstall if uv self update is not supported"
