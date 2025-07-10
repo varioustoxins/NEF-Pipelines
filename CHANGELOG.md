@@ -482,3 +482,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.107
 - add the ability to assign matched peaks to peaks match
+
+
+## version 0.1.108
+- fix help command so it shows trees rather than tables by default
