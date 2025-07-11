@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
@@ -32,6 +33,12 @@ from nef_pipelines.tools.fit.fit_lib import (
     spectra_to_isotope_axes,
     spectra_to_isotope_frequencies,
 )
+
+
+@dataclass
+class RatioResult:
+    value: float
+    uncertainty: float
 
 
 @fit_app.command()
@@ -97,11 +104,8 @@ def pipe(
 
         results = _ratio_calculation(id_xy_data, noise_level)
 
-        ratios = {id: result[0] for id, result in results.items()}
-        errors = {id: result[0] for id, result in results.items()}
-
         results_frame = _ratio_results_as_frame(
-            series_frame, NEF_PIPELINES_NAMESPACE, entry, ratios, errors, noise_level
+            series_frame, NEF_PIPELINES_NAMESPACE, entry, results, noise_level
         )
 
         entry.add_saveframe(results_frame)
@@ -126,7 +130,7 @@ def _ratio_calculation(id_xy_data, error):
 
         ratio = on_value / off_value
 
-        result[id] = ratio.nominal_value, ratio.std_dev
+        result[id] = RatioResult(ratio.nominal_value, ratio.std_dev)
 
     return result
 
@@ -135,8 +139,7 @@ def _ratio_results_as_frame(
     series_frame,
     prefix,
     entry,
-    ratios,
-    errors,
+    results,
     noise_level,
 ):
 
@@ -202,7 +205,7 @@ def _ratio_results_as_frame(
     relaxation_loop.add_tag(all_tags)
 
     data = []
-    for index, (data_id, ratio) in enumerate(ratios.items(), start=1):
+    for index, (data_id, result) in enumerate(results.items(), start=1):
         data_row = {"index": index, "data_id": index, "data_combination_id": UNUSED}
 
         peak_atoms = []
@@ -223,8 +226,8 @@ def _ratio_results_as_frame(
         data.append(data_row)
         data_row.update(
             {
-                "value": f"{ratio:.20f}",
-                "value_error": f"{errors[data_id]:.20f}",
+                "value": f"{result.value:.20f}",
+                "value_error": f"{result.uncertainty:.20f}",
             }
         )
 
