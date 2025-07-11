@@ -17,7 +17,7 @@
 
 __*Tools for Manipulating NEF [NMR Exchange Format] Files and Foreign File Access*__
 
-NEF-Pipelines is a set of command line (currently... there maybe a gui later!) tools for maniulating [NEF])(https://github.com/NMRExchangeFormat/NEF) or NMR
+NEF-Pipelines is a set of command line (currently... there maybe a gui later!) tools for manipulating [NEF])(https://github.com/NMRExchangeFormat/NEF) or NMR
 Exchange Format files which can be used to move NMR meta data [peaks, shifts, sequences etc] between NMR data processing
 programs.The programs provide basic tools for manipulating nef files:
 
