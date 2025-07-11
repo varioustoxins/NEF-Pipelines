@@ -23,7 +23,7 @@ if not sys.version_info >= MINIMUM_VERSION:
     print("exiting...", file=sys.stderr)
 
 # for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
-logging.getLogger().setLevel(logging.ERROR)
+logging.getLogger("pynmrstar").setLevel(logging.ERROR)
 
 EXIT_ERROR = 1
 
