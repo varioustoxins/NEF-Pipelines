@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 
+import streamfitter.fitter
 import typer
 
 # from lazy_import import lazy_module
@@ -36,6 +37,8 @@ except ImportError as e:
     fitter = None
     stream_fitter_import_error = str(e)
 
+VERBOSE_HELP = """how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings"""
+
 
 @fit_app.command()
 def exponential(
@@ -70,6 +73,9 @@ def exponential(
     data_type: IntensityMeasurementType = typer.Option(
         IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
     ),
+    verbose: int = typer.Option(
+        streamfitter.fitter.LoggingLevels.WARNING, count=True, help=VERBOSE_HELP
+    ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
     """- fit a data series to an exponential decay with error propagation [alpha]"""
@@ -92,7 +98,14 @@ def exponential(
     _exit_if_no_series_frames_selected(series_frames, frame_selectors)
 
     entry = pipe(
-        entry, series_frames, error_method, cycles, noise_level, data_type, seed
+        entry,
+        series_frames,
+        error_method,
+        cycles,
+        noise_level,
+        data_type,
+        seed,
+        verbose,
     )
 
     print(entry)
@@ -106,6 +119,7 @@ def pipe(
     noise_level,
     data_type: IntensityMeasurementType,
     seed: int,
+    verbose: int = 0,
 ) -> Entry:
 
     try:
@@ -133,7 +147,13 @@ def pipe(
         }
 
         results = fitter.fit(
-            function(), id_xy_data, error_method, cycles, noise_level, seed
+            function(),
+            id_xy_data,
+            error_method,
+            cycles,
+            noise_level,
+            seed,
+            verbose=verbose,
         )
 
         fits = results["fits"]
