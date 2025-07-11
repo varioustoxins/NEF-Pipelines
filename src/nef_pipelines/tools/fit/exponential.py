@@ -20,7 +20,7 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 
 try:
-
+    from streamfitter import fitter
     from streamfitter.error_propogation import ErrorPropogation
 
 except ImportError as e:
@@ -33,7 +33,7 @@ except ImportError as e:
         JACKNIFE = auto()
         BOOTSTRAP = auto()
 
-    streamfitter = None
+    fitter = None
     stream_fitter_import_error = str(e)
 
 
@@ -109,11 +109,8 @@ def pipe(
 ) -> Entry:
 
     try:
-        if streamfitter:
-            function = streamfitter.fitter.get_fitter(
-                streamfitter.fitter.FITTER_EXPONENTIAL_DECAY_2_PAMETER
-            )
-            fitter = streamfitter.fitter
+        if fitter:
+            function = fitter.get_function(fitter.FUNCTION_EXPONENTIAL_DECAY_2_PAMETER)
         else:
             raise ImportError(stream_fitter_import_error)
     except ImportError as e:
@@ -135,7 +132,9 @@ def pipe(
             for id, series_datum in id_series_data.items()
         }
 
-        results = fitter(function, id_xy_data, error_method, cycles, noise_level, seed)
+        results = fitter.fit(
+            function(), id_xy_data, error_method, cycles, noise_level, seed
+        )
 
         fits = results["fits"]
         monte_carlo_errors = results["monte_carlo_errors"]
