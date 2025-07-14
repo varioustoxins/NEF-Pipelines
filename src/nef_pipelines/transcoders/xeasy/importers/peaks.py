@@ -98,7 +98,9 @@ def pipe(
             lines, file_name, residue_type_lookup
         )
 
-        dimensions = _guess_dimensions_if_not_defined_or_throw(peaks, dimension_info)
+        dimensions = _guess_dimensions_if_not_defined_or_throw(
+            peaks, dimension_info, file_name
+        )
 
         dimensions = [{"axis_code": dimension.axis_code} for dimension in dimensions]
 

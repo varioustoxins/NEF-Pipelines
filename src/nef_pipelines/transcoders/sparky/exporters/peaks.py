@@ -86,7 +86,7 @@ def peaks(
     file_name_template: str = typer.Option(
         "%s.txt",
         help=FILE_NAME_TEMPLATE_HELP,
-        metavar="<peak-file.xpk>",
+        metavar="<%s.txt>",
     ),
     input: Path = typer.Option(
         STDIN,

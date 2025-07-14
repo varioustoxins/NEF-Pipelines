@@ -176,7 +176,7 @@ def pipe(
         sparky_peaks = [translate_new_peak(peak) for peak in sparky_peaks]
 
         dimensions = _guess_dimensions_if_not_defined_or_throw(
-            sparky_peaks, input_dimensions
+            sparky_peaks, input_dimensions, file_name
         )
 
         dimensions = [{"axis_code": dimension} for dimension in dimensions]
@@ -195,7 +195,7 @@ def pipe(
 
 
 def _guess_dimensions_if_not_defined_or_throw(
-    peaks: List[NewPeak], input_dimensions: List[str]
+    peaks: List[NewPeak], input_dimensions: List[str], file_name
 ) -> List[str]:
     results_by_dimension = {
         i: dimension for i, dimension in enumerate(input_dimensions)
@@ -252,6 +252,15 @@ def _guess_dimensions_if_not_defined_or_throw(
     for i in range(max_dimension + 1):
         result.append(results_by_dimension[i])
 
+    if "." in result:
+        bad_dimensions = [str(i) for i, dim in enumerate(result, start=1) if dim == "."]
+        bad_dimensions = ", ".join(bad_dimensions)
+
+        msg = f"""
+        for some dimensions [{bad_dimensions}] in the the file {file_name}, the isotopes are not defined 
+        [no useable assignments]
+        """
+        raise NoIsotopesOnAxisException(msg.strip())
     return result
 
 

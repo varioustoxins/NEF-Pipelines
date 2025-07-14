@@ -151,7 +151,7 @@ def pipe(
 
         # peaks.sort() # need to sort peaks on amides...
 
-        dimensions = _guess_dimensions_if_not_defined_or_throw(peaks, [])
+        dimensions = _guess_dimensions_if_not_defined_or_throw(peaks, [], file_name)
 
         dimensions = [{"axis_code": dimension} for dimension in dimensions]
 
