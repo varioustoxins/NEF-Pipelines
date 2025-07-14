@@ -7,7 +7,7 @@ from typing import List
 import typer
 from fyeah import f
 
-from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
+from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE, convert_isotopes
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
     add_frames_to_entry,
@@ -27,11 +27,15 @@ from nef_pipelines.transcoders.sparky.sparky_lib import parse_peaks
 
 # TODO: this needs to be moved to a library
 class SparkyPeakListException(Exception):
-    pass
+    ...
+
+
+class NoIsotopesOnAxisException(SparkyPeakListException):
+    ...
 
 
 class IncompatibleDimensionTypesException(SparkyPeakListException):
-    pass
+    ...
 
 
 app = typer.Typer()
@@ -105,6 +109,8 @@ def peaks(
 
     nuclei = parse_comma_separated_options(nuclei)
 
+    nuclei = convert_isotopes(nuclei)
+
     file_names_and_lines = {}
     for file_name, chain_code in zip_longest(file_names, chain_codes, fillvalue=None):
 
@@ -125,17 +131,21 @@ def peaks(
             exit_error(msg, e)
 
         file_names_and_lines[file_name] = lines
+    try:
+        entry = pipe(
+            entry,
+            frame_name,
+            file_names_and_lines,
+            chain_code,
+            sequence,
+            input_dimensions=nuclei,
+            spectrometer_frequency=spectrometer_frequency,
+            molecule_type=molecule_type,
+        )
+    except NoIsotopesOnAxisException as e:
+        msg = f"{e}. You need to define the isotopes on these axes with the --nuclei option"
 
-    entry = pipe(
-        entry,
-        frame_name,
-        file_names_and_lines,
-        chain_code,
-        sequence,
-        input_dimensions=nuclei,
-        spectrometer_frequency=spectrometer_frequency,
-        molecule_type=molecule_type,
-    )
+        exit_error(msg)
 
     print(entry)
 

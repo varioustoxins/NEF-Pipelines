@@ -3,6 +3,7 @@ import typer
 from nef_pipelines.lib.test_lib import (
     NOQA_E501,
     assert_lines_match,
+    isolate_frame,
     isolate_loop,
     path_in_test_data,
     read_test_data,
@@ -146,3 +147,40 @@ def test_full_comment():
     )
 
     assert_lines_match(EXPECTED_FULL_COMMENT, str(loop))
+
+
+def test_missing_isotopes():
+    path = path_in_test_data(__file__, "CONCACX.txt")
+
+    result = run_and_report(
+        app,
+        [
+            path,
+        ],
+        expected_exit_code=1,
+    )
+
+    assert "the isotopes are not defined" in result.stdout
+    assert "[1, 2, 3, 4]" in result.stdout
+
+
+EXPECTED_SPECTRUM_CONCACX = open(
+    path_in_test_data(__file__, "CONCACX_expected_spectrum.txt")
+).read()
+
+
+def test_give_isotopes_when_bad():
+    path = path_in_test_data(__file__, "CONCACX.txt")
+
+    result = run_and_report(
+        app,
+        [
+            "--nuclei",
+            "13C,15N,13C,13C",
+            path,
+        ],
+    )
+
+    spectrum_frame = isolate_frame(result.stdout, "nef_nmr_spectrum_sparky_CONCACX")
+
+    assert_lines_match(EXPECTED_SPECTRUM_CONCACX, spectrum_frame)

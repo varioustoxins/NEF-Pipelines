@@ -1,5 +1,6 @@
 import string
 from enum import auto
+from typing import List, Sequence, Union
 
 from strenum import UppercaseStrEnum
 
@@ -71,3 +72,33 @@ CODE_TO_ISOTOPE = {
     "31P": Isotope.P31,
 }
 # fmt: on
+
+
+def convert_isotopes(
+    isotopes: Union[Union[str, Isotope], Sequence[Union[str | Isotope]]]
+) -> List[Union[Isotope, str]]:
+    """
+    given a list or single values of either isotope names as strings or Isotopes convert them to a
+    list of Isotopes where possible. Unrecognised isotopes are passed throughnas strings. Isotope strings
+    can be either C13 or 13C for known  isotopes...
+
+    isotopes: either one or a list of isotope name or Isotopes
+
+    result: a list of Isotopes or strs for Isotopes that weren't recognised
+    """
+    if isinstance(isotopes, (str, Isotope)):
+        isotopes = [
+            isotopes,
+        ]
+
+    result = []
+    isotope_values = [member.value for member in Isotope]
+    for isotope in isotopes:
+        if isotope in CODE_TO_ISOTOPE:
+            result.append(CODE_TO_ISOTOPE[isotope])
+        elif isotope in isotope_values:
+            result.append(Isotope(isotope))
+        else:
+            result.append(isotope)
+
+    return result
