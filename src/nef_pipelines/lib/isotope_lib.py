@@ -75,7 +75,7 @@ CODE_TO_ISOTOPE = {
 
 
 def convert_isotopes(
-    isotopes: Union[Union[str, Isotope], Sequence[Union[str | Isotope]]]
+    isotopes: Union[Union[str, Isotope], Sequence[Union[str, Isotope]]]
 ) -> List[Union[Isotope, str]]:
     """
     given a list or single values of either isotope names as strings or Isotopes convert them to a
