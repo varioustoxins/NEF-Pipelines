@@ -483,6 +483,13 @@ improved error handling when `streamfitter` does load into `fit exponential`
 ## version 0.1.107
 - add the ability to assign matched peaks to peaks match
 
-
 ## version 0.1.108
 - fix help command so it shows trees rather than tables by default
+
+## version 0.1.109
+- better handling of axis bounds for Peaklists/Spectra in NMRView and NMRPipe
+- unassigned shifts are not averaged or reported by shifts average
+- shifts average command updates the chemical_shift_list tag on spectra/PeakLists used to
+  used to build the shift list if unassigned [more and better policies coming soon]
+- better error messages and handling for Isotope codes when importing sparky peak lists
+- fit exponential fitting now has a verbosity level
