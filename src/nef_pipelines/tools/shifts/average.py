@@ -47,7 +47,7 @@ def average(
     force: bool = typer.Option(False, help="if target peak list exists replace it"),
     frame_name: str = typer.Option("{entry_id}", help="the shift list to write to"),
     update_policies: List[UpdatePolicy] = typer.Option(
-        None, "--update-policies", help=UPDATE_POLICY_HELP
+        [], "--update-policies", help=UPDATE_POLICY_HELP
     ),
     selectors: List[str] = typer.Argument(
         None, help="selectors for frames to average shifts from [default is all]"
@@ -64,7 +64,7 @@ def average(
 
     frames = select_frames(entry, selectors, selection_type)
 
-    if update_policies is None:
+    if not update_policies:
         update_policies = [
             UpdatePolicy.UPDATE_UNDEFINED,
         ]
@@ -141,6 +141,12 @@ def pipe(
 
 def _update_shift_list_name(frame: Saveframe, shift_list_frame_name, update_policies):
 
+    print(
+        update_policies,
+        UpdatePolicy.UPDATE_UNDEFINED in update_policies,
+        frame.get_tag("chemical_shift_list")[0],
+        frame.get_tag("chemical_shift_list")[0] == UNUSED,
+    )
     if (
         UpdatePolicy.UPDATE_UNDEFINED in update_policies
         and frame.get_tag("chemical_shift_list")[0] == UNUSED
