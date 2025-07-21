@@ -55,8 +55,8 @@ EXPECTED_JOE_CLIC = """\
             _nef_spectrum_dimension.absolute_peak_positions
             _nef_spectrum_dimension.is_acquisition
 
-            1   ppm   1H   600.052978516    6.1679  .   circular   true   .
-            2   ppm  15N   60.8100013733   35.9997  .   circular   true   .
+            1   ppm   1H   600.052978516    1.0   8.65968   circular   true   .
+            2   ppm  15N   60.8100013733    1.0 127.47411   circular   true   .
 
         stop_
 

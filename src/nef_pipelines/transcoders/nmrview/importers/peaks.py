@@ -11,7 +11,7 @@ import string
 import sys
 import traceback
 from collections import Counter, OrderedDict
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from enum import auto
 from pathlib import Path
 from textwrap import dedent
@@ -19,6 +19,7 @@ from typing import Dict, List, Tuple
 
 import typer
 from fyeah import f
+from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import LowercaseStrEnum
 
@@ -1089,6 +1090,7 @@ def _spectrometer_frequencies_to_axis_codes(spectrometer_frequency, peak_list):
 def _create_spectrum_frame(entry_name, peak_list, chain_code):
 
     spectrometer_frequency = _guess_spectrometer_frequency(peak_list)
+    peak_bounds = _get_peak_bounds(peak_list)
     axis_isotopes = _spectrometer_frequencies_to_axis_codes(
         spectrometer_frequency, peak_list
     )
@@ -1116,16 +1118,22 @@ def _create_spectrum_frame(entry_name, peak_list, chain_code):
     )
     loop.add_tag(list_tags)
     list_data = peak_list.peak_list_data
+
+    expanded_peak_bounds = {
+        axis: peak_bounds.expand(10.0) for axis, peak_bounds in peak_bounds.items()
+    }
+    expanded_peak_bounds = {
+        axis: peak_bounds.ensure_width(1.0)
+        for axis, peak_bounds in expanded_peak_bounds.items()
+    }
     for i in range(list_data.num_axis):
         row = {
             "dimension_id": i + 1,
             "axis_unit": "ppm",
             "axis_code": axis_isotopes[i],
             "spectrometer_frequency": list_data.spectrometer_frequencies[i],
-            "spectral_width": (
-                list_data.sweep_widths[i] if list_data.sweep_widths else NEF_UNKNOWN
-            ),
-            "value_first_point": NEF_UNKNOWN,
+            "spectral_width": round(expanded_peak_bounds[i].width, 5),
+            "value_first_point": round(expanded_peak_bounds[i].max, 5),
             "folding": "circular",
             "absolute_peak_positions": "true",
             "is_acquisition": NEF_UNKNOWN,
@@ -1330,3 +1338,53 @@ def _exit_too_many_residue_handling_options(residue_handling):
             that are not compatible with each other, you can only combine options with case and warn...
             """
     exit_error(msg)
+
+
+@dataclass
+class AxisBounds:
+    min: float
+    max: float
+
+    @property
+    def middle(self):
+        return (self.max + self.min) / 2.0
+
+    @property
+    def width(self):
+        return self.max - self.min
+
+    def expand(self, percentage):
+        width = self.max - self.min
+        extra = width * (percentage / 100.0)
+
+        return AxisBounds(self.min - extra, self.max + extra)
+
+    def ensure_width(self, required_width):
+        new_min = self.min
+        new_max = self.max
+        if self.width < required_width:
+            extra_width = required_width - self.width
+            extra_width_2 = extra_width / 2.0
+            new_min = self.min - extra_width_2
+            new_max = self.max + extra_width_2
+
+        return AxisBounds(new_min, new_max)
+
+
+def _get_peak_bounds(peak_list):
+    shifts_by_axis = {}
+    axes = OrderedSet()
+    result = {}
+    for peak in peak_list.peaks:
+
+        for item, peak in peak.items():
+            if is_int(item):
+                shifts_by_axis.setdefault(item, []).append(peak.ppm)
+                axes.add(item)
+
+    for axis in axes:
+        axis_min = min(shifts_by_axis[axis])
+        axis_max = max(shifts_by_axis[axis])
+        result[axis] = AxisBounds(axis_min, axis_max)
+
+    return result

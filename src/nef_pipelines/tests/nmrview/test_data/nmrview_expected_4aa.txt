@@ -15,9 +15,9 @@ save_nef_nmr_spectrum_simnoe
       _nef_spectrum_dimension.absolute_peak_positions
       _nef_spectrum_dimension.is_acquisition
 
-     1   ppm   1H    800.133   11.0113   .   circular   true   .
-     2   ppm   1H    800.133   11.0600   .   circular   true   .
-     3   ppm   15N   81.076    81.8927   .   circular   true   .
+     1   ppm   1H    800.133    1.0      10.9235   circular   true   .
+     2   ppm   1H    800.133    3.9048    9.1214   circular   true   .
+     3   ppm   15N   81.076     1.0     132.99     circular   true   .
 
    stop_
 

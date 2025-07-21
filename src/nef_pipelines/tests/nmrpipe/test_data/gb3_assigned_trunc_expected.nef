@@ -15,8 +15,8 @@ save_nef_nmr_spectrum_gb3_assigned_trunc
       _nef_spectrum_dimension.absolute_peak_positions
       _nef_spectrum_dimension.is_acquisition
 
-     1   ppm   1H    600.433563655689   .   .   circular   true   .
-     2   ppm   15N   60.8478965004702   .   .   circular   true   .
+     1   ppm   1H    600.433563655689   1.0        9.159   circular   true   .
+     2   ppm   15N   60.8478965004702   1.8696   124.8798  circular   true   .
 
    stop_
 
