@@ -45,7 +45,7 @@ def average(
     update_policies: List[UpdatePolicy] = typer.Option(None, '--update-policies',
                                                  help=UPDATE_POLICY_HELP),
     selectors: List[str] = typer.Argument(
-        None, help="selectors to average shifts from [default is all]"
+        None, help="selectors for frames to average shifts from [default is all]"
     ),
 ):
     """- average chemical shifts from spectra [peaks] into a nef chemical shift frame [alpha]"""
