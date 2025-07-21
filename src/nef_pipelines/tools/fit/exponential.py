@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List
 
-import streamfitter.fitter
 import typer
 
 # from lazy_import import lazy_module
@@ -21,11 +20,11 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 
 try:
-    from streamfitter import fitter
+    from streamfitter import LoggingLevels, fitter
     from streamfitter.error_propogation import ErrorPropogation
 
 except ImportError as e:
-    from enum import auto
+    from enum import IntEnum, auto
 
     from strenum import StrEnum
 
@@ -34,10 +33,17 @@ except ImportError as e:
         JACKNIFE = auto()
         BOOTSTRAP = auto()
 
+    class LoggingLevels(IntEnum):
+        WARNING = 0
+        INFO = 1
+        DEBUG = 2
+        ALL = 3
+
     fitter = None
     stream_fitter_import_error = str(e)
 
-VERBOSE_HELP = """how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings"""
+VERBOSE_HELP = \
+"""how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings"""
 
 
 @fit_app.command()
@@ -73,9 +79,7 @@ def exponential(
     data_type: IntensityMeasurementType = typer.Option(
         IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
     ),
-    verbose: int = typer.Option(
-        streamfitter.fitter.LoggingLevels.WARNING, count=True, help=VERBOSE_HELP
-    ),
+    verbose: int = typer.Option(LoggingLevels.WARNING, count=True, help=VERBOSE_HELP),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
     """- fit a data series to an exponential decay with error propagation [alpha]"""
