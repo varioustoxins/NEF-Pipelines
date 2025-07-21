@@ -27,16 +27,6 @@ UNDERSCORE = "_"
 parser = None
 
 
-def _if_is_nef_file_load_as_entry(file_path):
-    entry = None
-    try:
-        entry = Entry.from_file(file_path)
-    except Exception:
-        pass
-
-    return entry
-
-
 # noinspection PyUnusedLocal
 @frames_app.command()
 def list(
@@ -225,3 +215,13 @@ def _indent_with_prestring(text_block, pre_string):
             raw_result.append(f"{empty_prestring}{string}")
 
     return "\n".join(raw_result)
+
+
+def _if_is_nef_file_load_as_entry(file_path):
+    entry = None
+    try:
+        entry = Entry.from_file(file_path)
+    except Exception:
+        pass
+
+    return entry
