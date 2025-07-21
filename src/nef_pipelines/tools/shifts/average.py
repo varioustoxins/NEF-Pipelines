@@ -95,6 +95,11 @@ def pipe(entry: Entry, frames: List[Saveframe], frame_name: str, force: bool,
 
     for atom, stats in sorted(shifts.items()):
         stddev = stats.stddev() if len(stats) > 1 else UNUSED
+
+        # filter on empty chain codes or sequence codes which are "" in the structures.Peak
+        if not atom.residue.chain_code  or  not atom.residue.sequence_code:
+            continue
+
         data = [
             {
                 "chain_code": atom.residue.chain_code,
