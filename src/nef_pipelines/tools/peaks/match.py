@@ -321,10 +321,8 @@ def pipe(entry: Entry, peak_frame_1: Saveframe, peak_frame_2: Saveframe, assign=
         results[peak_1_id] = best_matches, distance
 
     if assign:
-        print("ere")
-        _assign_frame(results, peak_frame_2)
+
         target_peak_loop = peak_frame_2.get_loop("nef_peak")
-        print(target_peak_loop)
         source_peak_loop = peak_frame_1.get_loop("nef_peak")
 
         source_values_by_index = {
