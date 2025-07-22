@@ -493,3 +493,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
   used to build the shift list if unassigned [more and better policies coming soon]
 - better error messages and handling for Isotope codes when importing sparky peak lists
 - fit exponential fitting now has a verbosity level
+
+## version 0.1.110
+- fix bug in shifts average
