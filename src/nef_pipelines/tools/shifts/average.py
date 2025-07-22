@@ -141,12 +141,6 @@ def pipe(
 
 def _update_shift_list_name(frame: Saveframe, shift_list_frame_name, update_policies):
 
-    print(
-        update_policies,
-        UpdatePolicy.UPDATE_UNDEFINED in update_policies,
-        frame.get_tag("chemical_shift_list")[0],
-        frame.get_tag("chemical_shift_list")[0] == UNUSED,
-    )
     if (
         UpdatePolicy.UPDATE_UNDEFINED in update_policies
         and frame.get_tag("chemical_shift_list")[0] == UNUSED
