@@ -50,6 +50,7 @@ def list(
         count=True,
         help="print verbose information more verbose options give more information",
     ),
+    write_error: bool = typer.Option(False, '--write-error', help='write output to stderr'),
     filters: Optional[List[str]] = typer.Argument(
         None, help="filters string for entry names and categories to list"
     ),
@@ -96,6 +97,7 @@ def list(
     with contextlib.redirect_stdout(sys.stderr):
         print(f"entry {entry.entry_id}")
         if verbose:
+    output_file = sys.stderr if write_error else sys.stdout
 
             import hashlib
 
