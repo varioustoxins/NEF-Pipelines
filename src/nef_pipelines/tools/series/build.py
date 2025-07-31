@@ -217,25 +217,39 @@ def pipe(
 
     series_frame = create_nef_save_frame(f"{NEF_PIPELINES_NAMESPACE}_series_list", name)
 
-    series_variable_type = EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE[
-        RelaxationExperimentType[experiment_type]
-    ]
-    series_variable_unit = SERIES_VARIABLE_TYPE_TO_SERIES_VARIABLE_UNIT[
-        series_variable_type
-    ]
+    if experiment_type == "unknown":
+        series_variable_type = "unknown"
+    else:
+        series_variable_type = EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE[
+            RelaxationExperimentType[experiment_type]
+        ]
+
+    if series_variable_type == "unknown":
+        series_variable_unit = "unknown"
+    else:
+
+        series_variable_unit = SERIES_VARIABLE_TYPE_TO_SERIES_VARIABLE_UNIT[
+            series_variable_type
+        ]
 
     series_variable_unit = (
         unit if unit != series_variable_unit else series_variable_unit
     )
 
-    data_value_type = EXPERIMENT_TYPE_TO_DATA_VARIABLE_TYPE[
-        RelaxationExperimentType[experiment_type]
-    ]
+    if experiment_type == "unknown":
+        data_value_type = "unknown"
+    else:
+        data_value_type = EXPERIMENT_TYPE_TO_DATA_VARIABLE_TYPE[
+            RelaxationExperimentType[experiment_type]
+        ]
     data_value_unit = DATA_VARIABLE_TYPE_TO_DATA_VARIABLE_UNIT[data_value_type]
 
-    experiment_type = EXPERIMENT_TO_IDENTIFIER[
-        RelaxationExperimentType[experiment_type]
-    ]
+    if experiment_type == "unknown":
+        experiment_type = RelaxationExperimentType.OTHER
+    else:
+        experiment_type = EXPERIMENT_TO_IDENTIFIER[
+            RelaxationExperimentType[experiment_type]
+        ]
     tags = [
         ("experiment_type", experiment_type),
         ("series_variable_type", series_variable_type),
