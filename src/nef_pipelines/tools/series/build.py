@@ -336,7 +336,7 @@ def pipe(
 def _guess_experiment_type(name):
     upper_name = name.upper()
     for experiment_name in NAME_TO_EXPERIMENT_TYPE:
-        if experiment_name in upper_name:
+        if experiment_name in upper_name and upper_name in NAME_TO_EXPERIMENT_TYPE:
             result = NAME_TO_EXPERIMENT_TYPE[upper_name]
             break
         else:
