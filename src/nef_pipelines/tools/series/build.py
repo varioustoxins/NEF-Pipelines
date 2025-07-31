@@ -217,7 +217,7 @@ def build(
 
     # TODO aren't these the same? add a name and expt attribute to the template and only use this notherwise
     if not name:
-        name = _guess_series_name(entry, frames_and_timings)
+        name = _make_series_name(entry, frames_and_timings)
 
     if not experiment_type:
         experiment_type = _guess_experiment_type(name)
@@ -344,7 +344,7 @@ def _guess_experiment_type(name):
     return result
 
 
-def _guess_series_name(entry, frames_and_timings):
+def _make_series_name(entry, frames_and_timings):
     result = None
     for relaxation_type in NAME_TO_EXPERIMENT_TYPE:
         do_break = False
