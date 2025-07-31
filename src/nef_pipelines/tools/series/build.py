@@ -465,7 +465,20 @@ def _exit_if_frame_selector_has_no_timing_selector(frame_selectors):
         exit_error(msg)
 
 
-def _select_relaxation_frames(entry: Entry, frame_selectors: List[str]) -> List[str]:
+def _select_relaxation_frames_by_selector_or_exit_if_other(
+    entry: Entry, frame_selectors: List[str]
+) -> List[Saveframe]:
+    """Select relaxation frames that are also spectrum frames using multiple selectors.
+
+    Args:
+        entry: NEF entry to search in
+        frame_selectors: List of frame frame_selector patterns
+
+    Returns:
+        List of spectrum frames that match the selectors (no duplicates)
+    """
+
+    # Get all spectrum frames
     spectrum_frames = select_frames(entry, "nef_nmr_spectrum", SelectionType.CATEGORY)
     spectrum_frame_ids = OrderedSet(
         [
@@ -474,36 +487,47 @@ def _select_relaxation_frames(entry: Entry, frame_selectors: List[str]) -> List[
         ]
     )
 
-    frame_selectors = [selector.replace("{var}", "*") for selector in frame_selectors]
-    frame_selectors = [selector.replace("{}", "*") for selector in frame_selectors]
-
-    relaxation_frames = []
+    # Process selectors with variable substitution and rememebr originals
+    processed_selectors_and_original_selectors = {}
     for frame_selector in frame_selectors:
         relaxation_frames.extend(
             select_frames(entry, frame_selector, SelectionType.NAME)
         )
+        for frame in matching_frames:
+            selected_frame_ids.add((frame.name, id(frame)))
 
-    relaxation_frame_ids = OrderedSet(
-        [
-            (relaxation_frame.name, id(relaxation_frame))
-            for relaxation_frame in relaxation_frames
-        ]
-    )
-
-    # TODO: just do an intersection dummy!
-    if not relaxation_frame_ids.issubset(spectrum_frame_ids):
-        non_spectrum_frames = relaxation_frame_ids.difference(spectrum_frame_ids)
-        non_spectrum_frame_names = "\n".join(
-            [non_spectrum_frame[0] for non_spectrum_frame in non_spectrum_frames]
+    # Filter to only include spectrum frames (intersection)
+    for frame_selector, selected_frame_ids in frame_ids_by_selector.items():
+        frame_ids_by_selector[frame_selector] = spectrum_frame_ids.intersection(
+            selected_frame_ids
         )
-        # TODO: just filter out non spectra frames...
-        _exit_if_some_frames_are_not_spectra(non_spectrum_frame_names)
 
-    return relaxation_frames
+    # Check for non-spectrum frames and error if found (preserve original behavior)
+    for frame_selector, valid_frame_ids in frame_ids_by_selector.items():
+        non_spectrum_frame_ids = frame_ids_by_selector[frame_selector].difference(
+            valid_frame_ids
+        )
+        if non_spectrum_frame_ids:
+            non_spectrum_frame_names = "\n".join(
+                [frame_name for frame_name, _ in non_spectrum_frame_ids]
+            )
+            _exit_if_some_frames_are_not_spectra(
+                frame_selector, non_spectrum_frame_names
+            )
+
+    # Convert back to frame objects
+    valid_frames_by_selector = {}
+    for frame_selector, valid_frame_ids in frame_ids_by_selector.items():
+        valid_frames_by_selector[frame_selector] = [
+            entry.get_saveframe_by_name(frame_name) for frame_name, _ in valid_frame_ids
+        ]
+
+    return valid_frames_by_selector
 
 
-def _exit_if_some_frames_are_not_spectra(non_spectrum_frame_names):
+def _exit_if_some_frames_are_not_spectra(frame_selector, non_spectrum_frame_names):
     msg = f"""
+            using the frame selector {frame_selector}
             some of the selected frames are not spectrum frames:
             {non_spectrum_frame_names}
             """
