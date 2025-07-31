@@ -51,6 +51,7 @@ def list(
         help="print verbose information more verbose options give more information",
     ),
     write_error: bool = typer.Option(False, '--write-error', help='write output to stderr'),
+    one_per_line:bool = typer.Option(False, '-1', '--one-per-line', help='write frame names one per line'),
     filters: Optional[List[str]] = typer.Argument(
         None, help="filters string for entry names and categories to list"
     ),
@@ -112,7 +113,7 @@ def list(
             md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
             num_lines = len(lines.split("\n"))
             print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
-        print()
+
 
         frames = select_frames(entry, filters, selector_type)
 
@@ -124,7 +125,10 @@ def list(
                     for i, frame_name in enumerate(frame_names, start=1)
                 ]
 
-            frame_list = strings_to_table_terminal_sensitive(frame_names)
+            if one_per_line:
+                frame_list = [[frame_name,] for frame_name in frame_names]
+            else:
+                frame_list = strings_to_table_terminal_sensitive(frame_names)
             print(tabulate(frame_list, tablefmt="plain"))
 
         else:
