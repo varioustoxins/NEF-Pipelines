@@ -3,6 +3,7 @@ import sys
 from collections import Counter
 from enum import IntEnum, auto
 from pathlib import Path
+from textwrap import dedent
 from typing import Dict, List, Tuple, Union
 
 import typer
@@ -173,7 +174,7 @@ def build(
     ),
     experiment_type: str = typer.Option(None, help="the type of the experiment"),
     display_parsed_values: bool = typer.Option(False, help="display the parsed values"),
-    frames_selectors: List[str] = typer.Argument(
+    frame_selectors: List[str] = typer.Argument(
         None,
         help=FRAMES_AND_TIMES_HELP,
     ),
