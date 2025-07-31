@@ -258,6 +258,10 @@ def pipe(
         ("data_variable_unit", series_variable_unit),
         ("data_value_type", data_value_type),
         ("data_value_unit", data_value_unit),
+        (
+            "version",
+            NEF_RELAXATION_VERSION,
+        ),
         ("comment", UNUSED),
     ]
     series_frame.add_tags(tags)
@@ -269,7 +273,6 @@ def pipe(
     series_frame.add_loop(series_experiment_loop)
     series_experiment_loop.add_tag(
         [
-            "version",
             "nmr_spectrum_id",
             "reference_experiment",
             "combination_id",
@@ -288,7 +291,6 @@ def pipe(
 
         loop_data.append(
             {
-                "version": NEF_RELAXATION_VERSION,
                 "nmr_spectrum_id": frame_name,
                 "reference_experiment": "false",
                 "combination_id": UNUSED,
