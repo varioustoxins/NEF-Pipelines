@@ -98,6 +98,14 @@ def list(
         print(f"entry {entry.entry_id}")
         if verbose:
     output_file = sys.stderr if write_error else sys.stdout
+    with contextlib.redirect_stdout(output_file):
+
+        if verbose > 0:
+
+            print(f"entry {entry.entry_id}")
+            print()
+
+        if verbose > 1:
 
             import hashlib
 
