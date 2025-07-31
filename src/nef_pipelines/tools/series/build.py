@@ -28,6 +28,7 @@ from nef_pipelines.lib.util import (
     is_int,
     parse_comma_separated_options,
     strings_to_tabulated_terminal_sensitive,
+    warn,
 )
 from nef_pipelines.tools.series import series_app
 
@@ -266,8 +267,11 @@ def pipe(
     )
 
     loop_data = []
-    for frame_key, value in frame_timings.items():
+    for frame_key, (value, unit) in frame_timings.items():
         frame_name, _ = frame_key
+
+        value = _scale_value_by_unit(value, unit)
+
         loop_data.append(
             {
                 "version": NEF_RELAXATION_VERSION,
@@ -642,3 +646,20 @@ def _exit_if_units_are_not_compatible(frame_timings_and_units):
                 {strings_to_tabulated_terminal_sensitive(units_and_timings_strings)}
                 """
         exit_error(msg)
+
+
+def _scale_value_by_unit(value, unit):
+    if is_float(value):
+        value = float(value)
+    if not unit or unit == "bool":
+        pass
+    elif unit.lower() in ("us", "ms"):
+        if unit.lower() == "ms":
+            value *= 1e-3
+        elif unit.lower() == "us":
+            value *= 1e-6
+    else:
+        msg = f""" scaling by unit {unit} not implemented [value: {value}], ignoring!"""
+        warn(msg)
+
+    return round(value, 6)
