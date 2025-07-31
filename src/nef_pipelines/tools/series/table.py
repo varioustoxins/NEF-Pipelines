@@ -8,7 +8,6 @@ from strenum import StrEnum
 
 from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import (
-    NEF_RELAXATION_VERSION,
     UNUSED,
     SelectionType,
     read_entry_from_file_or_stdin_or_exit_error,
@@ -167,7 +166,6 @@ def _build_series_data_loop(
     series_data_loop = Loop.from_scratch(f"{NAMESPACE}_series_data")
 
     tags = [
-        "version",
         "nmr_spectrum_id",
         "peak_id",
         "variable_value",
@@ -200,7 +198,6 @@ def _build_series_data_loop(
 
         for spectrum, peak_id, series_value, value in zipper:
             data = {
-                "version": NEF_RELAXATION_VERSION,
                 "nmr_spectrum_id": spectrum,
                 "peak_id": peak_id,
                 "variable_value": series_value,
