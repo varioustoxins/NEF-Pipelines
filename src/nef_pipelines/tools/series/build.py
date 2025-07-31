@@ -455,13 +455,29 @@ def _exit_error_it_number_of_timings_doesnt_match_number_of_frames(
 
 
 def _exit_if_frame_selector_has_no_timing_selector(frame_selectors):
-    if len(frame_selectors) != 1 or "{var}" not in frame_selectors[0]:
-        NEWLINE = "\n"
-        msg = f"""
-                    no timings provided to select timings you must have a single frame selector with
-                    a {{var}} placeholder i got {len(frame_selectors)} frame selectors and they were:
-                    {NEWLINE.join(frame_selectors)}
-                """
+
+    reason = None
+
+    if (len(frame_selectors)) < 1:
+        reason = "no frames were selected"
+    else:
+        for i, frame_selector in enumerate(frame_selectors, start=1):
+            if "{var}" not in frame_selector:
+                reason = f"frame selector {i}: {frame_selector} doesn't contain a {{var}} place holder"
+
+    if reason:
+        msg = f"""\
+            timings not parsed because:
+
+            {reason}
+
+            to select timings you must have one or more frame selector each with
+            a {{var}} placeholder. I got {len(frame_selectors)} frame selectors and they were:
+
+            """
+        msg = dedent(msg)
+        frame_elector_strings = "\n".join(frame_selectors)
+        msg += frame_elector_strings
         exit_error(msg)
 
 
@@ -490,8 +506,21 @@ def _select_relaxation_frames_by_selector_or_exit_if_other(
     # Process selectors with variable substitution and rememebr originals
     processed_selectors_and_original_selectors = {}
     for frame_selector in frame_selectors:
-        relaxation_frames.extend(
-            select_frames(entry, frame_selector, SelectionType.NAME)
+
+        processed_selector = frame_selector.replace("{var}", "*").replace("{}", "*")
+        processed_selectors_and_original_selectors[processed_selector] = frame_selector
+
+    # Collect all frames matching any frame_selector (use OrderedSet to avoid duplicates)
+    frame_ids_by_selector = {}
+    for (
+        processed_frame_selector,
+        frame_selector,
+    ) in processed_selectors_and_original_selectors.items():
+        selected_frame_ids = OrderedSet()
+        frame_ids_by_selector[frame_selector] = selected_frame_ids
+
+        matching_frames = select_frames(
+            entry, processed_frame_selector, SelectionType.NAME
         )
         for frame in matching_frames:
             selected_frame_ids.add((frame.name, id(frame)))
