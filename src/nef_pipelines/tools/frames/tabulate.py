@@ -77,6 +77,58 @@ chosen by index or loop category. Exact matching of frame names and loop categor
 option. Details of frames in a file loops can be listed using 'nef frame list -vvv'
 """
 
+# meaningful matches
+# 1. nothing == * all frames and loops                         *
+# 2. an exact frame name: all loops within that frame          bens_data
+# 3. a frame category: all loops within that frame             nef_nmr_spectrum
+# 4. a loop category                                           nmr_peaks
+# 5. a loop name and index                                     bens_data.1
+# 6. a frame name and a loop category                          bens_data.nmr_peaks
+# 7. a frame category and a loop category                      nef_nmr_spectrum.nmr_peaks]
+# 8. a frame category and a loop index                         for all frames of the category the nth loop - meaningful
+#                                                              loops can appear in any order
+# 9. a frame name and a loop index
+#
+# Loop category	Loop index	Loop category and index	No loop id
+# save frame name	6	9	X	2
+# save frame category	7	8	X	3
+# No save frame id	4	X	5	1
+
+# form the point of grammar
+# 1            2                3         a               b            c
+# <frame-name>|<frame-category>|<nothing>.<loop-category>|<loop-index>|<nothing>
+# 9 possibilities
+# x 1a. <frame-name>.<loop-category>       - can contain dots? -> higher priority
+# x 1b. <frame-name>.<loop-index>          - frame name can contain dots look for the name with dots first
+# x 1c. <frame-name>                       - can coontain dots! -> higher priotity
+# x 2a. <frame-category>.<loop-category>   - either can contain dots so higher priority but lower than a names()
+# x 2b. <frame-category>.<loop-index>      - not sure its menaingful, unless loops are ordered in all frames in a file
+# x 2c. <frame-category>                   - all loops in a particular frame type
+# x 3a. <loop-category>                    - every case of that loop
+# 3b. <loop-index>                          - not useful it would be the nth loop of all frames!
+# x 3c. <nothing>.<nothing>                - all frames all loops
+# ** plus one more loop-category + index
+#
+# nothing == wildcard
+# priority
+# frame-names | loop-categories >  frame-categories > fame-nothing > loop-index > loop-nothing
+#
+# so search order would be
+# 3c nothing-nothing                           - everything
+# 1a frame-name.loop-category                  - can contain dots and numbers so high priority, add wild cards to all
+#                                                all components
+# 2a frame-category.loop-category              - can contain dots and numbers so high priority, add wild cards to all
+#                                                components
+# 1c frame-name                                - can contain dots and numbers so high priority, all loops in the frame
+# 3a loop-category                             - can contain dots and numbers so high priority, all loops of the
+#                                                category
+# 2c frame-category                            - can contain dots and numbers so high priority, all loops for frames of
+#                                                the category
+# 1b frame-name.loop-index                     - the nth loops in the frame with the name
+# 2b frame-category.loop-index                 - the nth loop for all frames with the category                       -
+# loop-category.index                          - the nth loop with the category
+
+
 ABBREVIATED_HEADINGS = {
     "index": "ind",
     "chain_code": "chain",
