@@ -50,8 +50,12 @@ def list(
         count=True,
         help="print verbose information more verbose options give more information",
     ),
-    write_error: bool = typer.Option(False, '--write-error', help='write output to stderr'),
-    one_per_line:bool = typer.Option(False, '-1', '--one-per-line', help='write frame names one per line'),
+    write_error: bool = typer.Option(
+        False, "--write-error", help="write output to stderr"
+    ),
+    one_per_line: bool = typer.Option(
+        False, "-1", "--one-per-line", help="write frame names one per line"
+    ),
     filters: Optional[List[str]] = typer.Argument(
         None, help="filters string for entry names and categories to list"
     ),
@@ -95,9 +99,6 @@ def list(
             exit_error("couldn't read a nef stream from stdin")
 
     lines = str(entry)
-    with contextlib.redirect_stdout(sys.stderr):
-        print(f"entry {entry.entry_id}")
-        if verbose:
     output_file = sys.stderr if write_error else sys.stdout
     with contextlib.redirect_stdout(output_file):
 
@@ -114,7 +115,6 @@ def list(
             num_lines = len(lines.split("\n"))
             print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
 
-
         frames = select_frames(entry, filters, selector_type)
 
         if verbose == 0:
@@ -126,7 +126,12 @@ def list(
                 ]
 
             if one_per_line:
-                frame_list = [[frame_name,] for frame_name in frame_names]
+                frame_list = [
+                    [
+                        frame_name,
+                    ]
+                    for frame_name in frame_names
+                ]
             else:
                 frame_list = strings_to_table_terminal_sensitive(frame_names)
             print(tabulate(frame_list, tablefmt="plain"))
