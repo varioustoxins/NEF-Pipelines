@@ -286,7 +286,7 @@ def pipe(
     ]
     series_frame.add_tags(tags)
 
-    # TODO: pynmstar doesn't catch prepended spaces here it just gives and obscure error report!
+    # TODO: pynmstar doesn't catch prepended spaces here it just gives an obscure error report!
     series_experiment_loop = Loop.from_scratch(
         f"{NEF_PIPELINES_NAMESPACE}_series_experiment"
     )
