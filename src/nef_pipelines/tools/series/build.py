@@ -491,8 +491,11 @@ def _exit_if_some_frames_are_not_spectra(non_spectrum_frame_names):
 
 
 def _parse_timings_from_frames_or_exit(
-    save_frames: List[Saveframe], frame_selector: str, display_parsed_values: bool
+    save_frames: Dict[Tuple[str, int], List[Saveframe]],
+    frame_selector: str,
+    display_parsed_values: bool,
 ) -> Dict[Tuple[str, int], List[Tuple[Union[int, float, bool], str]]]:
+
     if "{var}" not in frame_selector:
         msg = f"no timing selector placeholder {{var}} provided in frame selector {frame_selector}"
         exit_error(msg)
@@ -570,6 +573,7 @@ def _parse_value_and_unit(value: str) -> Tuple[Union[bool, int, float, None]]:
             value = int(value)
         elif is_float(value):
             value = float(value)
+        unit = ""
     else:
         unit = None
         value = None
