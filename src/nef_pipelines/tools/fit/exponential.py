@@ -20,10 +20,10 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 
 try:
-    from streamfitter import LoggingLevels, fitter
+    from streamfitter.interface import LoggingLevels
 
 except ImportError as e:
-    from enum import IntEnum, auto
+    from enum import IntEnum
 
     class LoggingLevels(IntEnum):
         WARNING = 0
@@ -31,7 +31,6 @@ except ImportError as e:
         DEBUG = 2
         ALL = 3
 
-    fitter = None
     stream_fitter_import_error = str(e)
 
 VERBOSE_HELP = \
@@ -111,6 +110,8 @@ def pipe(
 ) -> Entry:
 
     try:
+        from streamfitter import fitter
+
         if fitter:
             function = fitter.get_function(fitter.FUNCTION_EXPONENTIAL_DECAY_2_PAMETER)
         else:
