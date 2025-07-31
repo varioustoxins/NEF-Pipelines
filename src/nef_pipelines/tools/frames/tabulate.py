@@ -13,7 +13,7 @@ from typing import Dict, List
 import typer
 import wcmatch.fnmatch as fnmatch
 from fyeah import f
-from pynmrstar import Saveframe
+from ordered_set import OrderedSet
 from tabulate import tabulate as tabulate_formatter
 
 from nef_pipelines.lib.nef_lib import (
@@ -289,59 +289,22 @@ def _build_column_selections(column_selections, exact):
 
 
 def tabulate_frames(entry, args):
-    frames_to_tabulate = _get_frames_to_tabulate(
+    frames_and_loops_to_tabulate = _select_chosen_frames_and_loops(
         entry, args.frame_loop_selectors, args.exact
     )
-    frame_indices = _select_loop_indices(args.frame_loop_selectors)
 
     seen_files = set()
-    for frame_name, frame_data in frames_to_tabulate.items():
+    for frame_name, loop_category in frames_and_loops_to_tabulate:
 
-        frame_category = frame_data.category
-
+        frame = [frame for frame in entry.frame_list if frame.name == frame_name][0]
+        loop = frame.get_loop(loop_category)
+        frame_category = frame.category
         category_length = len(frame_category)
-
-        frame_id = frame_data.name[category_length:].lstrip("_")
+        frame_id = frame.name[category_length:].lstrip("_")
         frame_id = frame_id.strip()
         frame_id = frame_id if len(frame_id) > 0 else ""
 
-        for i, loop in enumerate(frame_data.loops, start=1):
-            if _should_output_loop(
-                i, frame_name, frame_indices, loop.category, args.exact
-            ):
-                _output_loop(
-                    loop, frame_id, frame_category, entry.entry_id, args, seen_files
-                )
-
-
-def _select_loop_indices(frames):
-    frame_indices = {}
-    for frame_selector in frames:
-        frame_selector_index = frame_selector.split(".")
-        if len(frame_selector_index) == 1:
-            frame_name_selector = frame_selector_index[0]
-            frame_indices.setdefault(frame_name_selector, set()).add(ALL_LOOPS)
-        elif len(frame_selector_index) == 2:
-            frame_name_selector = frame_selector_index[0]
-            index = frame_selector_index[1]
-            index = int(index) if is_int(index) else index
-            frame_indices.setdefault(frame_name_selector, set()).add(index)
-        else:
-            exit_error(
-                f'[frames tabulate] too many fields int the frame selector {".".join(frame_selector)}'
-            )
-    for frame_selector, indices in frame_indices.items():
-        if ALL_LOOPS in indices and len(indices) > 1:
-            indices.remove(ALL_LOOPS)
-            index_strings = ", ".join([str(index) for index in indices])
-            message = f"""
-                [frames tabulate] incompatible selections, you selected all loops and a specific index for
-                frame: {frame_selector} indices were: {index_strings}
-                """
-
-            exit_error(message)
-
-    return frame_indices
+        _output_loop(loop, frame_id, frame.category, entry.entry_id, args, seen_files)
 
 
 def _remove_empty_columns(tabulation, headers):
@@ -546,103 +509,97 @@ def _abbreviate_headers(headers: List[str], abbreviations: Dict[str, str]) -> Li
     return result
 
 
-def _should_output_loop(index, frame_name, frame_indices, loop_category, exact):
+def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
+    loops_to_tabulate = OrderedSet()
 
-    do_output = False
-    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
-    for frame_selector in frame_indices:
-        if exact:
-            matched = frame_name == frame_selector
-        else:
-            matched = fnmatch.fnmatch(
-                frame_name.lstrip("_"), f"*{frame_selector}*", flags=match_flags
-            )
+    # match on everything most probably we ough to use a sentinal instead such as *
+    if len(frame_selectors) == 0:
+        for frame in entry.frame_dict.values():
+            for loop in frame.loops:
+                loops_to_tabulate.add((frame.name, loop.category))
 
-        if matched:
-            indices = frame_indices[frame_selector]
+    else:
+        match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
+        for frame_selector in frame_selectors:
 
-            if index in indices:
-                do_output = True
+            matched = False
+            for frame_name, frame_data in entry.frame_dict.items():
 
-            if ALL_LOOPS in indices:
-                do_output = True
-
-            if exact:
-                output_tests = [
-                    loop_category.lstrip("_") == target_index
-                    for target_index in indices
-                ]
-            else:
-                output_tests = [
-                    fnmatch.fnmatch(
-                        loop_category, f"*{target_index}*", flags=match_flags
-                    )
-                    for target_index in indices
-                ]
-
-            if any(output_tests):
-                do_output = True
-
-            if do_output:
-                break
-
-    return do_output
-
-
-def _count_loop_rows(save_frame: Saveframe) -> int:
-    count = 0
-    for loop in save_frame.loops:
-        count += len(loop)
-
-    return count
-
-
-def _get_frames_to_tabulate(entry, frame_selectors, exact):
-
-    frames_with_empty_loops = _get_loops_with_empty_frames_and_errors(entry)
-
-    frames_to_tabulate = _select_chosen_frames(entry, frame_selectors, exact)
-
-    _remove_empty_frames_and_warn(frames_to_tabulate, frames_with_empty_loops)
-
-    return frames_to_tabulate
-
-
-def _remove_empty_frames_and_warn(frames_to_tabulate, frames_with_empty_loops):
-    for frame_name in frames_to_tabulate:
-        if frame_name in frames_with_empty_loops:
-            print(frames_with_empty_loops[frame_name], file=sys.stderr)
-    for frame_name in frames_with_empty_loops:
-        if frame_name in frames_to_tabulate:
-            del frames_to_tabulate[frame_name]
-
-
-def _select_chosen_frames(entry, frame_selectors, exact):
-    frames_to_tabulate = {}
-    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
-    for frame_name, data in entry.frame_dict.items():
-        if len(frame_selectors) > 0:
-            for frame_selector in frame_selectors:
-                frame_selector = frame_selector.split(".")[0]
-
+                # check if we can match on the whole thing against a frame name
                 if fnmatch.fnmatch(
                     frame_name, f"*{frame_selector}*", flags=match_flags
                 ):
-                    frames_to_tabulate[frame_name] = data
-        else:
+                    for loop in frame_data:
+                        loops_to_tabulate.add((frame_data.name, loop.category))
+                    matched = True
+                    break
 
-            frames_to_tabulate[frame_name] = data
-    return frames_to_tabulate
+                # check for match on exact frame and loop category
+                if not matched:
+                    for loop in frame_data.loops:
+                        if fnmatch.fnmatch(
+                            f"{frame_name}.{loop.category}",
+                            f"*{frame_selector}*",
+                            flags=match_flags,
+                        ):
 
+                            loops_to_tabulate.add((frame_data.name, loop.category))
+                            matched = True
+                            break
 
-def _get_loops_with_empty_frames_and_errors(entry):
-    frames_with_empty_loops = {}
-    for frame_name, data in entry.frame_dict.items():
-        if len(data.loops) == 0:
-            msg = f"WARNING: frame {frame_name} has no loops and the frame will be ignored"
-            frames_with_empty_loops[frame_name] = msg
+                # match on inexact frame names and  loop categories
+                if not matched:
+                    frame_selector_parts = frame_selector.split(".")
+                    wildcard_frame_selector = "*".join(frame_selector_parts)
+                    for loop in frame_data.loops:
+                        if fnmatch.fnmatch(
+                            f"{frame_name}.{loop.category}",
+                            f"*{wildcard_frame_selector}*",
+                            flags=match_flags,
+                        ):
+                            loops_to_tabulate.add((frame_data.name, loop.category))
+                            matched = True
+                            break
 
-        if frame_name not in frames_with_empty_loops and _count_loop_rows(data) == 0:
-            msg = f"WARNING: frame {frame_name} has loops but they contain no data and the frame will be ignored"
-            frames_with_empty_loops[frame_name] = msg
-    return frames_with_empty_loops
+                # match on frame_name with an index for the loop
+                if not matched:
+                    frame_selector_parts = frame_selector.split(".")
+
+                    if is_int(frame_selector_parts[-1]):
+                        stub_frame_selector = ".".join(frame_selector_parts[:-1])
+                        loop_index = int(frame_selector_parts[-1])
+
+                        if fnmatch.fnmatch(
+                            frame_name, f"*{stub_frame_selector}*", flags=match_flags
+                        ):
+                            if loop_index > 0 and loop_index <= len(frame_data.loops):
+                                loops_to_tabulate.add(
+                                    (
+                                        frame_data.name,
+                                        frame_data.loops[loop_index - 1].category,
+                                    )
+                                )
+                            matched = True
+                            break
+
+            # match on loop category and index
+            if not matched:
+                matched_count = 0
+                selector_parts = frame_selector.split(".")
+                if is_int(selector_parts[-1]):
+                    category_part = ".".join(selector_parts[:-1])
+                    category_index = int(selector_parts[:-1]) + 1
+                    for frame_name, frame_data in entry.frame_dict.items():
+                        for loop in frame_data.loops:
+                            if fnmatch.fnmatch(
+                                loop.category, f"*{category_part}*", flags=match_flags
+                            ):
+                                matched_count += 1
+                                if matched_count == category_index:
+                                    loops_to_tabulate.add(
+                                        (frame_data.name, loop.category)
+                                    )
+                                    matched = True
+                                    break
+
+    return loops_to_tabulate
