@@ -1,4 +1,3 @@
-import math
 from dataclasses import dataclass, field
 from itertools import combinations
 from statistics import stdev
@@ -24,9 +23,45 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.peak_lib import frame_to_peaks
 from nef_pipelines.lib.shift_lib import IntensityMeasurementType
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.structures import NEFPipelinesException
 
 SERIES_DATA_CATEGORY = "_{NAMESPACE}_series_data"
+
+
+class NEFPLSFitLibException(NEFPipelinesException):
+    """Base exception class for NEF fit library errors."""
+
+    ...
+
+
+class NEFPLSFitLibNoIsotopeFrequenciesError(NEFPLSFitLibException):
+    """Raised when no isotope frequencies are found in spectrum frames."""
+
+    ...
+
+
+class NEFPLSFitLibInconsistentSeriesDataError(NEFPLSFitLibException):
+    """Raised when data is not consistent across series frames (frequencies or isotope axes)."""
+
+    ...
+
+
+class NEFPLSFitLibNoSeriesFramesSelectedError(NEFPLSFitLibException):
+    """Raised when no series frames are selected by the given selectors."""
+
+    ...
+
+
+class NEFPLSFitLibNoFrameSelectorsError(NEFPLSFitLibException):
+    """Raised when no frame selectors are provided."""
+
+    ...
+
+
+class NEFPLSFitLibMissingDataError(NEFPLSFitLibException):
+    """Raised when expected data is missing (series data loop, spectrum frame, or data ID)."""
+
+    ...
 
 
 @dataclass
@@ -35,6 +70,49 @@ class RelaxationSeriesValues:
     peak_ids: List[int] = field(default_factory=list)
     variable_values: List[Union[int, float]] = field(default_factory=list)
     values: List[Union[int, float, bool]] = field(default_factory=list)
+
+
+def _combine_relaxation_series(
+    series1: RelaxationSeriesValues, series2: RelaxationSeriesValues
+) -> RelaxationSeriesValues:
+    """Combine two RelaxationSeriesValues into a single RelaxationSeriesValues.
+
+    All fields from both series are combined as sequential blocks (series1 data first,
+    then series2 data). Raises an exception if equivalent fields between the two series
+    have different lengths.
+
+    Args:
+        series1: First RelaxationSeriesValues to combine
+        series2: Second RelaxationSeriesValues to combine
+
+    Returns:
+        RelaxationSeriesValues with combined data
+
+    Raises:
+        NEFPLSFitLibInconsistentSeriesDataError: If equivalent fields have different lengths between series
+    """
+    # Validate that equivalent fields between series1 and series2 have the same length
+    field_comparisons = [
+        ("spectra", len(series1.spectra), len(series2.spectra)),
+        ("peak_ids", len(series1.peak_ids), len(series2.peak_ids)),
+        ("variable_values", len(series1.variable_values), len(series2.variable_values)),
+        ("values", len(series1.values), len(series2.values)),
+    ]
+
+    for field_name, len1, len2 in field_comparisons:
+        if len1 != len2:
+            msg = f"Inconsistent field lengths for {field_name}: series1 has {len1}, series2 has {len2}"
+            raise NEFPLSFitLibInconsistentSeriesDataError(msg)
+
+    # Combine all fields as blocks (series1 first, then series2)
+    combined = RelaxationSeriesValues(
+        spectra=[*series1.spectra, *series2.spectra],
+        peak_ids=[*series1.peak_ids, *series2.peak_ids],
+        variable_values=[*series1.variable_values, *series2.variable_values],
+        values=[*series1.values, *series2.values],
+    )
+
+    return combined
 
 
 def _fit_results_as_frame(
@@ -195,7 +273,7 @@ def _exit_if_no_frequencies_found(isotope_frequencies, series_frame, entry):
         msg = f"""
             no isotope frequencies found in the series frame {series_frame.name} in entry {entry.entry_id}
         """
-        exit_error(msg)
+        raise NEFPLSFitLibNoIsotopeFrequenciesError(msg)
 
 
 def _get_unique_isotope_frequencies(isotope_frequencies):
@@ -255,6 +333,9 @@ def _select_relaxation_series_or_exit(
                 frame_key,
             ]
         )
+    else:
+        # No frame selectors provided and multiple frames available - use all relaxation frames
+        named_frames_and_ids = series_frames_and_ids
 
     selected_frames_and_ids = series_frames_and_ids.intersection(named_frames_and_ids)
 
@@ -272,13 +353,13 @@ def _exit_if_no_series_frames_selected(active_relaxation_frames, frame_selectors
             no series frames selected by the selectors
             {" ".join(frame_selectors)}
         """
-        exit_error(msg)
+        raise NEFPLSFitLibNoSeriesFramesSelectedError(msg)
 
 
 def _exit_if_no_frame_selectors(frame_selectors):
     if len(frame_selectors) == 0:
         msg = "you must select some frames!"
-        exit_error(msg)
+        raise NEFPLSFitLibNoFrameSelectorsError(msg)
 
     return None
 
@@ -296,7 +377,7 @@ def _exit_if_isotope_frequencies_are_not_unique(
                 spectrometer frequencies must be consistent in a series frame
             """
 
-            exit_error(msg)
+            raise NEFPLSFitLibInconsistentSeriesDataError(msg)
 
 
 def _exit_if_isotope_axes_are_not_unique(isotope_axes, series_frame, entry_id):
@@ -311,7 +392,7 @@ def _exit_if_isotope_axes_are_not_unique(isotope_axes, series_frame, entry_id):
                 the axes must be consistent in a series frame
             """
 
-            exit_error(msg)
+            raise NEFPLSFitLibInconsistentSeriesDataError(msg)
 
 
 def spectra_to_isotope_axes(spectrum_frames):
@@ -359,19 +440,6 @@ def frequencies_to_field_strength(frequencies):
     return fields_by_gamma_and_isotope[highest_gamma_isotope]
 
 
-def orderOfMagnitude(number):
-    return math.floor(math.log(number, 10))
-
-
-# TODO: move to lib
-def get_loop(frame: Saveframe, loop_name: str):
-    try:
-        series_experiment_loop = frame.get_loop(loop_name)
-    except KeyError:
-        series_experiment_loop = None
-    return series_experiment_loop
-
-
 def _get_spectra_by_series_variable(entry, series_experiment_loop):
     from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
 
@@ -390,13 +458,6 @@ def _get_spectra_by_series_variable(entry, series_experiment_loop):
     return spectra_by_times
 
 
-def _exit_if_no_series_data_loops_selected(frame, series_experiment_loop):
-    if not series_experiment_loop:
-        raise Exception()
-        msg = f"no nefpls series data loop found in frame {frame.name}"
-        exit_error(msg)
-
-
 def _exit_if_spectra_are_missing(spectra_by_times_and_indices, series_name):
     for (
         _,
@@ -405,7 +466,7 @@ def _exit_if_spectra_are_missing(spectra_by_times_and_indices, series_name):
     ), spectrum_frame in spectra_by_times_and_indices.items():
         if not spectrum_frame:
             msg = f"no spectrum frame found for series {series_name} for spectrum {spectrum_frame_name}"
-            exit_error(msg)
+            raise NEFPLSFitLibMissingDataError(msg)
 
 
 def _get_atoms_and_values(
@@ -470,7 +531,7 @@ def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry:
         else None
     )
 
-    _exit_if_no_series_data_loop(series_data_loop, series_frame, entry)
+    _exit_if_no_series_data_loop(series_data_loop, series_frame, entry, series_category)
 
     id_to_xy_data = {}
     for row in loop_row_namespace_iter(series_data_loop):
@@ -484,10 +545,12 @@ def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry:
     return id_to_xy_data
 
 
-def _exit_if_no_series_data_loop(series_data_loop, series_frame, entry):
-    if not series_data_loop:
+def _exit_if_no_series_data_loop(
+    series_data_loop, series_frame, entry, series_category
+):
+    if series_data_loop is None:
         msg = f"""
-        in the entry {entry.entry_id}
-        the series frame {series_frame.name} does not have a {SERIES_DATA_CATEGORY} loop
+            in the entry {entry.entry_id}
+            the series frame {series_frame.name} does not have a {series_category} loop
         """
-        exit_error(msg)
+        raise NEFPLSFitLibMissingDataError(msg)
