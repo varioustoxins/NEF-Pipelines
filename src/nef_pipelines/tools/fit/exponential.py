@@ -21,17 +21,9 @@ from nef_pipelines.tools.fit.fit_lib import (
 
 try:
     from streamfitter import LoggingLevels, fitter
-    from streamfitter.error_propogation import ErrorPropogation
 
 except ImportError as e:
     from enum import IntEnum, auto
-
-    from strenum import StrEnum
-
-    class ErrorPropogation(StrEnum):
-        PROPOGATION = auto()
-        JACKNIFE = auto()
-        BOOTSTRAP = auto()
 
     class LoggingLevels(IntEnum):
         WARNING = 0
@@ -54,12 +46,6 @@ def exponential(
         "--in",
         metavar="NEF-FILE",
         help="read NEF data from a file instead of stdin",
-    ),
-    error_method: ErrorPropogation = typer.Option(
-        ErrorPropogation.PROPOGATION,
-        "-e",
-        "--error-method",
-        help="error propagation method",
     ),
     cycles: int = typer.Option(
         1000,
@@ -104,7 +90,6 @@ def exponential(
     entry = pipe(
         entry,
         series_frames,
-        error_method,
         cycles,
         noise_level,
         data_type,
@@ -118,7 +103,6 @@ def exponential(
 def pipe(
     entry: Entry,
     series_frames: List[Saveframe],
-    error_method: ErrorPropogation,
     cycles: int,
     noise_level,
     data_type: IntensityMeasurementType,
@@ -153,7 +137,6 @@ def pipe(
         results = fitter.fit(
             function(),
             id_xy_data,
-            error_method,
             cycles,
             noise_level,
             seed,
