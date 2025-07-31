@@ -37,7 +37,7 @@ def _chunker(seq, size):
 
 
 @fit_app.command()
-def doublet1noe(
+def t1noe(
     input: Path = typer.Option(
         None,
         "-i",
