@@ -47,6 +47,7 @@ class RelaxationExperimentType(StrEnum):
     H_EXCHANGE_PROTECTION_FACTORS = auto()
     H_EXCHANGE_RATES = auto()
     HOMONUCLEAR_NOES = auto()
+    HETRONUCLEAR_T1_NOE = auto()
     CPMG = auto()
     CEST = auto()
     OTHER = auto()
@@ -64,6 +65,7 @@ EXPERIMENT_TYPE_TO_SERIES_VARIABLE_TYPE = {
     RelaxationExperimentType.HETERONUCLEAR_R1RHO_RELAXATION: "time",
     RelaxationExperimentType.HETERONUCLEAR_R1_RELAXATION: "time",
     RelaxationExperimentType.HETERONUCLEAR_R2_RELAXATION: "time",
+    RelaxationExperimentType.HETRONUCLEAR_T1_NOE: "time",
     RelaxationExperimentType.HETERONUCLEAR_NOES: "saturation",
     RelaxationExperimentType.CPMG: "cycles",
     RelaxationExperimentType.CEST: "offset",
@@ -76,6 +78,7 @@ EXPERIMENT_TYPE_TO_DATA_VARIABLE_TYPE = {
     RelaxationExperimentType.HETERONUCLEAR_R1RHO_RELAXATION: "intensity",
     RelaxationExperimentType.HETERONUCLEAR_R1_RELAXATION: "intensity",
     RelaxationExperimentType.HETERONUCLEAR_R2_RELAXATION: "intensity",
+    RelaxationExperimentType.HETRONUCLEAR_T1_NOE: "intensity",
     RelaxationExperimentType.HETERONUCLEAR_NOES: "intensity",
     RelaxationExperimentType.CPMG: "intensity",
     RelaxationExperimentType.CEST: "intensity",
