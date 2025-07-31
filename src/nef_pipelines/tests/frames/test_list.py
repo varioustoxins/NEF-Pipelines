@@ -20,8 +20,6 @@ def test_frame_basic():
     result = run_and_report(app, ["--in", path])
 
     EXPECTED = """\
-        entry test
-
         nef_nmr_meta_data  nef_molecular_system
     """
 
@@ -36,8 +34,6 @@ def test_frame_file_first():
     result = run_and_report(app, [path])
 
     EXPECTED = """\
-        entry test
-
         nef_nmr_meta_data  nef_molecular_system
     """
 
@@ -51,8 +47,6 @@ def test_frame_file_first_and_select():
     result = run_and_report(app, [path, "meta_data"])
 
     EXPECTED = """\
-        entry test
-
         nef_nmr_meta_data
     """
 

@@ -104,16 +104,15 @@ def list(
 
         if verbose > 0:
 
+            import hashlib
+
             print(f"entry {entry.entry_id}")
             print()
 
-        if verbose > 1:
-
-            import hashlib
-
             md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
             num_lines = len(lines.split("\n"))
-            print(f"    lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
+            print(f"lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
+            print()
 
         frames = select_frames(entry, filters, selector_type)
 
