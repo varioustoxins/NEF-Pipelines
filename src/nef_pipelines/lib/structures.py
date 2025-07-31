@@ -5,6 +5,11 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from strenum import LowercaseStrEnum, StrEnum
 
+
+class NEFPipelinesException(Exception):
+    ...
+
+
 # TODO: to avoid circular import, move to constants
 UNUSED = "."
 PSEUDO_PREFIX = "@"
