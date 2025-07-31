@@ -179,23 +179,43 @@ def build(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    frame_selectors = parse_comma_separated_options(frames_selectors)
+    frame_selectors = parse_comma_separated_options(frame_selectors)
 
     _exit_if_no_frame_selectors(frame_selectors)
 
-    frames = _select_relaxation_frames(entry, frames_selectors)
-
-    frame_timings_and_units = _get_timings_and_units_for_frames(
-        frames, frame_selectors, timings, input_unit, display_parsed_values
+    frames_by_selector = _select_relaxation_frames_by_selector_or_exit_if_other(
+        entry, frame_selectors
     )
 
-    frames_and_timings, unit = (
-        _ensure_units_consistent_and_get_unit_and_timings_or_exit(
-            frame_timings_and_units
+    frame_timings_and_units_by_selector = {}
+    for selector, frames in frames_by_selector.items():
+        frame_timings_and_units_by_selector[selector] = (
+            _get_timings_and_units_for_frames(
+                frames,
+                [
+                    selector,
+                ],
+                timings,
+                input_unit,
+                display_parsed_values,
+            )
         )
-    )
 
-    # TODO arenn't these the same? add a name and expt attribute to the template and only use this notherwise
+    for (
+        selector,
+        frame_timings_and_units,
+    ) in frame_timings_and_units_by_selector.items():
+        frames_and_timings, unit = (
+            _ensure_units_consistent_and_get_unit_and_timings_or_exit(
+                frame_timings_and_units
+            )
+        )
+
+    frames_and_timings = {}
+    for frame_timings_and_units in frame_timings_and_units_by_selector.values():
+        frames_and_timings.update(frame_timings_and_units)
+
+    # TODO aren't these the same? add a name and expt attribute to the template and only use this notherwise
     if not name:
         name = _guess_series_name(entry, frames_and_timings)
 
