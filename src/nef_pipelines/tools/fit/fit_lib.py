@@ -19,7 +19,6 @@ from nef_pipelines.lib.nef_lib import (
     UNUSED,
     SelectionType,
     create_nef_save_frame,
-    get_frame_id,
     loop_row_namespace_iter,
     select_frames,
 )
@@ -300,6 +299,7 @@ def _get_unique_isotope_frequencies(isotope_frequencies):
 def _series_frame_to_spectrum_frames(series_frame, prefix, entry):
 
     spectrum_frames = []
+
     for i, row in enumerate(
         loop_row_namespace_iter(
             series_frame.get_loop(f"{prefix}_series_experiment"), convert=True
@@ -414,6 +414,7 @@ def spectra_to_isotope_axes(spectrum_frames):
         spectrum_dimension_loop = loop_row_namespace_iter(
             spectrum_frame.get_loop("nef_spectrum_dimension")
         )
+
         for row in spectrum_dimension_loop:
             isotope = CODE_TO_ISOTOPE.get(row.axis_code)
             isotope_axes.setdefault(row.dimension_id, set()).add(isotope)
