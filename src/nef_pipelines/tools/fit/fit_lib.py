@@ -514,6 +514,11 @@ def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> fl
     replicates_stdev = stdev(differences) if differences else None
     replicates_stderr = (
         replicates_stdev / len(differences) ** 0.5 if differences else None
+    noise_level = stdev(differences) if differences else None
+
+    fraction_error_in_stdev = 1/sqrt(2) * 1/sqrt(len(differences))  if differences else None
+
+    return noise_level, fraction_error_in_stdev, len(differences)
     )
 
     stderr_div_stderr = replicates_stderr / replicates_stdev if differences else None
