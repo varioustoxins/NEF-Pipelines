@@ -72,6 +72,14 @@ def table(
         "--add-atom-names",
         help="decorate the table with the names of the atoms in the peaks",
     ),
+    outputs: List[str] = typer.Option(
+        [],
+        "--outputs",
+        help="""\
+           names of the output frames to create, there can be more then one these can be created using a comma
+           separated list or repeated use of this option; they are prefixed with nefpls_series_list_
+        """,
+    ),
 ):
     """- build a NEF data series from a set of spectra [alpha]"""
 
@@ -83,6 +91,8 @@ def table(
 
     frames = _select_series_frames(entry, frames_selectors, exact=exact)
 
+    outputs = parse_comma_separated_options(outputs)
+
     entry = pipe(
         entry,
         frames,
@@ -90,6 +100,7 @@ def table(
         SeriesSelectionMethod.ASSIGNMENT,
         force,
         add_atom_names,
+        outputs,
     )
 
     print(entry)
@@ -103,6 +114,7 @@ def pipe(
     series_selection_method: SeriesSelectionMethod,
     force: bool,
     add_atom_names: bool,
+    outputs: List[str],
 ) -> Entry:
 
     for series_frame in series_frames:
@@ -113,6 +125,7 @@ def pipe(
             entry,
             relaxation_loop_name,
             add_atom_names,
+            outputs,
         )
 
         _exit_if_frame_has_loop_unless_force(
@@ -140,6 +153,7 @@ def _build_series_data_loop(
     entry,
     relaxation_loop_name,
     add_atom_names,
+    outputs,
 ):
 
     series_experiment_loop = (
@@ -188,42 +202,49 @@ def _build_series_data_loop(
     series_data_loop.add_tag(tags)
 
     for group_index, (atoms, values) in enumerate(atoms_and_values.items(), start=1):
-        zipper = zip_longest(
-            values.spectra,
-            values.peak_ids,
-            values.variable_values,
-            values.values,
-            fillvalue=UNUSED,
-        )
 
-        for spectrum, peak_id, series_value, value in zipper:
-            data = {
-                "nmr_spectrum_id": spectrum,
-                "peak_id": peak_id,
-                "variable_value": series_value,
-                "variable_error": UNUSED,
-                "value": value,
-                "value_error": UNUSED,
-                "relaxation_list_id": f"{relaxation_loop_name}_fitted",
-                "data_id": group_index,
-            }
+        if not outputs:
+            list_ids = [
+                f"{relaxation_loop_name.replace('series_list','relaxation_list')}",
+            ]
+        else:
+            list_ids = [f"nefpls_relaxation_list_{output}" for output in outputs]
 
-            if add_atom_names:
-                for i, atom in enumerate(atoms, start=1):
-                    data.update(
-                        {
-                            f"nefpls_chain_code_{i}": atom.residue.chain_code,
-                            f"nefpls_sequence_code_{i}": atom.residue.sequence_code,
-                            f"nefpls_residue_name_{i}": atom.residue.residue_name,
-                            f"nefpls_atom_name_{i}": atom.atom_name,
-                        }
-                    )
-
-            series_data_loop.add_data(
-                [
-                    data,
-                ]
+        for list_id in list_ids:
+            zipper = zip_longest(
+                values.spectra,
+                values.peak_ids,
+                values.variable_values,
+                values.values,
+                fillvalue=UNUSED,
             )
+            for spectrum, peak_id, series_value, value in zipper:
+                data = {
+                    "nmr_spectrum_id": spectrum,
+                    "peak_id": peak_id,
+                    "variable_value": series_value,
+                    "variable_error": UNUSED,
+                    "value": value,
+                    "value_error": UNUSED,
+                    "relaxation_list_id": list_id,
+                    "data_id": group_index,
+                }
+
+                if add_atom_names:
+                    for i, atom in enumerate(atoms, start=1):
+                        data.update(
+                            {
+                                f"nefpls_chain_code_{i}": atom.residue.chain_code,
+                                f"nefpls_sequence_code_{i}": atom.residue.sequence_code,
+                                f"nefpls_residue_name_{i}": atom.residue.residue_name,
+                                f"nefpls_atom_name_{i}": atom.atom_name,
+                            }
+                        )
+                series_data_loop.add_data(
+                    [
+                        data,
+                    ]
+                )
 
     return series_data_loop
 
