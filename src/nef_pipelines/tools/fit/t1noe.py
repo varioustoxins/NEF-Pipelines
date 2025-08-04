@@ -1,7 +1,9 @@
+from math import sqrt
 from pathlib import Path
 from typing import List
 
 import typer
+from numpy import mean
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Saveframe
 
@@ -21,7 +23,7 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 
 try:
-    from streamfitter.interface import LoggingLevels
+    from streamfitter.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
 
 except ImportError as e:
 
@@ -179,6 +181,40 @@ def pipe(
             series_frame_2, NEF_PIPELINES_NAMESPACE, entry
         )
 
+
+        if  noise_level is not None:
+            requested_noise_source =  NoiseInfoSource.CLI
+            noise_source = NoiseInfoSource.CLI
+            noise_error_fraction = None
+            num_replicates = None
+        else:
+            requested_noise_source = NoiseInfoSource.REPLICATES
+            noise_level_1, noise_1_error_fraction, num_replicates_1 = calculate_noise_level_from_replicates(
+                id_series_data_1)
+
+            noise_level_2, _noise_2_error_fraction, num_replicates_2 = calculate_noise_level_from_replicates(
+                id_series_data_2)
+
+            if noise_level_1 and noise_level_2:
+                noise_level = sqrt(noise_level_1**2 + noise_level_2**2)
+                noise_error_fraction = mean(noise_1_error_fraction, noise_1_error_fraction) * 1 / sqrt(2)
+                noise_source = NoiseInfoSource.REPLICATES
+            else:
+                noise_level = None
+                noise_error_fraction = None
+                noise_source = NoiseInfoSource.NONE
+            num_replicates = num_replicates_1 + num_replicates_2
+
+        if num_replicates == 0:
+            noise_source = NoiseInfoSource.NONE
+
+
+        noise_info = NoiseInfo(noise_source, noise_level, noise_error_fraction, num_replicates, requested_noise_source)
+
+        print('#', noise_info)
+
+        data_ids = OrderedSet([*id_series_data_1.keys(), *id_series_data_2.keys()])
+
         if not outputs:
             outputs = OrderedSet()
             for data_id in data_ids:
@@ -212,7 +248,7 @@ def pipe(
             function(),
             id_xy_data,
             cycles,
-            noise_level,
+            noise_info,
             seed,
             verbose=verbose,
         )
