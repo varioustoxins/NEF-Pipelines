@@ -225,12 +225,12 @@ def pipe(
         outputs = [output.replace('nefpls_relaxation_list_','') for output in outputs]
 
         try:
-            ids = OrderedSet([*id_series_data_1.keys(), *id_series_data_2.keys()])
+
             id_series_data = {
-                id: _combine_relaxation_series(
-                    id_series_data_1[id], id_series_data_2[id]
+                data_id: _combine_relaxation_series(
+                    id_series_data_1[data_id], id_series_data_2[data_id]
                 )
-                for id in ids
+                for data_id in data_ids
             }
         except NEFPLSFitLibException as e:
             msg = f"""
@@ -240,8 +240,8 @@ def pipe(
             exit_error(msg)
 
         id_xy_data = {
-            id: (series_datum.variable_values, series_datum.values)
-            for id, series_datum in id_series_data.items()
+            data_id: (series_datum.variable_values, series_datum.values)
+            for data_id, series_datum in id_series_data.items()
         }
 
         results = fitter.fit(
