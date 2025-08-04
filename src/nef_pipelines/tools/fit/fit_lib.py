@@ -128,6 +128,7 @@ def _fit_results_as_frame(
     noise_level,
     noise_info: NoiseInfo,
     version_strings,
+    fitter_name
 ):
 
     spectrum_frames = _series_frame_to_spectrum_frames(series_frame, prefix, entry)
@@ -230,11 +231,15 @@ def _fit_results_as_frame(
                 }
             )
         data.append(data_row)
-        mc_error = monte_carlo_errors[data_id]["time_constant_mc_error"]
+
+        if monte_carlo_errors:
+            mc_error = monte_carlo_errors[data_id].get("{fit_name}_error", UNUSED)
+        else:
+            mc_error = UNUSED
         data_row.update(
             {
-                "value": f'{fit.params["time_constant"].value:.20f}',
-                "value_error": f"{mc_error:.20f}",
+                "value": f'{fit.params[fit_name].value:.6f}',
+                "value_error": f"{mc_error:.6}",
             }
         )
 
