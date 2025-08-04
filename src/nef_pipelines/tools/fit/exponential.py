@@ -183,17 +183,23 @@ def pipe(
         noise_level = results["noise_level"]
         version_strings = results["versions"]
 
+        fit_name = "time_constant"
+        output = "r1"
+
         frame = _fit_results_as_frame(
             series_frame,
             NEF_PIPELINES_NAMESPACE,
             entry,
             fits,
+            fit_name,
+            output,
             monte_carlo_errors,
             monte_carlo_value_stats,
             monte_carlo_param_values,
             seed,
             noise_info,
             version_strings,
+            "exponential-decay",
         )
 
         entry.add_saveframe(frame)
