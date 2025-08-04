@@ -19,7 +19,9 @@ from nef_pipelines.tools.fit.fit_lib import (
     _exit_if_no_series_frames_selected,
     _fit_results_as_frame,
     _select_relaxation_series_or_exit,
-    _series_frame_to_id_series_data, _series_frame_to_outputs, calculate_noise_level_from_replicates,
+    _series_frame_to_id_series_data,
+    _series_frame_to_outputs,
+    calculate_noise_level_from_replicates,
 )
 
 try:
@@ -71,16 +73,16 @@ def t1noe(
     ),
     outputs: List[str] = typer.Option(
         None,
-        '--outputs',
+        "--outputs",
         help="""\
             a list of output relaxation list names, there should be two in the order R1 and then NOE, these
             override values in the input frames
-        """
-    )
+        """,
+    ),
 ):
-    """- fit pairs of series to exponential decays with a shared rate and separate amplitudes with error propagation
-    to measure T1s and {1H}–15N nOes as described in TROSY pulse sequence for simultaneous measurement of the
-    15N R1 and {1H}–15N NOE in deuterated proteins O’Brien & Palmer doi://10.1007/s10858-018-0181-6 [alpha]
+    """- fit pairs of series to exponential decays with a shared R1, amplitude and asymtote  with error propagation
+    to measure T1s and {1H}–15N nOes as described in 'TROSY pulse sequence for simultaneous measurement of the
+    15N R1 and {1H}–15N NOE in deuterated proteins' O’Brien & Palmer doi://10.1007/s10858-018-0181-6 [alpha]
     """
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
@@ -105,29 +107,21 @@ def t1noe(
     if outputs:
         outputs = parse_comma_separated_options(outputs)
 
-    #TODO outputs should be a list of pairs, isolate in function
+    # TODO outputs should be a list of pairs, isolate in function
     if outputs and len(outputs) != 2:
-        joined_outputs =  ', '.join(outputs)
-        msg = \
-        f"""
-            when fitting symmetrical R1 curves and {{1H}}-15N nOes there must be two output relaxation lists 
+        joined_outputs = ", ".join(outputs)
+        msg = f"""
+            when fitting symmetrical R1 curves and {{1H}}-15N nOes there must be two output relaxation lists
             the first will contain R1 fits and the second {{1H}}-15N nOes, you gave {len(outputs)} outputs
             which were:
-            
+
             {joined_outputs}
         """
 
         exit_error(msg)
 
     entry = pipe(
-        entry,
-        series_frames,
-        cycles,
-        noise_level,
-        data_type,
-        seed,
-        verbose,
-        outputs
+        entry, series_frames, cycles, noise_level, data_type, seed, verbose, outputs
     )
 
     print(entry)
@@ -141,7 +135,7 @@ def pipe(
     data_type: IntensityMeasurementType,
     seed: int,
     verbose: int = 0,
-    outputs = None,
+    outputs=None,
 ) -> Entry:
 
     try:
@@ -173,7 +167,7 @@ def pipe(
             series_frame_2, NEF_PIPELINES_NAMESPACE, entry
         )
 
-        id_outputs_1  = _series_frame_to_outputs(
+        id_outputs_1 = _series_frame_to_outputs(
             series_frame_1, NEF_PIPELINES_NAMESPACE, entry
         )
 
@@ -181,23 +175,26 @@ def pipe(
             series_frame_2, NEF_PIPELINES_NAMESPACE, entry
         )
 
-
-        if  noise_level is not None:
-            requested_noise_source =  NoiseInfoSource.CLI
+        if noise_level is not None:
+            requested_noise_source = NoiseInfoSource.CLI
             noise_source = NoiseInfoSource.CLI
             noise_error_fraction = None
             num_replicates = None
         else:
             requested_noise_source = NoiseInfoSource.REPLICATES
-            noise_level_1, noise_1_error_fraction, num_replicates_1 = calculate_noise_level_from_replicates(
-                id_series_data_1)
+            noise_level_1, noise_1_error_fraction, num_replicates_1 = (
+                calculate_noise_level_from_replicates(id_series_data_1)
+            )
 
-            noise_level_2, _noise_2_error_fraction, num_replicates_2 = calculate_noise_level_from_replicates(
-                id_series_data_2)
+            noise_level_2, _noise_2_error_fraction, num_replicates_2 = (
+                calculate_noise_level_from_replicates(id_series_data_2)
+            )
 
             if noise_level_1 and noise_level_2:
                 noise_level = sqrt(noise_level_1**2 + noise_level_2**2)
-                noise_error_fraction = mean(noise_1_error_fraction, noise_1_error_fraction) * 1 / sqrt(2)
+                noise_error_fraction = (
+                    mean(noise_1_error_fraction, noise_1_error_fraction) * 1 / sqrt(2)
+                )
                 noise_source = NoiseInfoSource.REPLICATES
             else:
                 noise_level = None
@@ -208,10 +205,15 @@ def pipe(
         if num_replicates == 0:
             noise_source = NoiseInfoSource.NONE
 
+        noise_info = NoiseInfo(
+            noise_source,
+            noise_level,
+            noise_error_fraction,
+            num_replicates,
+            requested_noise_source,
+        )
 
-        noise_info = NoiseInfo(noise_source, noise_level, noise_error_fraction, num_replicates, requested_noise_source)
-
-        print('#', noise_info)
+        print("#", noise_info)
 
         data_ids = OrderedSet([*id_series_data_1.keys(), *id_series_data_2.keys()])
 
@@ -222,7 +224,7 @@ def pipe(
                 outputs.update(id_outputs_2[data_id])
             outputs = list(outputs)
 
-        outputs = [output.replace('nefpls_relaxation_list_','') for output in outputs]
+        outputs = [output.replace("nefpls_relaxation_list_", "") for output in outputs]
 
         try:
 
