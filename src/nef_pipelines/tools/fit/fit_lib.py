@@ -122,13 +122,15 @@ def _fit_results_as_frame(
     prefix,
     entry,
     fits,
+    fit_name,
+    output,
     monte_carlo_errors,
     monte_carlo_value_stats,
     monte_carlo_param_values,
-    noise_level,
+    monte_carlo_random_seed,
     noise_info: NoiseInfo,
     version_strings,
-    fitter_name
+    fitter_name,
 ):
 
     spectrum_frames = _series_frame_to_spectrum_frames(series_frame, prefix, entry)
@@ -159,11 +161,7 @@ def _fit_results_as_frame(
 
     axis_of_lowest_gamma = _isotope_axes_to_lowest_gamma_axis(isotope_axes)
 
-    frame_id = get_frame_id(series_frame)
-
-    result_frame = create_nef_save_frame(
-        f"{prefix}_relaxation_list", f"{frame_id}_fitted"
-    )
+    result_frame = create_nef_save_frame(f"{prefix}_relaxation_list", output)
 
     result_frame.add_tag("version", NEF_RELAXATION_VERSION)
     result_frame.add_tag("experiment_type", series_frame.get_tag("experiment_type")[0])
@@ -172,20 +170,15 @@ def _fit_results_as_frame(
     result_frame.add_tag("relaxation_atom_id", axis_of_lowest_gamma)
     result_frame.add_tag("ref_value", UNUSED)
     result_frame.add_tag("source", "experimental")
-    result_frame.add_tag("fitting_function", "ExponentialDecay")
+    result_frame.add_tag("fitting_function", fitter_name)
     result_frame.add_tag("minimizer", "leastsq")
-    result_frame.add_tag("error_method", "montecarlo")
 
     result_frame.add_tag("error_method", noise_info.source)
 
     comment = f"""
-        fitting software {version_strings}
-        random_seed 42
-        noise_estimate {noise_level}
-
-        source_of_noise_estimate 'replicates'
-        number_of_replicates: {len(spectrum_frames)}
-        requested noise estimate source: {noise_info.requested_noise_source} 
+        fitting software: {version_strings}
+        random seed {monte_carlo_random_seed}
+        requested noise estimate source: {noise_info.requested_noise_source}
         source of noise estimate: {noise_info.source}
         noise estimate: {noise_info.noise}
         noise estimate fractional error: {noise_info.fraction_error_in_noise}
@@ -238,7 +231,7 @@ def _fit_results_as_frame(
             mc_error = UNUSED
         data_row.update(
             {
-                "value": f'{fit.params[fit_name].value:.6f}',
+                "value": f"{fit.params[fit_name].value:.6f}",
                 "value_error": f"{mc_error:.6}",
             }
         )
