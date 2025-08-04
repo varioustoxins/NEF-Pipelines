@@ -175,6 +175,7 @@ def _fit_results_as_frame(
 
     result_frame.add_tag("error_method", noise_info.source)
 
+    # TODO move these to tags under nefpls...
     comment = f"""
         fitting software: {version_strings}
         random seed {monte_carlo_random_seed}
@@ -210,6 +211,8 @@ def _fit_results_as_frame(
 
         peak_atoms = []
         atom_key = next(iter(data_id_to_spectrum_peak_ids[data_id]))
+
+        # TODO check if peak exists or error
         for axis_atoms in spectrum_peak_id_to_axis_atoms[atom_key].values():
             peak_atoms.extend(axis_atoms)
 
