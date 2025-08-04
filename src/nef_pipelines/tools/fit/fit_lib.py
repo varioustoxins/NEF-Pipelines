@@ -554,14 +554,28 @@ def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry:
 
     _exit_if_no_series_data_loop(series_data_loop, series_frame, entry, series_category)
 
-    id_to_xy_data = {}
+    de_duped_data = OrderedDict()
     for row in loop_row_namespace_iter(series_data_loop):
         data_id = row.data_id
+
+        nmr_spectrum_id = row.nmr_spectrum_id
+        peak_id = row.peak_id
+        variable_value = row.variable_value
+        value = row.value
+
+        values = (nmr_spectrum_id, peak_id, variable_value, value)
+
+        de_duped_data.setdefault(data_id, OrderedSet()).add(values)
+
+    id_to_xy_data = {}
+    for data_id, rows in de_duped_data.items():
         relaxation_series = id_to_xy_data.setdefault(data_id, RelaxationSeriesValues())
-        relaxation_series.spectra.append(row.nmr_spectrum_id)
-        relaxation_series.peak_ids.append(row.peak_id)
-        relaxation_series.variable_values.append(row.variable_value)
-        relaxation_series.values.append(row.value)
+        for row in rows:
+            nmr_spectrum_id, peak_id, variable_value, value = row
+            relaxation_series.spectra.append(nmr_spectrum_id)
+            relaxation_series.peak_ids.append(peak_id)
+            relaxation_series.variable_values.append(variable_value)
+            relaxation_series.values.append(value)
 
     return id_to_xy_data
 
