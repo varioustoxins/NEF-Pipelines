@@ -284,6 +284,7 @@ def _exit_if_no_frequencies_found(isotope_frequencies, series_frame, entry):
     if not isotope_frequencies:
         msg = f"""
             no isotope frequencies found in the series frame {series_frame.name} in entry {entry.entry_id}
+            this indcates that the series frame is incomplete or missing...
         """
         raise NEFPLSFitLibNoIsotopeFrequenciesError(msg)
 
