@@ -493,13 +493,13 @@ def _get_atoms_and_values(
     return atoms_to_values
 
 
-def _get_noise_from_duplicated_values(xy_data) -> float:
+def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> float:
 
     repetitons = []
 
-    for series in xy_data.values():
-        xs = series[0]
-        ys = series[1]
+    for series_values in xy_data.values():
+        xs = series_values.variable_values
+        ys = series_values.values
         ys_by_x = {}
         for x, y in zip(xs, ys):
             ys_by_x.setdefault(float(x), []).append(float(y))
