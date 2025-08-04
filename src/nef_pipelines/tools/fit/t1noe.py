@@ -17,7 +17,7 @@ from nef_pipelines.tools.fit.fit_lib import (
     _exit_if_no_series_frames_selected,
     _fit_results_as_frame,
     _select_relaxation_series_or_exit,
-    _series_frame_to_id_series_data,
+    _series_frame_to_id_series_data, _series_frame_to_outputs, calculate_noise_level_from_replicates,
 )
 
 try:
@@ -67,6 +67,14 @@ def t1noe(
     frames_selectors: List[str] = typer.Argument(
         None, help="select frames to fit, these must come in pairs"
     ),
+    outputs: List[str] = typer.Option(
+        None,
+        '--outputs',
+        help="""\
+            a list of output relaxation list names, there should be two in the order R1 and then NOE, these
+            override values in the input frames
+        """
+    )
 ):
     """- fit pairs of series to exponential decays with a shared rate and separate amplitudes with error propagation
     to measure T1s and {1H}–15N nOes as described in TROSY pulse sequence for simultaneous measurement of the
@@ -92,6 +100,23 @@ def t1noe(
 
     _exit_if_no_series_frames_selected(series_frames, frame_selectors)
 
+    if outputs:
+        outputs = parse_comma_separated_options(outputs)
+
+    #TODO outputs should be a list of pairs, isolate in function
+    if outputs and len(outputs) != 2:
+        joined_outputs =  ', '.join(outputs)
+        msg = \
+        f"""
+            when fitting symmetrical R1 curves and {{1H}}-15N nOes there must be two output relaxation lists 
+            the first will contain R1 fits and the second {{1H}}-15N nOes, you gave {len(outputs)} outputs
+            which were:
+            
+            {joined_outputs}
+        """
+
+        exit_error(msg)
+
     entry = pipe(
         entry,
         series_frames,
@@ -100,6 +125,7 @@ def t1noe(
         data_type,
         seed,
         verbose,
+        outputs
     )
 
     print(entry)
@@ -113,6 +139,7 @@ def pipe(
     data_type: IntensityMeasurementType,
     seed: int,
     verbose: int = 0,
+    outputs = None,
 ) -> Entry:
 
     try:
@@ -143,6 +170,23 @@ def pipe(
         id_series_data_2 = _series_frame_to_id_series_data(
             series_frame_2, NEF_PIPELINES_NAMESPACE, entry
         )
+
+        id_outputs_1  = _series_frame_to_outputs(
+            series_frame_1, NEF_PIPELINES_NAMESPACE, entry
+        )
+
+        id_outputs_2 = _series_frame_to_outputs(
+            series_frame_2, NEF_PIPELINES_NAMESPACE, entry
+        )
+
+        if not outputs:
+            outputs = OrderedSet()
+            for data_id in data_ids:
+                outputs.update(id_outputs_1[data_id])
+                outputs.update(id_outputs_2[data_id])
+            outputs = list(outputs)
+
+        outputs = [output.replace('nefpls_relaxation_list_','') for output in outputs]
 
         try:
             ids = OrderedSet([*id_series_data_1.keys(), *id_series_data_2.keys()])
