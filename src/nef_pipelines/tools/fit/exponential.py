@@ -17,10 +17,11 @@ from nef_pipelines.tools.fit.fit_lib import (
     _fit_results_as_frame,
     _select_relaxation_series_or_exit,
     _series_frame_to_id_series_data,
+    calculate_noise_level_from_replicates,
 )
 
 try:
-    from streamfitter.interface import LoggingLevels
+    from streamfitter.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
 
 except ImportError as e:
     from enum import IntEnum
@@ -33,8 +34,9 @@ except ImportError as e:
 
     stream_fitter_import_error = str(e)
 
-VERBOSE_HELP = \
-"""how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings"""
+VERBOSE_HELP = """
+    how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings
+    """
 
 
 @fit_app.command()
@@ -130,6 +132,36 @@ def pipe(
             series_frame, NEF_PIPELINES_NAMESPACE, entry
         )
 
+        if noise_level is not None:
+            requested_noise_source = NoiseInfoSource.CLI
+            noise_source = NoiseInfoSource.CLI
+            noise_error_fraction = None
+            num_replicates = None
+        else:
+            requested_noise_source = NoiseInfoSource.REPLICATES
+
+            noise_level, noise_error_fraction, num_replicates = (
+                calculate_noise_level_from_replicates(id_series_data)
+            )
+
+            if noise_level:
+                noise_source = NoiseInfoSource.REPLICATES
+            else:
+                noise_level = None
+                noise_error_fraction = None
+                noise_source = NoiseInfoSource.NONE
+
+        if num_replicates == 0:
+            noise_source = NoiseInfoSource.NONE
+
+        noise_info = NoiseInfo(
+            noise_source,
+            noise_level,
+            noise_error_fraction,
+            num_replicates,
+            requested_noise_source,
+        )
+
         id_xy_data = {
             id: (series_datum.variable_values, series_datum.values)
             for id, series_datum in id_series_data.items()
@@ -139,7 +171,7 @@ def pipe(
             function(),
             id_xy_data,
             cycles,
-            noise_level,
+            noise_info,
             seed,
             verbose=verbose,
         )
@@ -159,7 +191,8 @@ def pipe(
             monte_carlo_errors,
             monte_carlo_value_stats,
             monte_carlo_param_values,
-            noise_level,
+            seed,
+            noise_info,
             version_strings,
         )
 
