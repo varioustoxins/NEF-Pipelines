@@ -7,6 +7,7 @@ from typing import Dict, List, OrderedDict, Tuple, Union
 from fyeah import f
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
+from streamfitter.interface import NoiseInfo
 
 from nef_pipelines.lib.isotope_lib import (
     CODE_TO_ISOTOPE,
@@ -125,6 +126,7 @@ def _fit_results_as_frame(
     monte_carlo_value_stats,
     monte_carlo_param_values,
     noise_level,
+    noise_info: NoiseInfo,
     version_strings,
 ):
 
@@ -172,6 +174,9 @@ def _fit_results_as_frame(
     result_frame.add_tag("fitting_function", "ExponentialDecay")
     result_frame.add_tag("minimizer", "leastsq")
     result_frame.add_tag("error_method", "montecarlo")
+
+    result_frame.add_tag("error_method", noise_info.source)
+
     comment = f"""
         fitting software {version_strings}
         random_seed 42
@@ -179,6 +184,11 @@ def _fit_results_as_frame(
 
         source_of_noise_estimate 'replicates'
         number_of_replicates: {len(spectrum_frames)}
+        requested noise estimate source: {noise_info.requested_noise_source} 
+        source of noise estimate: {noise_info.source}
+        noise estimate: {noise_info.noise}
+        noise estimate fractional error: {noise_info.fraction_error_in_noise}
+        noise estimate number replicates: {noise_info.num_replicates}
     """
     # error_in_noise-estimate {}
     # fit_time {}
