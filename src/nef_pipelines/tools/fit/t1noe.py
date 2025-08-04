@@ -180,19 +180,25 @@ def pipe(
         noise_level = results["noise_level"]
         version_strings = results["versions"]
 
-        frame = _fit_results_as_frame(
-            series_frame_1,
-            NEF_PIPELINES_NAMESPACE,
-            entry,
-            fits,
-            monte_carlo_errors,
-            monte_carlo_value_stats,
-            monte_carlo_param_values,
-            noise_level,
-            version_strings,
-        )
+        fit_ids = ["time_constant", "offset"]
+        for fit_name, output in zip(fit_ids, outputs):
+            frame = _fit_results_as_frame(
+                series_frame_1,
+                NEF_PIPELINES_NAMESPACE,
+                entry,
+                fits,
+                fit_name,
+                output,
+                monte_carlo_errors,
+                monte_carlo_value_stats,
+                monte_carlo_param_values,
+                seed,
+                noise_info,
+                version_strings,
+                "r1-noe-symmetric-double-exponential",
+            )
 
-        entry.add_saveframe(frame)
+            entry.add_saveframe(frame)
 
     return entry
 
