@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from itertools import combinations
+from math import sqrt
 from statistics import stdev
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, OrderedDict, Tuple, Union
 
 from fyeah import f
 from ordered_set import OrderedSet
@@ -511,19 +512,34 @@ def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> fl
         for combination in combinations(repetiton_set, 2):
             differences.append(combination[0] - combination[1])
 
-    replicates_stdev = stdev(differences) if differences else None
-    replicates_stderr = (
-        replicates_stdev / len(differences) ** 0.5 if differences else None
     noise_level = stdev(differences) if differences else None
 
-    fraction_error_in_stdev = 1/sqrt(2) * 1/sqrt(len(differences))  if differences else None
-
-    return noise_level, fraction_error_in_stdev, len(differences)
+    fraction_error_in_stdev = (
+        1 / sqrt(2) * 1 / sqrt(len(differences)) if differences else None
     )
 
-    stderr_div_stderr = replicates_stderr / replicates_stdev if differences else None
+    return noise_level, fraction_error_in_stdev, len(differences)
 
-    return replicates_stdev, stderr_div_stderr, len(differences)
+
+def _series_frame_to_outputs(series_frame: Saveframe, prefix: str, entry: Entry):
+    NAMESPACE = prefix  # noqa: F841
+    series_category = f(SERIES_DATA_CATEGORY)
+    series_data_loop = (
+        series_frame.get_loop(series_category)
+        if series_category in series_frame
+        else None
+    )
+
+    _exit_if_no_series_data_loop(series_data_loop, series_frame, entry, series_category)
+
+    ids_to_outputs = OrderedDict()
+    for row in loop_row_namespace_iter(series_data_loop):
+
+        data_id = row.data_id
+        if row.relaxation_list_id != UNUSED:
+            ids_to_outputs.setdefault(data_id, OrderedSet()).add(row.relaxation_list_id)
+
+    return ids_to_outputs
 
 
 def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry: Entry):
