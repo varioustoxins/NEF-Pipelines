@@ -60,7 +60,7 @@ EXPECTED_R1_DATA_SINGLE_NOE = """
 def test_t1noe_with_r1noe_data_single():
     """Test t1noe fitting with r1noe_data_single.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "r1noe_data_single.nef")).read()
+    test_data = open(path_in_test_data(__file__, "test_1_r1noe.nef")).read()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(app, ["T1_NOE_pos", "T1_NOE_neg"], input=test_data)
