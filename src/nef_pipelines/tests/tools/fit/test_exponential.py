@@ -37,7 +37,7 @@ EXPECTED_R1_DATA_SINGLE_R2 = """
 
 
 def test_t1noe_with_r1noe_data_single():
-    """Test t1noe fitting with r1noe_data_single.nef test data."""
+    """Test exponential fitting with test_1_exponential.nef test data."""
 
     test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
 
@@ -51,14 +51,31 @@ def test_t1noe_with_r1noe_data_single():
 
 
 def test_t1noe_with_no_cycles():
-    """Test t1noe fitting with no noise level provided, it should still nut
+    """Test exponential fitting with no noise level provided, it should still run
     but with no error analysis!"""
 
-    test_data = open(path_in_test_data(__file__, "r1noe_data_single.nef")).read()
+    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
 
     # Test that function exits with error when no noise level provided
     run_and_report(
         app,
-        ["T1_NOE_pos", "T1_NOE_neg"],
+        [
+            "T2",
+        ],
         input=test_data,
     )
+
+
+#
+# def test_t1noe_bad_input():
+#     """Test exponential fitting with no noise level provided, it should still run
+#     but with no error analysis!"""
+#
+#     test_data = open(path_in_test_data(__file__, "r1noe_data_single.nef")).read()
+#
+#     # Test that function exits with error when no noise level provided
+#     run_and_report(
+#         app,
+#         ["T1_NOE_pos", "T1_NOE_neg"],
+#         input=test_data,
+#     )
