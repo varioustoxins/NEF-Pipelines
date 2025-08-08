@@ -170,6 +170,7 @@ def _fit_results_as_frame(
     result_frame.add_tag("ref_value", UNUSED)
     result_frame.add_tag("source", "experimental")
     result_frame.add_tag("fitting_function", fitter_name)
+    # TODO fix this
     result_frame.add_tag("minimizer", "leastsq")
 
     result_frame.add_tag("error_method", noise_info.source)
