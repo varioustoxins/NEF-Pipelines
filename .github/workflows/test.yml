@@ -39,7 +39,7 @@ jobs:
 
       - name: install NEF-Pipelines
         run: |
-          uv install nef-pipelines --with streamfitter --python ${{ matrix.python-version }}
+          uv tool install nef-pipelines --with streamfitter --python ${{ matrix.python-version }}
 
       - name: Run tests
         run: |
