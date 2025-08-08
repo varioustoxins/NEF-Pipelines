@@ -30,7 +30,7 @@ EXPECTED_DATA_MEAN = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.000000   .   A   18   LYS   H   A   18   LYS   N
+     1   1   .   1.000000  0.244949   A   18   LYS   H   A   18   LYS   N
 
    stop_
 """

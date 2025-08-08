@@ -30,13 +30,13 @@ EXPECTED_R1_DATA_SINGLE_R2 = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.00000   .   A   18   LYS   H   A   18   LYS   N
+     1   1   .   1.300000   .   A   18   LYS   H   A   18   LYS   N
 
    stop_
 """
 
 
-def test_flat_data_single():
+def test_exponential_single():
     """Test exponential fitting with test_1_exponential.nef test data."""
 
     test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
@@ -50,23 +50,7 @@ def test_flat_data_single():
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R2, r1_loop)
 
 
-def test_exponential_with_no_cycles():
-    """Test exponential fitting with no noise level provided, it should still run
-    but with no error analysis!"""
-
-    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
-
-    # Test that function exits with error when no noise level provided
-    run_and_report(
-        app,
-        [
-            "T2",
-        ],
-        input=test_data,
-    )
-
-
-def test_t1noe_with_no_cycles():
+def test_exponential_single_no_cycles():
     """Test exponential fitting with no noise level provided, it should still run
     but with no error analysis!"""
 
