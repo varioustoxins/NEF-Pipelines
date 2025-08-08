@@ -162,7 +162,13 @@ def pipe(
         )
 
         fits = results["fits"]
-        monte_carlo_errors = None
+        # TODO do this better, we should have a better error data structure rather than
+        # faking montecarlo errors!
+        monte_carlo_errors = {
+            data_id: {"mean_mc_error": result.params["stddev"].value}
+            for data_id, result in results["fits"].items()
+        }
+
         monte_carlo_value_stats = None
         monte_carlo_param_values = None
         noise_level = results["noise_level"]
