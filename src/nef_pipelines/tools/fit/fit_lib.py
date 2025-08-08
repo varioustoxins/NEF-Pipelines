@@ -227,7 +227,7 @@ def _fit_results_as_frame(
             )
 
         if monte_carlo_errors:
-            mc_error = monte_carlo_errors[data_id].get("{fit_name}_error", UNUSED)
+            mc_error = monte_carlo_errors[data_id].get(f"{fit_name}_mc_error", UNUSED)
         else:
             mc_error = UNUSED
         data_row.update(
