@@ -32,26 +32,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install streamfitter
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
 
-      - name: Set pythonpath
+      - name: install NEF-Pipelines
         run: |
-          PWD=$(pwd)
-          echo "PYTHONPATH=${PWD}/src" >> $GITHUB_ENV
+          uv install nef-pipelines --with streamfitter --python ${{ matrix.python-version }}
 
-      - name: Run pytest
+      - name: Run tests
         run: |
-          pytest --disable-warnings  src/nef_pipelines/tests
-
-      - name: Run nef entry point
-        run: |
-          python src/nef_pipelines/main.py
-
-      - name: Check all plugins load
-        run: |
-          python src/nef_pipelines/main.py 2> /tmp/nef_pipelines.log
-          ! grep -q "WARNING: the following plugins failed to load" /tmp/nef_pipelines.log
+          nef test
