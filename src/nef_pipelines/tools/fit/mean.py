@@ -60,7 +60,7 @@ def mean(
     ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
-    """- calculate the mean and standard deviation of a data series [alpha]"""
+    """- calculate the mean and standard deviation [as error] of a data series [alpha]"""
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
