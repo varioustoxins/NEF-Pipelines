@@ -225,7 +225,6 @@ def _fit_results_as_frame(
                     f"atom_name_{i}": atom.atom_name,
                 }
             )
-        data.append(data_row)
 
         if monte_carlo_errors:
             mc_error = monte_carlo_errors[data_id].get("{fit_name}_error", UNUSED)
@@ -237,6 +236,7 @@ def _fit_results_as_frame(
                 "value_error": f"{mc_error:.6}",
             }
         )
+        data.append(data_row)
 
     relaxation_loop.add_data(data)
 
