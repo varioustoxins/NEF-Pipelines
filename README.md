@@ -17,18 +17,20 @@
 
 __*Tools for Manipulating NEF [NMR Exchange Format] Files and Foreign File Access*__
 
+> Please note NEF-Pipelines continues to be developed so if you do find problems put in an issue on the
+  [issue tracker]. Even better if you can help improve the software do get in touch, there is much to do!
+
 NEF-Pipelines is a set of command line (currently... there maybe a gui later!) tools for manipulating [NEF])(https://github.com/NMRExchangeFormat/NEF) or NMR
 Exchange Format files which can be used to move NMR meta data [peaks, shifts, sequences etc] between NMR data processing
 programs.The programs provide basic tools for manipulating nef files:
-
-> Please note NEF-Pipelines continues to be developed so if you do find problems put in an issue on the
-  [issue tracker]. Even better if you can help improve the software do get in touch, there is much to do!
 
 * __molecular chains__: listing, renaming and cloning molecular chains
 * __save-frames [tables]__: deleting, inserting, listing and pretty printing (tabulate)
 * __headers__ creation / updating NEF headers with correct UUIDs and history
 * __streaming__: NEF files into a pipeline
 * __testing__: self testing of NEF pipelines
+* __accessing online data__: chemical shift predictions
+* __fitting data__: basic relaxation data, j-modulated RDC experiments [in development]
 
 It also provides tools for importing and exporting non NEF files from the following programs [transcoding / translators]
 
