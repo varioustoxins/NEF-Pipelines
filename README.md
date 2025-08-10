@@ -10,6 +10,7 @@
 
 [![PyPI-Server](https://img.shields.io/pypi/v/nef_pipelines.svg)](https://pypi.org/project/nef_pipelines/)
 [![Monthly Downloads](https://pepy.tech/badge/nef_pipelines/month)](https://pepy.tech/project/nef_pipelines)
+[![PyPI Downloads](https://static.pepy.tech/badge/nef-pipelines)](https://pepy.tech/projects/nef-pipelines)
 [![Project generated with PyScaffold](https://img.shields.io/badge/-PyScaffold-005CA0?logo=pyscaffold)](https://pyscaffold.org/)
 
 
