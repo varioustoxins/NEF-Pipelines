@@ -7,8 +7,8 @@ from typing import Dict, List, OrderedDict, Tuple, Union
 from fyeah import f
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
-from streamfitter.interface import NoiseInfo
 
+from nef_pipelines.lib.interface import NoiseInfo
 from nef_pipelines.lib.isotope_lib import (
     CODE_TO_ISOTOPE,
     GAMMA_RATIOS,

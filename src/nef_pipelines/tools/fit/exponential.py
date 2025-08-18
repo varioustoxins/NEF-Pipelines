@@ -21,7 +21,7 @@ from nef_pipelines.tools.fit.fit_lib import (
 )
 
 try:
-    from streamfitter.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
+    from nef_pipelines.lib.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
 
 except ImportError as e:
     from enum import IntEnum
