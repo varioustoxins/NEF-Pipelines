@@ -496,3 +496,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.110
 - fix bug in shifts average
+
+## version 0.1.111
+- internal changes to make installation more robust anf fix bugs
