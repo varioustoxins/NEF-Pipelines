@@ -1,12 +1,13 @@
 from math import sqrt
 from pathlib import Path
+from statistics import mean
 from typing import List
 
 import typer
-from numpy import mean
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Saveframe
 
+from nef_pipelines.lib.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
 from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.shift_lib import IntensityMeasurementType
@@ -23,13 +24,6 @@ from nef_pipelines.tools.fit.fit_lib import (
     _series_frame_to_outputs,
     calculate_noise_level_from_replicates,
 )
-
-try:
-    from streamfitter.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
-
-except ImportError as e:
-
-    stream_fitter_import_error = str(e)
 
 VERBOSE_HELP = """
 how verbose to be, each call of verbose increases the verbosity, note this currently only reports JAX warnings
@@ -141,13 +135,10 @@ def pipe(
     try:
         from streamfitter import fitter
 
-        if fitter:
+        function = fitter.get_function(
+            fitter.FUNCTION_TWO_EXPONENTIAL_DECAYS_2_PAMETER_SHARED_RATE
+        )
 
-            function = fitter.get_function(
-                fitter.FUNCTION_TWO_EXPONENTIAL_DECAYS_2_PAMETER_SHARED_RATE
-            )
-        else:
-            raise ImportError(stream_fitter_import_error)
     except ImportError as e:
 
         msg = f"""
