@@ -495,22 +495,7 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - fit exponential fitting now has a verbosity level
 
 ## version 0.1.110
-- remove some erroneous print statements (corrupted output stream)
-
-## version 0.1.111
-- currently drop python 3.8 support
-- improvements to relaxation curve fitting
-  - add 3 point exponential fitter
-  - add shared parameter 3 point exponential fitter for Art Palmer T1noe experiments
-  - add linear least squares fitter [un-tested]
-  - add mean value fitter
-  - fit series can combine multiple series together
-  - when fitting provision of no noise level or monte carlo cycles are supported
-  - addproper testing for some of the fitters (bugs found)!
-- frames list only outputs entrys in verbose mode
-- frames list support one frame per line
-- frame tabulate has better frame  selection
 - fix bug in shifts average
 
-## version 0.1.112
-- internal changes to make installation more robust and fix bugs
+## version 0.1.111
+- internal changes to make installation more robust anf fix bugs
