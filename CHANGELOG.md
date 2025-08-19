@@ -507,9 +507,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
   - fit series can combine multiple series together
   - when fitting provision of no noise level or monte carlo cycles are supported
   - addproper testing for some of the fitters (bugs found)!
-- frames list only outputs entrys in verbose mode
-- frames list support one frame per line
-- frame tabulate has better frame  selection
+- frames list only outputs entry in verbose mode
+- frames list supports one frame per line
+- frame tabulate has better frame selection
 - fix bug in shifts average
 
 ## version 0.1.112
