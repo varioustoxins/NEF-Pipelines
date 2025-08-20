@@ -514,3 +514,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## version 0.1.112
 - internal changes to make installation more robust and fix bugs
+
+## Version 0.1.113
+- add UCBShift importer for sequences and shifts
+  - sequence import supports modes for delaing with sequence conflicts
+  - shifts import supports X, Y, and combined prediction types
+  - in alpha still needs more tests and review
