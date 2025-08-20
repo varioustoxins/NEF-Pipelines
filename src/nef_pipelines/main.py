@@ -13,7 +13,7 @@ try:
 except Exception:
     pass
 
-MINIMUM_VERSION = (3, 7)
+MINIMUM_VERSION = (3, 9)
 if not sys.version_info >= MINIMUM_VERSION:
     print(
         "Error; minimum version required id %i.%i [and python 2 is not supported]"
@@ -86,6 +86,7 @@ def main():
             "nef_pipelines.tools.loops",
             "nef_pipelines.tools.peaks",
             "nef_pipelines.tools.save",
+            "nef_pipelines.tools.sequences",
             "nef_pipelines.tools.series",
             "nef_pipelines.tools.shifts",
             "nef_pipelines.tools.simulate",
@@ -108,6 +109,7 @@ def main():
             "nef_pipelines.transcoders.sparky",
             "nef_pipelines.transcoders.nmrstar",
             "nef_pipelines.transcoders.talos",
+            "nef_pipelines.transcoders.ucbshift",
             "nef_pipelines.transcoders.xcamshift",
             "nef_pipelines.transcoders.xeasy",
             "nef_pipelines.transcoders.xplor",
