@@ -16,7 +16,8 @@ from nef_pipelines.lib.util import STDIN, parse_comma_separated_options
 from nef_pipelines.transcoders.ucbshift import import_app
 from nef_pipelines.transcoders.ucbshift.ucbshift_lib import parse_ucbshift_shifts
 
-# what about full side chain predictions in UCBshift 2.0?
+# TODO what about full side chain predictions in UCBshift 2.0?
+# TODO what about clashes in multiple files
 
 
 class PredictionType(LowercaseStrEnum):
