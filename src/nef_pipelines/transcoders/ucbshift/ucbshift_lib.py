@@ -45,7 +45,10 @@ def _parse_ucbshift_csv_rows(
 
 
 def parse_ucbshift_shifts(
-    csvfile, chain_code, file_name, prediction_type=None
+    csvfile: TextIO,
+    chain_code: str,
+    file_name: str,
+    prediction_type: PredictionType = PredictionType.COMBINED,
 ) -> List[ShiftData]:
     """Parse UCBShift CSV file to extract shift data"""
 
