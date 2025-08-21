@@ -55,16 +55,17 @@ def parse_ucbshift_shifts(
     shifts = []
 
     # Determine column suffix based on prediction type
-    if prediction_type is None:
+    if prediction_type is PredictionType.COMBINED:
         suffix = "_UCBShift"
-    elif str(prediction_type) == "combined":
-        suffix = "_UCBShift"
-    elif str(prediction_type) == "x":
-        suffix = "_X"
-    elif str(prediction_type) == "y":
-        suffix = "_Y"
+    elif prediction_type is PredictionType.X:
+        suffix = "_UCBShift_X"
+    elif prediction_type is PredictionType.Y:
+        suffix = "_UCBShift_Y"
     else:
-        suffix = "_UCBShift"  # default fallback
+        prediction_type_names = ", ".join([member.name for member in PredictionType])
+        raise Exception(
+            f"Unexpected prediction type I can only deal with {prediction_type_names}"
+        )
 
     # Mapping of UCBShift atom types to standard names with element and isotope information
     # Format: 'ucb_atom_name': (nef_atom_name, element, isotope_number)
