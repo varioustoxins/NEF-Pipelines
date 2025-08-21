@@ -1051,3 +1051,45 @@ def file_exists_and_has_bytes(output_file: Path):
         and output_file.is_file()
         and output_file.stat().st_size != 0
     )
+
+
+def expand_template_or_exit_error(template: str, **variables: Any) -> str:
+    """
+    Apply template variable substitution with error handling.
+
+    This function performs string template substitution using Python's str.format() method,
+    and calls exit_error with anl error message if invalid template variables are used.
+
+    Args:
+        template: Template string with {variable} placeholders (e.g., "file_{name}_{type}")
+        **variables: Available variables for substitution as keyword arguments
+
+    Returns:
+        Formatted string with variables substituted
+
+    Raises:
+        Calls exit_error if template contains invalid variables, providing:
+        - The invalid variable name
+        - The original template string
+        - List of available variables
+
+    Example:
+        >>> expand_template_or_exit_error("output_{name}_{type}", name="data", type="csv")
+        'output_data_csv'
+
+        >>> expand_template_or_exit_error("bad_{invalid}", name="test")
+        # Calls exit_error with helpful message about 'invalid' variable
+    """
+    try:
+        return template.format(**variables)
+    except KeyError as e:
+        # Extract the invalid variable name from the exception
+        invalid_var = str(e).strip("'\"")
+
+        # Get available variables for the error message
+        available_vars = ", ".join(sorted(variables.keys()))
+
+        exit_error(
+            f"invalid template variable '{invalid_var}' in template '{template}'. "
+            f"Available variables are: {available_vars}"
+        )
