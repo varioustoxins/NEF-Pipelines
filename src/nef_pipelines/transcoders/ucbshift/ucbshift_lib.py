@@ -124,41 +124,30 @@ def parse_ucbshift_shifts(
     return shifts
 
 
-def parse_ucbshift_sequence(csvfile, chain_code, file_name) -> List[SequenceResidue]:
+def parse_ucbshift_sequence(
+    csvfile, chain_code: str, file_name: str
+) -> List[SequenceResidue]:
     """Parse UCBShift CSV file to extract sequence data"""
 
-    residues = []
+    # Parse shifts to get residue information
+    shifts = parse_ucbshift_shifts(
+        csvfile, chain_code, file_name, PredictionType.COMBINED
+    )
 
-    for row, line_info in parse_ucbshift_csv_rows(csvfile, file_name):
-        try:
-            # Parse RESNUM
-            resnum_str = row["RESNUM"].strip()
-            _exit_if_resnum_is_not_int(resnum_str, line_info)
-            resnum = int(resnum_str)
-
-            # Parse RESNAME
-            resname = row["RESNAME"].strip()
-            _exit_if_resnum_missing_or_bad(resname, line_info)
-
-            # Create SequenceResidue with specified chain code
-            residue = SequenceResidue(
-                chain_code=chain_code,
-                sequence_code=resnum,
-                residue_name=resname,
+    # Extract unique residues from shift data
+    residue_dict = {}
+    for shift in shifts:
+        residue_key = (shift.atom.residue.chain_code, shift.atom.residue.sequence_code)
+        if residue_key not in residue_dict:
+            residue_dict[residue_key] = SequenceResidue(
+                chain_code=shift.atom.residue.chain_code,
+                sequence_code=shift.atom.residue.sequence_code,
+                residue_name=shift.atom.residue.residue_name,
                 linking=None,  # Will be set later based on position
             )
-            residues.append(residue)
 
-        except KeyError as e:
-            exit_error(
-                f"in UCBShift file {file_name} at line {line_info.line_no}: missing required column {e}"
-            )
-        except Exception as e:
-            exit_error(
-                f"in UCBShift file {file_name} at line {line_info.line_no}: {str(e)}"
-            )
-
-    return residues
+    # Return residues sorted by sequence code
+    return sorted(residue_dict.values(), key=lambda r: r.sequence_code)
 
 
 def _validate_csv_file_header(reader, file_name):
