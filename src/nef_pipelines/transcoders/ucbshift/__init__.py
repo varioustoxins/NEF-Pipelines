@@ -10,7 +10,7 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="ucbshift",
-        help="- read UCBShift CSV files [shifts, sequence]",
+        help="- read UCBShift files [shifts, sequence]",
     )
 
     app.add_typer(
