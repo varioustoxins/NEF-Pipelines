@@ -1,5 +1,7 @@
 import csv
 from enum import auto
+from typing import Any, Dict, Iterator, List, TextIO, Tuple
+
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.structures import (
@@ -12,13 +14,14 @@ from nef_pipelines.lib.structures import (
 from nef_pipelines.lib.util import exit_error
 
 
-def parse_ucbshift_csv_rows(
-    csvfile, file_name
 class PredictionType(LowercaseStrEnum):
     X = auto()
     Y = auto()
     COMBINED = auto()
 
+
+def _parse_ucbshift_csv_rows(
+    csvfile: TextIO, file_name: str
 ) -> Iterator[Tuple[Dict[str, Any], LineInfo]]:
     """Parse UCBShift CSV file and yield row data with line info for validation"""
     lines = csvfile.readlines()
