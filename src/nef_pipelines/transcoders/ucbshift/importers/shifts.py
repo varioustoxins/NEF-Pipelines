@@ -1,9 +1,7 @@
-from enum import auto
 from pathlib import Path
 from typing import List
 
 import typer
-from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
@@ -18,16 +16,12 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.ucbshift import import_app
-from nef_pipelines.transcoders.ucbshift.ucbshift_lib import parse_ucbshift_shifts
+from nef_pipelines.transcoders.ucbshift.ucbshift_lib import (
+    PredictionType,
+    parse_ucbshift_shifts,
+)
 
 # TODO what about full side chain predictions in UCBshift 2.0?
-# TODO what about clashes in multiple files
-
-
-class PredictionType(LowercaseStrEnum):
-    X = auto()
-    Y = auto()
-    COMBINED = auto()
 
 
 @import_app.command(no_args_is_help=True)
