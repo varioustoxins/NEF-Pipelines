@@ -622,7 +622,9 @@ def molecular_system_from_entry(entry):
     return result
 
 
-def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
+def add_frames_to_entry(
+    entry: Entry, frames: Union[List[Saveframe], Saveframe]
+) -> Entry:
     # TODO deal with merging esp wrt to molecular systems and possibly with other information
     # TODO add frame rename and frame delete
     """
@@ -630,12 +632,17 @@ def add_frames_to_entry(entry: Entry, frames: List[Saveframe]) -> Entry:
 
     Args:
         entry: an entry to add the save frames to
-        frames: a set of save frames to add, they must have different names to those present already
+        frames: a set of save frames or a frame to add, they must have different names to those present already
 
 
     Returns:
         the updated entry containing the frames
     """
+
+    if isinstance(frames, Saveframe):
+        frames = [
+            frames,
+        ]
 
     fixup_metadata(entry, NEF_PIPELINES, get_version(), script_name(__file__))
 
