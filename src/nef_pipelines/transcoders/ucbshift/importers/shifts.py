@@ -7,7 +7,7 @@ from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
-    read_entry_from_file_or_stdin_or_exit_error,
+    read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import get_chain_code_iter
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
@@ -57,7 +57,7 @@ def shifts(
 
     chain_codes = parse_comma_separated_options(chain_codes)
 
-    entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
+    entry = read_or_create_entry_exit_error_on_bad_file(input_path, "ucbshift")
 
     entry = pipe(entry, chain_codes, frame_name, file_names, prediction_type)
 
