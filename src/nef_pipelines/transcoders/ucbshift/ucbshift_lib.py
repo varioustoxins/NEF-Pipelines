@@ -78,7 +78,7 @@ def parse_ucbshift_shifts(
         f"N{suffix}": ("N", "N", 15),
     }
 
-    for row, line_info in parse_ucbshift_csv_rows(csvfile, file_name):
+    for row, line_info in _parse_ucbshift_csv_rows(csvfile, file_name):
         try:
             # Parse RESNUM
             resnum_str = row["RESNUM"].strip()
