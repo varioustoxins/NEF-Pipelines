@@ -14,8 +14,7 @@ save_nef_molecular_system
       _nef_sequence.cis_peptide
 
       1   A   1   MET   start    .   .
-      2   A   2   GLN   middle   .   .
-      3   A   3   ILE   end      .   .
+      2   A   2   ALA   middle   .   .
 
    stop_
 
