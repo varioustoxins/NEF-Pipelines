@@ -1,7 +1,7 @@
 [project]
 
 name = 'nef-pipelines'
-version = '0.1.114'
+version = '0.1.115'
 dynamic=['description','optional-dependencies','dependencies','scripts','urls','classifiers', 'authors','license',
          'readme']
 
