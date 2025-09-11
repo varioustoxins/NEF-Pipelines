@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import sys
 import tempfile
 import time
@@ -25,7 +26,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import sequences_from_frames, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
-from nef_pipelines.lib.util import STDIN, exit_error, is_int
+from nef_pipelines.lib.util import STDIN, exit_error, info, is_int
 from nef_pipelines.tools.loops.trim import ChainBound
 from nef_pipelines.tools.loops.trim import pipe as trim
 from nef_pipelines.transcoders.shiftx2 import import_app
@@ -132,6 +133,22 @@ def shifts(
         None, "-c", "--chain", help="chain to label output shift data with"
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="verbose output"),
+    retain_structure: bool = typer.Option(
+        False,
+        "--retain-structure",
+        help="whether to retain structure file after calculation",
+    ),
+    structure_path: Path = typer.Option(
+        None,
+        help="""Path to save downloaded structure to, [default: {code}_retained] allowed template codes are
+                    * code - the PDB code of the structure requested
+                    * uniprot - the uni prot code equivalent to the PDB
+                    * alphafold - the id of the alphafoldentry used
+                    * uniprot_start - the first residue in the uniprot entry
+                    * uniprot_end - the last residue in the uniprot entry
+                    * pdb_start - the first residue in the pdb entry
+        """,
+    ),
     in_file: Path = typer.Option(
         STDIN,
         "-i",
@@ -147,9 +164,20 @@ def shifts(
     if not chain:
         chain = source_chain
 
+    if retain_structure and not structure_path:
+        structure_path = "retained_{code}"
+
     entry = read_or_create_entry_exit_error_on_bad_file(in_file, "shiftx2")
 
-    entry = pipe(entry, code_or_file_name, source_chain, chain, alphafold, verbose)
+    entry = pipe(
+        entry,
+        code_or_file_name,
+        source_chain,
+        chain,
+        alphafold,
+        structure_path,
+        verbose,
+    )
     print(entry)
 
 
@@ -159,7 +187,8 @@ def pipe(
     source_chain: str,
     chain: str,
     alphafold: bool,
-    verbose: bool,
+    structure_path: Optional[Path] = None,
+    verbose: bool = False,
 ) -> Entry:
 
     if not chain and source_chain:
@@ -251,7 +280,56 @@ def pipe(
 
             entry = trim(entry, "shiftx2", SelectionType.NAME, chain_bounds)
 
+    _retain_structure_if_requested(structure_path, pdb_file_info, verbose)
+
     return entry
+
+
+def _retain_structure_if_requested(structure_path, pdb_file_info, verbose):
+    if structure_path:
+        try:
+            if structure_path:
+                code = pdb_file_info.pdb_code.upper()
+                uniprot = pdb_file_info.uniprot_id
+                alphafold = pdb_file_info.alphafold_id
+                uniprot_start = pdb_file_info.pdb_uniprot_end
+                uniprot_end = pdb_file_info.pdb_uniprot_end
+                pdb_start = pdb_file_info.pdb_start_residue
+
+                replacements = {
+                    "code": code,
+                    "uniprot": uniprot,
+                    "alphafold": alphafold,
+                    "uniprot_start": uniprot_start,
+                    "uniprot_end": uniprot_end,
+                    "pdb_start": pdb_start,
+                }
+
+                structure_path = Path(str(structure_path).format(**replacements))
+        except Exception as e:
+            msg = f"""
+                when trying to build the retained structure path {structure_path} there was  an error
+                {e} using the replacements:
+
+                {replacements}
+            """
+            exit_error(msg)
+
+        suffix = pdb_file_info.pdb_file_path.suffix
+        structure_path = structure_path.with_suffix(suffix)
+        try:
+            shutil.move(pdb_file_info.pdb_file_path, structure_path)
+        except Exception as e:
+            msg = f"""
+                couldn't move retained structure pdb_file_info.pdb_file_path to requested location
+                {structure_path} because {e}
+            """
+            exit_error(msg)
+        if verbose:
+            msg = f"""
+                moved {pdb_file_info.pdb_file_path} to {structure_path}
+            """
+            info(msg)
 
 
 def _increment_timeout(timeout):
@@ -644,7 +722,8 @@ def _note_uniprot_mapping_if_verbose(mapping, verbose):
             f"->  alphafold:{mapping.alphafold_id}:{uniprot_start}"
         )
 
-        _note(msg, verbose)
+        if verbose:
+            info(msg)
 
         if not verbose:
             print(f"# shiftx2 {msg}")
