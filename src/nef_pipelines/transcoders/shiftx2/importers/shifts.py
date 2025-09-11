@@ -640,8 +640,8 @@ def _note_uniprot_mapping_if_verbose(mapping, verbose):
         pdb_start = mapping.pdb_start_residue
         uniprot_start = mapping.pdb_uniprot_start
         msg = (
-            f"uniprot mapping, pdb:{mapping.pdb_code}:{pdb_start} -> uniprot:{mapping.uniprot_id}:{uniprot_start}"
-            " ->  alphafold:{mapping.alphafold_id}:{uniprot_start}"
+            f"uniprot mapping, pdb:{mapping.pdb_code}:{pdb_start} -> uniprot:{mapping.uniprot_id}:{uniprot_start} "
+            f"->  alphafold:{mapping.alphafold_id}:{uniprot_start}"
         )
 
         _note(msg, verbose)
