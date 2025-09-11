@@ -520,3 +520,11 @@ improved error handling when `streamfitter` does load into `fit exponential`
   - sequence import supports modes for delaing with sequence conflicts
   - shifts import supports X, Y, and combined prediction types
   - in alpha still needs more tests and review
+
+## Version 0.1.114
+- initial implementation of shifts correlation: a tool to create correlation plots
+  of shifts in different shift lists by atom type
+- initial implementation of chains validate a tool to validate the the molecular system
+  is correct and that assigned atoms in the entry are part of the defined molecular systems
+- added rcsb align a tool to align rcsb files to NEF molecular systems
+- added rcsb trim a tool to trim rcsb files to NEF molecular systems
