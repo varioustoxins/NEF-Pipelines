@@ -398,10 +398,30 @@ def exit_error(msg, exception=None):
     sys.exit(EXIT_ERROR)
 
 
-def warn(msg):
-    """print a warning to stderr prefixed with WARNING:"""
+def warn(msg=None):
+    """print a warning to stderr prefixed with WARNING:
+
+    - note empty lines do not have info prepended
+    """
     msg = dedent(msg)
-    print(f"WARNING: {msg}", file=sys.stderr)
+    msg = msg.strip()
+    if msg:
+        print(f"WARNING: {msg}", file=sys.stderr)
+    else:
+        print(file=sys.stderr)
+
+
+def info(msg=None):
+    """print information to stderr prefixed with INFO:
+
+    - note empty lines do not have info prepended
+    """
+    msg = dedent(msg)
+    msg = msg.strip()
+    if msg:
+        print(f"INFO: {msg}", file=sys.stderr)
+    else:
+        print(file=sys.stderr)
 
 
 def process_stream_and_add_frames(
