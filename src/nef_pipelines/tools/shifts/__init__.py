@@ -12,3 +12,4 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.tools.shifts.average  # noqa: F401
+    import nef_pipelines.tools.shifts.correlation  # noqa: F401
