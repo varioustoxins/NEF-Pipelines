@@ -411,17 +411,23 @@ def warn(msg=None):
         print(file=sys.stderr)
 
 
-def info(msg=None):
-    """print information to stderr prefixed with INFO:
+def info(msg=None, verbose=True):
+    """
+    print information to stderr prefixed with INFO:
+
+    msg: the msg to print
+    verbose: only output the message if verbose is true
 
     - note empty lines do not have info prepended
     """
-    msg = dedent(msg)
-    msg = msg.strip()
-    if msg:
-        print(f"INFO: {msg}", file=sys.stderr)
-    else:
-        print(file=sys.stderr)
+
+    if verbose:
+        msg = dedent(msg)
+        msg = msg.strip()
+        if msg:
+            print(f"INFO: {msg}", file=sys.stderr)
+        else:
+            print(file=sys.stderr)
 
 
 def process_stream_and_add_frames(
