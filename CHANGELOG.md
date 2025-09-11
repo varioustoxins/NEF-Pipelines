@@ -528,3 +528,8 @@ improved error handling when `streamfitter` does load into `fit exponential`
   is correct and that assigned atoms in the entry are part of the defined molecular systems
 - added rcsb align a tool to align rcsb files to NEF molecular systems
 - added rcsb trim a tool to trim rcsb files to NEF molecular systems
+
+## Version 0.1.115 'Cian'
+- correct bug where pdb to alphafold file mappings weren't reported correctly
+- add the ability to retain downloaded alphafold structure
+- correct a bug where rcsb trim and rcsb align weren't exposed in the command interface
