@@ -533,3 +533,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - correct bug where pdb to alphafold file mappings weren't reported correctly
 - add the ability to retain downloaded alphafold structure
 - correct a bug where rcsb trim and rcsb align weren't exposed in the command interface
+
+## Version 0.1.116 'Cian returns'
+- shiftx2 tool can now calculate shifts from an input pdb file
