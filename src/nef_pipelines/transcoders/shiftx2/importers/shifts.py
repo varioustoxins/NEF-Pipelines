@@ -158,7 +158,8 @@ def shifts(
         help="input to read NEF data from [- is stdin]",
     ),
 ):
-    """- read a shiftx2 chemical shift prediction [alpha]"""
+    """- read a shiftx2 chemical shift prediction or calculate from a pdb file directly or using a pdb, uniprot or
+    alphafold id using the web server [alpha]"""
 
     if not source_chain:
         source_chain = "A"
