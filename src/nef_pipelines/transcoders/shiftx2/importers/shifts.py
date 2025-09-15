@@ -1,3 +1,5 @@
+# TODO: whould the upload and calculate functionality be in a different tool shiftx2 calculate?
+
 import os
 import re
 import shutil
