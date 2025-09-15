@@ -26,7 +26,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.sequence_lib import sequences_from_frames, translate_1_to_3
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
-from nef_pipelines.lib.util import STDIN, exit_error, info, is_int
+from nef_pipelines.lib.util import STDIN, exit_error, info, is_int, warn
 from nef_pipelines.tools.loops.trim import ChainBound
 from nef_pipelines.tools.loops.trim import pipe as trim
 from nef_pipelines.transcoders.shiftx2 import import_app
@@ -195,7 +195,10 @@ def pipe(
         chain = source_chain
 
     file_path = Path(code_or_filename)
-    if file_path.exists():
+    is_structure_file = file_path.suffix in [
+        ".pdb"
+    ]  # , '.mmcif'] # TODO: we should support mmcifs?
+    if file_path.exists() and not is_structure_file:
         shifts = _read_shifts_from_file(file_path, chain)
     else:
 
@@ -204,6 +207,33 @@ def pipe(
                 code_or_filename, source_chain, verbose
             )
             code_or_filename = pdb_file_info.pdb_file_path
+            use_file = True
+        elif is_structure_file:
+
+            # TODO: this is 'a glorious hack' it may need redoing to remove technical debt
+            if structure_path:
+                msg = f"""
+                    a request to retain the structure used is ignored when the input is a pdb file (by extension)
+                    the input path was: {str(file_path)}
+                """
+
+                warn(msg)
+                structure_path = None
+
+            pdb_file_info = PDBDownloadResult(
+                pdb_uniprot_start=None,
+                pdb_uniprot_end=None,
+                pdb_start_residue=None,
+                uniprot_id=None,
+                pdb_code=None,
+                chain_code=chain,
+                network_ok=None,
+                file_system_ok=True,
+                pdb_url=None,
+                alphafold_id=None,
+                pdb_file_path=file_path,
+            )
+
             use_file = True
         else:
             use_file = False
