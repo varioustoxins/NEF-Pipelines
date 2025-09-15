@@ -142,8 +142,8 @@ def shifts(
         None,
         help="""Path to save downloaded structure to, [default: {code}_retained] allowed template codes are
                     * code - the PDB code of the structure requested
-                    * uniprot - the uni prot code equivalent to the PDB
-                    * alphafold - the id of the alphafoldentry used
+                    * uniprot - the uniprot code equivalent to the PDB
+                    * alphafold - the id of the alphafold entry used
                     * uniprot_start - the first residue in the uniprot entry
                     * uniprot_end - the last residue in the uniprot entry
                     * pdb_start - the first residue in the pdb entry
