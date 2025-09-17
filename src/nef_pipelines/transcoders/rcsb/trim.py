@@ -75,6 +75,8 @@ def trim(
     if verbose:
         info(f"Trimmed structure written to: {output_file}")
 
+    print(entry)
+
 
 def _read_structure(pdb_file: Path) -> Structure:
     """Read PDB or mmCIF file and return Structure object"""
