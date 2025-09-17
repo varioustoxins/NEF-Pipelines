@@ -536,3 +536,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## Version 0.1.116 'Cian returns'
 - shiftx2 tool can now calculate shifts from an input pdb file
+
+## Version 0.1.117 'Cian the third'
+- rcsb trim wasn't printing the entry to stdout breaking the pipeline
