@@ -71,8 +71,8 @@ def main():
 
         msg = """\
 
-             Initializaion error: one of the core libraries [friendly_tracback/typer] if missing from you environment
-             please make sure they are installed an try again
+             Initialisation error: one of the core libraries [click/typer] is missing from your environment
+             please make sure they are installed and try again
              exiting..."""
         do_exit_error(msg, e)
 
