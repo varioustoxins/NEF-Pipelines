@@ -6,7 +6,11 @@ from importlib import import_module
 from textwrap import dedent
 from traceback import format_exc, print_exc
 
-verbose_mode = False
+import typer
+
+from nef_pipelines import nef_app
+
+debug_mode = False
 
 try:
     import future  # noqa: F401
@@ -37,18 +41,28 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
+def debug_callback(
+    debug: bool = typer.Option(
+        False, "--debug", help="Enable debug output including stack traces"
+    )
+):
+
+    global debug_mode
+    if debug:
+        debug_mode = True
+        logging.basicConfig(level=logging.DEBUG)
+
+
 def create_nef_app():
-    import typer
 
-    from nef_pipelines import nef_app
+    # needed to avoid partially initialised module import
+    from nef_pipelines.main import debug_callback
 
-    nef_app.app = typer.Typer(no_args_is_help=True)
-    app = nef_app.app  # noqa: F841
+    nef_app.app = typer.Typer(no_args_is_help=True, callback=debug_callback)
     return nef_app
 
 
 def main():
-    global verbose_mode
     try:
         import typer
         from click import ClickException

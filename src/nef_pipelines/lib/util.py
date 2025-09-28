@@ -368,6 +368,9 @@ def exit_error(msg, exception=None):
         msg: the message
     """
 
+    # this has to be imported after complete initialisation has occured and after this module has been initialised...
+    from nef_pipelines.main import debug_mode
+
     # This should only happen in verbose mode
     if exception is not None:
         exc_info = sys.exc_info()
@@ -382,12 +385,22 @@ def exit_error(msg, exception=None):
 
     command = _script_to_command(script)
 
+    if debug_mode:
+        print(file=sys.stderr)
+        print("----------- traceback -----------", file=sys.stderr)
+        print(traceback.print_stack(), file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+        print(file=sys.stderr)
+
     print(f"ERROR [in: {command}]: {msg[0]}", file=sys.stderr)
-    print(file=sys.stderr)
-    print("----------- traceback -----------", file=sys.stderr)
-    print(traceback.print_stack(), file=sys.stderr)
-    print("---------------------------------", file=sys.stderr)
-    print(file=sys.stderr)
+
+    if debug_mode:
+
+        sys_argv = " ".join(sys.argv[1:])
+        debug_clause = f"...for full debug information run: nef --debug {sys_argv}"
+
+        print(file=sys.stderr)
+        print(debug_clause, file=sys.stderr)
 
     for line in msg[1:]:
         print(f"  {line}", file=sys.stderr)
