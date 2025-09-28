@@ -397,7 +397,7 @@ def exit_error(msg, exception=None):
     if debug_mode:
 
         sys_argv = " ".join(sys.argv[1:])
-        debug_clause = f"...for full debug information run: nef --debug {sys_argv}"
+        debug_clause = f"... for full debug information run: nef --debug {sys_argv}"
 
         print(file=sys.stderr)
         print(debug_clause, file=sys.stderr)
