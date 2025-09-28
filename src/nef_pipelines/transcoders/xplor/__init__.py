@@ -11,7 +11,7 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="xplor",
-        help="- read xplor [sequences, dihedral & distance restraints]",
+        help="- read and write xplor [sequences, dihedral & distance restraints]",
         no_args_is_help=True,
     )
 
