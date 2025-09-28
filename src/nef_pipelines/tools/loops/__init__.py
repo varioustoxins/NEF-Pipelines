@@ -10,6 +10,7 @@ if nef_app.app:
         loops_app,
         name="loops",
         help="- carry out operations on loops in nef frames",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

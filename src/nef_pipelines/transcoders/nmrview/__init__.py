@@ -12,13 +12,20 @@ if nef_app.app:
         app,
         name="nmrview",
         help="- read and write nmrview [peaks, sequences & shifts]",
+        no_args_is_help=True,
     )
 
     app.add_typer(
-        import_app, name="import", help="- import nmrview [peaks, sequences & shifts]"
+        import_app,
+        name="import",
+        help="- import nmrview [peaks, sequences & shifts]",
+        no_args_is_help=True,
     )
     app.add_typer(
-        export_app, name="export", help="-  export nmrview [peaks, sequences & shifts]"
+        export_app,
+        name="export",
+        help="-  export nmrview [peaks, sequences & shifts]",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

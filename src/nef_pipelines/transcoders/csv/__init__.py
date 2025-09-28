@@ -8,9 +8,11 @@ import_app = typer.Typer()
 
 if nef_app.app:
 
-    nef_app.app.add_typer(app, name="csv", help="- read [rdcs]")
+    nef_app.app.add_typer(app, name="csv", help="- read [rdcs]", no_args_is_help=True)
 
-    app.add_typer(import_app, name="import", help="- import [rdcs]")
+    app.add_typer(
+        import_app, name="import", help="- import [rdcs]", no_args_is_help=True
+    )
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.csv.importers._peaks_cli  # noqa: F401

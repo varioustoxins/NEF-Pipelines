@@ -10,6 +10,7 @@ if nef_app.app:
         peaks_app,
         name="peaks",
         help="- carry out operations on nef peaks",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

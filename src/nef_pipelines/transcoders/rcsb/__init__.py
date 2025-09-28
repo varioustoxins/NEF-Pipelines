@@ -7,9 +7,19 @@ app = typer.Typer()
 import_app = typer.Typer()
 
 if nef_app.app:
-    nef_app.app.add_typer(app, name="rcsb", help="- read pdb/cif [sequences]")
+    nef_app.app.add_typer(
+        app,
+        name="rcsb",
+        help="- read pdb/cif [sequences] & align and trim pdb/mmcif files by molecular systems",
+        no_args_is_help=True,
+    )
 
-    app.add_typer(import_app, name="import", help=r"\- import pdb/cif [sequences]")
+    app.add_typer(
+        import_app,
+        name="import",
+        help=r"\- import pdb/mmcif [sequences]",
+        no_args_is_help=True,
+    )
 
 
 # import of specific importers must be after app creation to avoid circular imports

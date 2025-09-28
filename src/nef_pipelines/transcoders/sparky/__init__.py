@@ -10,13 +10,15 @@ export_app = typer.Typer()
 if nef_app.app:
 
     nef_app.app.add_typer(
-        app,
-        name="sparky",
-        help="- read sparky files [shifts]",
+        app, name="sparky", help="- read sparky files [shifts]", no_args_is_help=True
     )
 
-    app.add_typer(import_app, name="import", help="- import sparky [shifts]")
-    app.add_typer(export_app, name="export", help="- export sparky [peaks]")
+    app.add_typer(
+        import_app, name="import", help="- import sparky [shifts]", no_args_is_help=True
+    )
+    app.add_typer(
+        export_app, name="export", help="- export sparky [peaks]", no_args_is_help=True
+    )
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.sparky.exporters.peaks  # noqa: F401

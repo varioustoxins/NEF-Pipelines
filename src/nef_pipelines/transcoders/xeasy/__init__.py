@@ -13,9 +13,15 @@ if nef_app.app:
         app,
         name="xeasy",
         help="- read xeasy files [flya dialect: sequence]",
+        no_args_is_help=True,
     )
 
-    app.add_typer(import_app, name="import", help="- import xeasy [sequence]")
+    app.add_typer(
+        import_app,
+        name="import",
+        help="- import xeasy [sequence]",
+        no_args_is_help=True,
+    )
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.xeasy.importers.peaks  # noqa: F401

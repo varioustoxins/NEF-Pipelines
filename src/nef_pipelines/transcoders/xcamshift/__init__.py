@@ -11,12 +11,14 @@ if nef_app.app:
         app,
         name="xcamshift",
         help="- write xcamshift for xplor [shifts]",
+        no_args_is_help=True,
     )
 
     app.add_typer(
         export_app,
         name="export",
         help="- export xcamhift for xplor [shifts]",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

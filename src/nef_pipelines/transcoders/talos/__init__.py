@@ -13,11 +13,20 @@ if nef_app.app:
         app,
         name="talos",
         help="- read and write talos files [shifts & restraints]",
+        no_args_is_help=True,
     )
 
-    app.add_typer(import_app, name="import", help="- import talos dihderal restraints ")
     app.add_typer(
-        export_app, name="export", help="-  export talos [shifts (& sequence)]"
+        import_app,
+        name="import",
+        help="- import talos dihderal restraints ",
+        no_args_is_help=True,
+    )
+    app.add_typer(
+        export_app,
+        name="export",
+        help="-  export talos [shifts (& sequence)]",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

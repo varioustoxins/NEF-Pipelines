@@ -8,15 +8,11 @@ export_app = typer.Typer()
 
 if nef_app.app:
     nef_app.app.add_typer(
-        app,
-        name="shifty",
-        help="- write shifty [shifts]",
+        app, name="shifty", help="- write shifty [shifts]", no_args_is_help=True
     )
 
     app.add_typer(
-        export_app,
-        name="export",
-        help="- export shifty [shifts]",
+        export_app, name="export", help="- export shifty [shifts]", no_args_is_help=True
     )
 
     # import of specific importers must be after app creation to avoid circular imports

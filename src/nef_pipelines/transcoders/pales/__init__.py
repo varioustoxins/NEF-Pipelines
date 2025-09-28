@@ -9,13 +9,21 @@ export_app = typer.Typer()
 
 if nef_app.app:
 
-    nef_app.app.add_typer(app, name="pales", help="- read and write pales/dc [rdcs]")
+    nef_app.app.add_typer(
+        app, name="pales", help="- read and write pales/dc [rdcs]", no_args_is_help=True
+    )
 
-    app.add_typer(import_app, name="import", help="-  import pales/dc [rdc restraints]")
+    app.add_typer(
+        import_app,
+        name="import",
+        help="-  import pales/dc [rdc restraints]",
+        no_args_is_help=True,
+    )
     app.add_typer(
         export_app,
         name="export",
         help="- export pales/dc [rdc restraints and templates]",
+        no_args_is_help=True,
     )
 
     # import of specific importers must be after app creation to avoid circular imports
