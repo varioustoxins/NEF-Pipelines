@@ -46,7 +46,7 @@ def trim(
         False, "--verbose", help="show verbose trimming information"
     ),
 ):
-    r"""\- trim pdb/cif to match NEF chains α"""
+    """- trim pdb/cif to match NEF chains α"""
 
     # Read NEF entry
     entry = read_entry_from_file_or_stdin_or_exit_error(nef_input)

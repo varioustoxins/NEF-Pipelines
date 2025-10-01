@@ -1,6 +1,7 @@
 import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 fit_app = typer.Typer()
 
@@ -10,7 +11,9 @@ if nef_app.app:
         fit_app,
         name="fit",
         help="- carry out fitting operations [alpha]",
+        rich_help_panel="Data analysis & manipulation",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

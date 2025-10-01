@@ -48,7 +48,7 @@ def align(
         False, "--verbose", help="show verbose alignment information"
     ),
 ):
-    r"""\- align pdb/cif structures to match NEF chains α"""
+    """- align pdb/cif structures to match NEF chains α"""
 
     # Read NEF entry
     entry = read_entry_from_file_or_stdin_or_exit_error(nef_input)

@@ -1,6 +1,7 @@
 import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 app = typer.Typer()
 import_app = typer.Typer()
@@ -13,7 +14,9 @@ if nef_app.app:
         app,
         name="talos",
         help="- read and write talos files [shifts & restraints]",
+        rich_help_panel="Transcoders",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     app.add_typer(
@@ -21,12 +24,14 @@ if nef_app.app:
         name="import",
         help="- import talos dihderal restraints ",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
     app.add_typer(
         export_app,
         name="export",
-        help="-  export talos [shifts (& sequence)]",
+        help="- export talos [shifts (& sequence)]",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

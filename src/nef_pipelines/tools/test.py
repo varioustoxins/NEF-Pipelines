@@ -21,7 +21,7 @@ TARGET_HELP = dedent(TARGET_HELP)
 # TODO add flag to enable warnings
 
 
-@app.command()
+@app.command(rich_help_panel="Housekeeping")
 def test(
     warnings: bool = typer.Option(
         False, "-w", "--warnings", help="include all warnings"

@@ -9,6 +9,7 @@ from traceback import format_exc, print_exc
 import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 debug_mode = False
 
@@ -30,6 +31,13 @@ if not sys.version_info >= MINIMUM_VERSION:
 logging.getLogger("pynmrstar").setLevel(logging.ERROR)
 
 EXIT_ERROR = 1
+
+try:
+    import rich  # noqa F401
+
+    rich_available = True
+except ImportError:
+    rich_available = False
 
 
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
@@ -58,7 +66,12 @@ def create_nef_app():
     # needed to avoid partially initialised module import
     from nef_pipelines.main import debug_callback
 
-    nef_app.app = typer.Typer(no_args_is_help=True, callback=debug_callback)
+    nef_app.app = typer.Typer(
+        no_args_is_help=True,
+        callback=debug_callback,
+        rich_markup_mode="markdown",
+        cls=FilteredHelpGroup,
+    )
     return nef_app
 
 

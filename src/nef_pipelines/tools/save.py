@@ -26,7 +26,7 @@ FILE_PATHS_HELP = """write the entries to files named, these maybe comma separat
 
 if nef_app:
     # noinspection PyUnusedLocal
-    @nef_app.app.command()
+    @nef_app.app.command(rich_help_panel="NEF manipulation")
     def save(
         input: Path = typer.Option(
             STDIN,

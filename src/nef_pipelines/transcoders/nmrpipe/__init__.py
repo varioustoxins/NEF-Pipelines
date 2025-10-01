@@ -2,6 +2,7 @@ import typer
 
 import nef_pipelines
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 app = typer.Typer()
 import_app = typer.Typer()
@@ -11,7 +12,9 @@ if nef_app.app:
         app,
         name="nmrpipe",
         help="- read nmrpipe [peaks, shifts & sequencess]",
+        rich_help_panel="Transcoders",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     app.add_typer(
@@ -19,6 +22,7 @@ if nef_app.app:
         name="import",
         help="- import nmrpipe [peaks, shifts & sequences]",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

@@ -1,6 +1,7 @@
 import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 app = typer.Typer()
 export_app = typer.Typer()
@@ -12,7 +13,9 @@ if nef_app.app:
         app,
         name="mars",
         help="- read and write mars [shifts and sequences]",
+        rich_help_panel="Transcoders",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     app.add_typer(
@@ -20,6 +23,7 @@ if nef_app.app:
         name="export",
         help="- export mars [shifts and sequences]",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     app.add_typer(
@@ -27,6 +31,7 @@ if nef_app.app:
         name="import",
         help="- import mars [shifts, sequence & peaks]",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     # import of specific importers must be after app creation to avoid circular imports

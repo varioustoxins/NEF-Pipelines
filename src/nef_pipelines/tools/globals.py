@@ -34,7 +34,7 @@ INFO = INFO.replace(r"\s+", " ")
 
 if nef_app:
     # noinspection PyUnusedLocal
-    @nef_app.app.command("globals")
+    @nef_app.app.command("globals", rich_help_panel="Housekeeping")
     def globals_(
         verbose: bool = typer.Option(None, "-v", "--verbose", help=VERBOSE_HELP),
         force: bool = typer.Option(None, "-f", "--force", help=FORCE_HELP),

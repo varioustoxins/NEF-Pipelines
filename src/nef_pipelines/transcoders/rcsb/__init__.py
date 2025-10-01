@@ -2,6 +2,7 @@ import typer
 
 import nef_pipelines
 from nef_pipelines import nef_app
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup
 
 app = typer.Typer()
 import_app = typer.Typer()
@@ -10,15 +11,18 @@ if nef_app.app:
     nef_app.app.add_typer(
         app,
         name="rcsb",
-        help="- read pdb/cif [sequences] & align and trim pdb/mmcif files by molecular systems",
+        help="- read pdb/cif [sequences], align and trim pdb/mmcif files by molecular systems",
+        rich_help_panel="Transcoders",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
     app.add_typer(
         import_app,
         name="import",
-        help=r"\- import pdb/mmcif [sequences]",
+        help="- import pdb/mmcif [sequences]",
         no_args_is_help=True,
+        cls=FilteredHelpGroup,
     )
 
 

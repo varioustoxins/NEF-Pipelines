@@ -9,7 +9,7 @@ from nef_pipelines.lib.util import get_version, script_name
 
 
 # noinspection PyUnusedLocal
-@nef_app.app.command()
+@nef_app.app.command(rich_help_panel="NEF manipulation")
 def header(
     name: str = typer.Argument("nef", help="name for the entry", metavar="<ENTRY-NAME>")
 ):
