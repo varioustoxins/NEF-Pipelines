@@ -94,7 +94,7 @@ def correlation(
     ),
     verbose: bool = typer.Option(False, "--verbose", help="produce verbose output"),
 ):
-    """- create a correlation plot comparing chemical shifts from two shift frame_names α"""
+    """- create a correlation plot comparing chemical shifts from two shift frames α"""
 
     # Check for plotting dependencies
     try:
