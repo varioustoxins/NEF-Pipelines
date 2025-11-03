@@ -484,6 +484,22 @@ def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
     return entry
 
 
+def read_entry_from_file_or_raise(file):
+    """
+    read a star entry from a file
+
+    :param file: a file on the file system
+    :return: a new Entry read from the file
+    :raises: IOError if the file doesn't exist, isn't a file, or can't be read
+    """
+    file = Path(file)
+
+    with open(file) as fh:
+        entry = Entry.from_file(fh)
+
+    return entry
+
+
 def read_entry_from_file_or_exit_error(file):
     """
     read a star entry from a file or exit with an error message
@@ -491,19 +507,10 @@ def read_entry_from_file_or_exit_error(file):
     :param file: a file on the file system
     :return: a new Entry read from the file
     """
-
-    file = Path(file)
-
-    if not file.exists() or not file.is_file():
-        exit_error(f"the file {file} doesn't exist or isn't a file")
     try:
-        with open(file) as fh:
-            entry = Entry.from_file(fh)
-
+        return read_entry_from_file_or_raise(file)
     except IOError as e:
-        exit_error(f"couldn't read from the file {file}", e)
-
-    return entry
+        exit_error(f"couldn't read an entry from the file {file} because {e}")
 
 
 # TODO: should be used as underpinnings for other related functions here
