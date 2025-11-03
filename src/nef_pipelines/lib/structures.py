@@ -419,3 +419,56 @@ class SecondaryStructure:
     secondary_structure: SecondaryStructureType
     merit: float  # typically between 0 and 1
     comment: str = ""
+
+
+@dataclass
+class ChainOffset:
+    chain_code: str
+    offset: int
+
+
+@dataclass
+class ResiduePair:
+    start_residue: Optional[Union[str, int]] = None
+    end_residue: Optional[Union[str, int]] = None
+
+
+@dataclass
+class ChainCode:
+    chain_code: str = None
+
+
+@dataclass
+class ResidueRange(ResiduePair, ChainCode):
+    pass
+
+
+class ResidueRangeParsingError(NEFPipelinesException):
+    """Exception raised when parsing a residue range specifications fails."""
+
+    pass
+
+
+@dataclass
+class ChainStartAndEnds:
+    chain_code: Union[int, str]
+    has_start: bool
+    has_end: bool
+
+
+@dataclass
+class RangeOffset(ResidueRange):
+    """Represents a chain offset operation with optional range specification."""
+
+    offset: int = 0
+
+
+class ChainOffsetSyntaxParsingError(Exception):
+    """Exception raised when parsing the new chain offset syntax fails."""
+
+    def __init__(
+        self, message: str, bad_value: str = "", all_arguments: List[str] = None
+    ):
+        super().__init__(message)
+        self.bad_value = bad_value
+        self.all_arguments = all_arguments or []
