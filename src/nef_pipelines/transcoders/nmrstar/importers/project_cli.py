@@ -1,17 +1,25 @@
+import string
 from enum import auto
 from pathlib import Path
+from textwrap import dedent
 from typing import List
 
 import typer
 from lazy_import import lazy_module
+from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import (
-    read_entry_from_file_or_exit_error,
+    read_entry_from_file_or_raise,
     read_or_create_entry_exit_error_on_bad_file,
 )
 from nef_pipelines.lib.sequence_lib import get_chain_code_iter
-from nef_pipelines.lib.util import STDIN, exit_error, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    STDIN,
+    exit_error,
+    is_int,
+    parse_comma_separated_options,
+)
 from nef_pipelines.transcoders.nmrstar import import_app
 from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     BMRB_AUTO_MIRROR,
@@ -196,7 +204,10 @@ def project(
         if (
             source == EntrySource.AUTO and not nmrstar_entry
         ) or source == EntrySource.FILE:
-            nmrstar_entry = read_entry_from_file_or_exit_error(file_path)
+            try:
+                nmrstar_entry = read_entry_from_file_or_raise(file_path)
+            except Exception as e:
+                _notify_failed_read_and_exit(file_path, e)
 
         if not nmrstar_entry:
             msg = f"could not read entry from {file_path}"
@@ -220,3 +231,47 @@ def project(
         )
 
         print(entry)
+
+
+def _notify_failed_read_and_exit(file_path, e):
+    file_path = Path(file_path)
+    if file_path.exists() and file_path.is_file():
+        if isinstance(e, PermissionError):
+            # Check file permissions more specifically
+            try:
+                stat_info = file_path.stat()
+                file_mode = stat_info.st_mode
+
+                # Check if file has any read permission bits set
+                if not (
+                    file_mode & 0o444
+                ):  # No read permission for owner, group, or other
+                    msg = f"couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path}"
+                elif not (file_mode & 0o400):  # Owner doesn't have read permission
+                    msg = f"couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path}"
+                else:
+                    # File has read permissions but still can't read - likely ownership or other restrictions
+                    msg = f"couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions."
+            except OSError:
+                msg = f"couldn't read from {file_path} due to permission error. Check file permissions and ownership."
+        else:
+            msg = f"couldn't read from {file_path} even though it exists, do you have permission to read it?"
+        exit_error(msg, e)
+    if file_path.exists() and not file_path.is_file():
+        msg = f"couldn't read from {file_path}, it exists but isn't a file"
+        exit_error(msg, e)
+    if is_int(str(file_path)) or is_int(str(file_path).lstrip(string.ascii_letters)):
+        msg = f"""
+                the file name {file_path} looks like a bmrb code but I couldn't read it
+                from the bmrb website, is it correct, is you network up, is the bmrb up?
+            """
+        exit_error(dedent(msg))
+    if not file_path.exists():
+        msg = f"the file name {file_path} doesn't look like an entry on the bmrb website and doesn't exist on disk..."
+        exit_error(msg)
+    if isinstance(e, ParsingError):
+        msg = f"failed to parse the file {file_path} because {e}"
+        exit_error(msg)
+
+    msg = f"failed to read the file {file_path} because {e}, please contact the developers"
+    exit_error(msg)
