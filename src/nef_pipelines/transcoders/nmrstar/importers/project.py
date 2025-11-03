@@ -6,7 +6,7 @@ from pynmrstar import Entry
 from requests.exceptions import HTTPError
 from tabulate import tabulate
 
-from nef_pipelines.lib.util import exit_error, is_int
+from nef_pipelines.lib.util import exit_error, info, is_int, warn
 from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     SHORTCUT_URLS,
     SHORTCUTS,
@@ -74,52 +74,52 @@ def _get_bmrb_entry_from_web_or_none(
     possible_entry = None
 
     have_data = False
-    if urls:
 
-        for i, url in enumerate(urls, start=1):
-            error = False
-            if verbose:
-                print(f"{i}. trying to from download {url}", file=sys.stderr)
+    if urls is None:
+        urls = []
+
+    for i, url in enumerate(urls, start=1):
+        error = False
+        if verbose:
+            info(f"{i}. trying to from download {url}")
+        try:
             try:
+                response = requests.get(url, timeout=timeout)
+                response.raise_for_status()
+                possible_entry = response.content
+            except requests.exceptions.SSLError:
+                info(
+                    f"NOTE: using weaker SSL key as long keys not supported by some mirrors [{url}]",
+                    file=sys.stderr,
+                )
+                requests.packages.urllib3.disable_warnings()
+                requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += "HIGH:!DH:!aNULL"
                 try:
-                    response = requests.get(url, timeout=timeout)
-                    response.raise_for_status()
-                    possible_entry = response.content
-                except requests.exceptions.SSLError:
-                    print(
-                        f"NOTE: using weaker SSL key as long keys not supported by some mirrors [{url}]",
-                        file=sys.stderr,
-                    )
-                    requests.packages.urllib3.disable_warnings()
-                    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += (
+                    requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += (
                         "HIGH:!DH:!aNULL"
                     )
-                    try:
-                        requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += (
-                            "HIGH:!DH:!aNULL"
-                        )
-                    except AttributeError:
-                        # no pyopenssl support used / needed / available
-                        pass
-                    response = requests.get(url, verify=False, timeout=timeout)
-                    response.raise_for_status()
-                    possible_entry = response.content
+                except AttributeError:
+                    # no pyopenssl support used / needed / available
+                    pass
+                response = requests.get(url, verify=False, timeout=timeout)
+                response.raise_for_status()
+                possible_entry = response.content
 
-            except HTTPError as http_err:
-                if verbose:
-                    msg = f"WARNING: while trying to download the url {url} there was an http error {http_err}"
-                    print(msg, file=sys.stderr)
-                    error = True
+        except HTTPError as http_err:
+            if verbose:
+                msg = f"WARNING: while trying to download the url {url} there was an http error {http_err}"
+                warn(msg)
+                error = True
 
-            except Exception as err:
-                if verbose:
-                    msg = f"WARNING: while trying to download the url {url} there was an error {err}"
-                    print(msg, file=sys.stderr)
-                    error = True
+        except Exception as err:
+            if verbose:
+                msg = f"WARNING: while trying to download the url {url} there was an error {err}"
+                warn(msg)
+                error = True
 
-            if not error:
-                have_data = True
-                break
+        if not error:
+            have_data = True
+            break
 
     if not have_data:
         if exit_on_error:
