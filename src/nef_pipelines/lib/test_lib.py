@@ -414,3 +414,61 @@ def assert_frame_category_exists(
         assert len(globals_frames) == count
     else:
         assert len(globals_frames) >= count
+
+
+def assert_loop_unchanged(
+    input_data: str, output_data: str, frame_name: str, loop_category: str
+):
+    """
+    Assert that a specific loop in the output data is unchanged from the input data.
+
+    Args:
+        input_data (str): The original NEF data as a string
+        output_data (str): The result NEF data as a string
+        frame_name (str): The name of the saveframe containing the loop
+        loop_category (str): The category name of the loop to compare
+
+    Raises:
+        AssertionError: If the loop has changed between input and output
+    """
+    from pynmrstar import Entry
+
+    # Get the original loop from input
+    input_entry = Entry.from_string(input_data)
+    input_frame = input_entry.get_saveframe_by_name(frame_name)
+    input_loop = input_frame.get_loop(loop_category)
+    expected_loop_str = str(input_loop)
+
+    # Get the output loop
+    output_loop = isolate_loop(output_data, frame_name, loop_category)
+
+    # Compare them
+    assert_lines_match(expected_loop_str, output_loop)
+
+
+def assert_frame_unchanged(input_data: str, output_data: str, frame_name: str):
+    """
+    Assert that a specific saveframe in the output data is unchanged from the input data.
+
+    Args:
+        input_data (str): The original NEF data as a string
+        output_data (str): The result NEF data as a string
+        frame_name (str): The name of the saveframe to compare
+
+    Raises:
+        AssertionError: If the frame has changed between input and output
+    """
+    from pynmrstar import Entry
+
+    # Get the original frame from input
+    input_entry = Entry.from_string(input_data)
+    input_frame = input_entry.get_saveframe_by_name(frame_name)
+    expected_frame_str = str(input_frame)
+
+    # Get the output frame
+    output_entry = Entry.from_string(output_data)
+    output_frame = output_entry.get_saveframe_by_name(frame_name)
+    output_frame_str = str(output_frame)
+
+    # Compare them
+    assert_lines_match(expected_frame_str, output_frame_str)
