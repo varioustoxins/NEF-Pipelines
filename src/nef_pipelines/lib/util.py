@@ -651,6 +651,10 @@ def parse_comma_separated_options(
     :param lists: a mixture of  lists of string or comma separated as a at sting
     :return: list of items
     """
+
+    if lists is None:
+        lists = []
+
     result = []
     for item in lists:
         if isinstance(item, str):
