@@ -539,3 +539,9 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 ## Version 0.1.117 'Cian the third'
 - rcsb trim wasn't printing the entry to stdout breaking the pipeline
+
+## Version 0.1.118
+- some minor bug squashing
+- at top level --debug shows a tracback if a command fails
+- help is diplayed much mor consistently especially if no inputs are given
+- added the CCPNTutorial to the github website
