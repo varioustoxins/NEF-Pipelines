@@ -81,3 +81,39 @@ def test_frame_basic_verbose():
     """
 
     assert_lines_match(EXPECTED_VERBOSE, result.stdout)
+
+
+def test_frame_no_matching_frames():
+    """Test that frames list doesn't crash when no frames match the filter."""
+
+    path = path_in_test_data(__file__, "frames.nef")
+    result = run_and_report(app, ["--in", path, "non_existent_frame"])
+
+    EXPECTED_NO_FRAMES = """"""
+
+    assert_lines_match(EXPECTED_NO_FRAMES, result.stdout)
+
+
+def test_frame_empty_stdin_shows_help():
+    """Test that frames list shows help and error message when no stdin input is available."""
+
+    # Run without --in and without stdin input (should trigger NEFPLSLIOEmptyStdinException)
+    result = run_and_report(app, [], expected_exit_code=0)
+
+    # Check that help text is displayed
+    assert "Usage:" in result.stdout
+    assert "list [OPTIONS] [FILTERS]" in result.stdout
+
+    # Check that the error message is displayed
+    assert "No input NEF entry from stdin or the command line..." in result.stdout
+
+
+def test_frame_with_no_filters_doesnt_fail():
+    """Test that frames list doesn't crash when no no filters are applied."""
+
+    path = path_in_test_data(__file__, "frames.nef")
+    result = run_and_report(app, ["--in", path])
+
+    EXPECTED_NO_FRAMES = "nef_nmr_meta_data nef_molecular_system"
+
+    assert_lines_match(EXPECTED_NO_FRAMES, result.stdout)

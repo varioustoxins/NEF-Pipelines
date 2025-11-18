@@ -5,18 +5,21 @@ from textwrap import dedent
 from typing import List, Optional
 
 import typer
+from click import Context
 from pynmrstar import Entry
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
+    NEFPLSLIOEmptyStdinException,
     SelectionType,
-    read_entry_from_file_or_stdin_or_exit_error,
+    read_entry_from_file_or_stdin_or_raise,
     select_frames,
 )
 from nef_pipelines.lib.sequence_lib import chains_from_frames, count_residues
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     STDIN,
+    display_help_and_exit,
     exit_error,
     strings_to_table_terminal_sensitive,
 )
@@ -30,6 +33,7 @@ parser = None
 # noinspection PyUnusedLocal
 @frames_app.command()
 def list(
+    context: Context,
     input: Path = typer.Option(
         STDIN,
         "-i",
@@ -63,7 +67,7 @@ def list(
     """- list the frames in the current input"""
 
     entry = None
-    if len(filters) > 0:
+    if filters is not None and len(filters) > 0:
         entry = _if_is_nef_file_load_as_entry(filters[0])
         if entry is not None:
             if input != STDIN:
@@ -86,9 +90,11 @@ def list(
     if entry is None:
 
         try:
-            entry = read_entry_from_file_or_stdin_or_exit_error(input)
-        except Exception as e:
-            exit_error(f"failed to read nef file {args.pipe} because", e)
+            entry = read_entry_from_file_or_stdin_or_raise(input)
+        except NEFPLSLIOEmptyStdinException:
+            display_help_and_exit(
+                context, "No input NEF entry from stdin or the command line..."
+            )
 
     if entry is None:
         if args.pipe is not None:
