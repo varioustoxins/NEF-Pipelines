@@ -91,7 +91,7 @@ def shifts(
     input: Path = typer.Option(
         STDIN,
         "-i",
-        "--input",
+        "--in",
         metavar="|PIPE|",
         help="input to read NEF data from [- is stdin]",
     ),
