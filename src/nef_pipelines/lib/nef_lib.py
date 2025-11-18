@@ -17,6 +17,7 @@ from strenum import LowercaseStrEnum
 from nef_pipelines.lib import util
 from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.globals_lib import set_global
+from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
@@ -59,6 +60,26 @@ class BadNefFileException(Exception):
 
 
 class NoSuchColumnException(Exception):
+    pass
+
+
+class NEFPLSLIOException(NEFPipelinesException):
+    """Exception for NEF Pipelines IO errors with optional chaining."""
+
+    def __init__(self, message: str, chained_exception: Optional[Exception] = None):
+        super().__init__(message)
+        self.__cause__ = chained_exception
+
+
+class NEFPLSLIOEmptyStdinException(NEFPLSLIOException):
+    """Exception for empty stdin when reading NEF data."""
+
+    pass
+
+
+class NEFPLSLIOStarParseException(NEFPLSLIOException):
+    """Exception for NEF/STAR parsing errors."""
+
     pass
 
 
@@ -257,6 +278,45 @@ def read_file_or_exit(file_path: Path) -> List[str]:
         exit_error(msg)
 
     return result
+
+
+# refactor to two functions one of which gets a TextIO
+def read_entry_from_stdin_or_raise() -> Entry:
+    """
+    read a star file entry from stdin or exit with an error message
+    :return: a star file entry
+    """
+
+    if sys.stdin.isatty():
+        raise NEFPLSLIOEmptyStdinException(
+            "you appear to be reading from an empty stdin"
+        )
+
+    try:
+        stdin_lines = sys.stdin.read()
+        if stdin_lines is None:
+            lines = [
+                "",
+            ]
+        lines = "".join(stdin_lines)
+    except IOError as e:
+        raise NEFPLSLIOException(f"failed to read stdin because: {e}", e)
+
+    if len(lines.strip()) == 0:
+        raise NEFPLSLIOEmptyStdinException(
+            "stdin is empty and doesn't contain a NEF file"
+        )
+
+    try:
+        entry = Entry.from_string(lines)
+
+    except ParsingError as e:
+        msg = f"failed to read a NEF entry from stdin because the NEF parser found the following error: {e}"
+        raise NEFPLSLIOStarParseException(msg, e)
+
+    entry.source = "-"
+
+    return entry
 
 
 # refactor to two functions one of which gets a TextIO
@@ -467,6 +527,21 @@ def select_frames(
             result[frame.category, frame.name] = frame
 
     return list(result.values()) if result else []
+
+
+def read_entry_from_file_or_stdin_or_raise(file: Path) -> Entry:
+    """
+    read a star entry from stdin or a file or exit.
+    note this exits with an error if stdin can't be read because its a terminal
+
+    :param file:
+    :return:
+    """
+    if file is None or file == Path("-"):
+        entry = read_entry_from_stdin_or_raise()
+    else:
+        entry = read_entry_from_file_or_raise(file)
+    return entry
 
 
 def read_entry_from_file_or_stdin_or_exit_error(file: Path) -> Entry:
