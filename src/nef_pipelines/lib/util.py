@@ -26,6 +26,7 @@ from typing import (
 )
 
 import click
+import typer
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
 from tabulate import tabulate
@@ -1136,3 +1137,17 @@ def expand_template_or_exit_error(template: str, **variables: Any) -> str:
             f"invalid template variable '{invalid_var}' in template '{template}'. "
             f"Available variables are: {available_vars}"
         )
+
+
+def display_help_and_exit(context: click.Context, msg: Optional[str] = None):
+    """
+    Display the help text for the program and exit without error
+
+    Args:
+        context (click.Context): typer/click context
+        msg (Optional[str]): optional message to display in red after help text
+    """
+    typer.echo(context.get_help())
+    if msg:
+        typer.echo(typer.style(msg, fg=typer.colors.BRIGHT_RED, bold=True))
+    sys.exit(0)
