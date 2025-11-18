@@ -162,7 +162,7 @@ def main():
 
         command = typer.main.get_command(nef_app.app)
 
-        command(standalone_mode=False)
+        command(prog_name="nef", standalone_mode=False)
 
         _report_warnings(warnings)
 
