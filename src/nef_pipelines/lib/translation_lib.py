@@ -31,7 +31,7 @@ def translate_atom_label(
     atom: AtomLabel, translation_scheme: TranslationScheme = XPLOR_IUPAC
 ) -> AtomLabel:
     """
-    Translate an atom name form on sheme to another e.g xplor to iupac
+    Translate an atom name form on sheme to another e.g. xplor to IUPAC
     :param atom: the atom label to translate
     :param translation_scheme: the translation scheme which is a tuple of NamingSchemes defining a translation from the
                                 first to the second
