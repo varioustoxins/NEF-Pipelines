@@ -319,13 +319,17 @@ def translate_1_to_3(
     return result
 
 
+# TODO: unknown residues should raise an exception not cause an exit
 def translate_3_to_1(
-    sequence: Union[str, List[str]], molecule_type=MoleculeTypes.PROTEIN
+    sequence: Union[str, List[str]],
+    molecule_type=MoleculeTypes.PROTEIN,
+    allow_unknown=True,
+    unknown_code="X",
 ) -> List[str]:
     """
 
     Translate a 3 letter sequence to a 1 letter sequence. If a single string is supplied it
-    is trabnslated and returned as a sinle residue
+    is translated and returned as a single residue
     Args:
         sequence (str|List[str]): 3 letter sequence code or 3 letter sequence
         molecule_type (MoleculeTypes): type of molecule to translate residue types
@@ -340,7 +344,7 @@ def translate_3_to_1(
     single_aa = False
     if isinstance(sequence, str):
         sequence = [
-            str,
+            sequence,
         ]
         single_aa = True
 
@@ -361,6 +365,8 @@ def translate_3_to_1(
                 exit_error(msg)
         if residue_name in translations:
             result.append(translations[residue_name])
+        elif allow_unknown:
+            result.append(unknown_code)
         else:
             msg = f"""
             unknown residue {residue_name}

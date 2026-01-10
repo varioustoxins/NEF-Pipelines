@@ -6,6 +6,7 @@ from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.sequence_lib import (
     BadResidue,
+    MoleculeTypes,
     chains_from_frames,
     count_residues,
     get_chain_code_iter,
@@ -14,6 +15,7 @@ from nef_pipelines.lib.sequence_lib import (
     sequence_3let_to_sequence_residues,
     sequences_from_frames,
     translate_1_to_3,
+    translate_3_to_1,
 )
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.test_lib import path_in_test_data
@@ -75,6 +77,60 @@ def test_bad_1let_3let():
 
     for msg in msgs:
         assert msg in str(exc_info.value)
+
+
+def test_3let_1let_protein_list():
+    """Test translate_3_to_1 with protein sequence as list."""
+    sequence = ["ALA", "CYS", "ASP", "GLU", "PHE"]
+    result = translate_3_to_1(sequence)
+    assert result == ["A", "C", "D", "E", "F"]
+
+
+def test_3let_1let_protein_single():
+    """Test translate_3_to_1 with single protein residue."""
+    result = translate_3_to_1("ALA")
+    assert result == "A"
+
+
+def test_3let_1let_case_insensitive():
+    """Test translate_3_to_1 is case insensitive."""
+    result = translate_3_to_1(["ala", "Cys", "ASP"])
+    assert result == ["A", "C", "D"]
+
+
+def test_3let_1let_dna():
+    """Test translate_3_to_1 with DNA sequence."""
+    sequence = ["DG", "DC", "DT", "DA"]
+    result = translate_3_to_1(sequence, molecule_type=MoleculeTypes.DNA)
+    assert result == ["G", "C", "T", "A"]
+
+
+def test_3let_1let_rna():
+    """Test translate_3_to_1 with RNA sequence."""
+    sequence = ["G", "C", "A", "U"]
+    result = translate_3_to_1(sequence, molecule_type=MoleculeTypes.RNA)
+    assert result == ["G", "C", "A", "U"]
+
+
+def test_3let_1let_unknown_allowed():
+    """Test translate_3_to_1 with unknown residue and allow_unknown=True."""
+    sequence = ["ALA", "YYY", "CYS"]
+    result = translate_3_to_1(sequence, allow_unknown=True)
+    assert result == ["A", "X", "C"]
+
+
+def test_3let_1let_unknown_custom_code():
+    """Test translate_3_to_1 with unknown residue and custom unknown_code."""
+    sequence = ["ALA", "XXX", "CYS"]
+    result = translate_3_to_1(sequence, allow_unknown=True, unknown_code="?")
+    assert result == ["A", "?", "C"]
+
+
+def test_3let_1let_unknown_not_allowed():
+    """Test translate_3_to_1 with unknown residue and allow_unknown=False."""
+    sequence = ["ALA", "XXX", "CYS"]
+    with pytest.raises(SystemExit):
+        translate_3_to_1(sequence, allow_unknown=False)
 
 
 def test_3let_sequence_residue():
