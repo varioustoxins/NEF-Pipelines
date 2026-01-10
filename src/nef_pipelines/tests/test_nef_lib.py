@@ -17,6 +17,7 @@ from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe
     read_entry_from_stdin_or_exit,
     read_or_create_entry_exit_error_on_bad_file,
     select_frames_by_name,
+    select_loops_by_category,
 )
 from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
 from nef_pipelines.lib.util import STDIN
@@ -33,6 +34,78 @@ ITER_TEST_DATA = """\
 
     stop_
 
+"""
+
+LOOPS_TWO_CATEGORIES = """\
+data_test
+    save_test_frame
+        _test.sf_category test
+        loop_
+            _nef_chemical_shift.col_1
+            .
+        stop_
+        loop_
+            _nef_distance_restraint.col_1
+            .
+        stop_
+    save_
+"""
+
+LOOPS_THREE_CATEGORIES = """\
+data_test
+    save_test_frame
+        _test.sf_category test
+        loop_
+            _nef_chemical_shift.col_1
+            .
+        stop_
+        loop_
+            _nef_distance_restraint.col_1
+            .
+        stop_
+        loop_
+            _nef_rdc_restraint.col_1
+            .
+        stop_
+    save_
+"""
+
+LOOPS_NUMBERED_LISTS = """\
+data_test
+    save_test_frame
+        _test.sf_category test
+        loop_
+            _nef_chemical_shift_list_1.col_1
+            .
+        stop_
+        loop_
+            _nef_chemical_shift_list_2.col_1
+            .
+        stop_
+        loop_
+            _nef_chemical_shift_list_3.col_1
+            .
+        stop_
+    save_
+"""
+
+LOOPS_TWO_NUMBERED_LISTS_PLUS_DISTANCE = """\
+data_test
+    save_test_frame
+        _test.sf_category test
+        loop_
+            _nef_chemical_shift_list_1.col_1
+            .
+        stop_
+        loop_
+            _nef_chemical_shift_list_2.col_1
+            .
+        stop_
+        loop_
+            _nef_distance_restraint.col_1
+            .
+        stop_
+    save_
 """
 
 # def test_nef_to_pandas():
@@ -437,3 +510,149 @@ def test_loop_row_dict_iter_attributes_update():
         assert str(row.col_1) == EXPECTED[i]["a"]
         assert str(row.col_2) == EXPECTED[i]["b"]
         assert str(row.col_3) == EXPECTED[i]["c"]
+
+
+def test_select_loops_by_category_empty_patterns():
+    """Test select_loops_by_category with empty pattern list returns all loops."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, [])
+
+    assert len(result) == 2
+
+
+def test_select_loops_by_category_single_match():
+    """Test select_loops_by_category with single pattern matching one loop."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["chemical_shift"])
+
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift"
+
+
+def test_select_loops_by_category_multiple_patterns():
+    """Test select_loops_by_category with multiple patterns."""
+    entry = Entry.from_string(LOOPS_THREE_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["chemical", "distance"])
+
+    assert len(result) == 2
+    categories = sorted([loop.category for loop in result])
+    assert categories == ["_nef_chemical_shift", "_nef_distance_restraint"]
+
+
+def test_select_loops_by_category_no_matches():
+    """Test select_loops_by_category with pattern matching no loops."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["dihedral"])
+
+    assert len(result) == 0
+
+
+def test_select_loops_by_category_exact_flag_false():
+    """Test select_loops_by_category with exact=False adds automatic wildcards."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["shift"], exact=False)
+
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift"
+
+
+def test_select_loops_by_category_exact_flag_true():
+    """Test select_loops_by_category with exact=True requires exact category match."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    # "shift" doesn't match exactly "nef_chemical_shift" (without leading _)
+    result = select_loops_by_category(loops, ["shift"], exact=True)
+    assert len(result) == 0
+
+    # Exact match required (pattern without leading underscore)
+    result = select_loops_by_category(loops, ["nef_chemical_shift"], exact=True)
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift"
+
+
+def test_select_loops_by_category_wildcard_patterns():
+    """Test select_loops_by_category with explicit wildcard patterns."""
+    entry = Entry.from_string(LOOPS_TWO_NUMBERED_LISTS_PLUS_DISTANCE)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    # Partial match with automatic wildcards
+    result = select_loops_by_category(loops, ["shift_list_1"])
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift_list_1"
+
+    # Explicit wildcard pattern
+    result = select_loops_by_category(loops, ["*shift_list*"])
+    assert len(result) == 2
+    categories = sorted([loop.category for loop in result])
+    assert categories == [
+        "_nef_chemical_shift_list_1",
+        "_nef_chemical_shift_list_2",
+    ]
+
+
+def test_select_loops_by_category_internal_wildcards():
+    """Test select_loops_by_category with explicit internal wildcards like A*B."""
+    entry = Entry.from_string(LOOPS_THREE_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    # Pattern with internal wildcard
+    result = select_loops_by_category(loops, ["nef_*_shift"])
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift"
+
+    # Another pattern with internal wildcard
+    result = select_loops_by_category(loops, ["nef_*_restraint"])
+    assert len(result) == 2
+    categories = sorted([loop.category for loop in result])
+    assert categories == ["_nef_distance_restraint", "_nef_rdc_restraint"]
+
+    # Multiple wildcards
+    result = select_loops_by_category(loops, ["nef_*_*"])
+    assert len(result) == 3
+
+
+def test_select_loops_by_category_bracket_patterns():
+    """Test select_loops_by_category with bracket patterns for character sets."""
+    entry = Entry.from_string(LOOPS_NUMBERED_LISTS)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["list_[12]"])
+
+    assert len(result) == 2
+    categories = sorted([loop.category for loop in result])
+    assert categories == [
+        "_nef_chemical_shift_list_1",
+        "_nef_chemical_shift_list_2",
+    ]
+
+
+def test_select_loops_by_category_deduplication():
+    """Test select_loops_by_category deduplicates matches from multiple patterns."""
+    entry = Entry.from_string(LOOPS_TWO_CATEGORIES)
+    frame = entry.get_saveframe_by_name("test_frame")
+    loops = frame.loops
+
+    result = select_loops_by_category(loops, ["chemical", "shift", "nef_chemical"])
+
+    assert len(result) == 1
+    assert result[0].category == "_nef_chemical_shift"

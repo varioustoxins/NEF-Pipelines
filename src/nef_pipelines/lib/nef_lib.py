@@ -529,6 +529,51 @@ def select_frames(
     return list(result.values()) if result else []
 
 
+def select_loops_by_category(
+    loops: List[Loop], category_patterns: List[str], exact: bool = False
+) -> List[Loop]:
+    """Select loops by category using fnmatch patterns with automatic wildcards.
+
+    Args:
+        loops: List of loops to search
+        category_patterns: List of patterns to match against loop categories
+                           (note the leading underscore on the loop category is not
+                            included in matching)
+        exact: the match of the category should be exact [switches of wild card matching]
+
+    Returns:
+        List of matching loops
+    """
+    if not category_patterns:
+        return list(loops)
+
+    matched_loop_ids = set()
+    matched_loops = []
+    for loop in loops:
+        # Strip leading underscore from category for matching (all NEF loop categories start with _)
+        loop_category = loop.category.lstrip("_")
+
+        for pattern in category_patterns:
+            loop_id = id(loop)
+
+            if exact:
+                if loop_category == pattern:
+                    if loop_id not in matched_loop_ids:
+                        matched_loops.append(loop)
+                        matched_loop_ids.add(loop_id)
+                    break
+            else:
+                # Add automatic wildcards like select_frames does
+                wildcard_pattern = f"*{pattern}*"
+                if fnmatch(loop_category, wildcard_pattern):
+                    if loop_id not in matched_loop_ids:
+                        matched_loops.append(loop)
+                        matched_loop_ids.add(loop_id)
+                    break
+
+    return matched_loops
+
+
 def read_entry_from_file_or_stdin_or_raise(file: Path) -> Entry:
     """
     read a star entry from stdin or a file or exit.
