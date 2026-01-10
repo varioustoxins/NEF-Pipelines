@@ -123,6 +123,7 @@ def get_linking(
     return result
 
 
+# TODO: we should add cis proline handling sometime!
 def sequence_to_nef_frame(
     sequences: List[SequenceResidue],
     no_chain_start: Union[List[str], Tuple[str]] = (),
@@ -176,7 +177,7 @@ def sequence_to_nef_frame(
                 "residue_name": sequence_residue.residue_name.upper(),
                 "linking": linking,
                 "residue_variant": NEF_UNKNOWN,
-                "cis_peptide": NEF_UNKNOWN,
+                "cis_peptide": "false",
             }
         ]
         nef_loop.add_data(data)
