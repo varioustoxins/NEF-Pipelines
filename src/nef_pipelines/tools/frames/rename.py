@@ -119,6 +119,11 @@ def rename(
                 new_full_name = f"{category}_{new_name_part}"
 
                 if new_full_name in entry.frame_dict.keys() and not force:
+                    # Check if we're trying to rename to the same name (null operation)
+                    existing_frame = entry.get_saveframe_by_name(new_full_name)
+                    if existing_frame is target_frame:
+                        # Renaming to itself - silently skip this as a no-op
+                        continue
                     _exit_clashing_frame_name(new_full_name, entry)
 
                 if new_full_name in entry.frame_dict.keys() and force:
