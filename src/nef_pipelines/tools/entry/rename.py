@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 import typer
@@ -29,5 +28,4 @@ def rename(
     if name is not None:
         entry.entry_id = name
 
-    if not sys.stdout.isatty():
-        print(entry)
+    print(entry)
