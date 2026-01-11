@@ -896,8 +896,9 @@ def create_nef_save_frame(
     """
     Create a NEF save frame from a category and a frame name, including the tags sf_category and sf_framecode
 
-    :param category: the category including an organisation prefix
+    :param frame_category: the category including an organisation prefix
     :param frame_id: the id of the frame  (can be None for singletons)
+    :param increment: the increment
     :param separator: separator between the category and the frame_id (default ::)
     :param end: text after the frame_id (can be used to create a fence  default is the empty string
     :return: a NEF style saveframe
