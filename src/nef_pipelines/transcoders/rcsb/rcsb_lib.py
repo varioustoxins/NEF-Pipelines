@@ -236,8 +236,12 @@ def _as_continuous_string_or_exit(name, line_info: PDBLineInfo, field_name: str)
     return name
 
 
-def _exit_if_no_chain_code_and_no_segment_id(chain_code, segment_id, line_info):
+def _exit_if_no_chain_code_and_no_segment_id(
+    chain_code, segment_id, line_info, default_chain_code=None
+):
     if not chain_code and not segment_id:
+        if default_chain_code:
+            return default_chain_code, segment_id
         msg = f"""
             in file {line_info.file_name} at line {line_info.line_no} both the chain code and segment id were
             not present on an ATOM record, one or both must be present
@@ -245,12 +249,15 @@ def _exit_if_no_chain_code_and_no_segment_id(chain_code, segment_id, line_info):
             the line was
 
             {line_info.line}
+
+            NOTE *** you can specify a chain code to use with the --chains option, e.g. --chains A ***
         """
 
         exit_error(msg)
+    return chain_code, segment_id
 
 
-def _parse_atom(line, line_info):
+def _parse_atom(line, line_info, default_chain_code=None):
     global current_residue, current_chain, current_model
 
     serial = line[6:11]
@@ -278,7 +285,11 @@ def _parse_atom(line, line_info):
 
     element = _as_string_or_none(element)
 
-    temp_fact = _convert_to_float_or_exit(temp_fact, line_info, "temperature factor")
+    temp_fact = _as_string_or_none(temp_fact)
+    if temp_fact:
+        temp_fact = _convert_to_float_or_exit(
+            temp_fact, line_info, "temperature factor"
+        )
 
     name = _as_continuous_string_or_exit(name, line_info, "name")
 
@@ -303,7 +314,9 @@ def _parse_atom(line, line_info):
         current_chain, chain_code, segment_id, line_info
     )
 
-    _exit_if_no_chain_code_and_no_segment_id(chain_code, segment_id, line_info)
+    chain_code, segment_id = _exit_if_no_chain_code_and_no_segment_id(
+        chain_code, segment_id, line_info, default_chain_code
+    )
 
     if current_chain:
         new_chain = False
@@ -554,7 +567,17 @@ def _sequence_from_residues_if_no_seqres(structure):
                         chain.sequence = sequence
 
 
-def parse_pdb(lines: Iterable[str], source: str = "unknown"):
+def parse_pdb(
+    lines: Iterable[str], source: str = "unknown", default_chain_code: str = None
+):
+    """
+    Parse a PDB file into a Structure object.
+
+    Args:
+        lines: Lines from the PDB file
+        source: Source filename for error messages
+        default_chain_code: Default chain code to use when both chain code and segment ID are missing
+    """
     global current_model, current_chain, current_residue, current_structure
 
     current_structure = Structure(source)
@@ -575,7 +598,7 @@ def parse_pdb(lines: Iterable[str], source: str = "unknown"):
             if not current_model:
                 current_model = Model(1)
                 current_structure.models.append(current_model)
-            _parse_atom(line, line_info)
+            _parse_atom(line, line_info, default_chain_code)
 
         if record_type == "TER":
             if not current_chain:
