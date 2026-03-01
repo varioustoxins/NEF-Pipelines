@@ -5,10 +5,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
 from pathlib import Path
-from textwrap import dedent
 from typing import Dict, Iterable, List, Optional
 
-from fyeah import f
 from pdbx import DataContainer
 from pdbx.reader import PdbxReader
 from strenum import LowercaseStrEnum
@@ -141,6 +139,39 @@ class Structure:
 
     def __getitem__(self, index):
         return self.models[0]
+
+    def get_chains_with_common_sequences(self, model_index: int = 0) -> List[List[str]]:
+        """
+        Find groups of chains that share identical sequences.
+
+        Args:
+            model_index: Which model to analyze (default: 0)
+
+        Returns:
+            List of chain code lists. Each inner list contains chains that share the same sequence.
+            Chains with unique sequences are returned as single-element lists.
+
+        Example:
+            [
+                ['A', 'B'],  # Chains A and B share the same sequence
+                ['C']        # Chain C has a unique sequence
+            ]
+        """
+        if model_index >= len(self.models):
+            return []
+
+        model = self.models[model_index]
+        sequence_groups = {}
+
+        for chain in model.chains.values():
+            if chain.sequence:
+                seq_tuple = tuple(chain.sequence.residues)
+                start_code = chain.sequence.start_sequence_code or 1
+                key = (seq_tuple, start_code)
+
+                sequence_groups.setdefault(key, []).append(chain.chain_code)
+
+        return list(sequence_groups.values())
 
 
 class StructureParseException(Exception):
