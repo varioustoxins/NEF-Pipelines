@@ -168,6 +168,21 @@ def test_file_type_from_data(file_name):
     ],
 )
 def test_parse_clic1(file_name):
+    """
+    Test parsing of CLIC1 structure (1k0o) in both PDB and mmCIF formats.
+
+    NOTE: Different sequence counts between formats is expected:
+    - PDB: 2 sequences (one per SEQRES record for chains A and B, even though identical)
+    - mmCIF: 1 sequence (entity-level, both chains reference same entity_id)
+
+    This reflects the different semantics of the file formats. PDB stores per-chain
+    SEQRES records while mmCIF uses entity-level sequences.
+
+    TODO: Could add pseudo-entity detection for PDB to match mmCIF behavior.
+
+    Related test case: 1J97.pdb (chains with same sequence but different numbering
+    2-211 vs 503-711) also stores 2 sequences, which is necessary since the numbering differs.
+    """
     file_data = read_test_data(file_name, __file__).split("\n")
     if file_name.endswith(".pdb"):
         structure = parse_pdb(file_data, file_name)
@@ -176,7 +191,15 @@ def test_parse_clic1(file_name):
     else:
         raise Exception(f"unexpected file type {file_name.split('.')[-1]}")
 
-    assert len(structure.sequences) == 1
+    # PDB: per-chain SEQRES → 2 sequences
+    # mmCIF: entity-level → 1 sequence (chains A & B share entity)
+    if file_name.endswith(".pdb"):
+        assert len(structure.sequences) == 2
+    elif file_name.endswith(".cif"):
+        assert len(structure.sequences) == 1
+    else:
+        assert False, f'unexpected file format {file_name.split(".")[-1]}'
+
     assert len(structure.secondary_structure) == 2
     assert list(structure.secondary_structure.keys()) == ["A", "B"]
     assert len(structure.models) == 1
@@ -188,11 +211,24 @@ def test_parse_clic1(file_name):
     assert len(model_0_chain_A.residues) == 225
     assert len(model_0_chain_B.residues) == 213
 
-    assert list(structure.sequences.keys()) == [
-        1,
-    ]
-    assert structure.sequences[1].id == 1
-    assert len(structure.sequences[1].residues) == 241
+    # Verify sequence content based on file format
+    if file_name.endswith(".pdb"):
+        # PDB stores separate sequences for each chain's SEQRES
+        assert list(structure.sequences.keys()) == [1, 2]
+        assert structure.sequences[1].id == 1
+        assert structure.sequences[2].id == 2
+        assert len(structure.sequences[1].residues) == 241
+        assert len(structure.sequences[2].residues) == 241
+        # Both sequences have identical content (but are separate objects)
+        assert structure.sequences[1].residues == structure.sequences[2].residues
+    elif file_name.endswith(".cif"):
+        # mmCIF uses entity-level sequences (chains A & B share entity_id)
+        assert list(structure.sequences.keys()) == [1]
+        assert structure.sequences[1].id == 1
+        assert len(structure.sequences[1].residues) == 241
+    else:
+        assert False, f'unexpected file format {file_name.split(".")[-1]}'
+
     assert structure.sequences[1].structure is structure
 
     for chain in "AB":
@@ -214,5 +250,8 @@ def test_parse_clic1(file_name):
 
     for sequence in structure.sequences.values():
         assert id(sequence.structure) == id(structure)
-        assert sequence.id == 1
         assert sequence.source == SequenceSource.SEQRES
+
+    groups = structure.get_chains_with_common_sequences()
+    assert len(groups) == 1
+    assert sorted(groups[0]) == ["A", "B"]

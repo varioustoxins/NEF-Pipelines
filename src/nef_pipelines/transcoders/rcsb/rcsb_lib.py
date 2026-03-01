@@ -479,19 +479,40 @@ def _parse_sheet(line, line_info):
 
 
 def _fixup_sequences(current_structure):
+    """
+    Renumber PDB SEQRES sequences with integer IDs.
+
+    NOTE: PDB format stores separate SEQRES records per chain. This function
+    preserves each chain's sequence object without deduplication, even if
+    multiple chains have identical sequences.
+
+    This differs from mmCIF which uses entity-level sequences where multiple
+    chains can reference the same entity_id.
+
+    TODO: Add pseudo-entity detection for PDB files to match mmCIF behavior.
+          Investigate how equivalent PDB/mmCIF files with offset sequences
+          handle entities. For 1J97:
+          - PDB: Chain B uses author numbering 503-711 (from SEQRES/ATOM records)
+          - mmCIF: Chain B uses auth_seq_id=503-711 (matches PDB) OR label_seq_id
+            which is entity-relative (canonical numbering from entity sequence)
+          - Both chains reference same entity_id=1 in mmCIF
+          - Parser currently favours auth_ over label_ attributes (correct for preserving
+            author intent, but could also expose canonical numbering)
+
+    Key cases this handles:
+    - 1k0o.pdb: Chains A & B with same sequence, same numbering → 2 sequences stored
+    - 1J97.pdb: Chains A & B with same sequence, different numbering (2-211 vs 503-711) → 2 sequences stored
+
+    The previous deduplication logic failed on 1J97.pdb by assuming chains with
+    the same sequence must use identical residue numbering, which is not true.
+    """
     sequences_by_index = {}
     sequence_count = 1
 
-    sequence_residues_set = set()
     for sequence in current_structure.sequences.values():
-        sequence_residues = tuple(sequence.residues)
-        if sequence_residues not in sequence_residues_set:
-            sequences_by_index[sequence_count] = sequence
-            sequence_residues_set.add(sequence_residues)
-            sequence_count += 1
-
-    for sequence_id, sequence in sequences_by_index.items():
-        sequence.id = sequence_id
+        sequences_by_index[sequence_count] = sequence
+        sequence.id = sequence_count
+        sequence_count += 1
 
     current_structure.sequences = sequences_by_index
     for sequence in current_structure.sequences.values():
@@ -1129,37 +1150,12 @@ def _match_sequences_and_set_offsets(structure):
                     chain_matches[chain_key] = sequence.id
                     continue
 
-        sequence_start_counts = {}
         chain_sequence_id_and_start = {}
         for chain_key, chain_start in chain_sequence_starts.items():
             if chain_key in chain_offsets:
                 sequence_start = chain_start - chain_offsets[chain_key]
                 sequence_id = chain_matches[chain_key]
-                sequence_start_counts.setdefault(sequence_id, Counter())[
-                    sequence_start
-                ] += 1
                 chain_sequence_id_and_start[chain_key] = (sequence_id, sequence_start)
-
-        for sequence_id, sequence_starts in sequence_start_counts.items():
-            if len(sequence_starts) > 1:
-                bad_chains = [
-                    chain_key
-                    for chain_key, (chain_sequence_id, _) in chain_sequence_id_and_start
-                    if sequence_id == chain_sequence_id
-                ]
-                bad_chains = [
-                    f"chain_code: {chain_key[0]} sequence_code: {chain_key[1]}"
-                    for chain_key in bad_chains
-                ]
-                bad_chains = "\n".join(bad_chains)  # noqua: E999
-                msg = """
-                    for sequence {sequence_id} there were multiple possible sequence starts
-                    derived from the sequences of the chains
-                    {bad_chains}
-                """
-                msg = dedent(msg)
-                msg = f(msg)
-                raise StructureParseException(msg)
 
         sequences_by_id = {
             sequence.id: sequence for sequence in structure.sequences.values()
