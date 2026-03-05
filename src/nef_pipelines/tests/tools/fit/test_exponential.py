@@ -66,7 +66,7 @@ def test_exponential_r1_data_single():
     result = run_and_report(app, ["T2", "--cycles", "1"], input=test_data)
 
     r1_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_r1", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T2", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R2, r1_loop)
 
@@ -114,7 +114,7 @@ def test_t1noe_with_r1noe_data_single_mc10_n0_1():
     )
 
     r1_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_r1", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T2", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R2_MC_NO_1, r1_loop)
 
