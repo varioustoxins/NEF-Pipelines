@@ -59,7 +59,7 @@ class BadNefFileException(Exception):
     pass
 
 
-class NoSuchColumnException(Exception):
+class NoSuchColumnException(NEFPipelinesException):
     pass
 
 
@@ -415,6 +415,97 @@ class RowDict(MutableMapping):
     #     self.__delitem__(key)
 
 
+class RowNamespace:
+    """Provides attribute-based access to loop row data with mutability support."""
+
+    def __init__(self, loop: Loop, row: int, convert: bool):
+        object.__setattr__(self, "_data", row)
+        object.__setattr__(self, "_convert", convert)
+        object.__setattr__(self, "_loop", loop)
+        object.__setattr__(
+            self, "_row_index", loop.data.index(row) if row in loop.data else -1
+        )
+        object.__setattr__(
+            self, "_tag_to_index", {tag: i for i, tag in enumerate(loop.tags)}
+        )
+
+    def __getattr__(self, key):
+
+        if key.startswith("_"):
+            value = object.__getattribute__(self, key)
+        else:
+            tag_to_index = object.__getattribute__(self, "_tag_to_index")
+            if key not in tag_to_index:
+                raise AttributeError(f"RowNamespace has no attribute '{key}'")
+
+            data = object.__getattribute__(self, "_data")
+            convert = object.__getattribute__(self, "_convert")
+            index = tag_to_index[key]
+            value = data[index]
+
+            if convert:
+                value = do_reasonable_type_conversions(value)
+        return value
+
+    def __setattr__(self, key, value):
+        if key.startswith("_"):
+            object.__setattr__(self, key, value)
+            return
+
+        tag_to_index = object.__getattribute__(self, "_tag_to_index")
+        if key not in tag_to_index:
+            loop = object.__getattribute__(self, "_loop")
+            row_index = object.__getattribute__(self, "_row_index")
+            available = ", ".join(sorted(tag_to_index.keys()))
+            raise AttributeError(
+                f"Cannot set '{key}' on row {row_index} in loop '{loop.category}'. "
+                f"Available tags: {available}"
+            )
+
+        data = object.__getattribute__(self, "_data")
+        index = tag_to_index[key]
+
+        # pynmrstar stores everything as strings internally
+        # Type conversions happen on READ (via do_reasonable_type_conversions in __getattr__)
+        # On WRITE, just convert to string (pynmrstar will do this on serialize/re-parse anyway)
+        if not isinstance(value, str):
+            value = str(value)
+        data[index] = value
+
+    def __contains__(self, key):
+        """Check if a tag exists in this row."""
+        tag_to_index = object.__getattribute__(self, "_tag_to_index")
+        return key in tag_to_index
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert RowNamespace to a dictionary containing only tag data (no internal attributes)."""
+        tag_to_index = object.__getattribute__(self, "_tag_to_index")
+        data = object.__getattribute__(self, "_data")
+        convert = object.__getattribute__(self, "_convert")
+
+        result = {}
+        for tag, index in tag_to_index.items():
+            value = data[index]
+            if convert:
+                value = do_reasonable_type_conversions(value)
+            result[tag] = value
+        return result
+
+    @property
+    def __dict__(self):
+        """Return dictionary view of tag data for vars() compatibility."""
+        return self.to_dict()
+
+    def __repr__(self):
+        tag_to_index = object.__getattribute__(self, "_tag_to_index")
+        data = object.__getattribute__(self, "_data")
+        items = {tag: data[idx] for tag, idx in tag_to_index.items()}
+        return f"RowNamespace({items})"
+
+    def __str__(self):
+        return self.__repr__()
+
+
 # TODO we should examine columns for types not individual rows entries
 # TODO we should rename this loop_row_iter
 def loop_row_dict_iter(
@@ -460,20 +551,26 @@ def do_reasonable_type_conversions(value: str) -> Union[str, float, int]:
     return value
 
 
-def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[Namespace]:
+def loop_row_namespace_iter(loop: Loop, convert: bool = True) -> Iterator[RowNamespace]:
     """
-    create an iterator that loops over the rows in a star file Loop as Namespaces, by default sensible
-    conversions from strings to ints and floats are made
-    :param loop: thr Loop
-    :param convert: try to convert values to ints or floats if possible [default is True]
-    :return: iterator of rows as dictionaries
+    create an iterator that loops over the rows in a star file Loop as RowNamespace objects, by default sensible
+    conversions from strings to ints and floats are made. The returned RowNamespace objects support both reading
+    and writing attributes, with changes propagating back to the original loop.
 
-    NOTE: This function is effectively replaced by loop_row_dict_iter, which returns a RowDict object
-          with support for attribute lookup
+    :param loop: the Loop
+    :param convert: try to convert values to ints or floats if possible [default is True]
+    :return: iterator of rows as mutable RowNamespace objects
     """
-    for row in loop_row_dict_iter(loop, convert=convert):
-        # yield row needs more tests modified
-        yield Namespace(**row)
+    if not isinstance(loop, Loop):
+        msg = f"""\
+            loop must be of type Loop you provided a {loop.__class__.__name__}"
+            value: {loop}
+        """
+        raise NEFPipelinesException(msg)
+
+    for i, row in enumerate(loop):
+        result = RowNamespace(loop, row, convert)
+        yield result
 
 
 # TODO this partially overlaps with select_frames_by_name in this file, combine and simplify!

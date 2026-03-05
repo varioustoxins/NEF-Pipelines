@@ -448,31 +448,162 @@ def test_row_dict_iter_delete():
 
 
 def test_loop_row_namespace_iter():
+    """Test loop_row_namespace_iter returns RowNamespace objects with correct attribute access and type conversion."""
 
     loop = Loop.from_string(ITER_TEST_DATA)
 
-    EXPECTED = [
-        Namespace(col_1="a", col_2=2, col_3=4.5),
-        Namespace(col_1="b", col_2=3, col_3=5.6),
+    result = list(loop_row_namespace_iter(loop))
+
+    assert len(result) == 2
+    # Check values and types are converted correctly
+    assert (result[0].col_1, result[0].col_2, result[0].col_3) == ("a", 2, 4.5)
+    assert [type(result[0].col_1), type(result[0].col_2), type(result[0].col_3)] == [
+        str,
+        int,
+        float,
     ]
-
-    result = [row for row in loop_row_namespace_iter(loop)]
-
-    assert result == EXPECTED
+    assert (result[1].col_1, result[1].col_2, result[1].col_3) == ("b", 3, 5.6)
+    assert [type(result[1].col_1), type(result[1].col_2), type(result[1].col_3)] == [
+        str,
+        int,
+        float,
+    ]
 
 
 def test_loop_row_namespace_iter_no_convert():
+    """Test loop_row_namespace_iter with convert=False returns string values without type conversion."""
 
     loop = Loop.from_string(ITER_TEST_DATA)
+
+    result = list(loop_row_namespace_iter(loop, convert=False))
+
+    assert len(result) == 2
+    # Check all values remain as strings when convert=False
+    assert (result[0].col_1, result[0].col_2, result[0].col_3) == ("a", "2", "4.5")
+    assert [type(result[0].col_1), type(result[0].col_2), type(result[0].col_3)] == [
+        str,
+        str,
+        str,
+    ]
+    assert (result[1].col_1, result[1].col_2, result[1].col_3) == ("b", "3", "5.6")
+    assert [type(result[1].col_1), type(result[1].col_2), type(result[1].col_3)] == [
+        str,
+        str,
+        str,
+    ]
+
+
+def test_loop_row_namespace_iter_mutability_basic():
+    """Test that RowNamespace allows modifying loop data through attribute assignment."""
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+
+    for row in loop_row_namespace_iter(loop):
+        if row.col_1 == "a":
+            row.col_2 = 999
+            row.col_3 = 888.8
+
+    # Values are converted to strings on write (pynmrstar stores everything as strings)
+    assert loop.data[0] == ["a", "999", "888.8"]
+    assert [type(datum) for datum in loop.data[0]] == [str, str, str]
+
+    # Second row unchanged
+    assert loop.data[1] == ["b", "3", "5.6"]
+    assert [type(datum) for datum in loop.data[1]] == [str, str, str]
+
+
+def test_loop_row_namespace_write_converts_to_string():
+    """Test that all values are converted to strings on write."""
+    TEST_DATA = """\
+    loop_
+        _test.name
+        _test.int_val
+        _test.float_val
+        _test.bool_val
+
+        A . . .
+    stop_
+    """
+
+    loop = Loop.from_string(TEST_DATA)
+    rows = list(loop_row_namespace_iter(loop))
+
+    # Assign different types - all get converted to strings
+    rows[0].int_val = 42
+    rows[0].float_val = 3.14
+    rows[0].bool_val = True
+
+    # Everything is stored as strings (pynmrstar behavior)
+    assert loop.data[0] == ["A", "42", "3.14", "True"]
+    assert [type(datum) for datum in loop.data[0]] == [str, str, str, str]
+
+
+def test_loop_row_namespace_read_converts_from_string():
+    """Test that values are converted to appropriate types on READ, not write."""
+    TEST_DATA = """\
+    loop_
+        _test.name
+        _test.value
+
+        A 10
+    stop_
+    """
+
+    loop = Loop.from_string(TEST_DATA)
+    rows = list(loop_row_namespace_iter(loop))
+
+    # Assign float - gets stored as string
+    rows[0].value = 3.14159
+
+    # Stored as string in loop.data
+    assert loop.data[0] == ["A", "3.14159"]
+    assert [type(datum) for datum in loop.data[0]] == [str, str]
+
+    # But when we READ it back via iterator, it's converted to float
+    rows_after = list(loop_row_namespace_iter(loop))
+    assert rows_after[0].value == 3.14159
+    assert type(rows_after[0].value) is float
+
+
+def test_loop_row_namespace_iter_mutability_invalid_attribute():
+    """Test that RowNamespace raises AttributeError with detailed context when trying to set invalid attributes."""
+
+    loop = Loop.from_string(ITER_TEST_DATA)
+    rows = list(loop_row_namespace_iter(loop))
+
+    with pytest.raises(
+        AttributeError,
+        match=r"Cannot set 'invalid_column' on row 0 in loop '_test'.*Available tags: col_1, col_2, col_3",
+    ):
+        rows[0].invalid_column = 123
+
+
+def test_loop_row_namespace_iter_writethrough():
+    """Test that reading and writing through RowNamespace is consistent with direct loop access."""
 
     EXPECTED = [
         Namespace(col_1="a", col_2="2", col_3="4.5"),
         Namespace(col_1="b", col_2="3", col_3="5.6"),
     ]
 
-    result = [row for row in loop_row_namespace_iter(loop, convert=False)]
+    rows = list(loop_row_namespace_iter(loop))
+    rows[0].col_2 = 777
+    rows[1].col_3 = 111.1
 
-    assert result == EXPECTED
+    # Verify changes propagated to loop data - all stored as strings
+    assert loop.data[0] == ["a", "777", "4.5"]
+    assert [type(datum) for datum in loop.data[0]] == [str, str, str]
+    assert loop.data[1] == ["b", "3", "111.1"]
+    assert [type(datum) for datum in loop.data[1]] == [str, str, str]
+
+    # Verify re-reading shows modified values with correct types (converted on read)
+    rows_after = list(loop_row_namespace_iter(loop))
+    assert rows_after[0].col_1 == "a"
+    assert rows_after[0].col_2 == 777
+    assert rows_after[0].col_3 == 4.5
+    assert rows_after[1].col_1 == "b"
+    assert rows_after[1].col_2 == 3
+    assert rows_after[1].col_3 == 111.1
 
 
 @pytest.mark.skip(reason="not currently working")
