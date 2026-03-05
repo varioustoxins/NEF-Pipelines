@@ -535,27 +535,6 @@ def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> fl
     return noise_level, fraction_error_in_stdev, len(differences)
 
 
-def _series_frame_to_outputs(series_frame: Saveframe, prefix: str, entry: Entry):
-    NAMESPACE = prefix  # noqa: F841
-    series_category = f(SERIES_DATA_CATEGORY)
-    series_data_loop = (
-        series_frame.get_loop(series_category)
-        if series_category in series_frame
-        else None
-    )
-
-    _exit_if_no_series_data_loop(series_data_loop, series_frame, entry, series_category)
-
-    ids_to_outputs = OrderedDict()
-    for row in loop_row_namespace_iter(series_data_loop):
-
-        data_id = row.data_id
-        if row.relaxation_list_id != UNUSED:
-            ids_to_outputs.setdefault(data_id, OrderedSet()).add(row.relaxation_list_id)
-
-    return ids_to_outputs
-
-
 def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry: Entry):
 
     NAMESPACE = prefix  # noqa: F841

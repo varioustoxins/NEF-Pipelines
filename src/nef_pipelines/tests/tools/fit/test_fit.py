@@ -45,7 +45,7 @@ def test_exponential_single():
     result = run_and_report(app, ["T2", "--cycles", "1"], input=test_data)
 
     r1_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_r1", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T2", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R2, r1_loop)
 

@@ -21,7 +21,6 @@ from nef_pipelines.tools.fit.fit_lib import (
     _fit_results_as_frame,
     _select_relaxation_series_or_exit,
     _series_frame_to_id_series_data,
-    _series_frame_to_outputs,
     calculate_noise_level_from_replicates,
 )
 
@@ -158,14 +157,6 @@ def pipe(
             series_frame_2, NEF_PIPELINES_NAMESPACE, entry
         )
 
-        id_outputs_1 = _series_frame_to_outputs(
-            series_frame_1, NEF_PIPELINES_NAMESPACE, entry
-        )
-
-        id_outputs_2 = _series_frame_to_outputs(
-            series_frame_2, NEF_PIPELINES_NAMESPACE, entry
-        )
-
         if noise_level is not None:
             requested_noise_source = NoiseInfoSource.CLI
             noise_source = NoiseInfoSource.CLI
@@ -208,14 +199,15 @@ def pipe(
 
         data_ids = OrderedSet([*id_series_data_1.keys(), *id_series_data_2.keys()])
 
-        if not outputs:
-            outputs = OrderedSet()
-            for data_id in data_ids:
-                outputs.update(id_outputs_1[data_id])
-                outputs.update(id_outputs_2[data_id])
-            outputs = list(outputs)
-
-        outputs = [output.replace("nefpls_relaxation_list_", "") for output in outputs]
+        if outputs:
+            outputs = [
+                output.replace("nefpls_relaxation_list_", "") for output in outputs
+            ]
+        else:
+            base_name = _extract_common_series_base(
+                series_frame_1.name, series_frame_2.name
+            )
+            outputs = [f"{base_name}_fit_r1", f"{base_name}_fit_noe"]
 
         try:
 
@@ -274,6 +266,30 @@ def pipe(
             entry.add_saveframe(frame)
 
     return entry
+
+
+# TODO move to lib nef_lib and add tests
+def _extract_common_series_base(name1: str, name2: str) -> str:
+    """Extract common base name from two series frame names.
+
+    For example, 'nefpls_series_list_T1_NOE_pos' and 'nefpls_series_list_T1_NOE_neg'
+    returns 'T1_NOE'.
+    """
+    prefix = f"{NEF_PIPELINES_NAMESPACE}_series_list_"
+    base1 = name1.replace(prefix, "")
+    base2 = name2.replace(prefix, "")
+
+    parts1 = base1.split("_")
+    parts2 = base2.split("_")
+
+    common_parts = []
+    for p1, p2 in zip(parts1, parts2):
+        if p1 == p2:
+            common_parts.append(p1)
+        else:
+            break
+
+    return "_".join(common_parts) if common_parts else base1
 
 
 def _exit_if_series_frame_not_in_pairs(series_frames):

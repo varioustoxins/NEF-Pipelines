@@ -109,12 +109,12 @@ def test_t1noe_with_r1noe_data_single():
     result = run_and_report(app, ["T1_NOE_pos", "T1_NOE_neg"], input=test_data)
 
     r1_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_r1", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T1_NOE_fit_r1", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R1, r1_loop)
 
     noe_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_noe", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T1_NOE_fit_noe", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_NOE, noe_loop)
 
@@ -132,11 +132,11 @@ def test_t1noe_with_r1noe_data_single_mc10_n0_1():
     )
 
     r1_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_r1", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T1_NOE_fit_r1", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_R1_MC, r1_loop)
 
     noe_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_noe", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_T1_NOE_fit_noe", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_R1_DATA_SINGLE_NOE_MC, noe_loop)

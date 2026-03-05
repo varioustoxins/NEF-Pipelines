@@ -45,6 +45,6 @@ def test_mean_data_single():
     result = run_and_report(app, ["MEAN"], input=test_data)
 
     mean_loop = isolate_loop(
-        result.stdout, "nefpls_relaxation_list_mean", "nefpls_relaxation"
+        result.stdout, "nefpls_relaxation_list_MEAN", "nefpls_relaxation"
     )
     assert_lines_match(EXPECTED_DATA_MEAN, mean_loop)
