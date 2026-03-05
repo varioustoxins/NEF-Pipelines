@@ -17,7 +17,7 @@ from nef_pipelines.lib.sequence_lib import (
     offset_chain_residues,
     sequence_to_nef_frame,
 )
-from nef_pipelines.lib.structures import Residue
+from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.util import STDIN, exit_error, parse_comma_separated_options
 from nef_pipelines.transcoders.fasta.importers.sequence import (
     _get_sequence_offsets,
@@ -172,7 +172,7 @@ def pipe(
             residue_name = row.Comp_ID
             entity_id = row.Entity_ID
 
-            residue = Residue(entity_id, seq_code, residue_name)
+            residue = SequenceResidue(entity_id, seq_code, residue_name)
             sequence_residues.append(residue)
 
     for i, residue in enumerate(sequence_residues):

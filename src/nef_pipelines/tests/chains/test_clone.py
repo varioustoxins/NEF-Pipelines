@@ -156,3 +156,63 @@ def test_clone_chain_clash():
     """
 
     assert_lines_match(EXPECTED, isolate_frame(result.stdout, "nef_molecular_system"))
+
+
+# noinspection PyUnusedLocal
+def test_cis_peptide_preservation():
+    """Test that cis_peptide values (., true, false) are preserved when cloning."""
+
+    INPUT_CIS_PEPTIDE_NEF = """\
+data_test
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+      1   A   1   ALA   start    .   .
+      2   A   2   PRO   middle   .   true
+      3   A   3   ALA   end      .   false
+
+   stop_
+
+save_
+"""
+
+    result = run_and_report(app, ["A", "1"], input=INPUT_CIS_PEPTIDE_NEF)
+
+    EXPECTED = """\
+        save_nef_molecular_system
+           _nef_molecular_system.sf_category   nef_molecular_system
+           _nef_molecular_system.sf_framecode  nef_molecular_system
+
+           loop_
+              _nef_sequence.index
+              _nef_sequence.chain_code
+              _nef_sequence.sequence_code
+              _nef_sequence.residue_name
+              _nef_sequence.linking
+              _nef_sequence.residue_variant
+              _nef_sequence.cis_peptide
+
+             1   A   1   ALA   start    .   .
+             2   A   2   PRO   middle   .   true
+             3   A   3   ALA   end      .   false
+             4   B   1   ALA   start    .   .
+             5   B   2   PRO   middle   .   true
+             6   B   3   ALA   end      .   false
+
+           stop_
+
+        save_
+    """
+
+    assert_lines_match(EXPECTED, isolate_frame(result.stdout, "nef_molecular_system"))

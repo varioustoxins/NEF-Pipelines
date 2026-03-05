@@ -169,6 +169,13 @@ def sequence_to_nef_frame(
 
     for index, (sequence_residue, linking) in enumerate(residue_and_linkages):
 
+        if sequence_residue.is_cis is None:
+            cis_peptide = NEF_UNKNOWN
+        elif sequence_residue.is_cis:
+            cis_peptide = "true"
+        else:
+            cis_peptide = "false"
+
         data = [
             {
                 "index": index + 1,
@@ -177,7 +184,7 @@ def sequence_to_nef_frame(
                 "residue_name": sequence_residue.residue_name.upper(),
                 "linking": linking,
                 "residue_variant": NEF_UNKNOWN,
-                "cis_peptide": "false",
+                "cis_peptide": cis_peptide,
             }
         ]
         nef_loop.add_data(data)
@@ -771,18 +778,18 @@ def _parse_loops_residues(loop, chain_codes_to_select):
             else:
                 linking = None
 
-            if cis_peptide_index is not None:
+            if cis_peptide_index is None:
+                cis_peptide = None
+            else:
                 cis_peptide = line[cis_peptide_index]
                 if cis_peptide == UNUSED:
-                    cis_peptide = False
+                    cis_peptide = None
                 elif cis_peptide.lower() == "true":
                     cis_peptide = True
                 elif cis_peptide.lower() == "false":
                     cis_peptide = False
                 else:
-                    cis_peptide = False
-            else:
-                cis_peptide = False
+                    cis_peptide = None
 
             if residue_variant_index is not None:
                 residue_variants = line[residue_variant_index].split(",")

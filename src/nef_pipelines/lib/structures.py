@@ -6,8 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from strenum import LowercaseStrEnum, StrEnum
 
 
-class NEFPipelinesException(Exception):
-    ...
+class NEFPipelinesException(Exception): ...  # noqa: E701
 
 
 # TODO: to avoid circular import, move to constants
@@ -60,7 +59,7 @@ class Residue:
 @dataclass(frozen=True, order=True)
 class SequenceResidue(Residue):
 
-    is_cis: bool = False
+    is_cis: Optional[bool] = None  # None is equivalent to .
     linking: Optional[Linking] = None
     variants: List[str] = ()
 
@@ -472,3 +471,47 @@ class ChainOffsetSyntaxParsingError(Exception):
         super().__init__(message)
         self.bad_value = bad_value
         self.all_arguments = all_arguments or []
+
+
+@dataclass
+class PaperType:
+    """Paper formatting configuration for plotting."""
+
+    paper_size: str  # a4, letter, legal, a3, tabloid
+    orientation: str  # landscape, portrait
+
+
+@dataclass
+class PlotInfo:
+    """Plot layout configuration."""
+
+    paper_type: PaperType
+    rows: int
+    cols: int
+    output_template: str
+    common_y_scale: bool = False
+    page_margin: float = 0.05  # Page edge margin as % of page width/height
+    spacing: float = 0.03  # Spacing between plots as % of page width/height
+    debug_grid: bool = False  # Show colored backgrounds for debugging grid layout
+
+
+@dataclass
+class FittedRate:
+    """Fitted exponential decay parameters."""
+
+    amplitude: float  # I0 - initial intensity
+    rate: float  # R - decay rate constant
+    rate_error: float  # Error on rate constant
+    data_id: int  # Link to data ID
+
+
+@dataclass
+class SeriesData:
+    """Time-series relaxation data for a single data_id."""
+
+    data_id: int
+    variable_values: List[float]  # Time points
+    data_values: List[float]  # Intensity values
+    variable_errors: List[Optional[float]]
+    value_errors: List[Optional[float]]
+    noise_estimate: Optional[float] = None
