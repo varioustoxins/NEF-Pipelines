@@ -15,11 +15,30 @@ INPUT_NEF_SHIFTS = read_test_data("ubiquitin_short_assigned.nef", __file__)
 
 EXPECTED_BASIC_EXPORT = """\
     Group    Atom    Nuc      Shift    SDev    Assignments
-    A10      H       1H       8.111   0.002              1
-    A10      N       15N    102.454   0.093              1
-    A10      C       13C    177.262   0.013              1
-    A10      CA      13C     52.491   0                  1
-    A10      CB      13C     16.428   0.114              1
+    F4       C       13C    177.091   0                  1
+    F4       CA      13C     57.45    0                  1
+    F4       CB      13C     40.259   0                  1
+    F4       H       1H       7.957   0.003              1
+    F4       N       15N    124.714   0.12               1
+    V5       H       1H       8.111   0.002              1
+    V5       N       15N    102.454   0.093              1
+"""
+
+EXPECTED_WITH_NEGATIVE_RESIDUES = """\
+    Group    Atom    Nuc      Shift    SDev    Assignments
+    F4       C       13C    177.091   0                  1
+    F4       CA      13C     57.45    0                  1
+    F4       CB      13C     40.259   0                  1
+    F4       H       1H       7.957   0.003              1
+    F4       N       15N    124.714   0.12               1
+    F4-1     C       13C    178.121   0.34               1
+    F4-1     CA      13C     61.148   0.027              1
+    F4-1     CB      13C     62.571   0.051              1
+    V5       H       1H       8.111   0.002              1
+    V5       N       15N    102.454   0.093              1
+    V5-1     C       13C    177.262   0.013              1
+    V5-1     CA      13C     52.491   0                  1
+    V5-1     CB      13C     16.428   0.114              1
 """
 
 EXPECTED_MINIMAL_EXPORT = """\
@@ -124,3 +143,15 @@ def test_no_shift_frames_warning():
     )
 
     assert warnings[0] == EXPECTED_NO_FRAMES_WARNING
+
+
+def test_include_negative_residues():
+    """Test that --include-negative-residues flag includes residue offsets like 4-1, 5-1."""
+
+    result = run_and_report(
+        app,
+        ["-o", "-", "--include-negative-residues", "nef_chemical_shift_list_default"],
+        input=INPUT_NEF_SHIFTS,
+    )
+
+    assert_lines_match(EXPECTED_WITH_NEGATIVE_RESIDUES, result.stdout)

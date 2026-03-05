@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import typer
 from pynmrstar import Entry, Saveframe
@@ -12,7 +12,11 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.sequence_lib import TRANSLATIONS_3_1_PROTEIN
+from nef_pipelines.lib.sequence_lib import (
+    TRANSLATIONS_3_1_PROTEIN,
+    sequence_from_entry,
+    sequence_to_residue_name_lookup,
+)
 from nef_pipelines.lib.shift_lib import nef_frames_to_shifts
 from nef_pipelines.lib.structures import ShiftData
 from nef_pipelines.lib.util import (
@@ -49,6 +53,11 @@ def shifts(
         help="frames to export (wildcards allowed, default: all chemical shift frames)",
         metavar="<frames>",
     ),
+    include_negative_residues: bool = typer.Option(
+        False,
+        "--include-negative-residues",
+        help="include shifts with negative residue offsets like 4-1, 5-1 [default: exclude them]",
+    ),
     force: bool = typer.Option(
         False,
         "-f",
@@ -65,7 +74,6 @@ def shifts(
     TODO: plan add --full-assignments option
     TODO: plan add --no-chains option
     TODO: plan add --chain-separator option
-    TODO: plan add --no-negative-residues option
     TODO: plan add --chain option for single chain export
     TODO: plan what to do on non shift frame... policy
     TODO: plan what to do if no shift frames seletced
@@ -90,6 +98,7 @@ def shifts(
         entry,
         shift_frames,
         output,
+        include_negative_residues,
     )
 
     _write_output_files(shift_files, output_to_stdout, force)
@@ -102,6 +111,7 @@ def pipe(
     entry: Entry,
     frames: List[Saveframe],
     output_template: str,
+    include_negative_residues: bool = False,
 ) -> Tuple[Entry, Dict[str, str]]:
     """Export NEF chemical shift frames to Sparky shift format.
 
@@ -109,22 +119,28 @@ def pipe(
         entry: NEF entry containing chemical shift frames
         frames: Saveframes to export
         output_template: Template for output filenames
+        include_negative_residues: Include shifts with negative residue offsets
 
     Returns:
         Tuple of (entry, dict of {filename: content})
     """
-
     output_files = {}
 
     entry_name = entry.entry_id
 
+    sequence = sequence_from_entry(entry)
+    sequence_lookup = sequence_to_residue_name_lookup(sequence)
+
     shifts = nef_frames_to_shifts(frames)
+
+    if not include_negative_residues:
+        shifts = _filter_negative_residues(shifts)
 
     chains_data = _group_shifts_by_chain_and_frame(shifts)
 
     for (frame_name, chain_code), chain_shifts in chains_data.items():
         filename = _build_filename(output_template, frame_name, chain_code, entry_name)
-        content = _format_sparky_shifts(chain_shifts)
+        content = _format_sparky_shifts(chain_shifts, sequence_lookup)
         output_files[filename] = content
 
     return entry, output_files
@@ -169,14 +185,23 @@ def _group_shifts_by_chain_and_frame(
     return chains_data
 
 
-def _format_sparky_shifts(shifts: List[ShiftData]) -> str:
-    """Convert shift data to Sparky shift format."""
+def _format_sparky_shifts(
+    shifts: List[ShiftData], sequence_lookup: Dict[Tuple[str, str], str]
+) -> str:
+    """Convert shift data to Sparky shift format.
 
+    Args:
+        shifts: List of shift data to format
+        sequence_lookup: Lookup dict for residue names
+
+    Returns:
+        Formatted shift list as string
+    """
     headers = ["Group", "Atom", "Nuc", "Shift", "SDev", "Assignments"]
 
     table = []
     for shift in shifts:
-        row = _build_shift_row(shift)
+        row = _build_shift_row(shift, sequence_lookup)
         table.append(row)
 
     result = tabulate(table, headers=headers, tablefmt="plain")
@@ -184,20 +209,38 @@ def _format_sparky_shifts(shifts: List[ShiftData]) -> str:
     return result
 
 
-def _build_shift_row(shift: ShiftData) -> List[str]:
-    """Build a single shift data row for tabulation."""
+def _build_shift_row(
+    shift: ShiftData, sequence_lookup: Dict[Tuple[str, str], str]
+) -> List[str]:
+    """Build a single shift data row for tabulation.
 
-    sequence_code = shift.atom.residue.sequence_code
-    residue_name = shift.atom.residue.residue_name
+    Args:
+        shift: Shift data to format
+        sequence_lookup: Lookup dict for residue names
+
+    Returns:
+        List of formatted values for the row
+    """
+    residue = shift.atom.residue
+    sequence_code = residue.sequence_code
+    chain_code = residue.chain_code
+    residue_name = residue.residue_name
     atom_name = shift.atom.atom_name
     value = shift.value
     value_uncertainty = shift.value_uncertainty
     element = shift.atom.element
     isotope_number = shift.atom.isotope_number
 
-    residue_1let = _convert_residue_to_1_letter(residue_name)
+    base_sequence_code, offset = _parse_sequence_code_and_offset(sequence_code)
 
-    group = f"{residue_1let}{sequence_code}"
+    residue_1let = _convert_residue_to_1_letter(
+        residue_name, chain_code, base_sequence_code, sequence_lookup
+    )
+
+    if offset != 0:
+        group = f"{residue_1let}{base_sequence_code}{offset}"
+    else:
+        group = f"{residue_1let}{sequence_code}"
 
     if isotope_number and isotope_number != UNUSED:
         nucleus = f"{isotope_number}{element}"
@@ -222,11 +265,99 @@ def _build_shift_row(shift: ShiftData) -> List[str]:
     return [group, atom_name, nucleus, shift_val, sdev, assignments]
 
 
-def _convert_residue_to_1_letter(residue_3let: str) -> str:
-    """Convert 3-letter residue code to 1-letter code."""
+# TODO this should be library code...
+def _has_offset(sequence_code: Union[str, int]) -> bool:
+    """Check if sequence code has an offset like '10-1' or '10+1'.
 
+    TODO: move this code to shift_lib and generalise
+
+    Args:
+        sequence_code: Sequence code to check
+
+    Returns:
+        True if sequence code contains an offset
+    """
+    seq_str = str(sequence_code)
+    for separator in ["-", "+"]:
+        if separator in seq_str:
+            parts = seq_str.rsplit(separator, 1)
+            if (
+                len(parts) == 2
+                and parts[0]
+                and parts[0].lstrip("-+").isdigit()
+                and parts[1].isdigit()
+            ):
+                return True
+    return False
+
+
+# TODO this should be library code...
+def _parse_sequence_code_and_offset(
+    sequence_code: Union[str, int]
+) -> Tuple[Union[str, int], int]:
+    """Parse sequence code with offset like '10-1' into base and offset.
+
+    Args:
+        sequence_code: Sequence code that may contain offset notation
+
+    Returns:
+        Tuple of (base_sequence_code, offset)
+    """
+    seq_str = str(sequence_code)
+
+    for separator, sign in [("-", -1), ("+", 1)]:
+        if separator in seq_str:
+            parts = seq_str.rsplit(separator, 1)
+            if (
+                len(parts) == 2
+                and parts[0]
+                and parts[0].lstrip("-+").isdigit()
+                and parts[1].isdigit()
+            ):
+                base_seq = parts[0]
+                if base_seq.lstrip("-+").isdigit():
+                    base_seq = int(base_seq)
+                return base_seq, sign * int(parts[1])
+
+    return sequence_code, 0
+
+
+def _filter_negative_residues(shifts: List[ShiftData]) -> List[ShiftData]:
+    """Filter out shifts with negative residue offsets.
+
+    Args:
+        shifts: List of shift data
+
+    Returns:
+        Filtered list excluding shifts with residue offsets
+    """
+    return [
+        shift for shift in shifts if not _has_offset(shift.atom.residue.sequence_code)
+    ]
+
+
+def _convert_residue_to_1_letter(
+    residue_3let: str,
+    chain_code: str,
+    sequence_code: Union[str, int],
+    sequence_lookup: Dict[Tuple[str, str], str],
+) -> str:
+    """Convert 3-letter residue code to 1-letter code with fallback lookup.
+
+    Args:
+        residue_3let: 3-letter residue code
+        chain_code: Chain code for lookup
+        sequence_code: Sequence code (base residue number)
+        sequence_lookup: Lookup dict from molecular system
+
+    Returns:
+        1-letter residue code
+    """
     if not residue_3let or residue_3let == UNUSED:
-        return "X"
+        residue_3let = sequence_lookup.get((chain_code, str(sequence_code)))
+
+        if not residue_3let or residue_3let == UNUSED:
+            return "X"
 
     residue_upper = residue_3let.upper()
 
@@ -251,6 +382,7 @@ def _build_filename(
     return filename
 
 
+# TODO should be lib utility code
 def _write_output_files(
     output_files: Dict[str, str], output_to_stdout: bool, force: bool
 ) -> None:

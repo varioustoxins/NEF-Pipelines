@@ -73,11 +73,19 @@ data_ubiquitin_short
          _nef_chemical_shift.ccpn_static
          _nef_chemical_shift.ccpn_comment
 
-          A      10    Ala  H     8.11125646   0.0019229051    H  1  1  false   .
-          A      10    Ala  N     102.4535755  0.0925289285    N  15  1  false  .
-          A      10    Ala  C     177.2619806  0.0133395288    C  13  1  false  .
-          A      10    Ala  CA    52.49098528  0               C  13  1  false  .
-          A      10    Ala  CB    16.42772942  0.1141368283    C  13  1  false  .
+         A      4     PHE  C     177.0907867  .               C  13  1  false  .
+         A      4     PHE  CA    57.45044906  .               C  13  1  false  .
+         A      4     PHE  CB    40.259399    .               C  13  1  false  .
+         A      4     PHE  H     7.956588347  0.0027175082    H  1   1  false  .
+         A      4     PHE  N     124.7144569  0.1199761464    N  15  1  false  .
+         A      4-1   .    C     178.1212954  0.3397487528    C  13  1  false  .
+         A      4-1   .    CA    61.14832291  0.0266869088    C  13  1  false  .
+         A      4-1   .    CB    62.57084641  0.0514681685    C  13  1  false  .
+         A      5     VAL  H     8.11125646   0.0019229051    H  1  1   false   .
+         A      5     VAL  N     102.4535755  0.0925289285    N  15  1  false  .
+         A      5-1   VAL  C     177.2619806  0.0133395288    C  13  1  false  .
+         A      5-1   VAL  CA    52.49098528  0               C  13  1  false  .
+         A      5-1   VAL  CB    16.42772942  0.1141368283    C  13  1  false  .
 
 
       stop_
