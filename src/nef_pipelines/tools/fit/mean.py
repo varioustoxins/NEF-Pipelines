@@ -175,7 +175,9 @@ def pipe(
         version_strings = results["versions"]
 
         fit_name = "mean"
-        output = "mean"
+        output = series_frame.name.replace(
+            f"{NEF_PIPELINES_NAMESPACE}_series_list_", ""
+        )
 
         frame = _fit_results_as_frame(
             series_frame,
