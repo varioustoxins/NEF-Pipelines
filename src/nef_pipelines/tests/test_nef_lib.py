@@ -581,12 +581,24 @@ def test_loop_row_namespace_iter_mutability_invalid_attribute():
 def test_loop_row_namespace_iter_writethrough():
     """Test that reading and writing through RowNamespace is consistent with direct loop access."""
 
+    loop = Loop.from_string(ITER_TEST_DATA)
+
     EXPECTED = [
         Namespace(col_1="a", col_2="2", col_3="4.5"),
         Namespace(col_1="b", col_2="3", col_3="5.6"),
     ]
 
     rows = list(loop_row_namespace_iter(loop))
+
+    # Verify initial values match expected (with type conversion)
+    assert rows[0].col_1 == EXPECTED[0].col_1
+    assert rows[0].col_2 == int(EXPECTED[0].col_2)
+    assert rows[0].col_3 == float(EXPECTED[0].col_3)
+    assert rows[1].col_1 == EXPECTED[1].col_1
+    assert rows[1].col_2 == int(EXPECTED[1].col_2)
+    assert rows[1].col_3 == float(EXPECTED[1].col_3)
+
+    # Now modify values
     rows[0].col_2 = 777
     rows[1].col_3 = 111.1
 
