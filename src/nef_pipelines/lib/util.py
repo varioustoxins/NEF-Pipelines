@@ -3,6 +3,7 @@ import functools
 import inspect
 import io
 import os
+import subprocess
 import sys
 import traceback
 import warnings
@@ -442,6 +443,30 @@ def info(msg=None, verbose=True):
             print(f"INFO: {msg}", file=sys.stderr)
         else:
             print(file=sys.stderr)
+
+
+def open_files_in_viewer(file_paths: List[str]) -> None:
+    """
+    Open files in the system's default viewer using platform-agnostic method.
+
+    Args:
+        file_paths: List of file paths to open
+    """
+    file_paths = [Path(path).resolve for path in file_paths]
+
+    for file_path in file_paths:
+        try:
+            if sys.platform.startswith("darwin"):  # macOS
+                subprocess.run(["open", file_path], check=True)
+            elif sys.platform.startswith("win"):  # Windows
+                # gemini says os.startfile is safer and doesn't require shell=True
+                os.startfile(file_path)
+            else:  # Linux and other Unix-like systems
+                subprocess.run(["xdg-open", file_path], check=True)
+        except subprocess.CalledProcessError as e:
+            warn(f"Failed to open {file_path}: {e}")
+        except FileNotFoundError:
+            warn(f"Could not find system viewer to open {file_path}")
 
 
 def process_stream_and_add_frames(
