@@ -251,6 +251,29 @@ def isolate_loop(target: str, frame_name: str, loop_category: str) -> Optional[s
     return str(loop)
 
 
+def select_tagged_lines(output: str) -> tuple:
+    """
+    Separate INFO:/WARNING: lines from NEF stream output.
+
+    Args:
+        output (str): Mixed output containing INFO/WARNING lines and NEF content
+
+    Returns:
+        tuple: (list of info/warn messages, clean NEF output)
+    """
+    lines = output.split("\n")
+    info_lines = []
+    nef_lines = []
+
+    for line in lines:
+        if line.startswith("INFO:") or line.startswith("WARNING:"):
+            info_lines.append(line)
+        else:
+            nef_lines.append(line)
+
+    return info_lines, "\n".join(nef_lines)
+
+
 def path_in_parent_directory(root: str, target: str) -> str:
     """
     given a root and a relative path find the relative file path
