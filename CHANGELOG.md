@@ -545,3 +545,10 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - at top level --debug shows a tracback if a command fails
 - help is diplayed much mor consistently especially if no inputs are given
 - added the CCPNTutorial to the github website
+
+# version 0.1.119
+- bug fixing for molecular_systems residue handling, frame renaming
+- fixed pdb sequence reader to read more files [fixed SEQRES deduplication bug]
+- fix bugs in fitter output frame naming
+- added a simple sparky shift list exporter
+- add infrasttructure in advance of new feature
