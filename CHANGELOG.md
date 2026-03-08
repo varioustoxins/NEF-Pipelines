@@ -552,3 +552,6 @@ improved error handling when `streamfitter` does load into `fit exponential`
 - fix bugs in fitter output frame naming
 - added a simple sparky shift list exporter
 - add infrasttructure in advance of new feature
+
+# version 0.1.120
+- failed to import sparky export shifts
