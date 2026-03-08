@@ -36,6 +36,7 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.transcoders.sparky.exporters.peaks  # noqa: F401
+    import nef_pipelines.transcoders.sparky.exporters.shifts  # noqa: F401
     import nef_pipelines.transcoders.sparky.importers.peaks  # noqa: F401
     import nef_pipelines.transcoders.sparky.importers.sequence  # noqa: F401
     import nef_pipelines.transcoders.sparky.importers.shifts  # noqa: F401
