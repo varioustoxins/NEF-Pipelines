@@ -69,7 +69,7 @@ git stash --message "${stash_message}"
 
 # build and publish
 tox -e build  # to build your package distribution
-tox -e publish -- --repository pypi
+tox -e publish -- --repository pypi --skip-existing
 
 git stash list | grep -q "${stash_message}"
 if [[ $? -eq 0 ]]; then
