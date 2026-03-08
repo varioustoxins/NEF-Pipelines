@@ -194,7 +194,8 @@ def _trim_chains_in_frames(frames, chain_bounds):
 
         loop.clear_data()
 
-        loop.add_data(rows_to_keep)
+        if rows_to_keep:
+            loop.add_data(rows_to_keep)
 
         if "index" in loop.tags:
             loop.renumber_rows("index")
