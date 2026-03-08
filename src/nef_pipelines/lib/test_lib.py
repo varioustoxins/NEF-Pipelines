@@ -318,6 +318,7 @@ def root_path(initial_path: str):
 
 
 # TODO: remove local we now use a hierarchical search
+# TODO: in the long term we should return a Path object
 def path_in_test_data(root: str, file_name: str) -> str:
     """
     given a root and a file name find the relative to the file
