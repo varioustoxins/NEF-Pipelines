@@ -119,6 +119,7 @@ def main():
             "nef_pipelines.tools.sink",
             "nef_pipelines.tools.stream",
             "nef_pipelines.tools.test",
+            "nef_pipelines.tools.version",
             "nef_pipelines.transcoders.csv",
             "nef_pipelines.transcoders.deep",
             "nef_pipelines.transcoders.echidna",
