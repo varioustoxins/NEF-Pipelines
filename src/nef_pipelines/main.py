@@ -9,7 +9,7 @@ from traceback import format_exc, print_exc
 import typer
 
 from nef_pipelines import nef_app
-from nef_pipelines.lib.typer_lib import FilteredHelpGroup
+from nef_pipelines.lib.typer_lib import FilteredHelpGroup, patch_rich_code_theme
 
 debug_mode = False
 
@@ -33,10 +33,6 @@ logging.getLogger("pynmrstar").setLevel(logging.ERROR)
 EXIT_ERROR = 1
 
 patch_rich_code_theme()
-
-    rich_available = True
-except ImportError:
-    rich_available = False
 
 
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
@@ -110,7 +106,9 @@ def main():
             "nef_pipelines.tools.globals",
             "nef_pipelines.tools.header",
             "nef_pipelines.tools.loops",
+            "nef_pipelines.tools.namespace",
             "nef_pipelines.tools.peaks",
+            "nef_pipelines.tools.plot",
             "nef_pipelines.tools.save",
             "nef_pipelines.tools.series",
             "nef_pipelines.tools.shifts",

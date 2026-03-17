@@ -1,4 +1,8 @@
+import os
+
 from typer.core import TyperGroup
+
+from nef_pipelines.lib.util import warn
 
 
 def patch_rich_code_theme():
@@ -82,11 +86,7 @@ class FilteredHelpGroup(TyperGroup):
     def _should_escape_help_strings(self):
         """Check if we should escape dashes (rich is available)"""
 
-        # note we will import from a partially initialised module unless we
-        # hide this in a function
-        from nef_pipelines.main import rich_available
-
-        return rich_available
+        return is_rich_in_use()
 
     def _escape_help_string(self, help_str):
         """Escape dashes at the start of help strings that would become bullets"""
@@ -96,3 +96,25 @@ class FilteredHelpGroup(TyperGroup):
             help_str = "\\" + help_str
 
         return help_str
+
+
+def is_rich_in_use():
+    """Check if Rich formatting should be used."""
+
+    # 1. Check environment variable (kill switch)
+    # Typer treats "false", "0", "no", and "off" as disabled
+
+    env_value = os.getenv("TYPER_USE_RICH", "1").lower()
+    rich_disabled = env_value in ("false", "0", "no", "off")
+
+    # 2. Check if rich_utils is actually installed
+    result = False
+    if not rich_disabled:
+        try:
+            from typer import rich_utils  # noqa: F401
+
+            result = True
+        except (ImportError, AttributeError):
+            result = False
+
+    return result
