@@ -32,8 +32,7 @@ logging.getLogger("pynmrstar").setLevel(logging.ERROR)
 
 EXIT_ERROR = 1
 
-try:
-    import rich  # noqa F401
+patch_rich_code_theme()
 
     rich_available = True
 except ImportError:
