@@ -442,9 +442,13 @@ class ResidueRange(ResiduePair, ChainCode):
     pass
 
 
-class ResidueRangeParsingError(NEFPipelinesException):
+class ResidueRangeParsingException(NEFPipelinesException):
     """Exception raised when parsing a residue range specifications fails."""
 
+    pass
+
+
+class BadFrameLoopTagSyntaxException(NEFPipelinesException):
     pass
 
 
@@ -471,6 +475,13 @@ class ChainOffsetSyntaxParsingError(Exception):
         super().__init__(message)
         self.bad_value = bad_value
         self.all_arguments = all_arguments or []
+
+
+@dataclass
+class FrameLoopAndTags:
+    frame_name: str
+    loop_name: str
+    tags: List[str] = field(default_factory=list)
 
 
 @dataclass
