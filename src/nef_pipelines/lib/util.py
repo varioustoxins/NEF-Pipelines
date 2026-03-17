@@ -452,7 +452,7 @@ def open_files_in_viewer(file_paths: List[str]) -> None:
     Args:
         file_paths: List of file paths to open
     """
-    file_paths = [Path(path).resolve for path in file_paths]
+    file_paths = [Path(path).resolve() for path in file_paths]
 
     for file_path in file_paths:
         try:
