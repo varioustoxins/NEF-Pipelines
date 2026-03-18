@@ -5,7 +5,7 @@ from dataclasses import replace
 from enum import auto
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
@@ -125,7 +125,7 @@ def get_linking(
 
 # TODO: we should add cis proline handling sometime!
 def sequence_to_nef_frame(
-    sequences: List[SequenceResidue],
+    sequences: Iterable[SequenceResidue],
     no_chain_start: Union[List[str], Tuple[str]] = (),
     no_chain_end: Union[List[str], Tuple[str]] = (),
 ) -> Saveframe:
