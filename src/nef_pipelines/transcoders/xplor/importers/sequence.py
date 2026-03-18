@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import Annotated, List, Optional
 
 import typer
 from ordered_set import OrderedSet
@@ -31,24 +31,28 @@ NO_CHAIN_END_HELP = """don't include the end chain link type on a chain for the 
 # todo add comment to other sequences etc
 @import_app.command()
 def sequence(
-    no_chain_starts: List[str] = typer.Option(
-        [], "--no-chain-start", help=NO_CHAIN_START_HELP
-    ),
-    no_chain_ends: List[str] = typer.Option(
-        [], "--no-chain-end", help=NO_CHAIN_END_HELP
-    ),
-    entry_name: str = typer.Option("xplor", help="a name for the entry if required"),
-    input_path: Path = typer.Option(
-        None,
-        metavar="|PIPE|",
-        help="file to read NEF data from default is stdin '-'",
-    ),
-    quiet: bool = typer.Option(
-        False, "--quiet", "-q", help="if set don't output the nef stream"
-    ),
-    file_paths: List[Path] = typer.Argument(
-        None, help="the file to read", metavar="<XPLOR-PSF-FILES>"
-    ),
+    no_chain_starts: Annotated[
+        List[str], typer.Option("--no-chain-start", help=NO_CHAIN_START_HELP)
+    ] = (),
+    no_chain_ends: Annotated[
+        List[str], typer.Option("--no-chain-end", help=NO_CHAIN_END_HELP)
+    ] = (),
+    entry_name: Annotated[
+        str, typer.Option(help="a name for the entry if required")
+    ] = "xplor",
+    input_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            metavar="|PIPE|", help="file to read NEF data from default is stdin '-'"
+        ),
+    ] = None,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="if set don't output the nef stream")
+    ] = False,
+    file_paths: Annotated[
+        Optional[List[Path]],
+        typer.Argument(help="the file to read", metavar="<XPLOR-PSF-FILES>"),
+    ] = (),
 ):
     """- convert xplor psf to nef sequence"""
 
