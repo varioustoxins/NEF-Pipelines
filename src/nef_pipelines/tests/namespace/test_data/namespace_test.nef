@@ -1,0 +1,101 @@
+data_namespace_test
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+
+     1   A   10   ALA   start
+     2   A   11   GLY   middle
+     3   A   12   VAL   end
+
+   stop_
+
+save_
+
+save_nef_chemical_shift_list_1
+   _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_1
+
+   loop_
+      _nef_chemical_shift.index
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+      _nef_chemical_shift.value_uncertainty
+
+       1   A   10   ALA   CA   50.0   0.5
+       2   A   11   GLY   CA   45.0   0.3
+       3   A   12   VAL   CA   60.0   0.4
+
+   stop_
+
+save_
+
+save_custom_data_frame
+   _custom_data_frame.sf_category   custom_data_frame
+   _custom_data_frame.sf_framecode  custom_data_frame
+   _custom_data_frame.note          'This is a straight tag with custom namespace'
+   _custom_data_frame.info          'Another custom straight tag'
+
+   loop_
+      _custom_values.index
+      _custom_values.chain_code
+      _custom_values.sequence_code
+      _custom_values.data
+      _custom_values.comment
+
+       1   A   10   1.5   'Custom data 1'
+       2   A   11   2.3   'Custom data 2'
+       3   A   12   3.1   'Custom data 3'
+
+   stop_
+
+save_
+
+save_test_experiment
+   _test_experiment.sf_category   test_experiment
+   _test_experiment.sf_framecode  test_experiment
+   _test_experiment.description    'Straight tag with test namespace'
+   _test_experiment.author         'Test Author'
+
+   loop_
+      _test_measurements.index
+      _test_measurements.chain_code
+      _test_measurements.sequence_code
+      _test_measurements.value
+      _test_measurements.error
+
+       1   A   10   100.5   1.2
+       2   A   11   98.3    1.0
+       3   A   12   102.1   1.5
+
+   stop_
+
+save_
+
+save_aria_distance_restraints
+   _aria_distance_restraints.sf_category   aria_distance_restraints
+   _aria_distance_restraints.sf_framecode  aria_distance_restraints
+
+   loop_
+      _aria_restraint.index
+      _aria_restraint.atom_1
+      _aria_restraint.atom_2
+      _aria_restraint.distance
+      _aria_restraint.error
+
+       1   'A.10.CA'   'A.11.CA'   3.8   0.2
+       2   'A.11.CA'   'A.12.CA'   3.9   0.2
+
+   stop_
+
+save_
