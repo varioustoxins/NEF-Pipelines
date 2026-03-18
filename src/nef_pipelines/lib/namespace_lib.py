@@ -10,6 +10,7 @@ from nef_pipelines.lib.cli_lib import parse_namespace_selectors
 #       approach for handling separators across all commands.
 
 # Registered namespace mapping from NEF specification
+# TODO [long term] we should download from the NEF website and use this as a fallback
 REGISTERED_NAMESPACES = {
     "nef": ("NEF Standard", "Data Exchange"),
     "nefpls": ("NEF Pipelines", "Format transcoding and NEF manipulation"),
