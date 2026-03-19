@@ -21,6 +21,7 @@ from nef_pipelines.lib.cli_lib import (
     parse_frame_loop_and_tags,
     parse_range_number_pairs,
     parse_residue_ranges,
+    parse_selector_lists,
     validate_residue_ranges_in_system,
 )
 from nef_pipelines.lib.structures import (
@@ -2280,3 +2281,80 @@ def test_validate_residue_ranges_in_system():
     assert len(missing) == 2
     assert missing[0] == ResidueRange("A", 12, 13)
     assert missing[1] == ResidueRange("B", 10, 11)
+
+
+def test_parse_selector_lists_basic():
+    """Test basic namespace selector parsing without prefixes."""
+    include, exclude = parse_selector_lists(["nef", "custom"])
+    assert include == {"nef", "custom"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_explicit_include():
+    """Test explicit include with + prefix."""
+    include, exclude = parse_selector_lists(["+nef", "+custom"])
+    assert include == {"nef", "custom"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_explicit_exclude():
+    """Test explicit exclude with - prefix."""
+    include, exclude = parse_selector_lists(["-nef"])
+    assert include == set()
+    assert exclude == {"nef"}
+
+
+def test_parse_selector_lists_mixed():
+    """Test mixed include and exclude."""
+    include, exclude = parse_selector_lists(["+nef", "-custom"])
+    assert include == {"nef"}
+    assert exclude == {"custom"}
+
+
+def test_parse_selector_lists_escaped_plus():
+    """Test escaped + prefix."""
+    include, exclude = parse_selector_lists(["++namespace"])
+    assert include == {"+namespace"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_escaped_minus():
+    """Test escaped - prefix."""
+    include, exclude = parse_selector_lists(["--namespace"])
+    assert include == {"-namespace"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_comma_escape():
+    """Test comma escape with use_escapes=True."""
+    include, exclude = parse_selector_lists(["my,,ns"], use_escapes=True)
+    assert include == {"my,ns"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_invert():
+    """Test invert flag swaps inclusion/exclusion."""
+    include, exclude = parse_selector_lists(["nef"], invert=True)
+    assert include == set()
+    assert exclude == {"nef"}
+
+
+def test_parse_selector_lists_invert_with_exclude():
+    """Test invert with explicit exclude prefix."""
+    include, exclude = parse_selector_lists(["-nef"], invert=True)
+    assert include == {"nef"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_comma_separated():
+    """Test comma-separated selectors."""
+    include, exclude = parse_selector_lists(["nef,custom,test"])
+    assert include == {"nef", "custom", "test"}
+    assert exclude == set()
+
+
+def test_parse_selector_lists_repeated_and_comma():
+    """Test mix of repeated and comma-separated."""
+    include, exclude = parse_selector_lists(["nef,custom", "test"])
+    assert include == {"nef", "custom", "test"}
+    assert exclude == set()

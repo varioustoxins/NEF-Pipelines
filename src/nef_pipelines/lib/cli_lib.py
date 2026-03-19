@@ -24,18 +24,23 @@ This module provides parsing and validation for several CLI constructs used thro
    - String residues, negative numbers
    - Open-ended ranges
 
-5. Separator Conflict Detection - Validates separators don't conflict with data
+5. Selector Lists - +nef, -custom for include/exclude patterns
+   - Namespace filtering with +/- prefixes
+   - Escape sequences (,,→, ++→+)
+   - Inversion support
+
+6. Separator Conflict Detection - Validates separators don't conflict with data
    - Checks chain codes, sequence codes
    - Suggests available alternatives
 
-6. Validation and Utilities - Range validation against actual data
+7. Validation and Utilities - Range validation against actual data
    - Expansion, formatting functions
 """
 
 import re
 from enum import Flag, auto
 from textwrap import dedent
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import pyparsing as pp
 from pynmrstar import Entry, Saveframe
@@ -1664,3 +1669,81 @@ def validate_residue_ranges_in_system(
             ranges_not_found.append(residue_range)
 
     return ranges_not_found
+
+
+def parse_selector_lists(
+    selectors: List[str], use_escapes: bool = False, invert: bool = False
+) -> Tuple[Set[str], Set[str]]:
+    """
+    Parse namespace selectors with inclusion/exclusion prefixes and optional escape sequences.
+
+    Args:
+        selectors: List of namespace patterns (may include +/- prefixes)
+        use_escapes: If True, process escape sequences (,, → ,)
+        invert: If True, swap inclusion/exclusion logic
+
+    Returns:
+        Tuple of (include_set, exclude_set) with namespace patterns
+
+    Examples:
+        ['+nef', '-custom'] → ({'nef'}, {'custom'})
+        ['-nef'] → (set(), {'nef'})
+        ['nef', 'custom'] → ({'nef', 'custom'}, set())
+        ['++nef'] → ({'+nef'}, set())  # escaped literal
+        ['my,,ns'], use_escapes=True → ({'my,ns'}, set())  # comma escape
+        invert=True, ['nef'] → (set(), {'nef'})
+    """
+    result_include = set()
+    result_exclude = set()
+
+    if selectors:
+        # If escapes enabled, unescape before parsing
+        if use_escapes:
+            # Use a placeholder that won't appear in normal text
+            placeholder = "\x00COMMA\x00"
+            unescaped = []
+            for selector in selectors:
+                # Replace escaped commas with placeholder
+                selector = selector.replace(",,", placeholder)
+                unescaped.append(selector)
+            selectors = unescaped
+
+        # Parse comma-separated options
+        parsed = parse_comma_separated_options(selectors)
+
+        include = set()
+        exclude = set()
+
+        for selector in parsed:
+            # Restore escaped commas if escapes were enabled
+            if use_escapes:
+                selector = selector.replace("\x00COMMA\x00", ",")
+
+            # Handle +/- prefix escapes first
+            if selector.startswith("++"):
+                # Escaped +
+                namespace = selector[1:]
+                include.add(namespace)
+            elif selector.startswith("--"):
+                # Escaped -
+                namespace = selector[1:]
+                include.add(namespace)
+            elif selector.startswith("+"):
+                # Explicit include
+                namespace = selector[1:]
+                include.add(namespace)
+            elif selector.startswith("-"):
+                # Explicit exclude
+                namespace = selector[1:]
+                exclude.add(namespace)
+            else:
+                # No prefix, default to include
+                include.add(selector)
+
+        # Apply inversion
+        if invert:
+            result_include, result_exclude = exclude, include
+        else:
+            result_include, result_exclude = include, exclude
+
+    return result_include, result_exclude

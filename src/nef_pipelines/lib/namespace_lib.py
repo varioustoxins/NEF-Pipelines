@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 from pynmrstar import Saveframe
 
-from nef_pipelines.lib.cli_lib import parse_namespace_selectors
+from nef_pipelines.lib.cli_lib import parse_selector_lists
 
 # TODO: Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
@@ -141,7 +141,7 @@ def filter_namespaces(
     result = all_namespaces
 
     if namespace_selectors:
-        include, exclude = parse_namespace_selectors(
+        include, exclude = parse_selector_lists(
             namespace_selectors, use_separator_escapes, invert
         )
 
