@@ -85,7 +85,6 @@ def renumber(
     starts: Annotated[
         bool,
         typer.Option(
-            "-s",
             "--starts",
             help="renumber residues using a starting value for the chain rather than an offset",
         ),

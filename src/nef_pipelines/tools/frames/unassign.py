@@ -179,7 +179,7 @@ def unassign(
         help="input to read NEF data from [- is stdin]",
     ),
     targets: List[Targets] = typer.Option(
-        [Targets.NOT_ATOM], "-t", "--targets", help=TARGETS_HELP
+        [Targets.NOT_ATOM], "--targets", help=TARGETS_HELP
     ),
     chain_values: List[str] = typer.Option(
         [], metavar="<CHAIN> | <OLD-CHAIN>: <NEW-CHAIN>...", help=CHAIN_VALUE_HELP
