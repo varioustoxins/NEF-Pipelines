@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from typer.testing import CliRunner
 
@@ -60,7 +62,7 @@ EXPECTED_R1_DATA_SINGLE_R2_MC_NO_1 = """
 def test_exponential_r1_data_single():
     """Test exponential fitting with test_1_exponential.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_exponential.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(app, ["T2", "--cycles", "1"], input=test_data)
@@ -75,7 +77,7 @@ def test_exponential_with_no_cycles():
     """Test exponential fitting with no noise level provided, it should still run
     but with no error analysis!"""
 
-    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_exponential.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     run_and_report(
@@ -91,7 +93,7 @@ def test_t1noe_with_no_cycles():
     """Test exponential fitting with no noise level provided, it should still run
     but with no error analysis!"""
 
-    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_exponential.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     run_and_report(
@@ -106,7 +108,7 @@ def test_t1noe_with_no_cycles():
 def test_t1noe_with_r1noe_data_single_mc10_n0_1():
     """Test t1noe fitting with r1noe_data_single.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "test_1_exponential.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_exponential.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(

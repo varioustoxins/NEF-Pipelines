@@ -2,6 +2,7 @@ import sys
 from argparse import Namespace
 from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
 
 import pytest
 
@@ -354,7 +355,7 @@ def test_read_entry_stdin_or_exit():
 
     """
     path = path_in_test_data(__file__, "header.nef")
-    lines = open(path).read()
+    lines = Path(path).read_text()
 
     with replace_stdin(lines):
         entry = read_entry_from_stdin_or_exit()

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from typer.testing import CliRunner
 
@@ -39,7 +41,7 @@ EXPECTED_DATA_MEAN = """
 def test_mean_data_single():
     """Test exponential fitting with test_1_exponential.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "test_1_mean.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_mean.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(app, ["MEAN"], input=test_data)

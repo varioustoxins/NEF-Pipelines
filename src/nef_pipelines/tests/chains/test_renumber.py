@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from typer.testing import CliRunner
 
@@ -26,7 +28,7 @@ def test_renumber_basic():
 
     path = path_in_test_data(__file__, "tailin_seq_short.nef")
 
-    result = run_and_report(app, [*OFFSET_CHAINS_A_10], input=open(path))
+    result = run_and_report(app, [*OFFSET_CHAINS_A_10], input=Path(path).read_text())
 
     EXPECTED = """\
         data_talin1
@@ -70,7 +72,9 @@ def test_renumber_basic():
 def test_renumber_multi_chain_two_chains():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
-    result = run_and_report(app, [*OFFSET_CHAINS_A_10_B_5], input=open(path))
+    result = run_and_report(
+        app, [*OFFSET_CHAINS_A_10_B_5], input=Path(path).read_text()
+    )
 
     EXPECTED = """\
         data_test
@@ -109,7 +113,10 @@ def test_renumber_no_offset():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
     result = run_and_report(
-        app, [*OFFSET_CHAINS_MISSING_OFFSET], input=open(path), expected_exit_code=1
+        app,
+        [*OFFSET_CHAINS_MISSING_OFFSET],
+        input=Path(path).read_text(),
+        expected_exit_code=1,
     )
 
     assert "ERROR" in result.stdout
@@ -121,7 +128,10 @@ def test_renumber_bad_offset():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
     result = run_and_report(
-        app, [*OFFSET_CHAINS_BAD_OFFSET], input=open(path), expected_exit_code=1
+        app,
+        [*OFFSET_CHAINS_BAD_OFFSET],
+        input=Path(path).read_text(),
+        expected_exit_code=1,
     )
 
     assert "ERROR" in result.stdout
@@ -133,7 +143,7 @@ def test_renumber_bad_offset():
 def test_renumber_no_chain_or_offset():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
-    result = run_and_report(app, [], input=open(path), expected_exit_code=1)
+    result = run_and_report(app, [], input=Path(path).read_text(), expected_exit_code=1)
 
     assert "ERROR" in result.stdout
     assert "you didn't provide any chains and offsets/starts" in result.stdout
@@ -143,7 +153,9 @@ def test_renumber_no_chain_or_offset():
 def test_set_starts_two_chains():
     path = path_in_test_data(__file__, "multi_chain.nef")
 
-    result = run_and_report(app, [*SET_CHAIN_STARTS_A_0_B_10], input=open(path))
+    result = run_and_report(
+        app, [*SET_CHAIN_STARTS_A_0_B_10], input=Path(path).read_text()
+    )
 
     EXPECTED = """\
         data_test
@@ -183,7 +195,9 @@ def test_set_starts_two_chains():
 def test_renumber_shifts_chain_a_only():
     path = path_in_test_data(__file__, "nef_3_peaks.nef")
 
-    result = run_and_report(app, [*SET_CHAIN_STAR_A_SHIFTS], input=open(path))
+    result = run_and_report(
+        app, [*SET_CHAIN_STAR_A_SHIFTS], input=Path(path).read_text()
+    )
 
     NOQUA_E501 = "# noqa E501"
     EXPECTED = """# noqa E501

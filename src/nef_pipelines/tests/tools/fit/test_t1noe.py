@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from typer.testing import CliRunner
 
@@ -103,7 +105,7 @@ EXPECTED_R1_DATA_SINGLE_NOE_MC = """
 def test_t1noe_with_r1noe_data_single():
     """Test t1noe fitting with r1noe_data_single.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "test_1_r1noe.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_r1noe.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(app, ["T1_NOE_pos", "T1_NOE_neg"], input=test_data)
@@ -122,7 +124,7 @@ def test_t1noe_with_r1noe_data_single():
 def test_t1noe_with_r1noe_data_single_mc10_n0_1():
     """Test t1noe fitting with r1noe_data_single.nef test data."""
 
-    test_data = open(path_in_test_data(__file__, "test_1_r1noe.nef")).read()
+    test_data = Path(path_in_test_data(__file__, "test_1_r1noe.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
     result = run_and_report(
