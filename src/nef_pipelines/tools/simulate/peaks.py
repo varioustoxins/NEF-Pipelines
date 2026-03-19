@@ -2,11 +2,12 @@ from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import List
+from typing import Annotated, List, Optional
 
 import typer
 from fyeah import f
 from pynmrstar import Entry
+from typer import Option
 
 from nef_pipelines.lib.nef_frames_lib import (
     EXPERIMENT_CLASSIFICATION,
@@ -61,22 +62,28 @@ NAME_TEMPLATE_HELP = """
 # TODO: add a flag to list spectra and groups...
 @simulate_app.command()
 def peaks(
-    shift_frame_selectors: List[str] = typer.Option(
-        None, "--shift-frames", help=SHIFT_FRAMES_HELP
-    ),
-    exact: bool = typer.Option(
-        False, help="if set frames are selected by exact matches"
-    ),
-    name_template: str = typer.Option(SPECTRUM_NAME_TEMPLATE, help=NAME_TEMPLATE_HELP),
-    spectrometer_frequency: float = typer.Option(FAKE_SPECTROMETER_FREQUENCY_600),
-    input: Path = typer.Option(
-        STDIN,
-        "--in",
-        "-i",
-        metavar="|INPUT|",
-        help="input to read NEF data from [stdin = -]",
-    ),
-    spectra: List[str] = typer.Argument(None, help=SPECTRA_HELP),
+    shift_frame_selectors: Annotated[
+        Optional[List[str]], Option("--shift-frames", help=SHIFT_FRAMES_HELP)
+    ] = (),
+    exact: Annotated[
+        bool, Option(help="if set frames are selected by exact matches")
+    ] = False,
+    name_template: Annotated[
+        str, Option(help=NAME_TEMPLATE_HELP)
+    ] = SPECTRUM_NAME_TEMPLATE,
+    spectrometer_frequency: Annotated[
+        float, typer.Option()
+    ] = FAKE_SPECTROMETER_FREQUENCY_600,
+    input: Annotated[
+        Path,
+        Option(
+            "--in",
+            "-i",
+            metavar="|INPUT|",
+            help="input to read NEF data from [stdin = -]",
+        ),
+    ] = STDIN,
+    spectra: Annotated[Optional[List[str]], typer.Argument(help=SPECTRA_HELP)] = (),
 ):
     """-  make a set of peaks for an hsqc, 13C direct detect or triple resonance spectrum from a list of shifts
     [alpha for non ccpn peak lists and 13C detect]"""
