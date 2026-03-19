@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 
 from nef_pipelines.lib.test_lib import (
@@ -164,9 +166,9 @@ def test_missing_isotopes():
     assert "[1, 2, 3, 4]" in result.stdout
 
 
-EXPECTED_SPECTRUM_CONCACX = open(
+EXPECTED_SPECTRUM_CONCACX = Path(
     path_in_test_data(__file__, "CONCACX_expected_spectrum.txt")
-).read()
+).read_text()
 
 
 def test_give_isotopes_when_bad():
