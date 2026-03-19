@@ -2,12 +2,11 @@ from copy import copy
 from itertools import tee
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Union
+from typing import Annotated, Dict, List, Optional, Union
 
 import typer
 from pynmrstar import Entry
 from tabulate import tabulate
-from typer import Argument, Option
 
 from nef_pipelines.lib.nef_lib import (
     NEF_MOLECULAR_SYSTEM,
@@ -47,48 +46,65 @@ SEQUENCE_CODE = "sequence_code"
 # noinspection PyUnusedLocal
 @chains_app.command()
 def renumber(
-    chain_offsets_or_starts: List[str] = Argument(
-        None,
-        metavar="<CHAIN-CODE> <OFFSET/START>",
-        help="chain-codes and offsets/starts for renumbering residue numbers, offsets are used by default and chain "
-        "starts are available using the --starts option [default: no selections, no offets; do nothing...]",
-        show_default=False,
-    ),
-    input: Path = typer.Option(
-        Path("-"),
-        "-i",
-        "--in",
-        metavar="NEF-FILE",
-        help="where to read NEF data from either a file or stdin '-'",
-    ),
-    selector_type: SelectionType = typer.Option(
-        SelectionType.ANY,
-        "-s",
-        "--selector",
-        help=f"control how to select frames to renumber, can be one of: {SELECTORS_LOWER}. "
-        "Any will match on names first and then if there is no match attempt to match on category",
-    ),
-    reference_frame_selectors: List[str] = Option(
-        None, "--references", help=REFERENCE_FRAMES_HELP, show_default=False
-    ),
-    starts: bool = Option(
-        False,
-        "-s",
-        "--starts",
-        help="renumber residues using a starting value for the chain "
-        "rather than an offset",
-    ),
-    frame_selectors: List[str] = Option(
-        None,
-        "-f",
-        "--frames",
-        metavar="<FRAME-SELECTOR>",
-        help="Limit changes to a particular frame by name or category [the selector], note: wildcards are "
-        "allowed. Frames are selected by name and then category if the name doesn't match"
-        "note: the option -t /--selector-type allows you to choose which selection type to use. "
-        "[default: all frames]",
-        show_default=False,
-    ),
+    chain_offsets_or_starts: Annotated[
+        Optional[List[str]],
+        typer.Argument(
+            metavar="<CHAIN-CODE> <OFFSET/START>",
+            help=(
+                "chain-codes and offsets/starts for renumbering residue numbers, "
+                "offsets are used by default and chain starts are available using "
+                "the --starts option [default: no selections, no offsets; do nothing...]"
+            ),
+            show_default=False,
+        ),
+    ] = (),
+    input: Annotated[
+        Path,
+        typer.Option(
+            "-i",
+            "--in",
+            metavar="NEF-FILE",
+            help="where to read NEF data from either a file or stdin '-'",
+        ),
+    ] = Path("-"),
+    selector_type: Annotated[
+        SelectionType,
+        typer.Option(
+            "-s",
+            "--selector",
+            help=(
+                f"control how to select frames to renumber, can be one of: {SELECTORS_LOWER}. "
+                "Any will match on names first and then if there is no match attempt to match on category"
+            ),
+        ),
+    ] = SelectionType.ANY,
+    reference_frame_selectors: Annotated[
+        Optional[List[str]],
+        typer.Option("--references", help=REFERENCE_FRAMES_HELP, show_default=False),
+    ] = (),
+    starts: Annotated[
+        bool,
+        typer.Option(
+            "-s",
+            "--starts",
+            help="renumber residues using a starting value for the chain rather than an offset",
+        ),
+    ] = False,
+    frame_selectors: Annotated[
+        Optional[List[str]],
+        typer.Option(
+            "-f",
+            "--frames",
+            metavar="<FRAME-SELECTOR>",
+            help=(
+                "Limit changes to a particular frame by name or category [the selector], "
+                "note: wildcards are allowed. Frames are selected by name and then "
+                "category if the name doesn't match note: the option -t /--selector-type "
+                "allows you to choose which selection type to use. [default: all frames]"
+            ),
+            show_default=False,
+        ),
+    ] = (),
 ):
     """- renumber chains in a nef file"""
 
