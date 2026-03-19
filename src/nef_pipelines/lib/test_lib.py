@@ -351,6 +351,7 @@ def run_and_report(
     input: IO[AnyStr] = None,
     expected_exit_code: int = 0,
     # separate_stderr = False # see below
+    merge_stderr: bool = True,
 ) -> Result:
     """
     run a typer app in the typer test harness and report exceptions and stdout to screen if there is an error
@@ -362,11 +363,29 @@ def run_and_report(
     :return: results object
     """
 
-    # TODO: mix_stderr appears to be being ignored in typers/clicks test_lib, add a ticket!
-    # my_mix_stderr = separate_stderr != True
-    runner = CliRunner()  # mix_stderr=my_mix_stderr)
+    runner = CliRunner()
 
     result = runner.invoke(typer_app, args, input=input)
+
+    if merge_stderr:
+        # TODO: this is a hack to make things work after an update in typer and click
+        # it needs to be removed in the long run
+        # Manually mix stderr into stdout for backward compatibility with existing tests
+        # In newer versions of click, stderr is separated, but our tests expect it in stdout
+        if hasattr(result, "stderr") and result.stderr:
+            # Create a new object with stdout+stderr mixed, preserving other attributes
+
+            class MixedResult:
+                def __init__(self, original_result):
+                    self._original = original_result
+                    self.stdout = original_result.stdout + original_result.stderr
+                    self.exit_code = original_result.exit_code
+                    self.exception = original_result.exception
+                    self.exc_info = original_result.exc_info
+                    if hasattr(original_result, "stderr"):
+                        self.stderr = original_result.stderr
+
+            result = MixedResult(result)
 
     if result.exit_code != expected_exit_code:
         print("\n", "-" * 40, "-stdout-", "-" * 40)
