@@ -17,13 +17,13 @@ from ordered_set import OrderedSet
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree as RichTree
-from strenum import KebabCaseStrEnum
+from strenum import LowercaseStrEnum
 from tabulate import tabulate
 from treelib import Tree
 from typer import Context
 
 from nef_pipelines.lib.typer_lib import is_rich_in_use
-from nef_pipelines.lib.util import chunks, parse_comma_separated_options
+from nef_pipelines.lib.util import parse_comma_separated_options
 from nef_pipelines.tools.help import help_app
 
 VERBOSE_HELP = """\
@@ -40,38 +40,52 @@ class TreeNodeType(Enum):
     COMMAND = auto()
 
 
-class TableFormat(KebabCaseStrEnum):
-    Simple = auto()
-    Grid = auto()
-    Pipe = auto()
-    Markdown = auto()
-    Fancy_Grid = auto()
-    Html = auto()
-    Html_Grid = auto()
-    Full = auto()
-    Markdown_Full = auto()
+class DisplayMode(LowercaseStrEnum):
+    """Display mode for command help output."""
+
+    Auto = auto()  # Smart: table for multiple commands, full help for single command
+    Tree = auto()  # Hierarchical tree view
+    Table = auto()  # Always show table listing
+    Help = auto()  # Always show full help for each command
+
+
+class OutputFormat(LowercaseStrEnum):
+    """Output format - works consistently across all display modes."""
+
+    Simple = auto()  # Rich terminal with colours/boxes (default)
+    Markdown = auto()  # Pure Markdown (AI-friendly, no ANSI codes)
+    Html = auto()  # HTML output with inline CSS
 
 
 # noinspection PyUnusedLocal
 @help_app.command()
 def commands(
     context: Context,
-    table_format: Annotated[
-        TableFormat,
+    display: Annotated[
+        DisplayMode,
+        typer.Option(
+            "--display",
+            help="""\
+                display mode: auto (smart: table for multiple, help for single), tree (hierarchical),
+                table (always table), help (always full help for each command)
+            """,
+        ),
+    ] = DisplayMode.Auto,
+    output_format: Annotated[
+        OutputFormat,
         typer.Option(
             "--format",
             show_choices=False,
             help="""\
-                table format: simple, grid, pipe, markdown, fancy-grid, html, html-grid, full
-                (rich terminal), or markdown-full (pure Markdown)
+                output format: simple (Rich terminal), markdown (pure Markdown for AI), html (HTML with CSS)
             """,
         ),
-    ] = TableFormat.Simple,
+    ] = OutputFormat.Simple,
     group_by_category: Annotated[
         bool,
         typer.Option(
-            "--group-by=category",
-            help="display separate tables for each category with Markdown headings (requires --table)",
+            "--group-by-category",
+            help="display separate tables/help for each category with headings",
         ),
     ] = False,
     matchers: Annotated[
@@ -80,13 +94,6 @@ def commands(
             help="select commands to display multiple items, wildcards and comma separated lists are allowed"
         ),
     ] = None,
-    table: Annotated[
-        bool,
-        typer.Option(
-            "--table",
-            help="display commands as a flat table/list instead of hierarchical tree",
-        ),
-    ] = False,
     python: Annotated[
         Optional[bool],
         typer.Option(
@@ -106,31 +113,37 @@ def commands(
 ):
     r"""\- display and filter the help for commands
 
-    commands are shown in a hierarchical tree view by default, however, tables can be displayed as an alternative.
-    If only a single command is selected its complete help is shown...
+    Commands are shown in a hierarchical tree view by default.
+    Use --display to control what is shown and --format to control how it's formatted.
     \b
-    - use `--table` to show a flat tabulated list instead.
-    - use `--format` with `--table` to control table style...
-        - simple (default) uses **Rich tables** with box-drawing characters when available.
-        - full for **rich** terminal output with colours and boxes.
-        - html for **HTML** table output.
-        - html-grid for a compact **multi-column HTML grid** used in the NEF-Pipelines website.
-        - Markdown-full for **pure Markdown** (ideal for AI/LLM consumption).
-    - use `--group-by-category` to separate by category (recommended for AIs).
+    **Display Modes:**
+    - auto (default): Smart mode - table for multiple commands, full help for one command, rich formatting if available
+    - tree: Hierarchical tree view
+    - table: Always show table listing
+    - help: Always show full help for each command
+
+    **Format Options (work across all display modes):**
+    - simple (default): Rich terminal with colours and boxes
+    - markdown: Pure Markdown (ideal for AI/LLM consumption)
+    - html: HTML output with inline CSS styling
+
+    **Grouping:**
+    - use `--group-by-category` to separate by category (recommended for AIs)
 
     Examples:
 
     ```bash
-        nef help commands                                                     # Tree view
-        nef help commands --table                                             # Simple table
-        nef help commands --table --format grid                               # Grid table
-        nef help commands --table --format Markdown                           # Markdown table
-        nef help commands --table --format html                               # HTML table
-        nef help commands --table --format html-grid                          # HTML grid
-        nef help commands --table --format full                               # Rich terminal
-        nef help commands --table --format Markdown-full                      # Pure Markdown
-        nef help commands --table --format Markdown-full --group-by-category  # Grouped
-        nef help commands plot --table --format full                          # Filter commands
+        nef help commands                                                      # Tree view (default)
+        nef help commands --display=auto                                       # Smart: table or help
+        nef help commands --display=table                                      # Always table
+        nef help commands --display=help                                       # Always full help
+        nef help commands --display=table --format=markdown                    # Markdown table
+        nef help commands --display=help --format=markdown                     # Pure Markdown help
+        nef help commands --display=help --format=markdown --group-by-category # Grouped Markdown
+        nef help commands --display=tree --format=html                         # HTML tree
+        nef help commands save --display=auto                                  # Auto shows full help (1 match)
+        nef help commands "*sparky*" --display=auto                            # Auto shows table (multiple)
+        nef help commands plot                                                 # Filter to plot commands
     ```
     """
     # Temporarily disable Rich if requested
@@ -140,7 +153,7 @@ def commands(
         os.environ["TYPER_USE_RICH"] = "0"
 
     try:
-        output = pipe(matchers, table_format, group_by_category, table, python)
+        output = pipe(matchers, output_format, group_by_category, display, python)
         print(output, file=sys.stderr)
     finally:
         # Restore original Rich setting
@@ -153,9 +166,9 @@ def commands(
 
 def pipe(
     matchers: Optional[List[str]] = None,
-    table_format: TableFormat = TableFormat.Simple,
+    output_format: OutputFormat = OutputFormat.Simple,
     group_by_category: bool = False,
-    table: bool = False,
+    display: DisplayMode = DisplayMode.Auto,
     python: Optional[bool] = None,
     plain: bool = False,
 ) -> str:
@@ -170,9 +183,9 @@ def pipe(
 
     Args:
         matchers: List of patterns to match commands (None means all commands)
-        table_format: Table format (simple, grid, pipe, Markdown, html, html-grid, full, Markdown-full)
+        output_format: Output format (simple, markdown, html)
         group_by_category: Whether to group by category
-        table: Whether to display as table instead of tree
+        display: Display mode (auto, tree, table, help)
         python: None (show all), True (only Python), False (only non-Python)
         plain: If True, use plain text without colours or boxes (internal option, not CLI)
 
@@ -189,34 +202,28 @@ def pipe(
         matchers = ["*"]
 
     filtered_tree = _build_command_tree(context, matchers, python)
-
     num_commands = _count_commands_in_tree(filtered_tree)
-    if (
-        num_commands == 1
-        and table_format == TableFormat.Simple
-        and not group_by_category
-    ):
-        table_format = TableFormat.Full
 
-    # Html/Html_Grid/Full/Markdown_Full formats show full help unless --table is explicitly requested
-    if (
-        table_format
-        in (
-            TableFormat.Full,
-            TableFormat.Markdown_Full,
-            TableFormat.Html,
-            TableFormat.Html_Grid,
-        )
-        and not table
-    ):
+    # Determine actual display mode based on DisplayMode and command count
+    if display == DisplayMode.Auto:
+        if num_commands == 1:
+            actual_display = DisplayMode.Help
+        else:
+            actual_display = DisplayMode.Table
+    else:
+        actual_display = display
+
+    # Execute the appropriate display mode
+    if actual_display == DisplayMode.Tree:
+        return _display_tree(filtered_tree, output_format, plain)
+    elif actual_display == DisplayMode.Table:
+        return _display_table(filtered_tree, output_format, group_by_category, plain)
+    elif actual_display == DisplayMode.Help:
         return _display_full_command(
-            filtered_tree, table_format, group_by_category, plain
+            filtered_tree, output_format, group_by_category, plain
         )
-
-    if table:
-        return _display_table(filtered_tree, table_format, group_by_category, plain)
-
-    return _display_tree(filtered_tree, plain)
+    else:
+        return _display_tree(filtered_tree, output_format, plain)
 
 
 def _get_click_context() -> Context:
@@ -297,11 +304,184 @@ def _extract_commands_data(tree: Tree) -> List[tuple]:
     return commands_data
 
 
-def _display_tree(tree: Tree, plain: bool = False) -> str:
+def _display_markdown_tree(tree: Tree) -> str:
+    """Display commands in hierarchical tree view using plain text markdown.
+
+    Args:
+        tree: Filtered command tree to display
+
+    Returns:
+        Markdown formatted tree as string
+    """
+    if len(tree) == 0:
+        return ""
+
+    output_buffer = StringIO()
+    output_buffer.write("# Command Tree\n\n```\n")
+
+    # Get the root node
+    root = tree.get_node(tree.root)
+    output_buffer.write(f"{root.tag}\n")
+
+    # Build the tree recursively using box-drawing characters
+    def add_children(node_id, prefix=""):
+        children = tree.children(node_id)
+        for i, child in enumerate(children):
+            is_last = i == len(children) - 1
+            connector = "└── " if is_last else "├── "
+            output_buffer.write(f"{prefix}{connector}{child.tag}\n")
+
+            # Recursively add children with updated prefix
+            if not child.is_leaf():
+                extension = "    " if is_last else "│   "
+                add_children(child.identifier, prefix + extension)
+
+    add_children(tree.root)
+    output_buffer.write("```\n\n")
+    output_buffer.write(
+        "**Key:** [X] has a python function [P]ipe / [C]md, [α] alpha feature\n"
+    )
+
+    return output_buffer.getvalue()
+
+
+def _display_html_tree(tree: Tree) -> str:
+    """Display commands in hierarchical tree view using HTML with CSS.
+
+    Args:
+        tree: Filtered command tree to display
+
+    Returns:
+        HTML formatted tree as string
+    """
+    if len(tree) == 0:
+        return ""
+
+    output_buffer = StringIO()
+
+    # Add CSS styling
+    output_buffer.write(
+        """<style>
+.command-tree {
+    font-family: 'Courier New', monospace;
+    line-height: 1.6;
+    margin: 20px 0;
+}
+.command-tree ul {
+    list-style-type: none;
+    padding-left: 20px;
+    margin: 0;
+}
+.command-tree > ul {
+    padding-left: 0;
+}
+.command-tree li {
+    margin: 5px 0;
+}
+.tree-root {
+    font-weight: bold;
+    color: #00aaff;
+    font-size: 1.1em;
+}
+.tree-group {
+    color: #ff8800;
+    font-weight: bold;
+}
+.tree-command {
+    color: #00cc00;
+}
+.tree-decorator {
+    color: #888888;
+    font-size: 0.9em;
+    margin-left: 5px;
+}
+.tree-decorator-python {
+    color: #0066ff;
+    font-weight: bold;
+}
+.tree-decorator-alpha {
+    color: #ff00ff;
+    font-weight: bold;
+}
+.tree-key {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-left: 3px solid #00aaff;
+    font-size: 0.9em;
+    color: #666;
+}
+</style>
+<div class="command-tree">
+"""
+    )
+
+    # Get the root node
+    root = tree.get_node(tree.root)
+    output_buffer.write(f'<div class="tree-root">{root.tag}</div>\n')
+
+    # Build the tree recursively using nested lists
+    def add_children(node_id):
+        children = tree.children(node_id)
+        if not children:
+            return
+
+        output_buffer.write("<ul>\n")
+        for child in children:
+            # Parse the tag to extract name and decorators
+            tag_parts = child.tag.split()
+            name = tag_parts[0]
+            decorators = tag_parts[1:] if len(tag_parts) > 1 else []
+
+            # Determine node class
+            if child.is_leaf():
+                node_class = "tree-command"
+            else:
+                node_class = "tree-group"
+
+            output_buffer.write(f'<li><span class="{node_class}">{name}</span>')
+
+            # Add decorators
+            for decorator in decorators:
+                if "[P]" in decorator or "[C]" in decorator:
+                    output_buffer.write(
+                        f'<span class="tree-decorator tree-decorator-python">{decorator}</span>'
+                    )
+                elif "[α]" in decorator:
+                    output_buffer.write(
+                        f'<span class="tree-decorator tree-decorator-alpha">{decorator}</span>'
+                    )
+                else:
+                    output_buffer.write(
+                        f'<span class="tree-decorator">{decorator}</span>'
+                    )
+
+            # Recursively add children
+            if not child.is_leaf():
+                add_children(child.identifier)
+
+            output_buffer.write("</li>\n")
+
+        output_buffer.write("</ul>\n")
+
+    add_children(tree.root)
+
+    output_buffer.write("</div>\n")
+    text = " [X] has a python function [P]ipe / [C]md, [α] alpha feature"
+    text = f'<div class="tree-key"><strong>Key:</strong>{text}</div>'
+    output_buffer.write(text)
+
+    return output_buffer.getvalue()
+
+
+def _display_tree(
+    tree: Tree, output_format: OutputFormat = OutputFormat.Simple, plain: bool = False
+) -> str:
     """Display commands in hierarchical tree view.
 
     Args:
         tree: Filtered command tree to display
+        output_format: Output format (simple, markdown, html)
         plain: If True, use plain text without colours or boxes
 
     Returns:
@@ -310,34 +490,45 @@ def _display_tree(tree: Tree, plain: bool = False) -> str:
     if len(tree) == 0:
         return ""
 
-    if is_rich_in_use() and not plain:
-        return _display_rich_tree(tree, plain)
+    if output_format == OutputFormat.Markdown:
+        return _display_markdown_tree(tree)
+    elif output_format == OutputFormat.Html:
+        return _display_html_tree(tree)
+    elif output_format == OutputFormat.Simple:
+        if is_rich_in_use() and not plain:
+            return _display_rich_tree(tree, plain)
+        else:
+            output = tree.show(stdout=False)
+            output += "\n\nkey: [X] has a python function [P]ipe / [C]md"
+            output += "\n     [α] alpha feature"
+            return output
     else:
-        output = tree.show(stdout=False)
-        output += "\n\nkey: [X] has a python function [P]ipe / [C]md"
-        output += "\n     [α] alpha feature"
-        return output
+        # Fallback to simple
+        return _display_tree(tree, OutputFormat.Simple, plain)
 
 
 def _display_full_command(
-    tree: Tree, table_format: TableFormat, group_by_category: bool, plain: bool = False
+    tree: Tree,
+    output_format: OutputFormat,
+    group_by_category: bool,
+    plain: bool = False,
 ) -> str:
     """Display full detailed help for commands.
 
     Args:
         tree: Filtered command tree
-        table_format: Full, Markdown_Full, Html, or Html_Grid format
+        output_format: Output format (simple, markdown, html)
         group_by_category: Whether to group by category
         plain: If True, use plain text without colours or boxes
 
     Returns:
         Formatted help text as string
     """
-    if table_format == TableFormat.Full:
+    if output_format == OutputFormat.Simple:
         result = _display_full_format(tree, group_by_category, plain)
-    elif table_format == TableFormat.Markdown_Full:
+    elif output_format == OutputFormat.Markdown:
         result = _display_markdown_full_format(tree, group_by_category)
-    elif table_format in (TableFormat.Html, TableFormat.Html_Grid):
+    elif output_format == OutputFormat.Html:
         result = _display_html_full_format(tree, group_by_category)
     else:
         result = ""
@@ -346,25 +537,31 @@ def _display_full_command(
 
 
 def _display_table(
-    tree: Tree, table_format: TableFormat, group_by_category: bool, plain: bool = False
+    tree: Tree,
+    output_format: OutputFormat,
+    group_by_category: bool,
+    plain: bool = False,
 ) -> str:
     """Display commands in table format.
 
     Args:
         tree: Filtered command tree
-        table_format: Table format (simple, grid, pipe, Markdown, html, html-grid, etc.)
+        output_format: Output format (simple, markdown, html)
         group_by_category: Whether to group by category
         plain: If True, use plain text without colours or boxes
 
     Returns:
         Formatted table as string
     """
-    if table_format == TableFormat.Html_Grid:
-        result = _display_html_grid_format(tree)
+    if output_format == OutputFormat.Simple:
+        result = _display_list_format(tree, "simple", group_by_category, plain)
+    elif output_format == OutputFormat.Markdown:
+        # Use 'pipe' format for proper markdown tables with | separators
+        result = _display_list_format(tree, "pipe", group_by_category, plain)
+    elif output_format == OutputFormat.Html:
+        result = _display_html_table_format(tree, group_by_category)
     else:
-        result = _display_list_format(
-            tree, table_format.value.replace("-", "_"), group_by_category, plain
-        )
+        result = _display_list_format(tree, "simple", group_by_category, plain)
 
     return result
 
@@ -706,88 +903,103 @@ def _get_rich_help_panel(path: tuple, group_panels: dict, cmd_obj=None) -> str:
     return result
 
 
-def _display_html_grid_format(tree: Tree) -> str:
-    """Display commands in HTML grid format.
-
-    This creates a multi-column HTML table showing command categories in a compact grid layout.
+def _display_html_table_format(tree: Tree, group_by_category: bool = False) -> str:
+    """Display commands in HTML table format with CSS styling.
 
     Args:
         tree: Filtered command tree
+        group_by_category: If True, display separate tables for each category
 
     Returns:
         HTML table as string
     """
+    commands_data = _extract_commands_data(tree)
+
+    if not commands_data:
+        return "<p>No commands found matching the specified patterns.</p>"
 
     output_buffer = StringIO()
 
-    table_info = {}
-    for elem in tree.all_nodes_itr():
-        if elem.is_leaf():
-            elem_name, *tags = elem.tag.split()
-            tags = [tag.strip("[]") for tag in tags]
+    # Add CSS styling
+    output_buffer.write(
+        """<style>
+.commands-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-family: Arial, sans-serif;
+}
+.commands-table th {
+    background-color: #00aaff;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: bold;
+}
+.commands-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+.commands-table tr:hover {
+    background-color: #f5f5f5;
+}
+.category-heading {
+    color: #00aaff;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #00aaff;
+    padding-bottom: 5px;
+}
+.command-name {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #0066cc;
+}
+.category-name {
+    color: #666;
+    font-size: 0.9em;
+}
+</style>
+"""
+    )
 
-            parent = tree.parent(elem.identifier)
-            parent_2 = tree.parent(parent.identifier)
+    if group_by_category:
+        for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
+            commands_list = list(the_commands)
 
-            node_type = parent.tag.strip()
+            output_buffer.write(f'<h2 class="category-heading">{category}</h2>\n')
+            output_buffer.write('<table class="commands-table">\n')
+            output_buffer.write(
+                "<thead><tr><th>Command</th><th>Description</th></tr></thead>\n"
+            )
+            output_buffer.write("<tbody>\n")
 
-            node_owner = parent_2.tag.strip() if parent_2 else "global"
+            for cmd_path, _, desc, _ in commands_list:
+                output_buffer.write("<tr>")
+                output_buffer.write(f'<td class="command-name">{cmd_path}</td>')
+                output_buffer.write(f"<td>{desc}</td>")
+                output_buffer.write("</tr>\n")
 
-            translations = {"import": "R", "export": "W"}
-            node_type = translations.get(node_type, "C")
-            tags.insert(0, node_type)
-            tags = [tag if tag != "P" else "🐍" for tag in tags]
+            output_buffer.write("</tbody>\n")
+            output_buffer.write("</table>\n")
+    else:
+        output_buffer.write('<table class="commands-table">\n')
+        output_buffer.write(
+            "<thead><tr><th>Command</th><th>Category</th><th>Description</th></tr></thead>\n"
+        )
+        output_buffer.write("<tbody>\n")
 
-            table_info.setdefault(node_owner, []).append((elem_name, tags))
+        for cmd_path, cmd_type, desc, _ in commands_data:
+            output_buffer.write("<tr>")
+            output_buffer.write(f'<td class="command-name">{cmd_path}</td>')
+            output_buffer.write(f'<td class="category-name">{cmd_type}</td>')
+            output_buffer.write(f"<td>{desc}</td>")
+            output_buffer.write("</tr>\n")
 
-    for node_owner, node_types in table_info.items():
-        by_type = {}
-        for node_type, node_info in node_types:
-            by_type.setdefault(node_type, set()).update(set(node_info))
-
-        for node_type, node_info in by_type.items():
-            if "R" in node_info and "W" in node_info:
-                node_info.remove("R")
-                node_info.remove("W")
-                node_info.add("RW")
-
-        table_info[node_owner] = by_type
-
-    SPACE_STRING = " "
-    items = []
-    for node_owner, node_info in table_info.items():
-        item = [node_owner, ""]
-        for node_type, node_tags in node_info.items():
-            item.append(f"{node_type} {SPACE_STRING.join(sorted(node_tags))}")
-        items.append(item)
-
-    columns = 5
-    column_width = 100 / columns
-
-    rows = chunks(iter(items), columns)
-
-    output_buffer.write('<table style="width:100%;table-layout=fixed">\n')
-    output_buffer.write("<tbody>\n")
-    for row_idx, row in enumerate(rows):
-        style = "" if row_idx > 0 else f' style="width:{column_width:4.2f}%"'
-        output_buffer.write(r" <tr>" + "\n")
-
-        max_num_lines = max([len(column) for column in row])
-        for column in row:
-            output_buffer.write(f"  <td{style}>\n")
-            num_lines = len(column)
-
-            for line_idx, line in enumerate(column):
-                bold_start = "<b>" if line_idx == 0 else ""
-                bold_end = "</b>" if line_idx == 0 else ""
-
-                output_buffer.write(f"    {bold_start}{line}{bold_end}<br>\n")
-            for _ in range(max_num_lines - num_lines):
-                output_buffer.write("    <br>\n")
-            output_buffer.write("  </td>\n")
-        output_buffer.write(" </tr>\n")
-    output_buffer.write("</tbody>\n")
-    output_buffer.write("</table>\n")
+        output_buffer.write("</tbody>\n")
+        output_buffer.write("</table>\n")
 
     return output_buffer.getvalue()
 
