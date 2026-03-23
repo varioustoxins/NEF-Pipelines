@@ -337,6 +337,8 @@ def pipe(
     return entry
 
 
+# TODO this needs improving - specificallly if unknown it should fail
+# it should be documented what it dowes...
 def _guess_experiment_type(name):
     upper_name = name.upper()
     for experiment_name in NAME_TO_EXPERIMENT_TYPE:
