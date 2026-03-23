@@ -316,33 +316,33 @@ def _display_markdown_tree(tree: Tree) -> str:
     if len(tree) == 0:
         return ""
 
-    output_buffer = StringIO()
-    output_buffer.write("# Command Tree\n\n```\n")
+    with StringIO() as output_buffer:
+        output_buffer.write("# Command Tree\n\n```\n")
 
-    # Get the root node
-    root = tree.get_node(tree.root)
-    output_buffer.write(f"{root.tag}\n")
+        # Get the root node
+        root = tree.get_node(tree.root)
+        output_buffer.write(f"{root.tag}\n")
 
-    # Build the tree recursively using box-drawing characters
-    def add_children(node_id, prefix=""):
-        children = tree.children(node_id)
-        for i, child in enumerate(children):
-            is_last = i == len(children) - 1
-            connector = "└── " if is_last else "├── "
-            output_buffer.write(f"{prefix}{connector}{child.tag}\n")
+        # Build the tree recursively using box-drawing characters
+        def add_children(node_id, prefix=""):
+            children = tree.children(node_id)
+            for i, child in enumerate(children):
+                is_last = i == len(children) - 1
+                connector = "└── " if is_last else "├── "
+                output_buffer.write(f"{prefix}{connector}{child.tag}\n")
 
-            # Recursively add children with updated prefix
-            if not child.is_leaf():
-                extension = "    " if is_last else "│   "
-                add_children(child.identifier, prefix + extension)
+                # Recursively add children with updated prefix
+                if not child.is_leaf():
+                    extension = "    " if is_last else "│   "
+                    add_children(child.identifier, prefix + extension)
 
-    add_children(tree.root)
-    output_buffer.write("```\n\n")
-    output_buffer.write(
-        "**Key:** [X] has a python function [P]ipe / [C]md, [α] alpha feature\n"
-    )
+        add_children(tree.root)
+        output_buffer.write("```\n\n")
+        output_buffer.write(
+            "**Key:** [X] has a python function [P]ipe / [C]md, [α] alpha feature\n"
+        )
 
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _display_html_tree(tree: Tree) -> str:
@@ -357,121 +357,129 @@ def _display_html_tree(tree: Tree) -> str:
     if len(tree) == 0:
         return ""
 
-    output_buffer = StringIO()
-
-    # Add CSS styling
-    output_buffer.write(
-        """<style>
+    with StringIO() as output_buffer:
+        # Add CSS styling
+        output_buffer.write(
+            """<style>
 .command-tree {
-    font-family: 'Courier New', monospace;
+    font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     margin: 20px 0;
+    padding: 15px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #eee;
 }
 .command-tree ul {
     list-style-type: none;
-    padding-left: 20px;
+    padding-left: 24px;
     margin: 0;
 }
 .command-tree > ul {
     padding-left: 0;
 }
 .command-tree li {
-    margin: 5px 0;
+    margin: 4px 0;
+    position: relative;
 }
 .tree-root {
-    font-weight: bold;
-    color: #00aaff;
-    font-size: 1.1em;
+    font-weight: 800;
+    color: #007acc;
+    font-size: 1.2em;
+    margin-bottom: 8px;
 }
 .tree-group {
-    color: #ff8800;
-    font-weight: bold;
+    color: #d48806;
+    font-weight: 600;
 }
 .tree-command {
-    color: #00cc00;
+    color: #389e0d;
 }
 .tree-decorator {
-    color: #888888;
-    font-size: 0.9em;
-    margin-left: 5px;
+    color: #8c8c8c;
+    font-size: 0.85em;
+    margin-left: 6px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
 }
 .tree-decorator-python {
-    color: #0066ff;
+    color: #096dd9;
     font-weight: bold;
 }
 .tree-decorator-alpha {
-    color: #ff00ff;
+    color: #eb2f96;
     font-weight: bold;
 }
 .tree-key {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-left: 3px solid #00aaff;
+    margin-top: 16px;
+    padding: 12px;
+    background-color: #f0f5ff;
+    border-left: 4px solid #1890ff;
+    border-radius: 0 4px 4px 0;
     font-size: 0.9em;
-    color: #666;
+    color: #595959;
 }
 </style>
 <div class="command-tree">
 """
-    )
+        )
 
-    # Get the root node
-    root = tree.get_node(tree.root)
-    output_buffer.write(f'<div class="tree-root">{root.tag}</div>\n')
+        # Get the root node
+        root = tree.get_node(tree.root)
+        output_buffer.write(f'<div class="tree-root">{root.tag}</div>\n')
 
-    # Build the tree recursively using nested lists
-    def add_children(node_id):
-        children = tree.children(node_id)
-        if not children:
-            return
+        # Build the tree recursively using nested lists
+        def add_children(node_id):
+            children = tree.children(node_id)
+            if not children:
+                return
 
-        output_buffer.write("<ul>\n")
-        for child in children:
-            # Parse the tag to extract name and decorators
-            tag_parts = child.tag.split()
-            name = tag_parts[0]
-            decorators = tag_parts[1:] if len(tag_parts) > 1 else []
+            output_buffer.write("<ul>\n")
+            for child in children:
+                # Parse the tag to extract name and decorators
+                tag_parts = child.tag.split()
+                name = tag_parts[0]
+                decorators = tag_parts[1:] if len(tag_parts) > 1 else []
 
-            # Determine node class
-            if child.is_leaf():
-                node_class = "tree-command"
-            else:
-                node_class = "tree-group"
-
-            output_buffer.write(f'<li><span class="{node_class}">{name}</span>')
-
-            # Add decorators
-            for decorator in decorators:
-                if "[P]" in decorator or "[C]" in decorator:
-                    output_buffer.write(
-                        f'<span class="tree-decorator tree-decorator-python">{decorator}</span>'
-                    )
-                elif "[α]" in decorator:
-                    output_buffer.write(
-                        f'<span class="tree-decorator tree-decorator-alpha">{decorator}</span>'
-                    )
+                # Determine node class
+                if child.is_leaf():
+                    node_class = "tree-command"
                 else:
-                    output_buffer.write(
-                        f'<span class="tree-decorator">{decorator}</span>'
-                    )
+                    node_class = "tree-group"
 
-            # Recursively add children
-            if not child.is_leaf():
-                add_children(child.identifier)
+                output_buffer.write(f'<li><span class="{node_class}">{name}</span>')
 
-            output_buffer.write("</li>\n")
+                # Add decorators
+                for decorator in decorators:
+                    if "[P]" in decorator or "[C]" in decorator:
+                        output_buffer.write(
+                            f'<span class="tree-decorator tree-decorator-python">{decorator}</span>'
+                        )
+                    elif "[α]" in decorator:
+                        output_buffer.write(
+                            f'<span class="tree-decorator tree-decorator-alpha">{decorator}</span>'
+                        )
+                    else:
+                        output_buffer.write(
+                            f'<span class="tree-decorator">{decorator}</span>'
+                        )
 
-        output_buffer.write("</ul>\n")
+                # Recursively add children
+                if not child.is_leaf():
+                    add_children(child.identifier)
 
-    add_children(tree.root)
+                output_buffer.write("</li>\n")
 
-    output_buffer.write("</div>\n")
-    text = " [X] has a python function [P]ipe / [C]md, [α] alpha feature"
-    text = f'<div class="tree-key"><strong>Key:</strong>{text}</div>'
-    output_buffer.write(text)
+            output_buffer.write("</ul>\n")
 
-    return output_buffer.getvalue()
+        add_children(tree.root)
+
+        output_buffer.write("</div>\n")
+        text = " [X] has a python function [P]ipe / [C]md, [α] alpha feature"
+        text = f'<div class="tree-key"><strong>Key:</strong>{text}</div>\n'
+
+        output_buffer.write(text)
+
+        return output_buffer.getvalue()
 
 
 def _display_tree(
@@ -576,66 +584,68 @@ def _display_rich_tree(tree: Tree, plain: bool = False) -> str:
     Returns:
         Formatted tree as string with ANSI colour codes (or plain text if plain=True)
     """
-    output_buffer = StringIO()
-    if plain:
-        console = Console(file=output_buffer, force_terminal=False, color_system=None)
-    else:
-        console = Console(file=output_buffer, force_terminal=True)
+    with StringIO() as output_buffer:
+        if plain:
+            console = Console(
+                file=output_buffer, force_terminal=False, color_system=None
+            )
+        else:
+            console = Console(file=output_buffer, force_terminal=True)
 
-    # Get the root node
-    root = tree.get_node(tree.root)
-    rich_tree = RichTree(f"[bold cyan]{root.tag}[/bold cyan]")
+        # Get the root node
+        root = tree.get_node(tree.root)
+        rich_tree = RichTree(f"[bold cyan]{root.tag}[/bold cyan]")
 
-    # Build the Rich tree recursively
-    def add_children(treelib_node_id, rich_parent):
-        children = tree.children(treelib_node_id)
-        for child in children:
-            # Parse the tag to extract name and decorators
-            tag_parts = child.tag.split()
-            name = tag_parts[0]
-            decorators = tag_parts[1:] if len(tag_parts) > 1 else []
+        # Build the Rich tree recursively
+        def add_children(treelib_node_id, rich_parent):
+            children = tree.children(treelib_node_id)
+            for child in children:
+                # Parse the tag to extract name and decorators
+                tag_parts = child.tag.split()
+                name = tag_parts[0]
+                decorators = tag_parts[1:] if len(tag_parts) > 1 else []
 
-            # Style based on whether it's a leaf or branch
-            if child.is_leaf():
-                # Leaf nodes (actual commands) in green
-                styled_name = f"[green]{name}[/green]"
-            else:
-                # Branch nodes (groups) in yellow
-                styled_name = f"[yellow]{name}[/yellow]"
-
-            # Add decorators with specific colours
-            decorator_parts = []
-            for decorator in decorators:
-                if "[P]" in decorator:
-                    decorator_parts.append("[blue][P][/blue]")
-                elif "[α]" in decorator:
-                    decorator_parts.append("[magenta][α][/magenta]")
+                # Style based on whether it's a leaf or branch
+                if child.is_leaf():
+                    # Leaf nodes (actual commands) in green
+                    styled_name = f"[green]{name}[/green]"
                 else:
-                    decorator_parts.append(f"[dim]{decorator}[/dim]")
+                    # Branch nodes (groups) in yellow
+                    styled_name = f"[yellow]{name}[/yellow]"
 
-            label = styled_name
-            if decorator_parts:
-                label += " " + " ".join(decorator_parts)
+                # Add decorators with specific colours
+                decorator_parts = []
+                for decorator in decorators:
+                    if "[P]" in decorator:
+                        decorator_parts.append("[blue][P][/blue]")
+                    elif "[α]" in decorator:
+                        decorator_parts.append("[magenta][α][/magenta]")
+                    else:
+                        decorator_parts.append(f"[dim]{decorator}[/dim]")
 
-            # Add this node to the Rich tree
-            new_branch = rich_parent.add(label)
+                label = styled_name
+                if decorator_parts:
+                    label += " " + " ".join(decorator_parts)
 
-            # Recursively add children
-            add_children(child.identifier, new_branch)
+                # Add this node to the Rich tree
+                new_branch = rich_parent.add(label)
 
-    # Build the tree starting from root
-    add_children(tree.root, rich_tree)
+                # Recursively add children
+                add_children(child.identifier, new_branch)
 
-    # Display the tree
-    console.print(rich_tree)
+        # Build the tree starting from root
+        add_children(tree.root, rich_tree)
 
-    # Display the key
-    console.print(
-        "\n[dim]key: [X] has a python function [/dim][blue][P][/blue][dim]ipe / [/dim][blue][C][/blue][dim]md[/dim]"
-    )
-    console.print("     [magenta][α][/magenta] [dim]alpha feature[/dim]")
+        # Display the tree
+        console.print(rich_tree)
 
-    return output_buffer.getvalue()
+        # Display the key
+        console.print(
+            "\n[dim]key: [X] has a python function [/dim][blue][P][/blue][dim]ipe / [/dim][blue][C][/blue][dim]md[/dim]"
+        )
+        console.print("     [magenta][α][/magenta] [dim]alpha feature[/dim]")
+
+        return output_buffer.getvalue()
 
 
 def _get_function_help(data):
@@ -811,19 +821,34 @@ def _display_list_format(
     if not commands_data:
         result = "No commands found matching the specified patterns."
     else:
-        output_buffer = StringIO()
-        use_rich_table = table_format == "simple" and is_rich_in_use() and not plain
+        with StringIO() as output_buffer:
+            use_rich_table = table_format == "simple" and is_rich_in_use() and not plain
 
-        if group_by_category:
-            for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
-                commands_list = list(the_commands)
+            if group_by_category:
+                for category, the_commands in groupby(
+                    commands_data, key=lambda x: x[1]
+                ):
+                    commands_list = list(the_commands)
 
-                output_buffer.write(f"\n## {category}\n\n")
+                    output_buffer.write(f"\n## {category}\n\n")
 
+                    table_data = [
+                        [cmd_path, desc] for cmd_path, _, desc, _ in commands_list
+                    ]
+                    headers = ["Command", "Description"]
+
+                    if use_rich_table:
+                        output_buffer.write(_format_rich_table(table_data, headers))
+                    else:
+                        output_buffer.write(
+                            tabulate(table_data, headers=headers, tablefmt=table_format)
+                        )
+            else:
                 table_data = [
-                    [cmd_path, desc] for cmd_path, _, desc, _ in commands_list
+                    [cmd_path, cmd_type, desc]
+                    for cmd_path, cmd_type, desc, _ in commands_data
                 ]
-                headers = ["Command", "Description"]
+                headers = ["Command", "Category", "Description"]
 
                 if use_rich_table:
                     output_buffer.write(_format_rich_table(table_data, headers))
@@ -831,21 +856,8 @@ def _display_list_format(
                     output_buffer.write(
                         tabulate(table_data, headers=headers, tablefmt=table_format)
                     )
-        else:
-            table_data = [
-                [cmd_path, cmd_type, desc]
-                for cmd_path, cmd_type, desc, _ in commands_data
-            ]
-            headers = ["Command", "Category", "Description"]
 
-            if use_rich_table:
-                output_buffer.write(_format_rich_table(table_data, headers))
-            else:
-                output_buffer.write(
-                    tabulate(table_data, headers=headers, tablefmt=table_format)
-                )
-
-        result = output_buffer.getvalue()
+            result = output_buffer.getvalue()
 
     return result
 
@@ -860,19 +872,19 @@ def _format_rich_table(table_data: List[List[str]], headers: List[str]) -> str:
     Returns:
         Formatted table as string with ANSI colour codes
     """
-    output_buffer = StringIO()
-    console = Console(file=output_buffer, force_terminal=True)
+    with StringIO() as output_buffer:
+        console = Console(file=output_buffer, force_terminal=True)
 
-    table = Table(show_header=True, header_style="bold cyan")
+        table = Table(show_header=True, header_style="bold cyan")
 
-    for header in headers:
-        table.add_column(header)
+        for header in headers:
+            table.add_column(header)
 
-    for row in table_data:
-        table.add_row(*row)
+        for row in table_data:
+            table.add_row(*row)
 
-    console.print(table)
-    return output_buffer.getvalue()
+        console.print(table)
+        return output_buffer.getvalue()
 
 
 def _get_rich_help_panel(path: tuple, group_panels: dict, cmd_obj=None) -> str:
@@ -918,90 +930,96 @@ def _display_html_table_format(tree: Tree, group_by_category: bool = False) -> s
     if not commands_data:
         return "<p>No commands found matching the specified patterns.</p>"
 
-    output_buffer = StringIO()
-
-    # Add CSS styling
-    output_buffer.write(
-        """<style>
+    with StringIO() as output_buffer:
+        # Add CSS styling
+        output_buffer.write(
+            """<style>
 .commands-table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
-    font-family: Arial, sans-serif;
+    font-family: system-ui, -apple-system, sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    overflow: hidden;
 }
 .commands-table th {
-    background-color: #00aaff;
+    background-color: #007acc;
     color: white;
-    padding: 12px;
+    padding: 14px 16px;
     text-align: left;
-    font-weight: bold;
+    font-weight: 600;
 }
 .commands-table td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #262626;
 }
 .commands-table tr:hover {
-    background-color: #f5f5f5;
+    background-color: #fafafa;
 }
 .category-heading {
-    color: #00aaff;
-    font-size: 1.4em;
-    font-weight: bold;
-    margin-top: 30px;
-    margin-bottom: 10px;
-    border-bottom: 2px solid #00aaff;
-    padding-bottom: 5px;
+    color: #007acc;
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-top: 32px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #007acc;
+    padding-bottom: 6px;
 }
 .command-name {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    color: #0066cc;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-weight: 700;
+    color: #096dd9;
 }
 .category-name {
-    color: #666;
+    color: #8c8c8c;
     font-size: 0.9em;
 }
 </style>
 """
-    )
+        )
 
-    if group_by_category:
-        for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
-            commands_list = list(the_commands)
+        if group_by_category:
+            for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
+                commands_list = list(the_commands)
 
-            output_buffer.write(f'<h2 class="category-heading">{category}</h2>\n')
+                output_buffer.write(f'<h2 class="category-heading">{category}</h2>\n')
+                output_buffer.write('<table class="commands-table">\n')
+                output_buffer.write(
+                    '<thead><tr><th scope="col">Command</th><th scope="col">Description</th></tr></thead>\n'
+                )
+                output_buffer.write("<tbody>\n")
+
+                for cmd_path, _, desc, _ in commands_list:
+                    output_buffer.write("<tr>")
+                    output_buffer.write(f'<td class="command-name">{cmd_path}</td>')
+                    output_buffer.write(f"<td>{desc}</td>")
+                    output_buffer.write("</tr>\n")
+
+                output_buffer.write("</tbody>\n")
+                output_buffer.write("</table>\n")
+        else:
             output_buffer.write('<table class="commands-table">\n')
-            output_buffer.write(
-                "<thead><tr><th>Command</th><th>Description</th></tr></thead>\n"
-            )
+
+            headings = ["Command", "Category", "Description"]
+            headings = [f'<th scope="col">{heading}</th>' for heading in headings]
+            text = f"<thead><tr>{headings}</tr></thead>\n"
+
+            output_buffer.write(text)
             output_buffer.write("<tbody>\n")
 
-            for cmd_path, _, desc, _ in commands_list:
+            for cmd_path, cmd_type, desc, _ in commands_data:
                 output_buffer.write("<tr>")
                 output_buffer.write(f'<td class="command-name">{cmd_path}</td>')
+                output_buffer.write(f'<td class="category-name">{cmd_type}</td>')
                 output_buffer.write(f"<td>{desc}</td>")
                 output_buffer.write("</tr>\n")
 
             output_buffer.write("</tbody>\n")
             output_buffer.write("</table>\n")
-    else:
-        output_buffer.write('<table class="commands-table">\n')
-        output_buffer.write(
-            "<thead><tr><th>Command</th><th>Category</th><th>Description</th></tr></thead>\n"
-        )
-        output_buffer.write("<tbody>\n")
 
-        for cmd_path, cmd_type, desc, _ in commands_data:
-            output_buffer.write("<tr>")
-            output_buffer.write(f'<td class="command-name">{cmd_path}</td>')
-            output_buffer.write(f'<td class="category-name">{cmd_type}</td>')
-            output_buffer.write(f"<td>{desc}</td>")
-            output_buffer.write("</tr>\n")
-
-        output_buffer.write("</tbody>\n")
-        output_buffer.write("</table>\n")
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _display_full_format(
@@ -1077,17 +1095,16 @@ def _display_markdown_full_grouped(commands_data: List[tuple]) -> str:
         Pure Markdown as string
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
+            commands_list = list(the_commands)
 
-    for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
-        commands_list = list(the_commands)
+            output_buffer.write(f"\n# {category}\n\n")
 
-        output_buffer.write(f"\n# {category}\n\n")
+            for cmd_path, _, cmd_obj in commands_list:
+                output_buffer.write(_format_command_markdown(cmd_path, cmd_obj))
 
-        for cmd_path, _, cmd_obj in commands_list:
-            output_buffer.write(_format_command_markdown(cmd_path, cmd_obj))
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _display_markdown_full_flat(commands_data: List[tuple]) -> str:
@@ -1100,17 +1117,16 @@ def _display_markdown_full_flat(commands_data: List[tuple]) -> str:
         Pure Markdown as string
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        for cmd_path, cmd_type, cmd_obj in commands_data:
+            output_buffer.write(f"\n## {cmd_path}\n\n")
+            output_buffer.write(f"**Category:** {cmd_type}\n\n")
+            output_buffer.write(
+                _format_command_markdown(cmd_path, cmd_obj, skip_title=True)
+            )
+            output_buffer.write("\n" + "-" * 80 + "\n")
 
-    for cmd_path, cmd_type, cmd_obj in commands_data:
-        output_buffer.write(f"\n## {cmd_path}\n\n")
-        output_buffer.write(f"**Category:** {cmd_type}\n\n")
-        output_buffer.write(
-            _format_command_markdown(cmd_path, cmd_obj, skip_title=True)
-        )
-        output_buffer.write("\n" + "-" * 80 + "\n")
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _format_command_markdown(cmd_path: str, cmd_obj, skip_title: bool = False) -> str:
@@ -1127,38 +1143,37 @@ def _format_command_markdown(cmd_path: str, cmd_obj, skip_title: bool = False) -
         Markdown documentation as string
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        if not skip_title:
+            output_buffer.write(f"\n## `{cmd_path}`\n\n")
 
-    if not skip_title:
-        output_buffer.write(f"\n## `{cmd_path}`\n\n")
+        help_text = ""
+        if hasattr(cmd_obj, "callback") and cmd_obj.callback:
+            help_text = cmd_obj.callback.__doc__ or ""
+        elif hasattr(cmd_obj, "help"):
+            help_text = cmd_obj.help or ""
 
-    help_text = ""
-    if hasattr(cmd_obj, "callback") and cmd_obj.callback:
-        help_text = cmd_obj.callback.__doc__ or ""
-    elif hasattr(cmd_obj, "help"):
-        help_text = cmd_obj.help or ""
+        if help_text:
+            clean_help = help_text.strip().lstrip("-").strip()
+            clean_help = clean_help.replace("\\-", "").strip()
+            paragraphs = clean_help.split("\n\n")
+            clean_paragraphs = [" ".join(p.split()) for p in paragraphs]
+            formatted_help = "\n\n".join(clean_paragraphs)
+            output_buffer.write(f"{formatted_help}\n\n")
 
-    if help_text:
-        clean_help = help_text.strip().lstrip("-").strip()
-        clean_help = clean_help.replace("\\-", "").strip()
-        paragraphs = clean_help.split("\n\n")
-        clean_paragraphs = [" ".join(p.split()) for p in paragraphs]
-        formatted_help = "\n\n".join(clean_paragraphs)
-        output_buffer.write(f"{formatted_help}\n\n")
+        arguments = [p for p in cmd_obj.params if isinstance(p, click.Argument)]
+        if arguments:
+            output_buffer.write("### Arguments\n\n")
+            for arg in arguments:
+                output_buffer.write(_format_param_markdown(arg, is_argument=True))
 
-    arguments = [p for p in cmd_obj.params if isinstance(p, click.Argument)]
-    if arguments:
-        output_buffer.write("### Arguments\n\n")
-        for arg in arguments:
-            output_buffer.write(_format_param_markdown(arg, is_argument=True))
+        options = [p for p in cmd_obj.params if isinstance(p, click.Option)]
+        if options:
+            output_buffer.write("### Options\n\n")
+            for opt in options:
+                output_buffer.write(_format_param_markdown(opt, is_argument=False))
 
-    options = [p for p in cmd_obj.params if isinstance(p, click.Option)]
-    if options:
-        output_buffer.write("### Options\n\n")
-        for opt in options:
-            output_buffer.write(_format_param_markdown(opt, is_argument=False))
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _format_param_markdown(param, is_argument: bool = False) -> str:
@@ -1246,38 +1261,37 @@ def _display_html_full_grouped(commands_data: List[tuple]) -> str:
         HTML as string
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
+            commands_list = list(the_commands)
 
-    for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
-        commands_list = list(the_commands)
+            output_buffer.write(f'<h1 style="color: #af00ff;">{category}</h1>\n\n')
 
-        output_buffer.write(f'<h1 style="colour: #af00ff;">{category}</h1>\n\n')
+            for cmd_path, _, cmd_obj in commands_list:
+                output_buffer.write(f'<h2 style="color: #0087ff;">{cmd_path}</h2>\n\n')
 
-        for cmd_path, _, cmd_obj in commands_list:
-            output_buffer.write(f'<h2 style="colour: #0087ff;">{cmd_path}</h2>\n\n')
+                # Create console for recording with file= to suppress stdout
+                console = Console(
+                    record=True, force_terminal=True, width=100, file=StringIO()
+                )
 
-            # Create console for recording with file= to suppress stdout
-            console = Console(
-                record=True, force_terminal=True, width=100, file=StringIO()
-            )
+                # Capture stdout
+                with StringIO() as captured_stdout:
+                    with redirect_stdout(captured_stdout):
+                        ctx = click.Context(cmd_obj, info_name=cmd_path, color=True)
+                        ctx.get_help()
 
-            # Capture stdout
-            captured_stdout = StringIO()
-            with redirect_stdout(captured_stdout):
-                ctx = click.Context(cmd_obj, info_name=cmd_path, color=True)
-                ctx.get_help()
+                    # Print captured output to recording console
+                    console.print(captured_stdout.getvalue())
 
-            # Print captured output to recording console
-            console.print(captured_stdout.getvalue())
+                # Export as HTML
+                html_chunk = console.export_html(
+                    inline_styles=True, code_format="<pre>{code}</pre>"
+                )
+                output_buffer.write(html_chunk)
+                output_buffer.write("\n")
 
-            # Export as HTML
-            html_chunk = console.export_html(
-                inline_styles=True, code_format="<pre>{code}</pre>"
-            )
-            output_buffer.write(html_chunk)
-            output_buffer.write("\n")
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _display_html_full_flat(commands_data: List[tuple]) -> str:
@@ -1290,38 +1304,40 @@ def _display_html_full_flat(commands_data: List[tuple]) -> str:
         HTML as string
     """
 
-    output_buffer = StringIO()
-    show_headers = len(commands_data) > 1
+    with StringIO() as output_buffer:
+        show_headers = len(commands_data) > 1
 
-    for cmd_path, cmd_type, cmd_obj in commands_data:
-        if show_headers:
-            output_buffer.write(f'<h2 style="colour: #0087ff;">{cmd_path}</h2>\n')
-            output_buffer.write(
-                f'<p style="colour: #6c6c6c;">Category: {cmd_type}</p>\n\n'
+        for cmd_path, cmd_type, cmd_obj in commands_data:
+            if show_headers:
+                output_buffer.write(f'<h2 style="color: #0087ff;">{cmd_path}</h2>\n')
+                output_buffer.write(
+                    f'<p style="color: #6c6c6c;">Category: {cmd_type}</p>\n\n'
+                )
+
+            # Create console for recording with file= to suppress stdout
+            console = Console(
+                record=True, force_terminal=True, width=100, file=StringIO()
             )
 
-        # Create console for recording with file= to suppress stdout
-        console = Console(record=True, force_terminal=True, width=100, file=StringIO())
+            # Capture stdout
+            with StringIO() as captured_stdout:
+                with redirect_stdout(captured_stdout):
+                    ctx = click.Context(cmd_obj, info_name=cmd_path, color=True)
+                    ctx.get_help()
 
-        # Capture stdout
-        captured_stdout = StringIO()
-        with redirect_stdout(captured_stdout):
-            ctx = click.Context(cmd_obj, info_name=cmd_path, color=True)
-            ctx.get_help()
+                # Print captured output to recording console
+                console.print(captured_stdout.getvalue())
 
-        # Print captured output to recording console
-        console.print(captured_stdout.getvalue())
+            # Export as HTML
+            html_chunk = console.export_html(
+                inline_styles=True, code_format="<pre>{code}</pre>"
+            )
+            output_buffer.write(html_chunk)
 
-        # Export as HTML
-        html_chunk = console.export_html(
-            inline_styles=True, code_format="<pre>{code}</pre>"
-        )
-        output_buffer.write(html_chunk)
+            if show_headers:
+                output_buffer.write("\n<hr>\n")
 
-        if show_headers:
-            output_buffer.write("\n<hr>\n")
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
 
 
 def _display_full_grouped(commands_data: List[tuple], plain: bool = False) -> str:
@@ -1335,27 +1351,26 @@ def _display_full_grouped(commands_data: List[tuple], plain: bool = False) -> st
         Formatted help text as string with ANSI colour codes (or plain text if plain=True)
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
+            commands_list = list(the_commands)
 
-    for category, the_commands in groupby(commands_data, key=lambda x: x[1]):
-        commands_list = list(the_commands)
-
-        if plain:
-            output_buffer.write(f"\n# {category}\n\n")
-        else:
-            output_buffer.write(f"\n\x1b[1;35m{category}\x1b[0m\n\n")
-
-        for cmd_path, _, cmd_obj in commands_list:
             if plain:
-                output_buffer.write(f"\n## {cmd_path}\n\n")
+                output_buffer.write(f"\n# {category}\n\n")
             else:
-                output_buffer.write(f"\n\x1b[1;34m{cmd_path}\x1b[0m\n\n")
+                output_buffer.write(f"\n\x1b[1;35m{category}\x1b[0m\n\n")
 
-            ctx = click.Context(cmd_obj, info_name=cmd_path, color=not plain)
-            help_text = ctx.get_help()
-            output_buffer.write(help_text)
+            for cmd_path, _, cmd_obj in commands_list:
+                if plain:
+                    output_buffer.write(f"\n## {cmd_path}\n\n")
+                else:
+                    output_buffer.write(f"\n\x1b[1;34m{cmd_path}\x1b[0m\n\n")
 
-    return output_buffer.getvalue()
+                ctx = click.Context(cmd_obj, info_name=cmd_path, color=not plain)
+                help_text = ctx.get_help()
+                output_buffer.write(help_text)
+
+        return output_buffer.getvalue()
 
 
 def _display_full_flat(commands_data: List[tuple], plain: bool = False) -> str:
@@ -1369,26 +1384,25 @@ def _display_full_flat(commands_data: List[tuple], plain: bool = False) -> str:
         Formatted help text as string with ANSI colour codes (or plain text if plain=True)
     """
 
-    output_buffer = StringIO()
+    with StringIO() as output_buffer:
+        # Skip headers if only one command (help already shows command name)
+        show_headers = len(commands_data) > 1
 
-    # Skip headers if only one command (help already shows command name)
-    show_headers = len(commands_data) > 1
+        for cmd_path, cmd_type, cmd_obj in commands_data:
+            if show_headers:
+                if plain:
+                    output_buffer.write(f"\n## {cmd_path}\n")
+                    output_buffer.write(f"Category: {cmd_type}\n\n")
+                else:
+                    # Write ANSI codes directly to buffer to avoid console buffering issues
+                    output_buffer.write(f"\n\x1b[1;34m{cmd_path}\x1b[0m\n")
+                    output_buffer.write(f"\x1b[2mCategory: {cmd_type}\x1b[0m\n\n")
 
-    for cmd_path, cmd_type, cmd_obj in commands_data:
-        if show_headers:
-            if plain:
-                output_buffer.write(f"\n## {cmd_path}\n")
-                output_buffer.write(f"Category: {cmd_type}\n\n")
-            else:
-                # Write ANSI codes directly to buffer to avoid console buffering issues
-                output_buffer.write(f"\n\x1b[1;34m{cmd_path}\x1b[0m\n")
-                output_buffer.write(f"\x1b[2mCategory: {cmd_type}\x1b[0m\n\n")
+            ctx = click.Context(cmd_obj, info_name=cmd_path, color=not plain)
+            help_text = ctx.get_help()
+            output_buffer.write(help_text)
 
-        ctx = click.Context(cmd_obj, info_name=cmd_path, color=not plain)
-        help_text = ctx.get_help()
-        output_buffer.write(help_text)
+            if show_headers:
+                output_buffer.write("\n" + "-" * 80 + "\n")
 
-        if show_headers:
-            output_buffer.write("\n" + "-" * 80 + "\n")
-
-    return output_buffer.getvalue()
+        return output_buffer.getvalue()
