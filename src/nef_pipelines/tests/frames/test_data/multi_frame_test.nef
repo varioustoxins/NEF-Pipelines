@@ -1,0 +1,50 @@
+data_multi_frame_test
+
+     save_nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
+
+        loop_
+           _nef_sequence.index
+           _nef_sequence.chain_code
+           _nef_sequence.sequence_code
+           _nef_sequence.residue_name
+           _nef_sequence.linking
+
+           1   A   1   ALA   start
+           2   A   2   GLY   middle
+           3   A   3   VAL   end
+
+        stop_
+
+     save_
+
+     save_ccpn_additional_data_1
+        _ccpn_additional_data.sf_category      ccpn_additional_data
+        _ccpn_additional_data.sf_framecode     ccpn_additional_data_1
+
+        loop_
+           _ccpn_data.key
+           _ccpn_data.value
+
+           frame1_key1     frame1_value1
+           frame1_key2     frame1_value2
+
+        stop_
+
+     save_
+
+     save_ccpn_additional_data_2
+        _ccpn_additional_data.sf_category      ccpn_additional_data
+        _ccpn_additional_data.sf_framecode     ccpn_additional_data_2
+
+        loop_
+           _ccpn_data.key
+           _ccpn_data.value
+
+           frame2_key1     frame2_value1
+           frame2_key2     frame2_value2
+
+        stop_
+
+     save_
