@@ -30,6 +30,8 @@ UNDERSCORE = "_"
 parser = None
 
 
+# TODO: the command should warn if it sees utf8 characters
+# we should most probably use charset-normalizer
 # noinspection PyUnusedLocal
 @frames_app.command()
 def list(
@@ -115,7 +117,7 @@ def list(
             print(f"entry {entry.entry_id}")
             print()
 
-            md5 = hashlib.md5(lines.encode("ascii")).hexdigest()
+            md5 = hashlib.md5(lines.encode("utf-8")).hexdigest()
             num_lines = len(lines.split("\n"))
             print(f"lines: {num_lines} frames: {len(entry)} checksum: {md5} [md5]")
             print()
@@ -207,9 +209,7 @@ def list(
                             counts_and_percentages = []
 
                             for residue, count in residue_counts[chain].items():
-                                percentage = (
-                                    f"{count/ residue_count_per_chain[chain]*100:5.2f}"
-                                )
+                                percentage = f"{count / residue_count_per_chain[chain] * 100 :5.2f}"
                                 counts_and_percentages.append(
                                     f"{residue}: {count} [{percentage}%]"
                                 )

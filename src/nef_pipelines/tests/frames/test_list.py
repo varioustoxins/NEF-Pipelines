@@ -117,3 +117,30 @@ def test_frame_with_no_filters_doesnt_fail():
     EXPECTED_NO_FRAMES = "nef_nmr_meta_data nef_molecular_system"
 
     assert_lines_match(EXPECTED_NO_FRAMES, result.stdout)
+
+
+def test_frame_verbose_with_utf8():
+    """Test that frames list -v works correctly with UTF-8 characters in the NEF file.
+
+    This specifically tests the fix for the MD5 encoding bug where 'unicode' encoding
+    was used instead of 'utf-8', which would fail on UTF-8 encoded files.
+    """
+    path = path_in_test_data(__file__, "utf8_test.nef")
+    result = run_and_report(app, ["--in", path, "-v"])
+
+    EXPECTED_VERBOSE_UTF8 = """
+        entry utf8_test
+            lines: 45 frames: 2 checksum: 297f92ba5b6cb3cd0301c87821ded26d [md5]
+        1. nef_nmr_meta_data
+            category: nef_nmr_meta_data
+            loops: 1 [lengths: 19]
+            loop names: nef_program_script
+            is nef frame: True
+        2. nef_molecular_system
+            category: nef_molecular_system
+            loops: 1 [lengths: 13]
+            loop names: nef_sequence
+            is nef frame: True
+    """
+
+    assert_lines_match(EXPECTED_VERBOSE_UTF8, result.stdout)
