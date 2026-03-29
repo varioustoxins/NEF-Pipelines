@@ -7,6 +7,7 @@ from nef_pipelines.lib.test_lib import (
     read_test_data,
     run_and_report,
 )
+from nef_pipelines.tools.chains import rename as rename_module
 from nef_pipelines.tools.chains.rename import rename
 
 runner = CliRunner()
@@ -16,6 +17,13 @@ app.command()(rename)
 
 RENAME_CHAINS_B_D = ["B", "D"]
 RENAME_CHAINS_A_E = ["A", "E"]
+
+
+@fixture(autouse=True)
+def clear_chain_code_cache():
+    """Clear the chain code tags cache before each test."""
+    rename_module._clear_chain_code_tags_cache()
+    yield
 
 
 @fixture
@@ -285,3 +293,94 @@ def test_rename_select_frame_by_category(INPUT_MULTI_CHAIN_SHIFTS_NEF):
     """
 
     assert_lines_match(EXPECTED, result.stdout)
+
+
+def test_rename_with_escaped_commas():
+    """\
+    Test renaming chains to chain codes containing commas using --use-escapes.
+    """
+    INPUT = read_test_data("multi_chain.nef", __file__)
+
+    result = run_and_report(app, ["--use-escapes", "B", "D,,1"], input=INPUT)
+
+    assert result.exit_code == 0
+
+    EXPECTED_ESCAPED_COMMA = """\
+    data_test
+
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+          _nef_sequence.ccpn_comment
+          _nef_sequence.ccpn_chain_role
+          _nef_sequence.ccpn_compound_name
+          _nef_sequence.ccpn_chain_comment
+
+         1   A     3   HIS   .   .   .   .   .   Sec5   .
+         2   A     4   MET   .   .   .   .   .   Sec5   .
+         3   D,1   5   ARG   .   .   .   .   .   Sec5   .
+         4   D,1   6   GLN   .   .   .   .   .   Sec5   .
+         5   C     7   PRO   .   .   .   .   .   Sec5   .
+
+       stop_
+
+    save_
+
+    """
+
+    assert_lines_match(EXPECTED_ESCAPED_COMMA, result.stdout)
+
+
+def test_rename_comma_separated_with_escapes():
+    """\
+    Test that comma-separated values work with --use-escapes.
+    """
+    INPUT = read_test_data("multi_chain.nef", __file__)
+
+    # Using comma to separate pairs: "B,D,,1" means B->D,1
+    result = run_and_report(app, ["--use-escapes", "B,D,,1"], input=INPUT)
+
+    assert result.exit_code == 0
+
+    EXPECTED_COMMA_SEP_ESCAPE = """\
+    data_test
+
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+          _nef_sequence.sequence_code
+          _nef_sequence.residue_name
+          _nef_sequence.linking
+          _nef_sequence.residue_variant
+          _nef_sequence.cis_peptide
+          _nef_sequence.ccpn_comment
+          _nef_sequence.ccpn_chain_role
+          _nef_sequence.ccpn_compound_name
+          _nef_sequence.ccpn_chain_comment
+
+         1   A     3   HIS   .   .   .   .   .   Sec5   .
+         2   A     4   MET   .   .   .   .   .   Sec5   .
+         3   D,1   5   ARG   .   .   .   .   .   Sec5   .
+         4   D,1   6   GLN   .   .   .   .   .   Sec5   .
+         5   C     7   PRO   .   .   .   .   .   Sec5   .
+
+       stop_
+
+    save_
+
+    """
+
+    assert_lines_match(EXPECTED_COMMA_SEP_ESCAPE, result.stdout)
