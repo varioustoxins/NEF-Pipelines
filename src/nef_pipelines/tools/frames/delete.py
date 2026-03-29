@@ -17,6 +17,7 @@ parser = None
 def delete(
     input_path: Path = typer.Option(
         None,
+        "--in",
         metavar="|PIPE|",
         help="file to read NEF data from default is stdin '-'",
     ),
