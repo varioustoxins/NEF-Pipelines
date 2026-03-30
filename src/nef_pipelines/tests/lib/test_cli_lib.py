@@ -25,6 +25,8 @@ from nef_pipelines.lib.cli_lib import (
     validate_residue_ranges_in_system,
 )
 from nef_pipelines.lib.structures import (
+    BadFrameLoopTagSyntaxException,
+    FrameLoopAndTags,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
@@ -2125,91 +2127,124 @@ def test_validate_split_separators_empty():
     assert result is None
 
 
-# Tests for parse_frame_loop_and_tags (ported from test_split.py)
+# Tests for parse_frame_loop_and_tags
+@pytest.mark.parametrize(
+    "input_str,kwargs,expected",
+    [
+        # Explicit frame.loop:tags format (loop columns)
+        (
+            "nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
+            {},
+            FrameLoopAndTags(
+                "nef_rdc_restraint_list", "nef_rdc_restraint", [], ["chain_code_1"]
+            ),
+        ),
+        # Frame:tags format (frame tags, not loop columns)
+        (
+            "my_frame:tag1,tag2,tag3",
+            {},
+            FrameLoopAndTags("my_frame", None, ["tag1", "tag2", "tag3"], []),
+        ),
+        # .loop:tags format (any frame, loop columns)
+        (
+            ".rdc:atom_name_1,atom_name_2",
+            {},
+            FrameLoopAndTags("*", "rdc", [], ["atom_name_1", "atom_name_2"]),
+        ),
+        # Frame.:tags format (any loop in frame, loop columns)
+        (
+            "dipolar.:tag1",
+            {},
+            FrameLoopAndTags("dipolar", "*", [], ["tag1"]),
+        ),
+        # Frame.loop format (entire loop, all columns)
+        (
+            "nef_rdc_restraint_list.nef_rdc_restraint",
+            {},
+            FrameLoopAndTags("nef_rdc_restraint_list", "nef_rdc_restraint", [], ["*"]),
+        ),
+        # Whitespace handling in tags (frame tags)
+        (
+            "frame:tag1 , tag2 ,tag3",
+            {},
+            FrameLoopAndTags("frame", None, ["tag1", "tag2", "tag3"], []),
+        ),
+    ],
+)
+def test_parse_frame_loop_and_tags(input_str, kwargs, expected):
+    """\
+    Test parse_frame_loop_and_tags with various input patterns.
+    """
+    result = parse_frame_loop_and_tags(input_str, **kwargs)
+
+    assert result == expected
 
 
-def test_parse_frame_loop_and_tags_custom_separators():
-    """Test parsing with custom separators."""
-    result = parse_frame_loop_and_tags(
-        "my_frame/loop_cat|tag1,tag2", frame_tag_separator="|", frame_loop_separator="/"
-    )
-
-    assert result.frame_name == "my_frame"
-    assert result.loop_name == "loop_cat"
-    assert result.tags == ["tag1", "tag2"]
-
-
-def test_parse_frame_loop_and_tags_explicit_frame_loop():
-    """Test explicit frame.loop:tags format."""
-    result = parse_frame_loop_and_tags(
-        "nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1"
-    )
-
-    assert result.frame_name == "nef_rdc_restraint_list"
-    assert result.loop_name == "nef_rdc_restraint"
-    assert result.tags == ["chain_code_1"]
-
-
-def test_parse_frame_loop_and_tags_frame_only():
-    """Test frame:tags format (auto-detect loop)."""
-    result = parse_frame_loop_and_tags("my_frame:tag1,tag2,tag3")
-
-    assert result.frame_name == "my_frame"
-    assert result.loop_name == "*"
-    assert result.tags == ["tag1", "tag2", "tag3"]
+@pytest.mark.parametrize(
+    "input_str,expected",
+    [
+        # Escaped colon in frame name
+        ("frame::name:tag", FrameLoopAndTags("frame:name", None, ["tag"], [])),
+        # Escaped dot in frame name
+        ("frame..name.loop:tag", FrameLoopAndTags("frame.name", "loop", [], ["tag"])),
+        # Escaped comma in tag list
+        ("frame:tag1,,2,tag3", FrameLoopAndTags("frame", None, ["tag1,2", "tag3"], [])),
+        # Escaped dot in loop name
+        ("frame.loop..name:tag", FrameLoopAndTags("frame", "loop.name", [], ["tag"])),
+        # Triple colon (:: → : plus separator :)
+        ("frame:::tag", FrameLoopAndTags("frame:", None, ["tag"], [])),
+        # Multiple escapes together
+        (
+            "fr::ame.lo..op:ta,,g1,tag2",
+            FrameLoopAndTags("fr:ame", "lo.op", [], ["ta,g1", "tag2"]),
+        ),
+        # Escaped in wildcard selectors
+        (".loop::name:tag", FrameLoopAndTags("*", "loop:name", [], ["tag"])),
+    ],
+)
+def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
+    """Test parse_frame_loop_and_tags with escape sequences."""
+    result = parse_frame_loop_and_tags(input_str, use_escapes=True)
+    assert result == expected
 
 
-def test_parse_frame_loop_and_tags_loop_wildcard():
-    """Test .loop:tags format (any frame)."""
-    result = parse_frame_loop_and_tags(".rdc:atom_name_1,atom_name_2")
+@pytest.mark.parametrize(
+    "input_str,expected_error_msg",
+    [
+        # Too many frame tag separators
+        ("frame:loop:tag1", "you have too many : separators [2], you should have 1"),
+        # Empty tags after colon
+        ("frame.loop:", "tags cannot be empty after ':'"),
+    ],
+)
+def test_parse_frame_loop_and_tags_errors(input_str, expected_error_msg):
+    """\
+    Test parse_frame_loop_and_tags error cases.
+    """
+    with pytest.raises(Exception) as exc_info:
+        parse_frame_loop_and_tags(input_str)
 
-    assert result.frame_name == "*"
-    assert result.loop_name == "rdc"
-    assert result.tags == ["atom_name_1", "atom_name_2"]
-
-
-def test_parse_frame_loop_and_tags_frame_wildcard():
-    """Test frame.:tags format (any loop in frame)."""
-    result = parse_frame_loop_and_tags("dipolar.:tag1")
-
-    assert result.frame_name == "dipolar"
-    assert result.loop_name == "*"
-    assert result.tags == ["tag1"]
-
-
-def test_parse_frame_loop_and_tags_missing_separator_error():
-    """Test error when frame tag separator is missing."""
-    try:
-        parse_frame_loop_and_tags("nef_rdc_restraint_list.nef_rdc_restraint")
-        assert False, "Expected BadFrameLoopTagSyntaxException"
-    except Exception as e:
-        assert "you don't have a frame tag separator [:]" in str(e)
-        assert "nef_rdc_restraint_list.nef_rdc_restraint" in str(e)
+    assert expected_error_msg in str(exc_info.value)
 
 
-def test_parse_frame_loop_and_tags_too_many_separators_error():
-    """Test error when too many frame tag separators."""
-    try:
-        parse_frame_loop_and_tags("frame:loop:tag1")
-        assert False, "Expected BadFrameLoopTagSyntaxException"
-    except Exception as e:
-        assert "you have too many [2] separators [:], you should have 1" in str(e)
+@pytest.mark.parametrize(
+    "input_str,escape_seq",
+    [
+        ("frame::name:tag", "::"),
+        ("frame..name.loop", ".."),
+        ("frame:tag1,,2", ",,"),
+        ("fr::ame.lo..op:ta,,g1", "multiple"),
+    ],
+)
+def test_parse_frame_loop_and_tags_escape_sequences_without_flag(input_str, escape_seq):
+    """\
+    Test that escape sequences without use_escapes=True raise helpful errors.
+    """
+    with pytest.raises(BadFrameLoopTagSyntaxException) as exc_info:
+        parse_frame_loop_and_tags(input_str)  # use_escapes=False by default
 
-
-def test_parse_frame_loop_and_tags_empty_tags_error():
-    """Test error when tags are empty."""
-    try:
-        parse_frame_loop_and_tags("frame.loop:")
-        assert False, "Expected BadFrameLoopTagSyntaxException"
-    except Exception as e:
-        assert "tags are required after ':'" in str(e)
-
-
-def test_parse_frame_loop_and_tags_whitespace_handling():
-    """Test that whitespace in tags is stripped."""
-    result = parse_frame_loop_and_tags("frame:tag1 , tag2 ,tag3")
-
-    assert result.tags == ["tag1", "tag2", "tag3"]
+    error_message = str(exc_info.value)
+    assert "Did you forget --use-escapes?" in error_message
 
 
 def test_parse_residue_ranges_multiple_in_chain():

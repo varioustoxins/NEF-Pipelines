@@ -40,10 +40,11 @@ This module provides parsing and validation for several CLI constructs used thro
 import re
 from enum import Flag, auto
 from textwrap import dedent
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pyparsing as pp
 from pynmrstar import Entry, Saveframe
+from pyparsing import ParserElement, ParseResults, StringEnd
 
 from nef_pipelines.lib.sequence_lib import sequence_from_entry
 from nef_pipelines.lib.structures import (
@@ -100,6 +101,21 @@ POSSIBLE_SEPARATORS = r'[](),;:"&<>/\{}`~!@#$%?+=|^-*'
 # <StrNoSigns> = <a string but no + no - and no <ChainCodeSeparator>>
 
 RANGE_FORMAT = "<CHAIN> | :<START-RESIDUE>[..<END-RESIDUE>] | <CHAIN>:<START-RESIDUE>[..<END-RESIDUE>]"
+
+# Frame/loop/tag selector separators
+FRAME_TAG_SEPARATOR = ":"
+FRAME_LOOP_SEPARATOR = "."
+TAG_LIST_SEPARATOR = ","
+
+# Placeholders for escape sequence processing in parse_frame_loop_and_tags
+_FRAME_LOOP_AND_TAG_PLACEHOLDERS = {
+    "::": "\x00COLON\x00",
+    "..": "\x00DOT\x00",
+    ",,": "\x00COMMA\x00",
+}
+_REVERSED_FRAME_LOOP_AND_TAG_PLACEHOLDERS = {
+    placeholder: sep[0] for sep, placeholder in _FRAME_LOOP_AND_TAG_PLACEHOLDERS.items()
+}
 
 
 class DetectedSeparatorConflicts(Flag):
@@ -1398,35 +1414,247 @@ def _find_range_intersection(range1: tuple, range2: tuple) -> Optional[tuple]:
 
 def parse_frame_loop_and_tags(
     frame_spec: str,
-    frame_tag_separator: str = ":",
-    frame_loop_separator: str = ".",
-    tag_list_separator: str = ",",
+    use_escapes: bool = False,
 ) -> FrameLoopAndTags:
-    """Parse a frame specification.
+    """\
+    Parse a frame/loop/tag selector specification.
+
+    The selector uses dot and colon to specify selection level:
+
+        NO DOT (frame level):
+            name        → entire saveframe (all tags + all loops)
+            name:tag    → saveframe tag (metadata like sf_category)
+            :tag        → saveframe tag in all frames
+
+        HAS DOT (loop level):
+            name.loop       → entire loop (all columns)
+            name.loop:tag   → loop column
+            .loop:tag       → loop column in all frames
+            .:tag           → loop column in all loops/frames
+
+    Empty parts default to wildcard (*):
+        .loop == *.loop    (empty before dot)
+        name. == name.*    (empty after dot)
+        :tag == *:tag      (empty before colon)
 
     Args:
-        frame_spec: Specification in format:
-                   - frame_selector.loop_category:tag1,tag2,... (explicit loop)
-                   - frame_selector:tag1,tag2,... (auto-detect loop)
-                   Missing parts default to wildcards:
-                   - dipolar. -> frame=dipolar, loop=* (any loop)
-                   - .rdc -> frame=*, loop=rdc (any frame)
-        frame_tag_separator: Separator between frame/loop and tags
-        frame_loop_separator: Separator between frame and loop
-        tag_list_separator: Separator between tags in tag lists
+        frame_spec: Selector string
+        use_escapes: Enable escape sequences (default False). When True, doubled separators become literals.
 
     Returns:
-        a structure containing the frame selector, loop selector, and split tags
+        FrameLoopAndTags with:
+            - frame_name: Frame selector pattern (never None, default "*")
+            - loop_name: None (frame tags only), "*" (all loops), or "name" (specific loop)
+            - frame_tags: Saveframe-level tags (empty if loop-level selector)
+            - loop_tags: Loop column tags (empty if frame-level selector)
+
+    Examples:
+        parse_frame_loop_and_tags("shift:sf_category")
+        → FrameLoopAndTags(frame_name="shift", loop_name=None,
+                           frame_tags=["sf_category"], loop_tags=[])
+
+        parse_frame_loop_and_tags("shift.chemical_shift:atom_name")
+        → FrameLoopAndTags(frame_name="shift", loop_name="chemical_shift",
+                           frame_tags=[], loop_tags=["atom_name"])
+
+        parse_frame_loop_and_tags(":sf_category")
+        → FrameLoopAndTags(frame_name="*", loop_name=None,
+                           frame_tags=["sf_category"], loop_tags=[])
+
+    Escape Sequences (use_escapes=True):
+        When use_escapes=True, doubled separators become literal characters in identifiers:
+        - :: → literal :
+        - .. → literal .
+        - ,, → literal ,
+
+        Examples:
+            parse_frame_loop_and_tags("frame::name:tag", use_escapes=True)
+            → FrameLoopAndTags(frame_name="frame:name", frame_tags=["tag"], ...)
+
+            parse_frame_loop_and_tags("frame.loop..2:tag", use_escapes=True)
+            → FrameLoopAndTags(frame_name="frame", loop_name="loop.2", ...)
+
+            parse_frame_loop_and_tags("frame:tag1,,2,tag3", use_escapes=True)
+            → FrameLoopAndTags(..., frame_tags=["tag1,2", "tag3"])
     """
 
+    # Save original spec before processing
+    original_spec = frame_spec
+
+    # Pre-process for escape sequences
+    frame_spec = _insert_frame_loop_tag_placeholders(frame_spec, use_escapes)
+
+    grammar = _build_frame_loop_tag_grammar(use_escapes)
+
+    parser_result = _parse_frame_loop_tag_or_raise(
+        frame_spec, grammar, original_spec, use_escapes
+    )
+
+    result = _parse_frame_loop_and_tags(frame_spec, parser_result)
+
+    # Post-process to restore escaped characters
+    result = _remove_frame_loop_tag_place_holders(result, use_escapes)
+
+    return result
+
+
+def _remove_frame_loop_tag_place_holders(
+    result: FrameLoopAndTags, use_escapes: bool
+) -> FrameLoopAndTags:
+    if use_escapes:
+        frame_name = result.frame_name
+        loop_name = result.loop_name
+        frame_tags = result.frame_tags
+        loop_tags = result.loop_tags
+
+        # Restore placeholders to literal separators
+        for placeholder, char in _REVERSED_FRAME_LOOP_AND_TAG_PLACEHOLDERS.items():
+            frame_name = frame_name.replace(placeholder, char)
+            if loop_name and loop_name != "*":
+                loop_name = loop_name.replace(placeholder, char)
+            frame_tags = [tag.replace(placeholder, char) for tag in frame_tags]
+            loop_tags = [tag.replace(placeholder, char) for tag in loop_tags]
+
+        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+    return result
+
+
+def _parse_frame_loop_and_tags(frame_spec, result: ParseResults) -> FrameLoopAndTags:
+    # Parse results based on whether we have tags and/or explicit loop
+    has_tag_separator = FRAME_TAG_SEPARATOR in frame_spec
+    has_loop_separator = FRAME_LOOP_SEPARATOR in frame_spec
+
+    if has_loop_separator and has_tag_separator:
+        # frame.loop:tags → loop columns
+        frame_name = result[0]
+        loop_name = result[1]
+        loop_tags = [tag.strip() for tag in result[2:]] if len(result) > 2 else ["*"]
+        frame_tags = []
+        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+    elif has_loop_separator:
+        # frame.loop → entire loop
+        frame_name = result[0]
+        loop_name = result[1]
+        loop_tags = ["*"]
+        frame_tags = []
+        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+    elif has_tag_separator:
+        # frame:tags → frame tags ONLY (not loop columns)
+        frame_name = result[0]
+        loop_name = None
+        frame_tags = [tag.strip() for tag in result[1:]] if len(result) > 1 else ["*"]
+        loop_tags = []
+        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+    else:
+        # frame → entire frame (all tags + all loops)
+        frame_name = result[0]
+        loop_name = "*"
+        frame_tags = ["*"]
+        loop_tags = ["*"]
+        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+    return result
+
+
+def _detect_escape_sequences(spec: str) -> str:
+    """\
+    Detect which escape sequences are present in the spec.
+
+    Returns:
+        Empty string if no escapes found, otherwise a descriptive message about the escape sequences
+    """
+    found_escapes = [
+        seq for seq in _FRAME_LOOP_AND_TAG_PLACEHOLDERS.keys() if seq in spec
+    ]
+    if not found_escapes:
+        return ""
+
+    # Build message describing the escape sequences
+    if len(found_escapes) == 1:
+        seq = found_escapes[0]
+        char = seq[0]
+        result = f"I found {seq} which looks like an escape sequence for {char} when --use-escapes is active"
+    else:
+        # Multiple escapes: "I found ::, .. and ,, which look like escape sequences for
+        # :, . and , when --use-escapes is active"
+        chars = [seq[0] for seq in found_escapes]
+
+        # Format escape sequences list
+        if len(found_escapes) == 2:
+            escapes_str = f"{found_escapes[0]} and {found_escapes[1]}"
+            chars_str = f"{chars[0]} and {chars[1]}"
+        else:
+            escapes_str = ", ".join(found_escapes[:-1]) + f" and {found_escapes[-1]}"
+            chars_str = ", ".join(chars[:-1]) + f" and {chars[-1]}"
+
+        result = f"I found {escapes_str} which look like escape sequences for {chars_str} when --use-escapes is active"
+
+    return result
+
+
+def _insert_frame_loop_tag_placeholders(
+    frame_spec: str | Any, use_escapes: bool
+) -> Any:
+    if use_escapes:
+        for seq, placeholder in _FRAME_LOOP_AND_TAG_PLACEHOLDERS.items():
+            frame_spec = frame_spec.replace(seq, placeholder)
+    return frame_spec
+
+
+def _parse_frame_loop_tag_or_raise(
+    frame_spec: str,
+    grammar: ParserElement | StringEnd,
+    original_spec: str,
+    use_escapes: bool,
+) -> ParseResults:
+    try:
+        result = grammar.parseString(frame_spec)
+    except pp.ParseException as e:
+        # Check for common error cases
+        if frame_spec.count(FRAME_TAG_SEPARATOR) > 1:
+            count = frame_spec.count(FRAME_TAG_SEPARATOR)
+            reason = f"you have too many {FRAME_TAG_SEPARATOR} separators [{count}], you should have 1"
+            if use_escapes:
+                msg = f". To use a literal '{FRAME_TAG_SEPARATOR}' character, escape it as '{FRAME_TAG_SEPARATOR * 2}'"
+                reason += msg
+            else:
+                # Check if escape sequences are present
+                escape_msg = _detect_escape_sequences(original_spec)
+                if escape_msg:
+                    reason += f". Did you forget --use-escapes? ({escape_msg})"
+        elif FRAME_TAG_SEPARATOR in frame_spec:
+            # Check if tags are empty (after the separator)
+            tags_part = frame_spec.split(FRAME_TAG_SEPARATOR, 1)[1]
+            if not tags_part.strip():
+                reason = f"tags cannot be empty after '{FRAME_TAG_SEPARATOR}'"
+            else:
+                reason = f"invalid syntax: {str(e)}"
+        else:
+            reason = f"invalid syntax: {str(e)}"
+
+        # Check for escape sequences when use_escapes is False
+        if not use_escapes:
+            escape_msg = _detect_escape_sequences(original_spec)
+            if escape_msg and "Did you forget --use-escapes?" not in reason:
+                reason += f". Did you forget --use-escapes? ({escape_msg})"
+
+        raise BadFrameLoopTagSyntaxException(original_spec, reason)
+    return result
+
+
+def _build_frame_loop_tag_grammar(use_escapes: bool) -> ParserElement | StringEnd:
     # Build pyparsing grammar
-    frame_tag_sep = pp.Literal(frame_tag_separator).suppress()
-    frame_loop_sep = pp.Literal(frame_loop_separator)
-    tag_sep = pp.Literal(tag_list_separator).suppress()
+    frame_tag_sep = pp.Literal(FRAME_TAG_SEPARATOR).suppress()
+    frame_loop_sep = pp.Literal(FRAME_LOOP_SEPARATOR)
+    tag_sep = pp.Literal(TAG_LIST_SEPARATOR).suppress()
 
     # Frame and loop identifiers (anything except the special separators)
-    forbidden_chars = frame_tag_separator + frame_loop_separator + tag_list_separator
-    identifier = pp.Word(pp.printables, excludeChars=forbidden_chars)
+    # When using escapes, allow placeholder characters (null bytes) in identifiers
+    forbidden_chars = FRAME_TAG_SEPARATOR + FRAME_LOOP_SEPARATOR + TAG_LIST_SEPARATOR
+    if use_escapes:
+        # Allow any character including placeholders (null bytes from escape processing)
+        identifier = pp.CharsNotIn(forbidden_chars)
+    else:
+        identifier = pp.Word(pp.printables, excludeChars=forbidden_chars)
 
     # Tag names (anything except separators, with optional whitespace)
     tag_name = pp.Combine(
@@ -1440,44 +1668,13 @@ def parse_frame_loop_and_tags(
         + frame_loop_sep.suppress()
         + pp.Optional(identifier, default="*")
     )
-    frame_only = identifier.copy()
+    frame_only = pp.Optional(identifier, default="*")
 
     frame_loop_part = frame_loop_explicit | frame_only
 
-    # Complete grammar: frame[.loop]:tag1,tag2,...
-    grammar = frame_loop_part + frame_tag_sep + tag_list + pp.StringEnd()
-
-    try:
-        result = grammar.parseString(frame_spec)
-    except pp.ParseException as e:
-        # Check for common error cases
-        if frame_tag_separator not in frame_spec:
-            reason = f"you don't have a frame tag separator [{frame_tag_separator}]"
-        elif frame_spec.count(frame_tag_separator) > 1:
-            count = frame_spec.count(frame_tag_separator)
-            reason = f"you have too many [{count}] separators [{frame_tag_separator}], you should have 1"
-        else:
-            # Check if tags are empty (after the separator)
-            tags_part = frame_spec.split(frame_tag_separator, 1)[1]
-            if not tags_part.strip():
-                reason = f"tags are required after '{frame_tag_separator}'"
-            else:
-                reason = f"invalid syntax: {str(e)}"
-        raise BadFrameLoopTagSyntaxException(frame_spec, reason)
-
-    # Parse results based on whether we matched explicit or simple pattern
-    if frame_loop_separator in frame_spec[: frame_spec.index(frame_tag_separator)]:
-        # Explicit frame.loop format
-        frame_selector = result[0]
-        loop_selector = result[1]
-        tags = [tag.strip() for tag in result[2:]]
-    else:
-        # Simple frame format (no loop specified)
-        frame_selector = result[0]
-        loop_selector = "*"
-        tags = [tag.strip() for tag in result[1:]]
-
-    return FrameLoopAndTags(frame_selector, loop_selector, tags)
+    # Complete grammar: frame[.loop][:tag1,tag2,...] (tags optional)
+    grammar = frame_loop_part + pp.Optional(frame_tag_sep + tag_list) + pp.StringEnd()
+    return grammar
 
 
 def parse_frame_loop_selector(pattern: str, separator: str = ".") -> Tuple[str, str]:
