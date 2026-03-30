@@ -3,16 +3,15 @@ from pathlib import Path
 from typing import List
 
 import typer
+from pynmrstar import Entry, Saveframe
 
-from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.nef_lib import (
+    parse_frame_name,
+    read_entry_from_file_or_stdin_or_exit_error,
+)
 from nef_pipelines.tools.frames import frames_app
 
-UNDERSCORE = "_"
 
-parser = None
-
-
-# noinspection PyUnusedLocal
 @frames_app.command()
 def delete(
     input_path: Path = typer.Option(
@@ -40,24 +39,70 @@ def delete(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
 
+    saveframes_to_delete = _find_saveframes(
+        entry, selectors, use_categories=use_categories, exact=exact
+    )
+
+    result = pipe(entry, saveframes_to_delete)
+
+    print(result)
+
+
+# TODO: should be in a library
+def _find_saveframes(
+    entry: Entry,
+    selectors: List[str],
+    use_categories: bool = False,
+    exact: bool = False,
+) -> List[Saveframe]:
+    """\
+    Find saveframes matching the given selectors.
+
+    Args:
+        entry: NEF entry to search
+        selectors: List of selector patterns (wildcards supported unless exact=True)
+        use_categories: If True, match against category instead of name/identity
+        exact: If True, don't add wildcards to selectors
+
+    Returns:
+        List of matching saveframes
+    """
     to_delete = []
-    for name in selectors:
-        for frame in entry:
-            frame_full_name = frame.name
-            frame_category = frame.category
-            frame_name = frame_full_name[len(frame_category) :].lstrip("_").strip("`")
 
-            for selector in selectors:
-                if not exact:
-                    selector = f"*{selector}*"
+    for frame in entry:
+        parsed = parse_frame_name(frame)
 
-                if use_categories:
-                    if fnmatch(frame_category, selector):
-                        to_delete.append(frame)
-                else:
-                    if fnmatch(frame_name, selector):
-                        to_delete.append(frame)
+        for selector in selectors:
+            if not exact:
+                selector = f"*{selector}*"
 
-    entry.remove_saveframe(to_delete)
+            if use_categories:
+                if fnmatch(parsed.category, selector):
+                    to_delete.append(frame)
+                    break
+            else:
+                identity_match = parsed.identity is not None and fnmatch(
+                    parsed.identity, selector
+                )
+                full_name_match = fnmatch(parsed.full_name, selector)
 
-    print(entry)
+                if identity_match or full_name_match:
+                    to_delete.append(frame)
+                    break
+
+    return to_delete
+
+
+def pipe(entry: Entry, saveframes_to_delete: List[Saveframe]) -> Entry:
+    """\
+    Remove specified saveframes from entry.
+
+    Args:
+        entry: NEF entry to modify
+        saveframes_to_delete: List of saveframes to remove
+
+    Returns:
+        Modified entry with saveframes removed
+    """
+    entry.remove_saveframe(saveframes_to_delete)
+    return entry

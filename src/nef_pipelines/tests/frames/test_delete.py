@@ -3,6 +3,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import (
     assert_lines_match,
+    path_in_test_data,
     read_test_data,
     run_and_report,
 )
@@ -88,3 +89,43 @@ def test_delete_name():
     result = run_and_report(app, ["test_1"], input=INPUT_PALES_TEST_1_NEF)
 
     assert_lines_match(EXPECTED_DELETE_NAME, result.stdout)
+
+
+# Test case where frame name equals category (like ccpn_additional_data)
+TEST_INPUT_FRAME_EQUALS_CATEGORY = """\
+data_test
+
+   save_ccpn_additional_data
+      _ccpn_additional_data.sf_category   ccpn_additional_data
+      _ccpn_additional_data.sf_framecode  ccpn_additional_data
+   save_
+
+   save_nef_molecular_system
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+   save_
+"""
+
+EXPECTED_AFTER_DELETE_FRAME_EQUALS_CATEGORY = """\
+data_test
+
+   save_nef_molecular_system
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+   save_
+"""
+
+
+def test_delete_name_equals_category():
+    """Test deletion of frame where frame name equals category (e.g., ccpn_additional_data)."""
+    result = run_and_report(
+        app, ["ccpn_additional_data"], input=TEST_INPUT_FRAME_EQUALS_CATEGORY
+    )
+    assert_lines_match(EXPECTED_AFTER_DELETE_FRAME_EQUALS_CATEGORY, result.stdout)
+
+
+def test_delete_with_in_option():
+    """Test deletion of frame using --in option to read from file."""
+    test_data_path = path_in_test_data(__file__, "pales_test_1.nef")
+    result = run_and_report(app, ["--in", test_data_path, "-c", "mol"])
+    assert_lines_match(EXPECTED_DELETE_CATEGORY, result.stdout)
