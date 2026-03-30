@@ -2,11 +2,11 @@ import re
 import sys
 from itertools import zip_longest
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import typer
 from fyeah import f
-from pynmrstar import Entry, cnmrstar
+from pynmrstar import Entry
 
 from nef_pipelines import nef_app
 from nef_pipelines.lib.util import (
@@ -224,62 +224,68 @@ def _exit_if_we_ran_out_of_entries(entry, file_path):
         exit_error(msg)
 
 
-# stolen from pynmrstar parser
-def _load_data(data: str) -> None:
-    """Loads data in preparation of parsing and cleans up newlines
-    and massages the data to make parsing work properly when multi-line
-    values aren't as expected. Useful for manually getting tokens from
-    the parser."""
-
-    # Fix DOS line endings
-    data = data.replace("\r\n", "\n").replace("\r", "\n")
-    # Change '\n; data ' started multi-lines to '\n;\ndata'
-    data = re.sub(r"\n;([^\n]+?)\n", r"\n;\n\1\n", data)
-
-    cnmrstar.load_string(data)
-
-
-def _get_token() -> str:
-    """Returns the next token in the parsing process."""
-
-    try:
-        token, line_number, delimiter = cnmrstar.get_token_full()
-    except ValueError as err:
-        raise Exception(str(err))
-
-    return token, line_number, delimiter
-
-
-def _iterate_tokens() -> Tuple[str, int, str]:
-    while token := _get_token():
-        if token[0] is None:
-            break
-        yield token
-
-
+# TODO: when we start using ustar we can replace much of this!
 def _entry_list_from_stdin_or_exit_error_if_none(file_name):
 
     file_path = Path(file_name)
 
-    text = read_from_file_or_exit(file_path)
+    try:
+        text = read_from_file_or_exit(file_path)
+    except Exception as e:
+        msg = f"""
+            Failed to read input file {file_path} because: {e}
+        """
+        exit_error(msg, e)
 
-    _load_data(text)
-
+    # Split entries by finding data_ blocks, preserving original text format
+    # This avoids the tokenization/reconstruction issue that corrupts multi-line strings
     entry_strings = []
-    tokens = None
-    for token in _iterate_tokens():
 
-        if token[0].startswith("data_"):
-            if tokens:
-                entry_strings.append(" ".join(tokens))
-            tokens = []
+    # Find all data_ block starts
+    # Match data_ at the beginning of a line with optional leading whitespace
+    data_pattern = re.compile(r"^\s*data_", re.MULTILINE)
 
-        tokens.append(f"\n{token[2]}{token[0]}\n{token[2]}")
+    # Find all positions where data_ blocks start
+    matches = list(data_pattern.finditer(text))
 
-    if tokens:
-        entry_strings.append(" ".join(tokens))
+    if not matches:
+        # No data blocks found, try to parse as single entry
+        if text.strip():
+            msg = f"""
+                No data_ blocks found in input from {file_path}.
+                Input length: {len(text)} bytes
+                Input preview: {text[:500]}...
+            """
+            exit_error(msg)
+        else:
+            msg = f"""
+                Input from {file_path} is empty or contains only whitespace.
+                Cannot save empty NEF data.
+            """
+            exit_error(msg)
 
-    return [Entry.from_string(entry_string) for entry_string in entry_strings]
+    # Extract each entry as original text
+    for i, match in enumerate(matches):
+        start = match.start()
+        # End is the start of the next data_ block, or end of file
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        entry_string = text[start:end].strip()
+        if entry_string:
+            entry_strings.append(entry_string)
+
+    # Parse entries with better error handling
+    entries = []
+    for i, entry_string in enumerate(entry_strings, 1):
+        try:
+            entries.append(Entry.from_string(entry_string))
+        except Exception as e:
+            msg = f"""
+                Failed to parse entry {i} from {file_path} because: {e}
+                Entry preview: {entry_string[:500]}...
+            """
+            exit_error(msg, e)
+
+    return entries
 
 
 def _exit_if_single_file_and_out_is_multiple_files(file_paths, single_file):

@@ -313,10 +313,8 @@ def test_save_no_stream(tmp_path):
 
     result = run_and_report(app, f"{str(test_path_1)}".split(), expected_exit_code=1)
 
-    assert (
-        "you must provide at least one entry to write, did you input a NEF file stream?"
-        in result.stdout
-    )
+    assert "Input from - is empty or contains only whitespace" in result.stdout
+    assert "Cannot save empty NEF data" in result.stdout
 
 
 def test_save_multi_stream_to_no_files(tmp_path):
@@ -344,13 +342,11 @@ def test_save_single_file_to_directory_error(tmp_path):
         app, f"--single-file {str(tmp_path)}".split(), expected_exit_code=1
     )
 
-    assert (
-        "you must provide at least one entry to write, did you input a NEF file stream?"
-        in result.stdout
-    )
+    assert "Input from - is empty or contains only whitespace" in result.stdout
+    assert "Cannot save empty NEF data" in result.stdout
 
 
-def test_save_single_file_to_multipe_files_error(tmp_path):
+def test_save_single_file_to_multiple_files_error(tmp_path):
 
     data = read_test_data(
         "multi.nef",
@@ -404,7 +400,7 @@ def test_multi_line_string():
     )
 
     Entry.from_string(result.stdout)
-    # no exceptions is all that is needed
+    # no exceptions are all that is needed
 
 
 def test_globals_cleanup():
