@@ -20,6 +20,7 @@ from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe
     select_frames_by_name,
     select_loops_by_category,
 )
+from nef_pipelines.lib.structures import SaveframeNameParts
 from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.main import EXIT_ERROR
@@ -800,3 +801,94 @@ def test_select_loops_by_category_deduplication():
 
     assert len(result) == 1
     assert result[0].category == "_nef_chemical_shift"
+
+
+@pytest.mark.parametrize(
+    "full_name,category,expected",
+    [
+        # Singleton frame (no identity, no counter)
+        (
+            "nef_molecular_system",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", None, None),
+        ),
+        # Frame with identity only
+        (
+            "nef_molecular_system_protein_A",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "protein_A", None),
+        ),
+        # Frame with counter only (no identity before counter)
+        ("ccpn_data`1`", "ccpn_data", SaveframeNameParts("ccpn", "data", None, "1")),
+        # Frame with both identity and counter
+        (
+            "nef_molecular_system_protein_A`1`",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "protein_A", "1"),
+        ),
+        # Edge case: multiple underscores in identity
+        (
+            "nef_distance_restraint_list_long_range_1",
+            "nef_distance_restraint_list",
+            SaveframeNameParts("nef", "distance_restraint_list", "long_range_1", None),
+        ),
+        # Edge case: no namespace prefix possible
+        ("nef", "nef", SaveframeNameParts(None, "nef", None, None)),
+        # Edge case: empty backticks (malformed counter)
+        (
+            "nef_molecular_system_protein_A``",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "protein_A``", None),
+        ),
+        # Edge case: multiple counters (only first is used)
+        (
+            "nef_molecular_system_protein_A`1`2`",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "protein_A`1", "2"),
+        ),
+        # Edge case: backtick in identity (before counter)
+        (
+            "nef_molecular_system_protein`A`1`",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "protein`A", "1"),
+        ),
+        # Edge case: backtick in identity (before counter)
+        (
+            "nef_molecular_system_proteinA``1`",
+            "nef_molecular_system",
+            SaveframeNameParts("nef", "molecular_system", "proteinA`", "1"),
+        ),
+        # Data inconsistency: category not a prefix of full_name
+        (
+            "nef_molecular_system",
+            "ccpn_data",
+            SaveframeNameParts("ccpn", "data", "ular_system", None),
+        ),
+    ],
+)
+def test_parse_frame_name(full_name, category, expected):
+    """\
+    Test parse_frame_name with various frame name patterns.
+    """
+    from nef_pipelines.lib.nef_lib import parse_frame_name
+
+    parsed = parse_frame_name((full_name, category))
+
+    assert parsed == expected
+
+
+def test_parse_frame_name_with_saveframe():
+    """\
+    Test parse_frame_name can accept a Saveframe object.
+    """
+    from pynmrstar import Saveframe
+
+    from nef_pipelines.lib.nef_lib import parse_frame_name
+
+    frame = Saveframe.from_scratch("nef_molecular_system_protein_A")
+    frame.category = "nef_molecular_system"
+
+    parsed = parse_frame_name(frame)
+    expected = SaveframeNameParts("nef", "molecular_system", "protein_A", None)
+
+    assert parsed == expected

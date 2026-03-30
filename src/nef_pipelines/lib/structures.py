@@ -64,6 +64,65 @@ class SequenceResidue(Residue):
     variants: List[str] = ()
 
 
+# parse_frame_name() replaces manual string manipulation in:
+#   - src/nef_pipelines/tools/frames/delete.py (done)
+#   - src/nef_pipelines/tools/frames/list.py (todo)
+#   - src/nef_pipelines/tools/frames/rename.py (todo)
+#   - src/nef_pipelines/tools/frames/tabulate.py (todo)
+#   Parser is in: src/nef_pipelines/lib/nef_lib.py::parse_frame_name()
+@dataclass(frozen=True)
+class SaveframeNameParts:
+    """\
+    Parsed components of a NEF frame name.
+
+    Frame names follow the pattern: <namespace>_<category>[_<identity>][`<counter>`]
+
+    Example: nef_molecular_system_protein_A`1`
+        namespace: "nef"
+        category: "nef_molecular_system"
+        identity: "protein_A"
+        counter: "1"
+
+    When identity is None, this represents a singleton frame with no instance name.
+    """
+
+    namespace: Optional[str]
+    category: str
+    identity: Optional[str]
+    counter: Optional[str]
+
+    @property
+    def is_singleton(self) -> bool:
+        """\
+        Check if this is a singleton frame (no identity part).
+        """
+        return self.identity is None and self.counter is None
+
+    @property
+    def full_name(self) -> str:
+        """\
+        Reconstruct full frame name from parts.
+
+        Includes namespace prefix if present.
+        """
+        # Add namespace prefix to category
+        if self.namespace:
+            category_with_namespace = f"{self.namespace}_{self.category}"
+        else:
+            category_with_namespace = self.category
+
+        # Build base name
+        if self.identity is None:
+            base = category_with_namespace
+        else:
+            base = f"{category_with_namespace}_{self.identity}"
+
+        # Add counter if present
+        if self.counter:
+            return f"{base}`{self.counter}`"
+        return base
+
+
 # should contain a residue and have constructors?
 @dataclass(frozen=True, order=True)
 class AtomLabel:
@@ -480,8 +539,9 @@ class ChainOffsetSyntaxParsingError(Exception):
 @dataclass
 class FrameLoopAndTags:
     frame_name: str
-    loop_name: str
-    tags: List[str] = field(default_factory=list)
+    loop_name: Optional[str]
+    frame_tags: List[str] = field(default_factory=list)
+    loop_tags: List[str] = field(default_factory=list)
 
 
 @dataclass

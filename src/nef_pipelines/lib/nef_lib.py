@@ -1,5 +1,4 @@
 import sys
-from argparse import Namespace
 from collections.abc import MutableMapping
 from enum import auto
 from fnmatch import fnmatch
@@ -17,7 +16,7 @@ from strenum import LowercaseStrEnum
 from nef_pipelines.lib import util
 from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.globals_lib import set_global
-from nef_pipelines.lib.structures import NEFPipelinesException
+from nef_pipelines.lib.structures import NEFPipelinesException, SaveframeNameParts
 from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
@@ -182,6 +181,95 @@ def get_frame_ids(frames_or_entry: Union[List[Saveframe], Entry]) -> List[str]:
     """
 
     return list([get_frame_id(frame) for frame in frames_or_entry])
+
+
+def parse_frame_name(frame: Union[Saveframe, Tuple[str, str]]) -> SaveframeNameParts:
+    """\
+    Parse a frame name into structured components.
+
+    Handles:
+    - Namespace extraction (nef, ccpn, custom, etc.)
+    - Category identification
+    - Identity extraction (after category)
+    - CCPN counter notation (`<n>`)
+    - Singleton frames (full_name == category, identity is None)
+
+    Args:
+        frame: Either a Saveframe object or tuple of (full_name, category)
+
+    Returns:
+        SaveframeNameParts with all components
+
+    Examples:
+        frame: nef_molecular_system → identity is None (singleton)
+        frame: nef_molecular_system_protein_A → identity is "protein_A"
+        frame: ccpn_data_frame`1` → identity is "data_frame", counter is "1"
+    """
+
+    # Extract full_name and category
+    if isinstance(frame, Saveframe):
+        full_name = frame.name
+        category = frame.category
+    else:
+        full_name, category = frame
+
+    # Extract namespace from category and remove it from category
+    # TODO fix
+    # has to be local to avoid circular imports [boo]
+    from nef_pipelines.lib.namespace_lib import extract_namespace
+
+    namespace = extract_namespace(category)
+
+    # Strip namespace prefix from category
+    if namespace and category.startswith(f"{namespace}_"):
+        category_without_namespace = category[len(namespace) + 1 :]
+    else:
+        category_without_namespace = category
+
+    # Extract identity: everything after category, stripped of leading underscores
+    if full_name == category:
+        # Singleton frame - no instance name
+        identity = None
+        counter = None
+    else:
+        # Remove category prefix
+        remainder = full_name[len(category) :]
+
+        # Strip leading underscores
+        remainder = remainder.lstrip(UNDERSCORE)
+
+        # Handle CCPN counter notation: `<n>` at the END only
+        # Counter is ONLY valid if string ends with `X` where X is non-empty
+        # Look for the LAST pair of backticks - if they contain something, that's the counter
+        # All other backticks (even earlier in the string) are part of the identity
+        counter = None
+        if remainder.endswith("`") and "`" in remainder[:-1]:
+            # Find the position of the second-to-last backtick
+            second_last_backtick = remainder.rfind("`", 0, -1)
+            # Extract what's between the last two backticks
+            potential_counter = remainder[second_last_backtick + 1 : -1]
+            # Only valid if non-empty
+            if potential_counter:
+                counter = potential_counter
+                # Identity is everything before the opening backtick of the counter
+                # This may include other backticks from earlier in the string
+                identity = remainder[:second_last_backtick]
+            else:
+                # Empty counter like ``, all is identity
+                identity = remainder
+        else:
+            # Doesn't end with valid counter pattern, all is identity
+            identity = remainder
+
+        # If identity is empty after processing, this is actually a singleton
+        identity = identity if identity else None
+
+    return SaveframeNameParts(
+        namespace=namespace,
+        category=category_without_namespace,
+        identity=identity,
+        counter=counter,
+    )
 
 
 def select_frames_by_name(
