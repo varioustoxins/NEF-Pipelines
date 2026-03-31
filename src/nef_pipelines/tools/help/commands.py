@@ -577,6 +577,10 @@ def _display_table(
 def _display_rich_tree(tree: Tree, plain: bool = False) -> str:
     """Display a tree using Rich's Tree component with colours.
 
+    TODO: Refactor to use tree_lib.render_tree_with_rich() with custom color_callback
+    instead of duplicating the tree rendering logic. The color callback should handle
+    parsing decorators ([P], [C], [α]) and applying appropriate styling.
+
     Args:
         tree: treelib.Tree object to display
         plain: If True, use plain text without colours or boxes
