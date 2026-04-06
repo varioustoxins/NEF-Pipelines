@@ -17,16 +17,40 @@ TARGET_HELP = """
 TARGET_HELP = dedent(TARGET_HELP)
 
 
-# TODO add verbosity control
-# TODO add flag to enable warnings
-
-
 @app.command(rich_help_panel="Housekeeping")
 def test(
     warnings: bool = typer.Option(
         False, "-w", "--warnings", help="include all warnings"
     ),
-    # native_tracebacks: bool = typer.Option(False, '-n', '--native-tracebacks', help='use standard python tracebacks'),
+    verbose: int = typer.Option(
+        0,
+        "-v",
+        "--verbose",
+        count=True,
+        help="increase verbosity: -v (normal), -vv (verbose), -vvv (very verbose)",
+    ),
+    show_capture: bool = typer.Option(
+        False, "-s", "--show-capture", help="show print statements and captured output"
+    ),
+    exit_first: bool = typer.Option(
+        False, "-x", "--exitfirst", help="exit on first test failure"
+    ),
+    keyword: str = typer.Option(
+        None, "-k", "--keyword", help="only run tests matching given expression"
+    ),
+    traceback: str = typer.Option(
+        "long",
+        "--tb",
+        "--traceback",
+        help="traceback style: auto, long, short, line, native, no",
+    ),
+    pdb: bool = typer.Option(False, "--pdb", help="drop into debugger on failures"),
+    markers: str = typer.Option(
+        None, "-m", "--markers", help="only run tests matching given mark expression"
+    ),
+    quiet: bool = typer.Option(
+        False, "-q", "--quiet", help="decrease verbosity (quiet mode)"
+    ),
     targets: List[str] = typer.Argument(None, help=TARGET_HELP),
 ):
     """- run the test suite"""
@@ -42,12 +66,38 @@ def test(
     tests = _find_pytest_commands(root_path, targets)
 
     if not targets or (targets and len(tests) != 0):
-        command = ["-vvv", "--full-trace", *tests]
+        # Build verbosity flags - default to -vvv for backward compatibility
+        if quiet:
+            verbosity_flags = ["-q"]
+        elif verbose == 0:
+            # default no verbosity
+            verbosity_flags = []
+        else:
+            verbosity_flags = [f"-{'v' * verbose}"]
+
+        command = [*verbosity_flags, "--full-trace", *tests]
 
         if not warnings:
             command = ["--disable-warnings", *command]
-        # if native_tracebacks:
-        #     command = ['--tb=native', *command]
+
+        if show_capture:
+            command.append("-s")
+
+        if exit_first:
+            command.append("-x")
+
+        if keyword:
+            command.extend(["-k", keyword])
+
+        if traceback != "long":
+            command.append(f"--tb={traceback}")
+
+        if pdb:
+            command.append("--pdb")
+
+        if markers:
+            command.extend(["-m", markers])
+
         main(command)
 
 
