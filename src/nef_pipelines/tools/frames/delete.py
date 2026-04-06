@@ -1,4 +1,4 @@
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import List
 
@@ -77,14 +77,14 @@ def _find_saveframes(
                 selector = f"*{selector}*"
 
             if use_categories:
-                if fnmatch(parsed.category, selector):
+                if fnmatchcase(parsed.category, selector):
                     to_delete.append(frame)
                     break
             else:
-                identity_match = parsed.identity is not None and fnmatch(
+                identity_match = parsed.identity is not None and fnmatchcase(
                     parsed.identity, selector
                 )
-                full_name_match = fnmatch(parsed.full_name, selector)
+                full_name_match = fnmatchcase(parsed.full_name, selector)
 
                 if identity_match or full_name_match:
                     to_delete.append(frame)

@@ -7,11 +7,11 @@ import re
 import sys
 from collections import Counter
 from enum import Enum, auto
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Dict, List
 
 import typer
-import wcmatch.fnmatch as fnmatch
 from fyeah import f
 from ordered_set import OrderedSet
 from tabulate import tabulate as tabulate_formatter
@@ -29,7 +29,6 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.tools.frames import frames_app
 
-NO_FLAGS = 0x0000
 ALL_LOOPS = "*"
 
 UNDERSCORE = "_"
@@ -426,15 +425,10 @@ def _output_loop(loop_data, frame_id, frame_category, entry_id, args, seen_files
 def _get_selected_columns(headers, columns_selections, exact):
 
     selected_columns = set(headers)
-    match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
 
     for selection_type, selection_string in columns_selections:
         current_selections = set(
-            [
-                header
-                for header in headers
-                if fnmatch.fnmatch(header, selection_string, flags=match_flags)
-            ]
+            [header for header in headers if fnmatchcase(header, selection_string)]
         )
 
         if selection_type == ColumnSelectionType.INCLUDE:
@@ -519,16 +513,13 @@ def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
                 loops_to_tabulate.add((frame.name, loop.category))
 
     else:
-        match_flags = fnmatch.IGNORECASE if not exact else NO_FLAGS
         for frame_selector in frame_selectors:
 
             for frame_name, frame_data in entry.frame_dict.items():
                 frame_matched = False
 
                 # check if we can match on the whole thing against a frame name
-                if fnmatch.fnmatch(
-                    frame_name, f"*{frame_selector}*", flags=match_flags
-                ):
+                if fnmatchcase(frame_name, f"*{frame_selector}*"):
                     for loop in frame_data:
                         loops_to_tabulate.add((frame_data.name, loop.category))
                     frame_matched = True
@@ -536,10 +527,8 @@ def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
                 # check for match on exact frame and loop category
                 if not frame_matched:
                     for loop in frame_data.loops:
-                        if fnmatch.fnmatch(
-                            f"{frame_name}.{loop.category}",
-                            f"*{frame_selector}*",
-                            flags=match_flags,
+                        if fnmatchcase(
+                            f"{frame_name}.{loop.category}", f"*{frame_selector}*"
                         ):
                             loops_to_tabulate.add((frame_data.name, loop.category))
                             frame_matched = True
@@ -549,10 +538,9 @@ def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
                     frame_selector_parts = frame_selector.split(".")
                     wildcard_frame_selector = "*".join(frame_selector_parts)
                     for loop in frame_data.loops:
-                        if fnmatch.fnmatch(
+                        if fnmatchcase(
                             f"{frame_name}.{loop.category}",
                             f"*{wildcard_frame_selector}*",
-                            flags=match_flags,
                         ):
                             loops_to_tabulate.add((frame_data.name, loop.category))
                             frame_matched = True
@@ -565,9 +553,7 @@ def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
                         stub_frame_selector = ".".join(frame_selector_parts[:-1])
                         loop_index = int(frame_selector_parts[-1])
 
-                        if fnmatch.fnmatch(
-                            frame_name, f"*{stub_frame_selector}*", flags=match_flags
-                        ):
+                        if fnmatchcase(frame_name, f"*{stub_frame_selector}*"):
                             if loop_index > 0 and loop_index <= len(frame_data.loops):
                                 loops_to_tabulate.add(
                                     (
@@ -585,9 +571,7 @@ def _select_chosen_frames_and_loops(entry, frame_selectors, exact):
                 category_index = int(selector_parts[-1])
                 for frame_name, frame_data in entry.frame_dict.items():
                     for loop in frame_data.loops:
-                        if fnmatch.fnmatch(
-                            loop.category, f"*{category_part}*", flags=match_flags
-                        ):
+                        if fnmatchcase(loop.category, f"*{category_part}*"):
                             matched_count += 1
                             if matched_count == category_index:
                                 loops_to_tabulate.add((frame_data.name, loop.category))

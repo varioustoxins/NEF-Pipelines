@@ -4,7 +4,7 @@ import argparse
 import fcntl
 import os
 import sys
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 
 from pynmrstar import Entry
 
@@ -61,7 +61,7 @@ def offset_chemical_shifts(entry, args):
                 atom_name = line[atom_name_index]
 
                 if chain == args.chain_code:
-                    if args.target == isotope or fnmatch(atom_name, args.target):
+                    if args.target == isotope or fnmatchcase(atom_name, args.target):
                         value = float(value) + args.offset
                         line[value_index] = value
 

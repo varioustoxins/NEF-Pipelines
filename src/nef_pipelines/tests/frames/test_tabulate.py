@@ -62,7 +62,7 @@ def test_frame_and_loop_selection_text():
     path = path_in_test_data(__file__, "ubiquitin_short_unassign_single_chain.nef")
 
     result = run_and_report(
-        app, ["--in", path, "nef_nmr_Spectrum_simnoe.nef_spectrum_Dimension"]
+        app, ["--in", path, "nef_nmr_spectrum_simnoe.nef_spectrum_dimension"]
     )
 
     assert "nef_molecular_system" not in result.stdout

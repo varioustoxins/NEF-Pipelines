@@ -6,7 +6,7 @@ import os
 import sys
 from contextlib import redirect_stdout
 from enum import Enum, auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from io import StringIO
 from itertools import groupby
 from typing import Annotated, List, Optional
@@ -678,7 +678,7 @@ def _build_command_tree(
 
     raw_filtered_tree = []
     for path in tree_elems:
-        matches = [fnmatch(".".join(path), f"*{matcher}*") for matcher in matchers]
+        matches = [fnmatchcase(".".join(path), f"*{matcher}*") for matcher in matchers]
         if all(matches):
             cmd_obj = tree_elems[path]
             # Filter by Python interface if this is a command (not root or group)

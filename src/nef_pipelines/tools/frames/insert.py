@@ -1,7 +1,7 @@
 import inspect
 import sys
 from enum import auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import List
 
@@ -76,11 +76,11 @@ def insert(
                 ok_external_frame = True
             if use_categories and not exact:
                 for category in select:
-                    if fnmatch(external_frame.category, f"*{category}*"):
+                    if fnmatchcase(external_frame.category, f"*{category}*"):
                         ok_external_frame = True
             if not use_categories and not exact:
                 for name in select:
-                    if fnmatch(external_frame.name, f"*{name}*"):
+                    if fnmatchcase(external_frame.name, f"*{name}*"):
                         ok_external_frame = True
 
             if ok_external_frame:

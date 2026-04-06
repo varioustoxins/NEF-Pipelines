@@ -1,6 +1,6 @@
 import sys
 from difflib import SequenceMatcher
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import List
@@ -88,7 +88,7 @@ def rename(
                 target_frames = [
                     frame
                     for frame in target_frames
-                    if fnmatch(frame.category, f"*{category}*")
+                    if fnmatchcase(frame.category, f"*{category}*")
                 ]
 
         if len(target_frames) == 0:

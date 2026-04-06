@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import IntEnum
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from textwrap import dedent
 from typing import Callable, List, Optional, TextIO, Tuple, Union
 
@@ -366,7 +366,7 @@ def select_data_records(gdb: DbFile, type: str) -> List[DbRecord]:
     :return: a list of matching DbRecords
     """
     return select_records(
-        gdb, "DATA", predicate=lambda rec: fnmatch(rec.values[0], type)
+        gdb, "DATA", predicate=lambda rec: fnmatchcase(rec.values[0], type)
     )
 
 

@@ -1,7 +1,7 @@
 import sys
 from collections.abc import MutableMapping
 from enum import auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from itertools import zip_longest
 from pathlib import Path
 from textwrap import dedent
@@ -297,7 +297,7 @@ def select_frames_by_name(
         for frame in frames:
             for selector in name_selectors:
 
-                if fnmatch(frame.name, selector):
+                if fnmatchcase(frame.name, selector):
                     # frames aren't hashable and so can't be saved in a set
                     # but names should be unique
                     result[frame.name] = frame
@@ -693,11 +693,13 @@ def select_frames(
 
         if frame.category is not None:
             accept_frame_category = any(
-                [fnmatch(frame.category, filter) for filter in predicate]
+                [fnmatchcase(frame.category, filter) for filter in predicate]
             )
         else:
             accept_frame_category = False
-        accept_frame_name = any([fnmatch(frame.name, filter) for filter in predicate])
+        accept_frame_name = any(
+            [fnmatchcase(frame.name, filter) for filter in predicate]
+        )
 
         if (
             selector_type in (SelectionType.NAME, SelectionType.ANY)
@@ -750,7 +752,7 @@ def select_loops_by_category(
             else:
                 # Add automatic wildcards like select_frames does
                 wildcard_pattern = f"*{pattern}*"
-                if fnmatch(loop_category, wildcard_pattern):
+                if fnmatchcase(loop_category, wildcard_pattern):
                     if loop_id not in matched_loop_ids:
                         matched_loops.append(loop)
                         matched_loop_ids.add(loop_id)

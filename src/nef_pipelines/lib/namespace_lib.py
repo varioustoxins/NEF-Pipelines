@@ -1,4 +1,4 @@
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from typing import Dict, List, Optional, Tuple
 
 from pynmrstar import Saveframe
@@ -149,7 +149,7 @@ def filter_namespaces(
         for ns in all_namespaces:
             if include:
                 for pattern in include:
-                    if fnmatch(ns, pattern):
+                    if fnmatchcase(ns, pattern):
                         filtered_namespaces.add(ns)
                         break
             else:
@@ -157,7 +157,7 @@ def filter_namespaces(
 
             if ns in filtered_namespaces:
                 for pattern in exclude:
-                    if fnmatch(ns, pattern):
+                    if fnmatchcase(ns, pattern):
                         filtered_namespaces.discard(ns)
                         break
 

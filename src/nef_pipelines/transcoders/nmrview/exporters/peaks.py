@@ -1,7 +1,7 @@
 from argparse import Namespace
 from collections import Counter
 from enum import auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
@@ -76,7 +76,7 @@ def peaks(
         selection = {
             name: frame
             for name, frame in names_and_frames.items()
-            if fnmatch(name, frame_selector)
+            if fnmatchcase(name, frame_selector)
         }
 
         selected_frames.update(selection)
@@ -86,7 +86,7 @@ def peaks(
             selection = {
                 name: frame
                 for name, frame in names_and_frames.items()
-                if fnmatch(name, f"*{frame_selector}*")
+                if fnmatchcase(name, f"*{frame_selector}*")
             }
 
             selected_frames.update(selection)
@@ -119,9 +119,11 @@ def peaks(
         result = ["label dataset sw sf"]
 
         axis_names = [
-            dimension.axis_code
-            if "axis_code" in dimension and dimension != NEF_UNKNOWN
-            else "unknown"
+            (
+                dimension.axis_code
+                if "axis_code" in dimension and dimension != NEF_UNKNOWN
+                else "unknown"
+            )
             for dimension in spectrum_dimensions
         ]
 
