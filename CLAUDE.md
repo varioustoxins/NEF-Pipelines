@@ -142,6 +142,22 @@ The package follows PyScaffold conventions with src-layout:
   - Examples: `colour` not `color`, `colour_policy` not `color_policy`, `ColourOutputPolicy` not `ColorOutputPolicy`
   - This applies to: CLI option names (`--colour-policy`), parameter names, class names, enum values, docstrings, help text, and comments
 
+### Import Guidelines
+
+- **Imports MUST be at the top level of the module** unless there is a specific technical reason
+- The ONLY valid reasons for imports inside functions are:
+  1. **Lazy loading of large packages** to improve startup time
+  2. **Avoiding circular import dependencies**
+- **When imports are inside functions, add clear comments explaining why:**
+  ```python
+  def some_function():
+      # Import inside function to avoid circular dependency with module_x
+      from nef_pipelines.lib.module_x import SomeClass
+
+      # Lazy import of heavy package to improve startup time
+      import large_package
+  ```
+- Do NOT put imports inside functions for any other reason (code organization, "cleanliness", etc.)
 ## Code Organization Pattern
 
 ### Command Structure
