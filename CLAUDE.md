@@ -158,6 +158,28 @@ The package follows PyScaffold conventions with src-layout:
       import large_package
   ```
 - Do NOT put imports inside functions for any other reason (code organization, "cleanliness", etc.)
+
+### Pattern Matching Guidelines
+
+- **ALWAYS use `fnmatchcase` instead of `fnmatch.fnmatch`**
+  - `fnmatchcase` provides consistent case-sensitive matching across all platforms
+  - `fnmatch.fnmatch` is case-insensitive on Windows and case-sensitive on Unix, causing platform-specific bugs
+  - Use `from fnmatch import fnmatchcase` at module level
+  - Example:
+    ```python
+    from fnmatch import fnmatchcase
+
+    # CORRECT: Always case-sensitive, platform-independent
+    if fnmatchcase(name, pattern):
+        ...
+
+    # WRONG: Platform-dependent behavior (banned)
+    from fnmatch import fnmatch
+    if fnmatch(name, pattern):  # DO NOT USE
+        ...
+    ```
+  - An AST-based test (`test_banned_functions.py`) enforces this rule
+
 ## Code Organization Pattern
 
 ### Command Structure
