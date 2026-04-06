@@ -26,5 +26,4 @@ typer~=0.23.2
 typing-extensions~=4.12.2 ; python_version < "3.9.0"
 uncertainties~=3.1.7
 urllib3 <=1.26.15
-wcmatch~=8.5
 xmltodict~=0.13.0
