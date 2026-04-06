@@ -9,17 +9,27 @@ NEF-Pipelines is a Python package for manipulating NEF (NMR Exchange Format) fil
 
 ## Development Commands
 
+### IMPORTANT: Use `nefl` for Local Development
+**Always use `nefl` (not `nef`) when testing or running commands during development.**
+- `nefl` runs the local development version from `src/`
+- `nef` runs the installed version which may be stale
+
 ### Testing
 ```bash
-# Run all tests using pytest via tox
-tox
+# PREFERRED: Run tests with nefl (uses local development version)
+nefl test src/nef_pipelines/tests/entry/test_tree.py
 
-# Run tests directly with pytest
-pytest src/nef_pipelines/tests
+# Run specific test
+nefl test src/nef_pipelines/tests/entry/test_tree.py::test_tree_basic
+```
 
-# Run specific test modules
-pytest src/nef_pipelines/tests/frames/
-pytest src/nef_pipelines/tests/nmrview/
+### Running Commands During Development
+```bash
+# ALWAYS use nefl for testing commands locally
+nefl entry tree file.nef
+nefl entry tree file.nef molecular --colour-policy plain
+
+# NOT: nef entry tree file.nef  (this uses installed version)
 ```
 
 ### Building
