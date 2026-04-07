@@ -2,7 +2,7 @@
 Shared utilities for tree building and visualization.
 
 Provides reusable functions for working with treelib Trees:
-- Rich colored tree rendering with customizable styling
+- Rich coloured tree rendering with customizable styling
 - Tree filtering with wildcard pattern matching
 - Helper functions for tree manipulation
 """
@@ -13,47 +13,74 @@ from fnmatch import fnmatchcase
 from io import StringIO
 from typing import Callable, List, Optional, Set
 
-import wcmatch.fnmatch as fnmatch
 from rich.console import Console
 from rich.tree import Tree as RichTree
-from treelib import Tree
+from strenum import LowercaseStrEnum
+from treelib import Node, Tree
 
-from nef_pipelines.lib.typer_lib import is_rich_in_use
+# Colour constants for NEF tree rendering
+ENTRY_COLOUR = "bold cyan"
+FRAME_COLOUR = "yellow"
+LOOP_COLOUR = "blue"
+TAG_COLOUR = "green"
+MATCHED_COLOUR = "bold red"
+METADATA_COLOUR = "dim"
 
 
-def render_tree_with_rich(
+class ColourOutputPolicy(LowercaseStrEnum):
+    """\
+    Terminal colour output policy for tree rendering.
+    """
+
+    PLAIN = auto()  # No colours (black & white)
+    AUTO = auto()  # Auto-detect terminal (default)
+    COLOR = auto()  # Force colours (for testing or piping)
+
+
+def render_tree(
     tree: Tree,
-    color_callback: Optional[Callable[[str, bool], str]] = None,
-    plain: bool = False,
+    colour_callback: Optional[Callable[[Node, Optional[List[str]]], str]] = None,
+    colour_policy: ColourOutputPolicy = ColourOutputPolicy.AUTO,
+    filter_patterns: Optional[List[str]] = None,
 ) -> str:
     """\
-    Render tree using Rich with customizable node coloring.
+    Render tree using Rich with customizable node colouring.
 
     Args:
         tree: treelib.Tree object to render
-        color_callback: Function (node_tag, is_leaf) -> styled_string for custom coloring
-        plain: If True, disable colors (B&W output)
+        colour_callback: Function (node, filter_patterns) -> styled_string for custom colouring
+        colour_policy: ColourPolicy.PLAIN (no colours), ColourPolicy.AUTO (detect terminal),
+                    or ColourPolicy.COLOR (force colours)
+        filter_patterns: Optional list of patterns used to filter tree (for highlighting)
 
     Returns:
-        Formatted tree string with ANSI codes (or plain if plain=True)
+        Formatted tree string with ANSI codes (or plain if colour_mode=PLAIN)
     """
+
     with StringIO() as output_buffer:
-        if plain:
+        if colour_policy == ColourOutputPolicy.PLAIN:
             console = Console(
                 file=output_buffer, force_terminal=False, color_system=None
             )
-        else:
+        elif colour_policy == ColourOutputPolicy.COLOR:
+            # Force terminal output (for testing or explicit colour request)
             console = Console(file=output_buffer, force_terminal=True)
+        else:  # ColorPolicy.AUTO
+            # Auto-detect: force terminal if stdout is a tty
+            # (needed because we render to StringIO, not directly to stdout)
+            console = Console(file=output_buffer, force_terminal=sys.stdout.isatty())
 
         root = tree.get_node(tree.root)
-        root_styled = color_callback(root.tag, False) if color_callback else root.tag
+        root_styled = (
+            colour_callback(root, filter_patterns) if colour_callback else root.tag
+        )
         rich_tree = RichTree(root_styled)
 
         def add_children(treelib_node_id, rich_parent):
             children = tree.children(treelib_node_id)
             for child in children:
-                if color_callback:
-                    styled_label = color_callback(child.tag, child.is_leaf())
+                if colour_callback:
+                    styled_label = colour_callback(child, filter_patterns)
                 else:
                     styled_label = child.tag
 
@@ -63,22 +90,6 @@ def render_tree_with_rich(
         add_children(tree.root, rich_tree)
         console.print(rich_tree)
         return output_buffer.getvalue()
-
-
-def render_plain_tree(tree: Tree) -> str:
-    """\
-    Render tree as plain text (B&W) using treelib's built-in formatting.
-
-    Args:
-        tree: Tree to render
-
-    Returns:
-        Plain text tree representation
-    """
-    if is_rich_in_use():
-        return render_tree_with_rich(tree, plain=True)
-    else:
-        return tree.show(stdout=False)
 
 
 def prune_tree_to_matches(
