@@ -7,6 +7,7 @@ Provides reusable functions for working with treelib Trees:
 - Helper functions for tree manipulation
 """
 
+from fnmatch import fnmatchcase
 from io import StringIO
 from typing import Callable, List, Optional, Set
 
@@ -82,13 +83,13 @@ def prune_tree_to_matches(
     tree: Tree,
     patterns: List[str],
     include_descendants: bool = True,
-    case_sensitive: bool = False,
     exact: bool = False,
 ) -> Tree:
     """\
     Prune tree to keep only nodes matching patterns with optional descendants.
 
     Matched nodes always include their ancestors (required for valid tree structure).
+    Uses case-sensitive matching.
 
     TODO: Add escape sequence support (use_escapes parameter) to allow matching
     literal wildcards (e.g., ** to match literal *, \\? to match literal ?).
@@ -98,14 +99,13 @@ def prune_tree_to_matches(
         tree: treelib.Tree to prune
         patterns: List of wildcard patterns (e.g., ["chain*", "*shift*"])
         include_descendants: If True, include all child nodes of matches
-        case_sensitive: If True, use case-sensitive matching
         exact: If True, match exact names only (no automatic wildcard wrapping)
 
     Returns:
         New Tree containing matched nodes with ancestors (and descendants if requested)
     """
     nodes_to_keep = _collect_matching_nodes_from_tree(
-        tree, patterns, include_descendants, case_sensitive, exact
+        tree, patterns, include_descendants, exact
     )
     return _build_filtered_tree_from_retained_nodes(tree, nodes_to_keep)
 
@@ -114,7 +114,6 @@ def _collect_matching_nodes_from_tree(
     tree: Tree,
     patterns: List[str],
     include_descendants: bool,
-    case_sensitive: bool,
     exact: bool,
 ) -> Set[str]:
     """\
@@ -124,7 +123,6 @@ def _collect_matching_nodes_from_tree(
         tree: Tree to search
         patterns: Wildcard patterns to match
         include_descendants: Whether to include child nodes
-        case_sensitive: Whether matching is case-sensitive
         exact: Whether to match exact names only
 
     Returns:
@@ -133,7 +131,7 @@ def _collect_matching_nodes_from_tree(
     nodes = set()
 
     for node in tree.all_nodes_itr():
-        if _node_matches_patterns(node.tag, patterns, case_sensitive, exact):
+        if _node_matches_patterns(node.tag, patterns, exact):
             nodes.add(node.identifier)
             nodes.update(_get_all_ancestors_of_node(tree, node.identifier))
 
@@ -143,30 +141,25 @@ def _collect_matching_nodes_from_tree(
     return nodes
 
 
-def _node_matches_patterns(
-    node_name: str, patterns: List[str], case_sensitive: bool, exact: bool
-) -> bool:
+def _node_matches_patterns(node_name: str, patterns: List[str], exact: bool) -> bool:
     """\
-    Check if node name matches any pattern.
+    Check if node name matches any pattern using case-sensitive matching.
 
     Args:
         node_name: Node tag string to match
         patterns: List of wildcard patterns
-        case_sensitive: Whether to use case-sensitive matching
         exact: If True, match exact names only (no wildcard wrapping)
 
     Returns:
         True if node_name matches any pattern
     """
-    match_flags = 0 if case_sensitive else fnmatch.IGNORECASE
-
     for pattern in patterns:
         if exact:
             match_pattern = pattern  # Use pattern as-is for exact matching
         else:
             match_pattern = f"*{pattern}*"  # Wrap with wildcards for substring matching
 
-        if fnmatch.fnmatch(node_name, match_pattern, flags=match_flags):
+        if fnmatchcase(node_name, match_pattern):
             return True
     return False
 
