@@ -51,20 +51,15 @@ def extract_namespace(name: str) -> Optional[str]:
     Returns:
         Namespace string or None if pattern doesn't match
     """
-    # Handle loop categories and tags (start with _)
+
     if name.startswith("_"):
-        parts = name[1:].split("_", 1)
-        if len(parts) >= 2:
-            return parts[0]
-        return None
+        name = name[1:]
 
-    # Handle frame categories (no leading _)
-    # Extract namespace as first part before underscore
     parts = name.split("_", 1)
-    if len(parts) >= 2:
-        return parts[0]
+    result = parts[0] if len(parts) >= 2 else None
 
-    return None
+    return result
+
 
 
 def collect_namespaces_from_frames(
