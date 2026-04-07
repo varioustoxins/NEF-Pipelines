@@ -1,6 +1,6 @@
 import sys
 import traceback
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from io import StringIO
 from itertools import zip_longest
 from pathlib import Path
@@ -131,11 +131,11 @@ def select_matching_tests(tests, selectors):
             path_test = str(selector_parts[0])
 
             if not paths_equal:
-                paths_equal = fnmatch(path, path_test)
+                paths_equal = fnmatchcase(path, path_test)
 
             test_names_equal = False
             if (num_selector_parts == 2) and (num_test_parts == 2):
-                test_names_equal = fnmatch(test_parts[-1], selector_parts[-1])
+                test_names_equal = fnmatchcase(test_parts[-1], selector_parts[-1])
 
             if paths_equal and test_names_equal:
                 results.append(test)
