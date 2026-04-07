@@ -7,6 +7,8 @@ Provides reusable functions for working with treelib Trees:
 - Helper functions for tree manipulation
 """
 
+import sys
+from enum import auto
 from fnmatch import fnmatchcase
 from io import StringIO
 from typing import Callable, List, Optional, Set
@@ -85,14 +87,15 @@ def prune_tree_to_matches(
     include_descendants: bool = True,
     exact: bool = False,
 ) -> Tree:
+    # TODO: Add escape sequence support (use_escapes parameter) to allow matching
+
     """\
     Prune tree to keep only nodes matching patterns with optional descendants.
 
     Matched nodes always include their ancestors (required for valid tree structure).
     Uses case-sensitive matching.
 
-    TODO: Add escape sequence support (use_escapes parameter) to allow matching
-    literal wildcards (e.g., ** to match literal *, \\? to match literal ?).
+    literal wildcards (e.g., ** to match literal *, \\? to match literal ? ).
     Would require NEGATE flag or custom escape handling in wcmatch.fnmatch.
 
     Args:
@@ -107,7 +110,7 @@ def prune_tree_to_matches(
     nodes_to_keep = _collect_matching_nodes_from_tree(
         tree, patterns, include_descendants, exact
     )
-    return _build_filtered_tree_from_retained_nodes(tree, nodes_to_keep)
+    return build_filtered_tree_from_retained_nodes(tree, nodes_to_keep)
 
 
 def _collect_matching_nodes_from_tree(
@@ -136,7 +139,7 @@ def _collect_matching_nodes_from_tree(
             nodes.update(_get_all_ancestors_of_node(tree, node.identifier))
 
             if include_descendants:
-                nodes.update(_get_all_descendants_of_node(tree, node.identifier))
+                nodes.update(get_all_descendants_of_node(tree, node.identifier))
 
     return nodes
 
@@ -185,7 +188,7 @@ def _get_all_ancestors_of_node(tree: Tree, node_id: str) -> List[str]:
     return ancestors
 
 
-def _get_all_descendants_of_node(tree: Tree, node_id: str) -> List[str]:
+def get_all_descendants_of_node(tree: Tree, node_id: str) -> List[str]:
     """\
     Get all descendant node identifiers recursively.
 
@@ -200,12 +203,12 @@ def _get_all_descendants_of_node(tree: Tree, node_id: str) -> List[str]:
 
     for child in tree.children(node_id):
         descendants.append(child.identifier)
-        descendants.extend(_get_all_descendants_of_node(tree, child.identifier))
+        descendants.extend(get_all_descendants_of_node(tree, child.identifier))
 
     return descendants
 
 
-def _build_filtered_tree_from_retained_nodes(
+def build_filtered_tree_from_retained_nodes(
     tree: Tree, nodes_to_keep: Set[str]
 ) -> Tree:
     """\
