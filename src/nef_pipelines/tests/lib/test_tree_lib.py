@@ -3,11 +3,7 @@ from textwrap import dedent
 import pytest
 from treelib import Tree
 
-from nef_pipelines.lib.tree_lib import (
-    prune_tree_to_matches,
-    render_plain_tree,
-    render_tree_with_rich,
-)
+from nef_pipelines.lib.tree_lib import prune_tree_to_matches, render_tree
 
 
 def tree_from_dict(tree_dict):
@@ -89,19 +85,19 @@ def test_render_tree_with_rich_basic(sample_tree):
     so this produces the same output as render_plain_tree in test contexts.
     Both tests are kept to validate both code paths work correctly.
     """
-    result = render_tree_with_rich(sample_tree)
+    result = render_tree(sample_tree)
 
     EXPECTED_OUTPUT = """\
-root
-├── child1
-│   ├── data
-│   └── grandchild2
-├── child2
-│   └── data
-└── Special:name
-    └── special.child
-"""
-
+            root
+            ├── child1
+            │   ├── data
+            │   └── grandchild2
+            ├── child2
+            │   └── data
+            └── Special:name
+                └── special.child
+            """
+    EXPECTED_OUTPUT = dedent(EXPECTED_OUTPUT)
     assert result == EXPECTED_OUTPUT
 
 
@@ -112,7 +108,7 @@ def test_render_plain_tree_basic(sample_tree):
     Note: In test contexts, this produces identical output to render_tree_with_rich
     because Rich strips formatting when not outputting to a terminal.
     """
-    result = render_plain_tree(sample_tree)
+    result = render_tree(sample_tree)
 
     EXPECTED_OUTPUT = """\
                 root
@@ -208,30 +204,32 @@ def test_prune_tree_to_matches_no_descendants_specific_pattern(sample_tree):
     assert filtered.to_dict() == EXPECTED_STRUCTURE
 
 
-def test_prune_tree_to_matches_case_insensitive(sample_tree):
+def test_prune_tree_to_matches_case_sensitive_uppercase_example(sample_tree):
     """\
-    Test case-insensitive pattern matching matches Special and special.
+    Test case-sensitive pattern matching (now always case-sensitive).
+    "Special" should match only "Special:name", not "special.child".
     """
-    # Case-insensitive (default): "special" should match both "Special:name" and "special.child"
-    filtered = prune_tree_to_matches(sample_tree, ["special"], case_sensitive=False)
+    filtered = prune_tree_to_matches(
+        sample_tree, ["Special"], include_descendants=False
+    )
 
-    EXPECTED_STRUCTURE = {
-        "root": {"children": [{"Special:name": {"children": ["special.child"]}}]}
-    }
+    EXPECTED_STRUCTURE = {"root": {"children": ["Special:name"]}}
 
     assert filtered.to_dict() == EXPECTED_STRUCTURE
 
 
-def test_prune_tree_to_matches_case_sensitive(sample_tree):
+def test_prune_tree_to_matches_case_sensitive_lowercase(sample_tree):
     """\
-    Test case-sensitive pattern matching distinguishes Special vs special.
+    Test case-sensitive matching with lowercase pattern.
+    "special" should match only "special.child", not "Special:name".
     """
-    # Case-sensitive: "Special" should match only "Special:name", not "special.child"
     filtered = prune_tree_to_matches(
-        sample_tree, ["Special"], case_sensitive=True, include_descendants=False
+        sample_tree, ["special"], include_descendants=False
     )
 
-    EXPECTED_STRUCTURE = {"root": {"children": ["Special:name"]}}
+    EXPECTED_STRUCTURE = {
+        "root": {"children": [{"Special:name": {"children": ["special.child"]}}]}
+    }
 
     assert filtered.to_dict() == EXPECTED_STRUCTURE
 
