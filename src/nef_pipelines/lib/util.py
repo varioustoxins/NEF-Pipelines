@@ -3,13 +3,15 @@ import functools
 import inspect
 import io
 import os
+import re
 import subprocess
 import sys
 import traceback
 import warnings
 from argparse import Namespace
 from enum import auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
+from fnmatch import translate as fnmatch_translate
 from math import floor
 from pathlib import Path
 from textwrap import dedent
@@ -56,7 +58,7 @@ STDOUT = Path("-")
 NEWLINE = "\n"
 
 
-def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Loop:
+def _get_loop_by_category_or_none(frame: Saveframe, category: str) -> Optional[Loop]:
 
     result = None
     if f"_{category}" in frame.loop_dict.keys():
@@ -1086,7 +1088,7 @@ def fnmatch_one_of(target: str, patterns: Tuple[str, ...]) -> bool:
     Returns:
         True if the chain code matches any of the patterns
     """
-    return any(fnmatch(target, pattern) for pattern in patterns)
+    return any(fnmatchcase(target, pattern) for pattern in patterns)
 
 
 def exit_if_file_has_bytes_and_no_force(output_file: Path, force: bool):
@@ -1176,3 +1178,70 @@ def display_help_and_exit(context: click.Context, msg: Optional[str] = None):
     if msg:
         typer.echo(typer.style(msg, fg=typer.colors.BRIGHT_RED, bold=True))
     sys.exit(0)
+
+
+def find_substring_with_wildcard(text: str, pattern: str) -> Optional[Tuple[int, int]]:
+    """\
+    Find the substring in text that matches the significant core of a wildcard pattern.
+
+    The significant core is the pattern with leading and trailing '*' stripped.
+    '?' wildcards are kept as part of the core since they match exactly one character.
+    If the pattern consists entirely of '*', the full matched span is returned.
+    Uses fnmatch for shell-style pattern matching including '?' as single-character wildcard.
+    Uses case-sensitive matching.
+
+    Note: this doesn't rebuild the regex completely correctly as returned by fnmatch.translate but 'works...'
+
+    Args:
+        text: Text to search in
+        pattern: fnmatch-style pattern (may contain wildcards)
+
+    Returns:
+        Tuple of (start, end) indices of matched portion, or None if no match
+    """
+
+    L_FENCE = "[[L]]"
+    R_FENCE = "[[R]]"
+
+    # Only strip '*' from edges, not '?' (? matches exactly 1 char, part of significant core)
+    raw_sig = pattern.lstrip("*").rstrip("*")
+
+    if raw_sig:
+        # Split pattern into pre, sig, post BEFORE calling fnmatch_translate.
+        # This avoids the complex named group patterns that fnmatch_translate creates
+        # for patterns like "*chain*" → "(?=(?P<g0>.*?chain))(?P=g0).*"
+        # By translating each piece separately, we get simple patterns we can combine.
+        len_pre = len(pattern) - len(pattern.lstrip("*"))
+        len_post = len(pattern) - len(pattern.rstrip("*"))
+
+        raw_pre = pattern[:len_pre]
+        raw_post = pattern[len(pattern) - len_post :] if len_post > 0 else ""
+
+        def to_re(p):
+            if not p:
+                return ""
+            reg = fnmatch_translate(p)
+            # Remove anchors and extract core pattern from (?s:...) grouping
+            reg = reg.replace(r"\Z", "")
+            # Strip the (?s:...) wrapper if present
+            if reg.startswith("(?s:") and reg.endswith(")"):
+                reg = reg[4:-1]  # Remove '(?s:' prefix and ')' suffix
+            return reg
+
+        # Convert wildcards to regex, or use .*? for missing wildcards
+        pre_re = to_re(raw_pre) if raw_pre else ".*?"
+        sig_re = to_re(raw_sig)
+        post_re = to_re(raw_post) if raw_post else ".*?"
+
+        draft_regex = f"{pre_re}{L_FENCE}{sig_re}{R_FENCE}{post_re}"
+        final_regex = (
+            rf"(?s:{draft_regex.replace(L_FENCE, '(').replace(R_FENCE, ')')}\Z)"
+        )
+
+        match = re.search(final_regex, text)
+        result = match.span(1) if match else None
+    else:
+        # Pattern is all wildcards - match entire string if pattern matches
+        result = (0, len(text)) if fnmatchcase(text, pattern) else None
+
+    return result
