@@ -38,9 +38,9 @@ This module provides parsing and validation for several CLI constructs used thro
 """
 
 import re
-from enum import Flag, auto
+from enum import Enum, Flag, auto
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pyparsing as pp
 from pynmrstar import Entry, Saveframe
@@ -57,6 +57,32 @@ from nef_pipelines.lib.structures import (
     ResidueRangeParsingException,
 )
 from nef_pipelines.lib.util import NEWLINE, is_int, parse_comma_separated_options
+
+
+class SelectorAction(Enum):
+    """Actions for selector operations."""
+
+    INCLUDE = "INCLUDE"
+    EXCLUDE = "EXCLUDE"
+
+
+class AllNamespacesSentinel:
+    """Sentinel object representing 'all namespaces' in selector operations.
+
+    Using a unique sentinel object instead of a string like "ALL" prevents
+    any possible conflict with an actual namespace named "ALL" or "*".
+    """
+
+    def __repr__(self):
+        return "ALL_NAMESPACES"
+
+    def __str__(self):
+        return "ALL_NAMESPACES"
+
+
+# Singleton sentinel for "all namespaces" selector
+ALL_NAMESPACES = AllNamespacesSentinel()
+
 
 # separators that can be used in star files [. and _ can't be separators]
 # basically non-numeric and alphabetic ascii
@@ -112,6 +138,9 @@ _FRAME_LOOP_AND_TAG_PLACEHOLDERS = {
     "::": "\x00COLON\x00",
     "..": "\x00DOT\x00",
     ",,": "\x00COMMA\x00",
+    "\\\\": "\x00BACKSLASH\x00",
+    "++": "\x00PLUS\x00",
+    "--": "\x00MINUS\x00",
 }
 _REVERSED_FRAME_LOOP_AND_TAG_PLACEHOLDERS = {
     placeholder: sep[0] for sep, placeholder in _FRAME_LOOP_AND_TAG_PLACEHOLDERS.items()
@@ -1648,7 +1677,7 @@ def _build_frame_loop_tag_grammar(use_escapes: bool) -> ParserElement | StringEn
     tag_sep = pp.Literal(TAG_LIST_SEPARATOR).suppress()
 
     # Frame and loop identifiers (anything except the special separators)
-    # When using escapes, allow placeholder characters (null bytes) in identifiers
+    # When using escapes, allow placeholder characters (null bytes from escape processing)
     forbidden_chars = FRAME_TAG_SEPARATOR + FRAME_LOOP_SEPARATOR + TAG_LIST_SEPARATOR
     if use_escapes:
         # Allow any character including placeholders (null bytes from escape processing)
@@ -1869,78 +1898,90 @@ def validate_residue_ranges_in_system(
 
 
 def parse_selector_lists(
-    selectors: List[str], use_escapes: bool = False, invert: bool = False
-) -> Tuple[Set[str], Set[str]]:
-    """
-    Parse namespace selectors with inclusion/exclusion prefixes and optional escape sequences.
+    selectors: List[str], use_escapes: bool = False, no_initial_selection: bool = False
+) -> List[Tuple[SelectorAction, Union[str, AllNamespacesSentinel]]]:
+    r"""
+    Parse a set of selectors with inclusion/exclusion prefixes and optional escape sequences.
+
+    The no_initial_selection flag controls the initial state:
+    - no_initial_selection=False (normal): Start empty
+    - no_initial_selection=True (empty): Start with all
 
     Args:
-        selectors: List of namespace patterns (may include +/- prefixes)
-        use_escapes: If True, process escape sequences (,, → ,)
-        invert: If True, swap inclusion/exclusion logic
+        selectors: List of patterns (may include +/-/! prefixes)
+        use_escapes: If True, process escape sequences (\, → ,)
 
     Returns:
-        Tuple of (include_set, exclude_set) with namespace patterns
+        List of tuples (action, pattern) where:
+        - action is SelectorAction.INCLUDE or SelectorAction.EXCLUDE
+        - pattern is ALL_NAMESPACES sentinel or namespace_name string
+        - When no_initial_selection=True, prepends (EXCLUDE, ALL_NAMESPACES) to start with all
 
     Examples:
-        ['+nef', '-custom'] → ({'nef'}, {'custom'})
-        ['-nef'] → (set(), {'nef'})
-        ['nef', 'custom'] → ({'nef', 'custom'}, set())
-        ['++nef'] → ({'+nef'}, set())  # escaped literal
-        ['my,,ns'], use_escapes=True → ({'my,ns'}, set())  # comma escape
-        invert=True, ['nef'] → (set(), {'nef'})
+        ['nef'] → [(INCLUDE, 'nef')]  # start empty, add nef
+        no_initial_selection=True, ['nef'] → [(EXCLUDE, ALL_NAMESPACES), (INCLUDE, 'nef')]  # start none, add nef
+        ['+nef', '-custom'] → [(INCLUDE, 'nef'), (EXCLUDE, 'custom')]
+        ['-'] → [(EXCLUDE, ALL_NAMESPACES)]  # clear all
+        no_initial_selection=True, ['+nef'] → [(EXCLUDE, ALL_NAMESPACES), (INCLUDE, 'nef')]
     """
-    result_include = set()
-    result_exclude = set()
 
-    if selectors:
-        # If escapes enabled, unescape before parsing
-        if use_escapes:
-            # Use a placeholder that won't appear in normal text
-            placeholder = "\x00COMMA\x00"
-            unescaped = []
-            for selector in selectors:
-                # Replace escaped commas with placeholder
-                selector = selector.replace(",,", placeholder)
-                unescaped.append(selector)
-            selectors = unescaped
+    result = []
 
-        # Parse comma-separated options
-        parsed = parse_comma_separated_options(selectors)
+    if no_initial_selection:
+        result.append((SelectorAction.EXCLUDE, ALL_NAMESPACES))
 
-        include = set()
-        exclude = set()
+    for selector_str in selectors:
+        # Step 1: Tokenize into (was_first_char_escaped, content)
+        chunks = []
+        current_chunk = []
+        escaped = False
+        first_char_escaped = False
+        is_first_in_chunk = True
 
-        for selector in parsed:
-            # Restore escaped commas if escapes were enabled
-            if use_escapes:
-                selector = selector.replace("\x00COMMA\x00", ",")
+        for char in selector_str:
+            if use_escapes and not escaped and char == "\\":
+                escaped = True
+                continue
 
-            # Handle +/- prefix escapes first
-            if selector.startswith("++"):
-                # Escaped +
-                namespace = selector[1:]
-                include.add(namespace)
-            elif selector.startswith("--"):
-                # Escaped -
-                namespace = selector[1:]
-                include.add(namespace)
-            elif selector.startswith("+"):
-                # Explicit include
-                namespace = selector[1:]
-                include.add(namespace)
-            elif selector.startswith("-"):
-                # Explicit exclude
-                namespace = selector[1:]
-                exclude.add(namespace)
+            if not escaped and char == ",":
+                # Finalize the current item before the comma
+                chunks.append((first_char_escaped, "".join(current_chunk)))
+                # Reset for next item
+                current_chunk = []
+                is_first_in_chunk = True
+                first_char_escaped = False
             else:
-                # No prefix, default to include
-                include.add(selector)
+                if is_first_in_chunk:
+                    first_char_escaped = escaped
+                    is_first_in_chunk = False
 
-        # Apply inversion
-        if invert:
-            result_include, result_exclude = exclude, include
-        else:
-            result_include, result_exclude = include, exclude
+                current_chunk.append(char)
+                escaped = False
 
-    return result_include, result_exclude
+        # Add the final item in the string
+        chunks.append((first_char_escaped, "".join(current_chunk)))
+
+        # Step 2: Resolve Actions
+        for was_escaped, item in chunks:
+            if not item:
+                continue
+
+            # A prefix is ONLY a prefix if it wasn't escaped
+            if not was_escaped:
+                if item == "+":
+                    result.append((SelectorAction.INCLUDE, ALL_NAMESPACES))
+                    continue
+                if item == "-" or item == "!":
+                    result.append((SelectorAction.EXCLUDE, ALL_NAMESPACES))
+                    continue
+                if item.startswith("+"):
+                    result.append((SelectorAction.INCLUDE, item[1:]))
+                    continue
+                if item.startswith("-") or item.startswith("!"):
+                    result.append((SelectorAction.EXCLUDE, item[1:]))
+                    continue
+
+            # If escaped OR no prefix: it's a bare name (always INCLUDE)
+            result.append((SelectorAction.INCLUDE, item))
+
+    return result

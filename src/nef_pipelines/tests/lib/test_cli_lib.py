@@ -5,10 +5,12 @@ from pynmrstar import Entry, Loop, Saveframe
 
 # noinspection PyProtectedMember
 from nef_pipelines.lib.cli_lib import (
+    ALL_NAMESPACES,
     RANGE_FORMAT,
     ChainOffsetSyntaxParsingError,
     DetectedSeparatorConflicts,
     RangeOffset,
+    SelectorAction,
     _combine_range_number_pairs,
     _get_available_separators,
     _validate_separators_are_unique_or_get_message,
@@ -1848,7 +1850,7 @@ def test_detect_overlapping_range_offsets_conflict_info_details():
     """Test that conflict info contains all expected details."""
     range_offsets = [
         RangeOffset("A", 1, 10, 5),  # A:1-10 +5 -> 6-15
-        RangeOffset("A", 8, 15, 0),  # A:8-15 +0 -> 8-15 (overlap at 8-15)
+        RangeOffset("A", 8, 15, 0),  # A:8-15 -> 8-15 (overlap at 8-15)
     ]
     result = detect_overlapping_range_offsets(range_offsets)
 
@@ -2318,78 +2320,149 @@ def test_validate_residue_ranges_in_system():
     assert missing[1] == ResidueRange("B", 10, 11)
 
 
-def test_parse_selector_lists_basic():
-    """Test basic namespace selector parsing without prefixes."""
-    include, exclude = parse_selector_lists(["nef", "custom"])
-    assert include == {"nef", "custom"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_explicit_include():
-    """Test explicit include with + prefix."""
-    include, exclude = parse_selector_lists(["+nef", "+custom"])
-    assert include == {"nef", "custom"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_explicit_exclude():
-    """Test explicit exclude with - prefix."""
-    include, exclude = parse_selector_lists(["-nef"])
-    assert include == set()
-    assert exclude == {"nef"}
-
-
-def test_parse_selector_lists_mixed():
-    """Test mixed include and exclude."""
-    include, exclude = parse_selector_lists(["+nef", "-custom"])
-    assert include == {"nef"}
-    assert exclude == {"custom"}
-
-
-def test_parse_selector_lists_escaped_plus():
-    """Test escaped + prefix."""
-    include, exclude = parse_selector_lists(["++namespace"])
-    assert include == {"+namespace"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_escaped_minus():
-    """Test escaped - prefix."""
-    include, exclude = parse_selector_lists(["--namespace"])
-    assert include == {"-namespace"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_comma_escape():
-    """Test comma escape with use_escapes=True."""
-    include, exclude = parse_selector_lists(["my,,ns"], use_escapes=True)
-    assert include == {"my,ns"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_invert():
-    """Test invert flag swaps inclusion/exclusion."""
-    include, exclude = parse_selector_lists(["nef"], invert=True)
-    assert include == set()
-    assert exclude == {"nef"}
-
-
-def test_parse_selector_lists_invert_with_exclude():
-    """Test invert with explicit exclude prefix."""
-    include, exclude = parse_selector_lists(["-nef"], invert=True)
-    assert include == {"nef"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_comma_separated():
-    """Test comma-separated selectors."""
-    include, exclude = parse_selector_lists(["nef,custom,test"])
-    assert include == {"nef", "custom", "test"}
-    assert exclude == set()
-
-
-def test_parse_selector_lists_repeated_and_comma():
-    """Test mix of repeated and comma-separated."""
-    include, exclude = parse_selector_lists(["nef,custom", "test"])
-    assert include == {"nef", "custom", "test"}
-    assert exclude == set()
+@pytest.mark.parametrize(
+    "selectors, use_escapes, no_initial_selection, expected",
+    [
+        # Basic parsing
+        (
+            ["nef", "custom"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
+        ),
+        # Explicit include/exclude
+        (
+            ["+nef", "+custom"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
+        ),
+        (["-nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
+        (
+            ["+nef", "-custom"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+        ),
+        # ! as alias for - (exclude)
+        (["!nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
+        (
+            ["+nef", "!custom"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+        ),
+        (["!"], False, False, [(SelectorAction.EXCLUDE, ALL_NAMESPACES)]),
+        (
+            ["nef,!custom"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+        ),
+        # Escapes enabled
+        ([r"\+namespace"], True, False, [(SelectorAction.INCLUDE, "+namespace")]),
+        ([r"\-namespace"], True, False, [(SelectorAction.INCLUDE, "-namespace")]),
+        ([r"my\,ns"], True, False, [(SelectorAction.INCLUDE, "my,ns")]),
+        ([r"my\\ns"], True, False, [(SelectorAction.INCLUDE, "my\\ns")]),
+        # Escaped commas in different positions
+        (
+            [r"name\,,name2"],
+            True,
+            False,
+            [(SelectorAction.INCLUDE, "name,"), (SelectorAction.INCLUDE, "name2")],
+        ),
+        (
+            [r"name,\,name2"],
+            True,
+            False,
+            [(SelectorAction.INCLUDE, "name"), (SelectorAction.INCLUDE, ",name2")],
+        ),
+        ([r"name\,\,name2"], True, False, [(SelectorAction.INCLUDE, "name,,name2")]),
+        (
+            [r"name1,name2\,suffix"],
+            True,
+            False,
+            [
+                (SelectorAction.INCLUDE, "name1"),
+                (SelectorAction.INCLUDE, "name2,suffix"),
+            ],
+        ),
+        # Escaped characters with prefixes
+        ([r"-\+plus"], True, False, [(SelectorAction.EXCLUDE, "+plus")]),
+        ([r"+\-minus"], True, False, [(SelectorAction.INCLUDE, "-minus")]),
+        ([r"+\,comma"], True, False, [(SelectorAction.INCLUDE, ",comma")]),
+        # Literal prefixes (escaped)
+        ([r"\+"], True, False, [(SelectorAction.INCLUDE, "+")]),
+        ([r"\-"], True, False, [(SelectorAction.INCLUDE, "-")]),
+        ([r"\!"], True, False, [(SelectorAction.INCLUDE, "!")]),
+        ([r"\!namespace"], True, False, [(SelectorAction.INCLUDE, "!namespace")]),
+        # no_initial_selection=True (start with empty set)
+        (
+            ["nef"],
+            False,
+            True,
+            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+        ),
+        (
+            ["-nef"],
+            False,
+            True,
+            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
+        ),
+        (
+            ["!nef"],
+            False,
+            True,
+            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
+        ),
+        (
+            ["+nef"],
+            False,
+            True,
+            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+        ),
+        # Comma separation
+        (
+            ["nef,custom,test"],
+            False,
+            False,
+            [
+                (SelectorAction.INCLUDE, "nef"),
+                (SelectorAction.INCLUDE, "custom"),
+                (SelectorAction.INCLUDE, "test"),
+            ],
+        ),
+        (
+            ["nef,custom", "test"],
+            False,
+            False,
+            [
+                (SelectorAction.INCLUDE, "nef"),
+                (SelectorAction.INCLUDE, "custom"),
+                (SelectorAction.INCLUDE, "test"),
+            ],
+        ),
+        # All Namespaces
+        (["-"], False, False, [(SelectorAction.EXCLUDE, ALL_NAMESPACES)]),
+        (["+"], False, False, [(SelectorAction.INCLUDE, ALL_NAMESPACES)]),
+        # Order preservation
+        (
+            ["-", "+nef"],
+            False,
+            False,
+            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+        ),
+        (
+            ["+nef", "-"],
+            False,
+            False,
+            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, ALL_NAMESPACES)],
+        ),
+    ],
+)
+def test_parse_selector_lists(selectors, use_escapes, no_initial_selection, expected):
+    """Test parse_selector_lists with various options and escape sequences."""
+    result = parse_selector_lists(
+        selectors, use_escapes=use_escapes, no_initial_selection=no_initial_selection
+    )
+    assert result == expected
