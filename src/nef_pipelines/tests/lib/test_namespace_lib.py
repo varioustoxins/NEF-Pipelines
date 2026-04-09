@@ -1,40 +1,14 @@
+import pytest
+from pynmrstar import Loop
+
 from nef_pipelines.lib.namespace_lib import (
+    NO_NAMESPACE,
     REGISTERED_NAMESPACES,
-    extract_namespace,
+    EntryPart,
     filter_namespaces,
+    get_namespace,
     if_separator_conflicts_get_message,
 )
-
-
-def test_extract_namespace_standard_nef():
-    """Test extraction from standard NEF loop category."""
-    assert extract_namespace("_nef_sequence") == "nef"
-
-
-def test_extract_namespace_custom():
-    """Test extraction from custom namespace."""
-    assert extract_namespace("_custom_data") == "custom"
-
-
-def test_extract_namespace_nested_tag():
-    """Test extraction from nested tag (namespace determined by prefix before second _)."""
-    assert extract_namespace("_nef_peak.position") == "nef"
-
-
-def test_extract_namespace_frame_category():
-    """Test extraction from frame category (no leading underscore)."""
-    assert extract_namespace("nef_molecular_system") == "nef"
-    assert extract_namespace("custom_data_frame") == "custom"
-
-
-def test_extract_namespace_single_underscore():
-    """Test that names with only one underscore return None."""
-    assert extract_namespace("_sequence") is None
-
-
-def test_extract_namespace_empty():
-    """Test empty string returns None."""
-    assert extract_namespace("") is None
 
 
 def test_registered_namespaces_contains_nef():
@@ -50,6 +24,71 @@ def test_registered_namespaces_contains_nefpls():
         "NEF Pipelines",
         "Format transcoding and NEF manipulation",
     )
+
+
+@pytest.mark.parametrize(
+    "value,node_type,parent,expected",
+    [
+        # Saveframes (strings)
+        ("nef_molecular_system", EntryPart.Saveframe, None, "nef"),
+        ("ccpn_assignment", EntryPart.Saveframe, None, "ccpn"),
+        ("custom_data_frame", EntryPart.Saveframe, None, "custom"),
+        # Loops (strings)
+        ("_nef_sequence", EntryPart.Loop, None, "nef"),
+        ("_nmr_chain", EntryPart.Loop, None, "nmr"),
+        # Frame tags with registered namespace prefix
+        ("ccpn_peaklist_name", EntryPart.FrameTag, "nef", "ccpn"),
+        ("nefpls_version", EntryPart.FrameTag, "ccpn", "nefpls"),
+        # Frame tags inheriting from parent (silent NEF)
+        ("chain_code", EntryPart.FrameTag, "nef", "nef"),
+        ("custom_field", EntryPart.FrameTag, "ccpn", "ccpn"),
+        # Loop tags with registered namespace prefix
+        ("ccpn_comment", EntryPart.LoopTag, "nef", "ccpn"),
+        ("nefpls_serial", EntryPart.LoopTag, "ccpn", "nefpls"),
+        # Loop tags inheriting from parent (silent NEF)
+        ("chain_code", EntryPart.LoopTag, "nef", "nef"),
+        ("serial", EntryPart.LoopTag, "ccpn", "ccpn"),
+        # Tags without parent default to nef
+        ("chain_code", EntryPart.FrameTag, None, "nef"),
+        ("atom_name", EntryPart.LoopTag, None, "nef"),
+        # Loop objects
+        (Loop.from_scratch("_nef_sequence"), EntryPart.Loop, None, "nef"),
+        (Loop.from_scratch("_ccpn_data"), EntryPart.Loop, None, "ccpn"),
+        # Saveframe objects
+        (create_nef_save_frame("nef_molecular_system"), EntryPart.Saveframe, None, "nef"),
+        (create_nef_save_frame("ccpn_assignment"), EntryPart.Saveframe, None, "ccpn"),
+        # Tags with Loop object parent
+        ("serial", EntryPart.LoopTag, Loop.from_scratch("_ccpn_data"), "ccpn"),
+        # Tags with Saveframe object parent
+        ("note", EntryPart.FrameTag, create_nef_save_frame("ccpn_assignment"), "ccpn"),
+        # Null namespace cases (saveframes/loops without underscore separator)
+        ("nef", EntryPart.Saveframe, None, NO_NAMESPACE),
+        ("ccpn", EntryPart.Saveframe, None, NO_NAMESPACE),
+        ("test", EntryPart.Saveframe, None, NO_NAMESPACE),
+        ("_sequence", EntryPart.Loop, None, NO_NAMESPACE),
+        ("_data", EntryPart.Loop, None, NO_NAMESPACE),
+        # Tags inheriting null namespace from parent
+        ("note", EntryPart.FrameTag, NO_NAMESPACE, NO_NAMESPACE),
+        ("serial", EntryPart.LoopTag, NO_NAMESPACE, NO_NAMESPACE),
+    ]
+)
+def test_get_namespace(value, node_type, parent, expected):
+    """Test get_namespace for various node types and inheritance patterns."""
+    assert get_namespace(value, node_type, parent) == expected
+
+
+def test_get_namespace_loop_object_with_wrong_node_type():
+    """Test that passing Loop object with non-Loop node_type raises error."""
+    loop = Loop.from_scratch("_nef_sequence")
+    with pytest.raises(ValueError, match="Loop object provided but node_type is.*expected EntryPart.Loop"):
+        get_namespace(loop, EntryPart.Saveframe)
+
+
+def test_get_namespace_saveframe_object_with_wrong_node_type():
+    """Test that passing Saveframe object with non-Saveframe node_type raises error."""
+    frame = create_nef_save_frame("nef_molecular_system")
+    with pytest.raises(ValueError, match="Saveframe object provided but node_type is.*expected EntryPart.Saveframe"):
+        get_namespace(frame, EntryPart.Loop)
 
 
 def test_filter_namespaces_no_selectors():

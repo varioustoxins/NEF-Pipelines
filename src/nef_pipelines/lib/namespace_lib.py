@@ -1,13 +1,17 @@
+from enum import Enum, auto
 from fnmatch import fnmatchcase
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
-from pynmrstar import Saveframe
+from pynmrstar import Saveframe, Loop
 
-from nef_pipelines.lib.cli_lib import parse_selector_lists
+from nef_pipelines.lib.cli_lib import ALL_NAMESPACES, SelectorAction, parse_selector_lists
 
 # TODO: Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
 #       approach for handling separators across all commands.
+
+# Null namespace constant - represents saveframes/loops without namespace separator
+NO_NAMESPACE = ""
 
 # Registered namespace mapping from NEF specification
 # TODO [long term] we should download from the NEF website and use this as a fallback
@@ -29,14 +33,103 @@ REGISTERED_NAMESPACES = {
     "yasara": ("Yasara", "Structure refinement"),
 }
 
+def get_registered_namespaces():
+    return {**REGISTERED_NAMESPACES}
 
-def extract_namespace(name: str) -> Optional[str]:
+class EntryPart(Enum):
+    Entry = auto()
+    Loop = auto()
+    Saveframe = auto()
+    FrameTag = auto()
+    LoopTag = auto()
+
+    # FrameCategory = auto()
+    # LoopCategory = auto()
+    # Namespace = auto()
+
+def get_namespace(
+    value: Union[str, Loop, Saveframe],
+    node_type: EntryPart,
+    parent_namespace: Optional[Union[str, Loop, Saveframe]] = None,
+    known_namespaces: Optional[dict] = None
+) -> str:
+    """\
+    Determine the namespace for a saveframe, loop, or tag.
+
+    For saveframes and loops: first token before _ is namespace (or "" if no underscore)
+    For tags: if first token is registered namespace, use it; otherwise inherit from parent
+
+    Args:
+        value: Name string, Loop object, or Saveframe object
+        node_type: EntryPart enum value (Saveframe, Loop, FrameTag, LoopTag)
+        parent_namespace: Namespace string, Loop, or Saveframe (for tag inheritance)
+        known_namespaces: Dict of registered namespaces (defaults to REGISTERED_NAMESPACES)
+
+    Returns:
+        Namespace string. Returns "" (null namespace) for saveframes/loops without underscore separator.
+        Tags inherit from parent (including null namespace "") or default to "nef" if no parent.
+
+    Examples:
+        get_namespace("nef_molecular_system", EntryPart.Saveframe) → "nef"
+        get_namespace("nef", EntryPart.Saveframe) → ""
+        get_namespace("_nef_sequence", EntryPart.Loop) → "nef"
+        get_namespace("_sequence", EntryPart.Loop) → ""
+        get_namespace("ccpn_peaklist_name", EntryPart.FrameTag, "nef") → "ccpn"
+        get_namespace("chain_code", EntryPart.LoopTag, "nef") → "nef"
+        get_namespace("note", EntryPart.FrameTag, "") → ""
     """
-    Extract namespace from a tag, loop, or frame name.
+    known_namespaces = get_registered_namespaces() if not known_namespaces else known_namespaces
+
+    # Validate object type matches node_type
+    if isinstance(value, Loop) and node_type != EntryPart.Loop:
+        raise ValueError(f"Loop object provided but node_type is {node_type}, expected EntryPart.Loop")
+    if isinstance(value, Saveframe) and node_type != EntryPart.Saveframe:
+        raise ValueError(f"Saveframe object provided but node_type is {node_type}, expected EntryPart.Saveframe")
+
+    # Convert value to string if it's a Loop or Saveframe object
+    if isinstance(value, Loop):
+        value_str = value.category
+    elif isinstance(value, Saveframe):
+        value_str = value.category
+    else:
+        value_str = value
+
+    # Convert parent_namespace to string if needed
+    if isinstance(parent_namespace, Loop):
+        parent_namespace_str = get_namespace(parent_namespace.category, EntryPart.Loop, None, known_namespaces)
+    elif isinstance(parent_namespace, Saveframe):
+        parent_namespace_str = get_namespace(parent_namespace.category, EntryPart.Saveframe, None, known_namespaces)
+    else:
+        parent_namespace_str = parent_namespace
+
+    # Extract first token using existing _extract_namespace function
+    extracted = _extract_namespace(value_str)
+
+    # Determine namespace based on node type
+    if node_type in (EntryPart.Saveframe, EntryPart.Loop):
+        # For saveframes and loops, return extracted namespace (can be NO_NAMESPACE)
+        result = extracted
+    elif extracted and extracted in known_namespaces:
+        # For tags: if extracted namespace is a registered namespace, use it (explicit prefix)
+        result = extracted
+    else:
+        # Otherwise inherit from parent (including null namespace), or default to nef if no parent
+        result = parent_namespace_str if parent_namespace_str is not None else "nef"
+
+    return result
+
+
+def _extract_namespace(name: str) -> str:
+    """
+    Extract namespace token from a tag, loop, or frame name (private helper).
+
+    This is a low-level string parser. External code should use get_namespace()
+    which implements the full namespace determination algorithm.
 
     Patterns:
         - Loop/tag: _<namespace>_<rest> → namespace
         - Frame category: <namespace>_<rest> → namespace
+        - No underscore separator → "" (null namespace)
 
     Examples:
         _nef_sequence → nef (loop category)
@@ -44,6 +137,8 @@ def extract_namespace(name: str) -> Optional[str]:
         _nef_peak.position → nef (tag name)
         nef_molecular_system → nef (frame category)
         custom_data_frame → custom (frame category)
+        nef → "" (null namespace)
+        _sequence → "" (null namespace)
 
     Args:
         name: Tag, loop category, or frame category
@@ -51,12 +146,15 @@ def extract_namespace(name: str) -> Optional[str]:
     Returns:
         Namespace string or None if pattern doesn't match
     """
+    # Guard against None input (malformed saveframes)
+    if name is None:
+        return NO_NAMESPACE
 
     if name.startswith("_"):
         name = name[1:]
 
     parts = name.split("_", 1)
-    result = parts[0] if len(parts) >= 2 else None
+    result = parts[0] if len(parts) >= 2 else NO_NAMESPACE
 
     return result
 
