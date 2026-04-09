@@ -119,6 +119,7 @@ The application uses a hierarchical command structure built on Typer. Commands s
 6. **ALWAYS use path_in_test_data()** - Use `path_in_test_data(filename, __file__)` to locate test data files, never hardcode paths
 7. **NEVER skip tests for missing test data** - Tests must FAIL (not skip) if required test data files are missing
 8. **ALWAYS use temporary directories for output** - Test output files must be written to temporary directories (use pytest's `tmp_path` fixture), never to the working directory or test data directories
+9. **ALWAYS use pytest parameterisation for related tests** - When multiple tests follow the same pattern with different inputs, use `@pytest.mark.parametrize` instead of writing separate test functions. This improves readability and makes tests easier to extend.
 
 These are non-negotiable requirements, not suggestions. Apply them automatically without asking unless told otherwise.
 
