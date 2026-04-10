@@ -1902,6 +1902,9 @@ def parse_selector_lists(
 ) -> List[Tuple[SelectorAction, Union[str, AllNamespacesSentinel]]]:
     r"""
     Parse a set of selectors with inclusion/exclusion prefixes and optional escape sequences.
+    The implimentation assumes that you have everything selected and want a set of operations that
+    act on thsi initial selection. This includes the falg no_initial_selection which, when True,
+    adds an action to clear the selection list.
 
     The no_initial_selection flag controls the initial state:
     - no_initial_selection=False (normal): Start empty

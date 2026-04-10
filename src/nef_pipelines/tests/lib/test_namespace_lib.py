@@ -9,6 +9,7 @@ from nef_pipelines.lib.namespace_lib import (
     get_namespace,
     if_separator_conflicts_get_message,
 )
+from nef_pipelines.lib.nef_lib import create_nef_save_frame
 
 
 def test_registered_namespaces_contains_nef():
@@ -55,7 +56,12 @@ def test_registered_namespaces_contains_nefpls():
         (Loop.from_scratch("_nef_sequence"), EntryPart.Loop, None, "nef"),
         (Loop.from_scratch("_ccpn_data"), EntryPart.Loop, None, "ccpn"),
         # Saveframe objects
-        (create_nef_save_frame("nef_molecular_system"), EntryPart.Saveframe, None, "nef"),
+        (
+            create_nef_save_frame("nef_molecular_system"),
+            EntryPart.Saveframe,
+            None,
+            "nef",
+        ),
         (create_nef_save_frame("ccpn_assignment"), EntryPart.Saveframe, None, "ccpn"),
         # Tags with Loop object parent
         ("serial", EntryPart.LoopTag, Loop.from_scratch("_ccpn_data"), "ccpn"),
@@ -70,7 +76,7 @@ def test_registered_namespaces_contains_nefpls():
         # Tags inheriting null namespace from parent
         ("note", EntryPart.FrameTag, NO_NAMESPACE, NO_NAMESPACE),
         ("serial", EntryPart.LoopTag, NO_NAMESPACE, NO_NAMESPACE),
-    ]
+    ],
 )
 def test_get_namespace(value, node_type, parent, expected):
     """Test get_namespace for various node types and inheritance patterns."""
@@ -80,14 +86,20 @@ def test_get_namespace(value, node_type, parent, expected):
 def test_get_namespace_loop_object_with_wrong_node_type():
     """Test that passing Loop object with non-Loop node_type raises error."""
     loop = Loop.from_scratch("_nef_sequence")
-    with pytest.raises(ValueError, match="Loop object provided but node_type is.*expected EntryPart.Loop"):
+    with pytest.raises(
+        ValueError,
+        match="Loop object provided but node_type is.*expected EntryPart.Loop",
+    ):
         get_namespace(loop, EntryPart.Saveframe)
 
 
 def test_get_namespace_saveframe_object_with_wrong_node_type():
     """Test that passing Saveframe object with non-Saveframe node_type raises error."""
     frame = create_nef_save_frame("nef_molecular_system")
-    with pytest.raises(ValueError, match="Saveframe object provided but node_type is.*expected EntryPart.Saveframe"):
+    with pytest.raises(
+        ValueError,
+        match="Saveframe object provided but node_type is.*expected EntryPart.Saveframe",
+    ):
         get_namespace(frame, EntryPart.Loop)
 
 
