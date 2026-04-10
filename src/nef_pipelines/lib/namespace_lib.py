@@ -267,12 +267,14 @@ def collect_namespaces_from_frames(
 
     return namespaces
 
-
+#TODO [for future consideration] what should happen about errors e.g. you list a thing to add that doesn't exist and are the selectors
+# fnmatch wildcards? if so we need to escape * and ?
 def filter_namespaces(
     all_namespaces: set,
     namespace_selectors: List[str],
     use_separator_escapes: bool,
-    invert: bool,
+    no_initial_selection: bool = False
+
 ) -> set:
     """
     Filter namespaces based on selector patterns.
