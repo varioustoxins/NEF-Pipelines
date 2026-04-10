@@ -225,7 +225,7 @@ def filter_namespaces(
         all_namespaces: Set of all namespace strings to filter
         namespace_selectors: Optional namespace patterns with +/- prefixes
         use_separator_escapes: If True, process escape sequences
-        invert: If True, invert namespace selection logic
+        no_initial_selection: If True, start with empty set; otherwise start with all
 
     Returns:
         Set of filtered namespace strings
@@ -234,25 +234,28 @@ def filter_namespaces(
     result = all_namespaces
 
     if namespace_selectors:
-        include, exclude = parse_selector_lists(
-            namespace_selectors, use_separator_escapes, invert
+        operations = parse_selector_lists(
+            namespace_selectors, use_separator_escapes, no_initial_selection
         )
 
-        filtered_namespaces = set()
-        for ns in all_namespaces:
-            if include:
-                for pattern in include:
-                    if fnmatchcase(ns, pattern):
-                        filtered_namespaces.add(ns)
-                        break
-            else:
-                filtered_namespaces.add(ns)
+        filtered_namespaces = all_namespaces.copy()
 
-            if ns in filtered_namespaces:
-                for pattern in exclude:
-                    if fnmatchcase(ns, pattern):
-                        filtered_namespaces.discard(ns)
-                        break
+        for action, pattern in operations:
+
+            if action == SelectorAction.INCLUDE:
+                if pattern is ALL_NAMESPACES:
+                    filtered_namespaces = all_namespaces.copy()
+                else:
+                    for namespace in all_namespaces:
+                        if fnmatchcase(namespace, pattern):
+                            filtered_namespaces.add(namespace)
+            elif action == SelectorAction.EXCLUDE:
+                if pattern is ALL_NAMESPACES:
+                    filtered_namespaces.clear()
+                else:
+                    for namespace in list(filtered_namespaces):
+                        if fnmatchcase(namespace, pattern):
+                            filtered_namespaces.discard(namespace)
 
         result = filtered_namespaces
 

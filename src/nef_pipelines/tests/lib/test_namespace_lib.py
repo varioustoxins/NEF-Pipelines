@@ -132,9 +132,10 @@ def test_filter_namespaces_wildcard():
 
 
 def test_filter_namespaces_invert():
-    """Test filter with invert flag."""
+    """Test filter with no_initial_selection flag."""
     all_namespaces = {"nef", "custom", "test"}
-    result = filter_namespaces(all_namespaces, ["nef"], False, True)
+    # Start with empty, add custom and test
+    result = filter_namespaces(all_namespaces, ["custom", "test"], False, True)
     assert result == {"custom", "test"}
 
 
