@@ -6,7 +6,7 @@ from pynmrstar import Saveframe, Loop
 
 from nef_pipelines.lib.cli_lib import ALL_NAMESPACES, SelectorAction, parse_selector_lists
 
-# TODO: Move separator escaping functionality to cli_lib and consolidate
+# TODO: [for future] Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
 #       approach for handling separators across all commands.
 
@@ -14,7 +14,7 @@ from nef_pipelines.lib.cli_lib import ALL_NAMESPACES, SelectorAction, parse_sele
 NO_NAMESPACE = ""
 
 # Registered namespace mapping from NEF specification
-# TODO [long term] we should download from the NEF website and use this as a fallback
+# TODO [for future] we should download from the NEF website and use this as a fallback
 REGISTERED_NAMESPACES = {
     "nef": ("NEF Standard", "Data Exchange"),
     "nefpls": ("NEF Pipelines", "Format transcoding and NEF manipulation"),
@@ -144,7 +144,7 @@ def _extract_namespace(name: str) -> str:
         name: Tag, loop category, or frame category
 
     Returns:
-        Namespace string or None if pattern doesn't match
+        Namespace string, or "" (NO_NAMESPACE) if pattern doesn't match
     """
     # Guard against None input (malformed saveframes)
     if name is None:
@@ -157,8 +157,6 @@ def _extract_namespace(name: str) -> str:
     result = parts[0] if len(parts) >= 2 else NO_NAMESPACE
 
     return result
-
-
 
 def collect_namespaces_from_frames(
     frames: List[Saveframe],
