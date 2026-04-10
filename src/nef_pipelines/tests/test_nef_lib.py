@@ -832,8 +832,8 @@ def test_select_loops_by_category_deduplication():
             "nef_distance_restraint_list",
             SaveframeNameParts("nef", "distance_restraint_list", "long_range_1", None),
         ),
-        # Edge case: no namespace prefix possible
-        ("nef", "nef", SaveframeNameParts(None, "nef", None, None)),
+        # Edge case: no namespace prefix possible (null namespace)
+        ("nef", "nef", SaveframeNameParts("", "nef", None, None)),
         # Edge case: empty backticks (malformed counter)
         (
             "nef_molecular_system_protein_A``",
