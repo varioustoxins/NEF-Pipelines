@@ -225,6 +225,8 @@ def build_filtered_tree_from_retained_nodes(
     """\
     Build new tree containing only specified nodes.
 
+    Preserves custom node types by adding node objects directly.
+
     Args:
         tree: Source tree
         nodes_to_keep: Set of node identifiers to include
@@ -246,11 +248,6 @@ def build_filtered_tree_from_retained_nodes(
                 else:
                     continue
 
-                filtered.create_node(
-                    tag=node.tag,
-                    identifier=node.identifier,
-                    parent=parent_id,
-                    data=node.data,
-                )
+                filtered.add_node(node, parent=parent_id)
 
     return filtered
