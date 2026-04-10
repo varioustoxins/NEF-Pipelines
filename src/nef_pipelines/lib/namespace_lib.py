@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from fnmatch import fnmatchcase
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
-from pynmrstar import Saveframe, Loop
+from pynmrstar import Loop, Saveframe
 
-from nef_pipelines.lib.cli_lib import ALL_NAMESPACES, SelectorAction, parse_selector_lists
+from nef_pipelines.lib.cli_lib import (
+    ALL_NAMESPACES,
+    SelectorAction,
+    parse_selector_lists,
+)
 
 # TODO: [for future] Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
@@ -34,6 +38,7 @@ REGISTERED_NAMESPACES = {
     "yasara": ("Yasara", "Structure refinement"),
 }
 
+
 def get_registered_namespaces():
     return {**REGISTERED_NAMESPACES}
 
@@ -52,10 +57,11 @@ class NamespaceInformation:
         loop_category: Loop category (None for frame-level items)
         entry_part: Level where namespace occurs (Saveframe, Loop, FrameTag, LoopTag)
     """
+
     frame_name: str
     frame_category: str
     loop_category: Optional[str]
-    entry_part: 'EntryPart'
+    entry_part: "EntryPart"
 
 
 class EntryPart(Enum):
@@ -69,11 +75,12 @@ class EntryPart(Enum):
     # LoopCategory = auto()
     # Namespace = auto()
 
+
 def get_namespace(
     value: Union[str, Loop, Saveframe],
     node_type: EntryPart,
     parent_namespace: Optional[Union[str, Loop, Saveframe]] = None,
-    known_namespaces: Optional[dict] = None
+    known_namespaces: Optional[dict] = None,
 ) -> str:
     """\
     Determine the namespace for a saveframe, loop, or tag.
@@ -100,13 +107,19 @@ def get_namespace(
         get_namespace("chain_code", EntryPart.LoopTag, "nef") → "nef"
         get_namespace("note", EntryPart.FrameTag, "") → ""
     """
-    known_namespaces = get_registered_namespaces() if not known_namespaces else known_namespaces
+    known_namespaces = (
+        get_registered_namespaces() if not known_namespaces else known_namespaces
+    )
 
     # Validate object type matches node_type
     if isinstance(value, Loop) and node_type != EntryPart.Loop:
-        raise ValueError(f"Loop object provided but node_type is {node_type}, expected EntryPart.Loop")
+        raise ValueError(
+            f"Loop object provided but node_type is {node_type}, expected EntryPart.Loop"
+        )
     if isinstance(value, Saveframe) and node_type != EntryPart.Saveframe:
-        raise ValueError(f"Saveframe object provided but node_type is {node_type}, expected EntryPart.Saveframe")
+        raise ValueError(
+            f"Saveframe object provided but node_type is {node_type}, expected EntryPart.Saveframe"
+        )
 
     # Convert value to string if it's a Loop or Saveframe object
     if isinstance(value, Loop):
@@ -118,9 +131,13 @@ def get_namespace(
 
     # Convert parent_namespace to string if needed
     if isinstance(parent_namespace, Loop):
-        parent_namespace_str = get_namespace(parent_namespace.category, EntryPart.Loop, None, known_namespaces)
+        parent_namespace_str = get_namespace(
+            parent_namespace.category, EntryPart.Loop, None, known_namespaces
+        )
     elif isinstance(parent_namespace, Saveframe):
-        parent_namespace_str = get_namespace(parent_namespace.category, EntryPart.Saveframe, None, known_namespaces)
+        parent_namespace_str = get_namespace(
+            parent_namespace.category, EntryPart.Saveframe, None, known_namespaces
+        )
     else:
         parent_namespace_str = parent_namespace
 
@@ -179,6 +196,7 @@ def _extract_namespace(name: str) -> str:
     result = parts[0] if len(parts) >= 2 else NO_NAMESPACE
 
     return result
+
 
 def collect_namespaces_from_frames(
     frames: List[Saveframe],
@@ -260,21 +278,27 @@ def collect_namespaces_from_frames(
                     EntryPart.LoopTag,
                 )
                 if key not in seen:
-                    namespaces.setdefault(loop_ns, []).append(
-                        (frame.name, frame.category, loop.category, "loop")
+                    namespaces.setdefault(tag_namespace, []).append(
+                        NamespaceInformation(
+                            frame_name=frame.name,
+                            frame_category=frame.category,
+                            loop_category=loop.category,
+                            entry_part=EntryPart.LoopTag,
+                        )
                     )
                     seen.add(key)
 
     return namespaces
 
-#TODO [for future consideration] what should happen about errors e.g. you list a thing to add that doesn't exist and are the selectors
+
+# TODO [for future consideration] what should happen about errors e.g. you list a thing to add that doesn't exist
+#      and are the selectors
 # fnmatch wildcards? if so we need to escape * and ?
 def filter_namespaces(
     all_namespaces: set,
     namespace_selectors: List[str],
     use_separator_escapes: bool,
-    no_initial_selection: bool = False
-
+    no_initial_selection: bool = False,
 ) -> set:
     """
     Filter namespaces based on selector patterns.
