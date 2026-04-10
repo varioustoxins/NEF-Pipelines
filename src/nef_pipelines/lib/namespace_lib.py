@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 from fnmatch import fnmatchcase
 from typing import Dict, List, Optional, Tuple, Union
@@ -35,6 +36,27 @@ REGISTERED_NAMESPACES = {
 
 def get_registered_namespaces():
     return {**REGISTERED_NAMESPACES}
+
+
+@dataclass(frozen=True)
+class NamespaceInformation:
+    """\
+    Information about a namespace occurrence in NEF data.
+
+    Represents where a namespace is used within an entry at different levels
+    (frame, loop, or tag).
+
+    Attributes:
+        frame_name: Saveframe name
+        frame_category: Saveframe category
+        loop_category: Loop category (None for frame-level items)
+        entry_part: Level where namespace occurs (Saveframe, Loop, FrameTag, LoopTag)
+    """
+    frame_name: str
+    frame_category: str
+    loop_category: Optional[str]
+    entry_part: 'EntryPart'
+
 
 class EntryPart(Enum):
     Entry = auto()
