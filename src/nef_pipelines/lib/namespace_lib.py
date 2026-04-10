@@ -182,7 +182,7 @@ def _extract_namespace(name: str) -> str:
 
 def collect_namespaces_from_frames(
     frames: List[Saveframe],
-) -> Dict[str, List[Tuple[str, str, Optional[str], str]]]:
+) -> Dict[str, List[NamespaceInformation]]:
     """
     Collect all namespaces from frames, loops, and tags.
 
@@ -190,44 +190,80 @@ def collect_namespaces_from_frames(
         frames: List of saveframes to process
 
     Returns:
-        Dict mapping namespace → list of (frame_name, frame_category, loop_category, level_type) tuples
-        where:
-        - frame_category is frame.category
-        - loop_category is loop.category for loops, None for frames
-        - level_type is 'frame', 'loop', 'column-tag', or 'tag'
+        Dict mapping namespace → list of NamespaceInformation objects describing
+        where each namespace occurs (frame, loop, or tag level)
     """
     namespaces = {}
     seen = set()
 
     for frame in frames:
-        # Check frame.category for namespace
-        frame_ns = extract_namespace(frame.category)
-        if frame_ns:
-            key = (frame_ns, frame.name, frame.category, None, "frame")
+        # Get frame namespace
+        frame_namespace = get_namespace(frame, EntryPart.Saveframe)
+        key = (frame_namespace, frame.name, frame.category, None, EntryPart.Saveframe)
+        if key not in seen:
+            namespaces.setdefault(frame_namespace, []).append(
+                NamespaceInformation(
+                    frame_name=frame.name,
+                    frame_category=frame.category,
+                    loop_category=None,
+                    entry_part=EntryPart.Saveframe,
+                )
+            )
+            seen.add(key)
+
+        # Collect frame tags (can have explicit namespace prefixes like ccpn_peaklist_name)
+        for tag_name, _tag_value in frame.tag_iterator():
+            tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
+            key = (tag_namespace, frame.name, frame.category, None, EntryPart.FrameTag)
             if key not in seen:
-                namespaces.setdefault(frame_ns, []).append(
-                    (frame.name, frame.category, None, "frame")
+                namespaces.setdefault(tag_namespace, []).append(
+                    NamespaceInformation(
+                        frame_name=frame.name,
+                        frame_category=frame.category,
+                        loop_category=None,
+                        entry_part=EntryPart.FrameTag,
+                    )
                 )
                 seen.add(key)
 
-        # Note: Frame tags (like sf_category, note, description) are NOT namespace-prefixed
-        # They are just plain tags within the frame. We only extract namespaces from
-        # tags that start with underscore (which appear in loops).
-
         for loop in frame.loops:
-            # Check loop.category for namespace
-            loop_ns = extract_namespace(loop.category)
-            if loop_ns:
-                key = (loop_ns, frame.name, frame.category, loop.category, "loop")
+            # Get loop namespace
+            loop_namespace = get_namespace(loop, EntryPart.Loop)
+            key = (
+                loop_namespace,
+                frame.name,
+                frame.category,
+                loop.category,
+                EntryPart.Loop,
+            )
+            if key not in seen:
+                namespaces.setdefault(loop_namespace, []).append(
+                    NamespaceInformation(
+                        frame_name=frame.name,
+                        frame_category=frame.category,
+                        loop_category=loop.category,
+                        entry_part=EntryPart.Loop,
+                    )
+                )
+                seen.add(key)
+
+            # Collect loop tags (can have explicit namespace prefixes like ccpn_comment)
+            for tag_name in loop.tags:
+                tag_namespace = get_namespace(
+                    tag_name, EntryPart.LoopTag, loop_namespace
+                )
+                key = (
+                    tag_namespace,
+                    frame.name,
+                    frame.category,
+                    loop.category,
+                    EntryPart.LoopTag,
+                )
                 if key not in seen:
                     namespaces.setdefault(loop_ns, []).append(
                         (frame.name, frame.category, loop.category, "loop")
                     )
                     seen.add(key)
-
-            # Note: Loop tags (accessed via loop.tags) are plain names like 'chain_code', 'atom_name'
-            # They do NOT have namespace prefixes - they inherit the loop's namespace
-            # So we don't extract namespaces from loop.tags
 
     return namespaces
 
