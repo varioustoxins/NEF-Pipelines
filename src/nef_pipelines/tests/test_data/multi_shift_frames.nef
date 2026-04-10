@@ -1,0 +1,111 @@
+data_multi_shift_test
+
+
+   save_nef_nmr_meta_data
+
+      _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+      _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+      _nef_nmr_meta_data.format_name      nmr_exchange_format
+      _nef_nmr_meta_data.format_version   1.1
+      _nef_nmr_meta_data.program_name     AnalysisAssign
+      _nef_nmr_meta_data.program_version  3.1.1
+      _nef_nmr_meta_data.creation_date    2023-03-07T19:53:20.040790
+      _nef_nmr_meta_data.uuid             AnalysisAssign-2023-03-07T19:53:20.040790-985977877
+      _nef_nmr_meta_data.coordinate_file_name  .
+
+      loop_
+         _nef_program_script.program_name
+         _nef_program_script.script_name
+         _nef_program_script.script
+
+         CcpNmr  exportProject  .
+      stop_
+   save_
+
+
+   save_nef_molecular_system
+
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.index
+         _nef_sequence.chain_code
+         _nef_sequence.sequence_code
+         _nef_sequence.residue_name
+         _nef_sequence.linking
+         _nef_sequence.residue_variant
+         _nef_sequence.cis_peptide
+
+         1   A  1   ALA  start   .  .
+         2   A  2   GLY  middle  .  .
+      stop_
+   save_
+
+
+   save_nef_chemical_shift_list_default
+
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+
+         A  1  ALA  H   8.1   H  1
+         A  1  ALA  N   120.0  N  15
+         A  2  GLY  H   8.3   H  1
+         A  2  GLY  N   110.0  N  15
+
+      stop_
+   save_
+
+
+   save_nef_chemical_shift_list_simulated
+
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_simulated
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+
+         A  1  ALA  CA  52.0  C  13
+         A  2  GLY  CA  45.0  C  13
+
+      stop_
+   save_
+
+
+   save_nef_chemical_shift_list_predicted
+
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_predicted
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+
+         A  1  ALA  CB  18.0  C  13
+         A  2  GLY  CB  17.5  C  13
+
+      stop_
+   save_
+
+
+# End of data_multi_shift_test

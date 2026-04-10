@@ -1,0 +1,23 @@
+data_namespace_test
+
+   save_nef_molecular_system
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.chain_code
+         A
+      stop_
+   save_
+
+   save_ccpn_additional_data
+      _ccpn_additional_data.sf_category   ccpn_additional_data
+      _ccpn_additional_data.sf_framecode  ccpn_additional_data
+
+      loop_
+         _ccpn_data.key
+         _ccpn_data.value
+
+         test  123
+      stop_
+   save_

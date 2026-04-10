@@ -1,0 +1,31 @@
+data_namespace_hierarchical_test
+
+   save_nef_molecular_system
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.chain_code
+         A
+      stop_
+   save_
+
+   save_ccpn_assignment
+      _ccpn_assignment.sf_category   ccpn_assignment
+      _ccpn_assignment.sf_framecode  ccpn_assignment
+
+      loop_
+         _nmr_chain.short_name
+         _nmr_chain.serial
+
+         A  1
+      stop_
+
+      loop_
+         _nmr_residue.chain_code
+         _nmr_residue.sequence_code
+
+         A  1
+         A  2
+      stop_
+   save_
