@@ -108,7 +108,7 @@ def tree(
         "--children",
         help="show all children of nodes found by the selectors",
     ),
-    namespace: Optional[List[str]] = typer.Option(
+    namespaces: Optional[List[str]] = typer.Option(
         None,
         "--namespace",
         help="""\
@@ -191,7 +191,7 @@ e.g        nef entry tree file.nef chain --node-type loop-tag   # Only show loop
         colour_policy,
         no_highlight,
         children,
-        namespace,
+        namespaces,
         no_initial_selection,  # , node_type
     )
     print(output, end="")
