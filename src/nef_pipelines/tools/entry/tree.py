@@ -35,7 +35,13 @@ from nef_pipelines.lib.tree_lib import (
     prune_tree_to_matches,
     render_tree,
 )
-from nef_pipelines.lib.util import STDIN, exit_error, find_substring_with_wildcard, warn
+from nef_pipelines.lib.util import (
+    STDIN,
+    exit_error,
+    find_substring_with_wildcard,
+    parse_comma_separated_options,
+    warn,
+)
 from nef_pipelines.tools.entry import entry_app
 
 # TODO: Node type filtering feature - commented out for future consideration
@@ -182,6 +188,8 @@ e.g        nef entry tree file.nef chain --node-type loop-tag   # Only show loop
         else:
             input = selectors[0]
             selectors = selectors[1:]
+
+    selectors = parse_comma_separated_options(selectors)
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
