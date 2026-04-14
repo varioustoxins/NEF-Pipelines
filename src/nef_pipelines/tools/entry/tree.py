@@ -130,6 +130,8 @@ def tree(
             ```
         """,
     ),
+    # TODO [future] use_escapes: bool = typer.Option(False, "--use-escapes",
+    # help="use escapes in namspaces and selectors"),
     no_initial_selection: bool = typer.Option(
         False,
         "--no-initial-selection",
@@ -192,6 +194,26 @@ e.g        nef entry tree file.nef chain --node-type loop-tag   # Only show loop
     selectors = parse_comma_separated_options(selectors)
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
+
+    # TODO [future] add a funcion to cli_lib to look for selector conflicts, ie names which contain a set of separator
+    #  values there are already specific funtions that can be mined in cli_lib however
+    # this should be general function
+    #  and its hould be possible to decide where to look for conflicts
+    # Saveframe, Loop, SaveFrame-tag and loop-tag names, namespaces, loop categories, saveframe categories or all
+    # use library functions from namespace_lib, and nef_lib to parse namespaces and componenets of frame names, find
+    # namespace and decompose loop and frame tags [if functions are missing tell me]
+
+    # in this
+    # case
+    # its - +, and !
+
+    # TODO namespaces should be selected outside the tree using the complete set of namespaces in the entry
+    # TODO creat a DisplayOptions data class like type
+    # @dataclass
+    # class DisplayOptions:
+    #     colour_policy: ColourOutputPolicy = ColourOutputPolicy.AUTO
+    #     no_highlight: bool = False
+    #     children
 
     output = pipe(
         entry,
