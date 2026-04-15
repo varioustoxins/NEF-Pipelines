@@ -392,6 +392,7 @@ def run_and_report(
             result = MixedResult(result)
 
     if result.exit_code != expected_exit_code:
+        # TODO these shouldn't have breaks between the -'s
         print("\n", "-" * 40, "-stdout-", "-" * 40)
         print(result.stdout)
         if hasattr(result, "stderr") and result.stderr:
