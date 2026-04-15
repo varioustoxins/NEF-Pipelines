@@ -127,3 +127,22 @@ def test_bare_filename():
     result = select_matching_tests(TEST_NAMES, args)
 
     assert result == EXPECTED_NAMES
+
+def test_py_file_without_separator():
+    # Use stable dummy test files instead of production tests
+    test_names = [
+        "tests/meta_tests/test_data/dummy_test_simple.py::test_dummy_pass_1",
+        "tests/meta_tests/test_data/dummy_test_simple.py::test_dummy_pass_2",
+        "tests/meta_tests/test_data/dummy_test_another.py::test_another_1",
+    ]
+
+    args = ["dummy_test_simple.py"]
+
+    expected_names = [
+        "tests/meta_tests/test_data/dummy_test_simple.py::test_dummy_pass_1",
+        "tests/meta_tests/test_data/dummy_test_simple.py::test_dummy_pass_2",
+    ]
+
+    result = select_matching_tests(test_names, args)
+
+    assert result == expected_names

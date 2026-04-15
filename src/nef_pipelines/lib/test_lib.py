@@ -87,6 +87,10 @@ def select_matching_tests(tests, selectors):
 
     for selector in selectors:
 
+        # If selector is a .py file without ::, add :: to match all tests in that file
+        if selector.endswith('.py') and '::' not in selector:
+            selector = f"{selector}::"
+
         selector_parts = _split_test_spec(selector)
         num_selector_parts = len(selector_parts)
 
