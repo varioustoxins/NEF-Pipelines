@@ -1,4 +1,6 @@
-from nef_pipelines.lib.test_lib import select_matching_tests
+# TODO we could also do with a test to check the separation of stdout and stderr by run_and_report
+
+from nef_pipelines.lib.test_lib import run_and_report, select_matching_tests
 
 TEST_NAMES = [
     "tests/nmrpipe/test_gdb.py::test_bad_data_format",
