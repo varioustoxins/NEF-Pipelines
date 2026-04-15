@@ -1444,7 +1444,7 @@ def _find_range_intersection(range1: tuple, range2: tuple) -> Optional[tuple]:
 def parse_frame_loop_and_tags(
     frame_spec: str,
     use_escapes: bool = False,
-) -> FrameLoopAndTags:
+) -> FrameLoopAndTagSelectors:
     """\
     Parse a frame/loop/tag selector specification.
 
@@ -1528,8 +1528,8 @@ def parse_frame_loop_and_tags(
 
 
 def _remove_frame_loop_tag_place_holders(
-    result: FrameLoopAndTags, use_escapes: bool
-) -> FrameLoopAndTags:
+    result: FrameLoopAndTagSelectors, use_escapes: bool
+) -> FrameLoopAndTagSelectors:
     if use_escapes:
         frame_name = result.frame_name
         loop_name = result.loop_name
@@ -1544,12 +1544,27 @@ def _remove_frame_loop_tag_place_holders(
             frame_tags = [tag.replace(placeholder, char) for tag in frame_tags]
             loop_tags = [tag.replace(placeholder, char) for tag in loop_tags]
 
-        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+        result = FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
     return result
 
 
-def _parse_frame_loop_and_tags(frame_spec, result: ParseResults) -> FrameLoopAndTags:
-def _build_frame_loop_selectors(frame_spec, result: ParseResults) -> FrameLoopAndTagSelectors:
+def _build_frame_loop_selectors(
+    frame_spec, result: ParseResults
+) -> FrameLoopAndTagSelectors:
+    # Indices into ParseResults for the frame.loop:tags grammar
+    FRAME_IDX = 0
+    LOOP_IDX = 1
+    FRAME_TAGS_IDX = 1
+    LOOP_TAGS_IDX = 2
+
+    def extract_tags_from_result(result: ParseResults, start_index: int) -> List[str]:
+        """Extract and strip tags from parse results, defaulting to ["*"] if no tags present."""
+        return (
+            [tag.strip() for tag in result[start_index:]]
+            if len(result) > start_index
+            else ["*"]
+        )
+
     # Parse results based on whether we have tags and/or explicit loop
     has_tag_separator = FRAME_TAG_SEPARATOR in frame_spec
     has_loop_separator = FRAME_LOOP_SEPARATOR in frame_spec
@@ -1581,8 +1596,8 @@ def _build_frame_loop_selectors(frame_spec, result: ParseResults) -> FrameLoopAn
         loop_name = "*"
         frame_tags = ["*"]
         loop_tags = ["*"]
-        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
-    return result
+
+    return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
 
 
 def _detect_escape_sequences(spec: str) -> str:

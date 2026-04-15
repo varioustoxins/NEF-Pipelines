@@ -28,7 +28,7 @@ from nef_pipelines.lib.cli_lib import (
 )
 from nef_pipelines.lib.structures import (
     BadFrameLoopTagSyntaxException,
-    FrameLoopAndTags,
+    FrameLoopAndTagSelectors,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
@@ -2137,7 +2137,7 @@ def test_validate_split_separators_empty():
         (
             "nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
             {},
-            FrameLoopAndTags(
+            FrameLoopAndTagSelectors(
                 "nef_rdc_restraint_list", "nef_rdc_restraint", [], ["chain_code_1"]
             ),
         ),
@@ -2145,31 +2145,33 @@ def test_validate_split_separators_empty():
         (
             "my_frame:tag1,tag2,tag3",
             {},
-            FrameLoopAndTags("my_frame", None, ["tag1", "tag2", "tag3"], []),
+            FrameLoopAndTagSelectors("my_frame", None, ["tag1", "tag2", "tag3"], []),
         ),
         # .loop:tags format (any frame, loop columns)
         (
             ".rdc:atom_name_1,atom_name_2",
             {},
-            FrameLoopAndTags("*", "rdc", [], ["atom_name_1", "atom_name_2"]),
+            FrameLoopAndTagSelectors("*", "rdc", [], ["atom_name_1", "atom_name_2"]),
         ),
         # Frame.:tags format (any loop in frame, loop columns)
         (
             "dipolar.:tag1",
             {},
-            FrameLoopAndTags("dipolar", "*", [], ["tag1"]),
+            FrameLoopAndTagSelectors("dipolar", "*", [], ["tag1"]),
         ),
         # Frame.loop format (entire loop, all columns)
         (
             "nef_rdc_restraint_list.nef_rdc_restraint",
             {},
-            FrameLoopAndTags("nef_rdc_restraint_list", "nef_rdc_restraint", [], ["*"]),
+            FrameLoopAndTagSelectors(
+                "nef_rdc_restraint_list", "nef_rdc_restraint", [], ["*"]
+            ),
         ),
         # Whitespace handling in tags (frame tags)
         (
             "frame:tag1 , tag2 ,tag3",
             {},
-            FrameLoopAndTags("frame", None, ["tag1", "tag2", "tag3"], []),
+            FrameLoopAndTagSelectors("frame", None, ["tag1", "tag2", "tag3"], []),
         ),
     ],
 )
@@ -2186,22 +2188,31 @@ def test_parse_frame_loop_and_tags(input_str, kwargs, expected):
     "input_str,expected",
     [
         # Escaped colon in frame name
-        ("frame::name:tag", FrameLoopAndTags("frame:name", None, ["tag"], [])),
+        ("frame::name:tag", FrameLoopAndTagSelectors("frame:name", None, ["tag"], [])),
         # Escaped dot in frame name
-        ("frame..name.loop:tag", FrameLoopAndTags("frame.name", "loop", [], ["tag"])),
+        (
+            "frame..name.loop:tag",
+            FrameLoopAndTagSelectors("frame.name", "loop", [], ["tag"]),
+        ),
         # Escaped comma in tag list
-        ("frame:tag1,,2,tag3", FrameLoopAndTags("frame", None, ["tag1,2", "tag3"], [])),
+        (
+            "frame:tag1,,2,tag3",
+            FrameLoopAndTagSelectors("frame", None, ["tag1,2", "tag3"], []),
+        ),
         # Escaped dot in loop name
-        ("frame.loop..name:tag", FrameLoopAndTags("frame", "loop.name", [], ["tag"])),
+        (
+            "frame.loop..name:tag",
+            FrameLoopAndTagSelectors("frame", "loop.name", [], ["tag"]),
+        ),
         # Triple colon (:: → : plus separator :)
-        ("frame:::tag", FrameLoopAndTags("frame:", None, ["tag"], [])),
+        ("frame:::tag", FrameLoopAndTagSelectors("frame:", None, ["tag"], [])),
         # Multiple escapes together
         (
             "fr::ame.lo..op:ta,,g1,tag2",
-            FrameLoopAndTags("fr:ame", "lo.op", [], ["ta,g1", "tag2"]),
+            FrameLoopAndTagSelectors("fr:ame", "lo.op", [], ["ta,g1", "tag2"]),
         ),
         # Escaped in wildcard selectors
-        (".loop::name:tag", FrameLoopAndTags("*", "loop:name", [], ["tag"])),
+        (".loop::name:tag", FrameLoopAndTagSelectors("*", "loop:name", [], ["tag"])),
     ],
 )
 def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):

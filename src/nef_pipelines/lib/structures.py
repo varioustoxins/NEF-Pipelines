@@ -537,7 +537,7 @@ class ChainOffsetSyntaxParsingError(Exception):
 
 
 @dataclass
-class FrameLoopAndTags:
+class FrameLoopAndTagSelectors:
     frame_name: str
     loop_name: Optional[str]
     frame_tags: List[str] = field(default_factory=list)
