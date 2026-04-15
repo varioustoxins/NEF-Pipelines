@@ -1,8 +1,9 @@
 import math
 from dataclasses import dataclass, field
 from enum import auto
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
 
 
@@ -542,6 +543,26 @@ class FrameLoopAndTagSelectors:
     loop_name: Optional[str]
     frame_tags: List[str] = field(default_factory=list)
     loop_tags: List[str] = field(default_factory=list)
+
+
+@dataclass
+class FramesLoopAndTags:
+    frame: Saveframe
+    loop: Optional[Loop]
+    frame_tags: List[str] = field(default_factory=list)
+    loop_tags: List[str] = field(default_factory=list)
+
+
+@dataclass
+class DisplayOptions:
+    """Formatting options for display output."""
+
+    display_modes: List[Any] = field(default_factory=list)
+    count: int = 10
+    exact: bool = False
+    tags_only: bool = False
+    loops_only: bool = False
+    no_comments: bool = False
 
 
 @dataclass

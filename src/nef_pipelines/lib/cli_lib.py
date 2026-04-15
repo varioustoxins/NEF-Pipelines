@@ -50,13 +50,15 @@ from nef_pipelines.lib.sequence_lib import sequence_from_entry
 from nef_pipelines.lib.structures import (
     BadFrameLoopTagSyntaxException,
     ChainOffsetSyntaxParsingError,
-    FrameLoopAndTags,
+    FrameLoopAndTagSelectors,
     RangeOffset,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
 )
 from nef_pipelines.lib.util import NEWLINE, is_int, parse_comma_separated_options
+
+SELECT_ALL_FRAME_CATEGORIES_AND_TAGS = "*.*:*"
 
 
 class SelectorAction(Enum):
@@ -1569,30 +1571,25 @@ def _build_frame_loop_selectors(
     has_tag_separator = FRAME_TAG_SEPARATOR in frame_spec
     has_loop_separator = FRAME_LOOP_SEPARATOR in frame_spec
 
+    # Set defaults
+    frame_name = result[FRAME_IDX]
+    loop_name = None
+    frame_tags = []
+    loop_tags = []
+
     if has_loop_separator and has_tag_separator:
         # frame.loop:tags → loop columns
-        frame_name = result[0]
-        loop_name = result[1]
-        loop_tags = [tag.strip() for tag in result[2:]] if len(result) > 2 else ["*"]
-        frame_tags = []
-        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+        loop_name = result[LOOP_IDX]
+        loop_tags = extract_tags_from_result(result, LOOP_TAGS_IDX)
     elif has_loop_separator:
         # frame.loop → entire loop
-        frame_name = result[0]
-        loop_name = result[1]
+        loop_name = result[LOOP_IDX]
         loop_tags = ["*"]
-        frame_tags = []
-        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
     elif has_tag_separator:
         # frame:tags → frame tags ONLY (not loop columns)
-        frame_name = result[0]
-        loop_name = None
-        frame_tags = [tag.strip() for tag in result[1:]] if len(result) > 1 else ["*"]
-        loop_tags = []
-        result = FrameLoopAndTags(frame_name, loop_name, frame_tags, loop_tags)
+        frame_tags = extract_tags_from_result(result, FRAME_TAGS_IDX)
     else:
         # frame → entire frame (all tags + all loops)
-        frame_name = result[0]
         loop_name = "*"
         frame_tags = ["*"]
         loop_tags = ["*"]
