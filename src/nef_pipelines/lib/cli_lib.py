@@ -1515,11 +1515,11 @@ def parse_frame_loop_and_tags(
 
     grammar = _build_frame_loop_tag_grammar(use_escapes)
 
-    parser_result = _parse_frame_loop_tag_or_raise(
+    parser_result = _parse_spec_with_grammar(
         frame_spec, grammar, original_spec, use_escapes
     )
 
-    result = _parse_frame_loop_and_tags(frame_spec, parser_result)
+    result = _build_frame_loop_selectors(frame_spec, parser_result)
 
     # Post-process to restore escaped characters
     result = _remove_frame_loop_tag_place_holders(result, use_escapes)
@@ -1549,6 +1549,7 @@ def _remove_frame_loop_tag_place_holders(
 
 
 def _parse_frame_loop_and_tags(frame_spec, result: ParseResults) -> FrameLoopAndTags:
+def _build_frame_loop_selectors(frame_spec, result: ParseResults) -> FrameLoopAndTagSelectors:
     # Parse results based on whether we have tags and/or explicit loop
     has_tag_separator = FRAME_TAG_SEPARATOR in frame_spec
     has_loop_separator = FRAME_LOOP_SEPARATOR in frame_spec
@@ -1629,7 +1630,7 @@ def _insert_frame_loop_tag_placeholders(
     return frame_spec
 
 
-def _parse_frame_loop_tag_or_raise(
+def _parse_spec_with_grammar(
     frame_spec: str,
     grammar: ParserElement | StringEnd,
     original_spec: str,
