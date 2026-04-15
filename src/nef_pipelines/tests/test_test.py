@@ -128,7 +128,9 @@ def test_bare_filename():
 
     assert result == EXPECTED_NAMES
 
+
 def test_py_file_without_separator():
+    """Test that test_file.py (without ::) matches all tests in that file."""
     # Use stable dummy test files instead of production tests
     test_names = [
         "tests/meta_tests/test_data/dummy_test_simple.py::test_dummy_pass_1",
@@ -146,3 +148,44 @@ def test_py_file_without_separator():
     result = select_matching_tests(test_names, args)
 
     assert result == expected_names
+
+
+def test_run_and_report_displays_stderr_on_exit_code_mismatch():
+    """Test that run_and_report displays complete diagnostics when exit code doesn't match expected."""
+    from contextlib import redirect_stdout
+    from io import StringIO
+
+    from meta_tests.test_data.failing_app import app
+
+    captured_output = StringIO()
+
+    with redirect_stdout(captured_output):
+        # This should trigger assertion error and print diagnostics
+        # Expected exit code 0 but actual will be 1, so diagnostics will be displayed
+        try:
+            run_and_report(app, [], expected_exit_code=0, merge_stderr=False)
+        except AssertionError:
+            pass  # Expected when exit codes don't match
+
+    output = captured_output.getvalue()
+
+    # Verify output contains complete diagnostic stanza
+    EXPECTED_DIAGNOSTIC_SECTIONS = [
+        "---------------------------------------- -stdout- ----------------------------------------",
+        "This is stdout output",
+        "---------------------------------------- -stderr- ----------------------------------------",
+        "This is stderr output",
+        "---------------------------------------- exception ----------------------------------------",
+        "raise typer.Exit(1)",
+        "---------------------------------------- --------- ----------------------------------------",
+    ]
+
+    # Verify all sections are present in correct order
+    last_pos = -1
+    for section in EXPECTED_DIAGNOSTIC_SECTIONS:
+        pos = output.find(section, last_pos + 1)
+        assert pos > last_pos, f"Section '{section}' missing or out of order"
+        last_pos = pos
+
+    # Verify output ends with footer
+    assert output.rstrip().endswith(EXPECTED_DIAGNOSTIC_SECTIONS[-1])

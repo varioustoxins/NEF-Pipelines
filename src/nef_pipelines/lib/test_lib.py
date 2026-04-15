@@ -88,7 +88,7 @@ def select_matching_tests(tests, selectors):
     for selector in selectors:
 
         # If selector is a .py file without ::, add :: to match all tests in that file
-        if selector.endswith('.py') and '::' not in selector:
+        if selector.endswith(".py") and "::" not in selector:
             selector = f"{selector}::"
 
         selector_parts = _split_test_spec(selector)
@@ -394,6 +394,9 @@ def run_and_report(
     if result.exit_code != expected_exit_code:
         print("\n", "-" * 40, "-stdout-", "-" * 40)
         print(result.stdout)
+        if hasattr(result, "stderr") and result.stderr:
+            print("-" * 40, "-stderr-", "-" * 40)
+            print(result.stderr)
         if result.exception:
             print("-" * 40, "exception", "-" * 40)
             formatted = list(traceback.TracebackException(*result.exc_info).format())
