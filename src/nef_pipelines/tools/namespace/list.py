@@ -21,6 +21,14 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.util import exit_error
 from nef_pipelines.tools.namespace import namespace_app
 
+#TODO [future] add output via | less --header -R --header=2 and the opportunity to remove colouring --no-colour?
+#TODO [future] add line numbers
+#TODO [future] more colour, textual
+#TODO [future] select by object type [tags, loops, etc] use selectors
+#TODO [future] output option
+#TODO [future] colour namespace parts in frame names etc
+#TODO [future] bold namespaces
+
 
 # raised if , found in a namespace and use_separator_escapes not specified
 class NamepaceSeparatorConflict(Exception):
