@@ -27,8 +27,6 @@ from nef_pipelines.tools.frames import frames_app
 
 UNDERSCORE = "_"
 
-parser = None
-
 
 # TODO: the command should warn if it sees utf8 characters
 # we should most probably use charset-normalizer
