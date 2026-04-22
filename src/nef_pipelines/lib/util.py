@@ -396,10 +396,10 @@ def exit_error(msg, exception=None):
         print("---------------------------------", file=sys.stderr)
         print(file=sys.stderr)
 
-    command = '**startup/main**' if command == "unknown" else command
+    command = "**startup/main**" if command == "unknown" else command
     print(f"ERROR [in: {command}]: {msg[0]}", file=sys.stderr)
 
-    if debug_mode:
+    if not debug_mode:
 
         sys_argv = " ".join(sys.argv[1:])
         debug_clause = f"... for full debug information run: nef --debug {sys_argv}"
