@@ -141,6 +141,18 @@ def main():
         for module_name in modules:
             try:
                 import_module(module_name)
+                for command_info in nef_app.app.registered_commands:
+                    try:
+                        typer.main.get_command_from_info(
+                            command_info, rich_markup_mode="markdown"
+                        )
+                    except TypeError as e:
+                        print(f"\n[!!!] FOUND THE BUG IN MODULE: {module_name}")
+                        print(
+                            f"Command name: {command_info.name or command_info.callback.__name__}"
+                        )
+                        raise e
+
             except Exception:
                 msg = f"plugin {module_name}\n{format_exc()}"
 
