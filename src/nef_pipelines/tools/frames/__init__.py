@@ -10,7 +10,10 @@ if nef_app.app:
     nef_app.app.add_typer(
         frames_app,
         name="frames",
-        help="- carry out operations on frames in nef files [delete, filter, insert, list, rename, tabulate, unassign]",
+        help="""\
+            - carry out operations on frames in nef files
+              [delete, display, filter, insert, list, rename, tabulate, unassign]
+        """,
         rich_help_panel="NEF manipulation",
         no_args_is_help=True,
         cls=FilteredHelpGroup,
@@ -18,6 +21,7 @@ if nef_app.app:
 
     # import of specific importers must be after app creation to avoid circular imports
     import nef_pipelines.tools.frames.delete  # noqa: F401
+    import nef_pipelines.tools.frames.display  # noqa: F401
     import nef_pipelines.tools.frames.filter  # noqa: F401
     import nef_pipelines.tools.frames.insert  # noqa: F401
     import nef_pipelines.tools.frames.list  # noqa: F401
