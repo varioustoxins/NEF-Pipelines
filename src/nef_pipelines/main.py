@@ -9,6 +9,7 @@ from traceback import format_exc, print_exc
 import typer
 
 from nef_pipelines import nef_app
+from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.typer_lib import FilteredHelpGroup, patch_rich_code_theme
 
 debug_mode = False
@@ -141,17 +142,20 @@ def main():
         for module_name in modules:
             try:
                 import_module(module_name)
-                for command_info in nef_app.app.registered_commands:
-                    try:
-                        typer.main.get_command_from_info(
-                            command_info, rich_markup_mode="markdown"
-                        )
-                    except TypeError as e:
-                        print(f"\n[!!!] FOUND THE BUG IN MODULE: {module_name}")
-                        print(
-                            f"Command name: {command_info.name or command_info.callback.__name__}"
-                        )
-                        raise e
+                if debug_mode:
+                    for command_info in nef_app.app.registered_commands:
+                        try:
+                            typer.main.get_command_from_info(
+                                command_info,
+                                pretty_exceptions_short=False,
+                                rich_markup_mode="markdown",
+                            )
+                        except TypeError as e:
+                            msg = f"""\
+                                there was an error in loading the typer command line for the module {module_name}
+                                Command name: {command_info.name or command_info.callback.__name__}
+                            """
+                            raise NEFPipelinesException(msg, e)
 
             except Exception:
                 msg = f"plugin {module_name}\n{format_exc()}"
