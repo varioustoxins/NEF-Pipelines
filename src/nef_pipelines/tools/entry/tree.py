@@ -17,11 +17,11 @@ from treelib import Node, Tree
 from nef_pipelines.lib.cli_lib import parse_frame_loop_and_tags
 from nef_pipelines.lib.namespace_lib import (
     NO_NAMESPACE,
-    EntryPart,
     filter_namespaces,
     get_namespace,
 )
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.structures import EntryPart
 from nef_pipelines.lib.tree_lib import (
     ENTRY_COLOUR,
     FRAME_COLOUR,

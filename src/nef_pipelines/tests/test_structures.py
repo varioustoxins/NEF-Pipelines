@@ -1,8 +1,8 @@
-"""Tests for structures.py - SaveframeNameParts."""
+"""Tests for structures.py - SaveframeNameParts and EntryPartValues."""
 
 import pytest
 
-from nef_pipelines.lib.structures import SaveframeNameParts
+from nef_pipelines.lib.structures import EntryPart, EntryPartValues, SaveframeNameParts
 
 
 @pytest.mark.parametrize(
@@ -81,3 +81,20 @@ def test_full_name_reconstruction(
         namespace=namespace, category=category, identity=identity, counter=counter
     )
     assert parts.full_name == expected_full_name
+
+
+@pytest.mark.parametrize(
+    "loop_category,tag_name,expected_entry_part",
+    [
+        (None, None, EntryPart.Saveframe),
+        (None, "sf_category", EntryPart.FrameTag),
+        ("_nef_sequence", None, EntryPart.Loop),
+        ("_nef_sequence", "chain_code", EntryPart.LoopTag),
+    ],
+)
+def test_entry_part_values_entry_part_derived(
+    loop_category, tag_name, expected_entry_part
+):
+    """entry_part is derived correctly from loop_category and tag_name."""
+    epv = EntryPartValues("frame_name", "frame_category", loop_category, tag_name)
+    assert epv.entry_part == expected_entry_part

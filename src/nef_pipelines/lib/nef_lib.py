@@ -215,7 +215,8 @@ def parse_frame_name(frame: Union[Saveframe, Tuple[str, str]]) -> SaveframeNameP
 
     # Extract namespace from category and remove it from category
     # has to be local to avoid circular imports
-    from nef_pipelines.lib.namespace_lib import EntryPart, get_namespace
+    from nef_pipelines.lib.namespace_lib import get_namespace
+    from nef_pipelines.lib.structures import EntryPart
 
     namespace = get_namespace(category, EntryPart.Saveframe)
 

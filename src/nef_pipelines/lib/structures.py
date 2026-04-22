@@ -1,10 +1,58 @@
 import math
 from dataclasses import dataclass, field
-from enum import auto
+from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
+
+
+class EntryPart(Enum):
+    """Identifies which structural level of a NEF entry an item belongs to."""
+
+    Entry = auto()
+    Saveframe = auto()
+    Loop = auto()
+    FrameTag = auto()
+    LoopTag = auto()
+
+
+@dataclass(frozen=True)
+class EntryPartValues:
+    """\
+    Location of one item within a NEF saveframe hierarchy.
+
+    entry_part is derived automatically from loop_category and tag_name:
+        neither set  → Saveframe
+        tag_name only → FrameTag
+        loop_category only → Loop
+        both set → LoopTag
+
+    Attributes:
+        frame_name: Saveframe name
+        frame_category: Saveframe category
+        loop_category: Loop category — set for Loop and LoopTag, None otherwise
+        tag_name: Tag or column name — set for FrameTag and LoopTag, None otherwise
+        entry_part: Derived from loop_category/tag_name (not a constructor argument)
+    """
+
+    frame_name: str
+    frame_category: str
+    loop_category: Optional[str] = None
+    tag_name: Optional[str] = None
+    entry_part: EntryPart = field(init=False)
+
+    def __post_init__(self):
+        """Derive entry_part from the combination of loop_category and tag_name."""
+        if self.loop_category is None and self.tag_name is None:
+            ep = EntryPart.Saveframe
+        elif self.loop_category is None:
+            ep = EntryPart.FrameTag
+        elif self.tag_name is None:
+            ep = EntryPart.Loop
+        else:
+            ep = EntryPart.LoopTag
+        object.__setattr__(self, "entry_part", ep)
 
 
 class NEFPipelinesException(Exception): ...  # noqa: E701

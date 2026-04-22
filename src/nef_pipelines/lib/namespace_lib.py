@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-from enum import Enum, auto
 from fnmatch import fnmatchcase
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pynmrstar import Loop, Saveframe
 
@@ -10,6 +8,7 @@ from nef_pipelines.lib.cli_lib import (
     SelectorAction,
     parse_selector_lists,
 )
+from nef_pipelines.lib.structures import EntryPart, EntryPartValues
 
 # TODO: [for future] Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
@@ -41,39 +40,6 @@ REGISTERED_NAMESPACES = {
 
 def get_registered_namespaces():
     return {**REGISTERED_NAMESPACES}
-
-
-@dataclass(frozen=True)
-class NamespaceInformation:
-    """\
-    Information about a namespace occurrence in NEF data.
-
-    Represents where a namespace is used within an entry at different levels
-    (frame, loop, or tag).
-
-    Attributes:
-        frame_name: Saveframe name
-        frame_category: Saveframe category
-        loop_category: Loop category (None for frame-level items)
-        entry_part: Level where namespace occurs (Saveframe, Loop, FrameTag, LoopTag)
-    """
-
-    frame_name: str
-    frame_category: str
-    loop_category: Optional[str]
-    entry_part: "EntryPart"
-
-
-class EntryPart(Enum):
-    Entry = auto()
-    Loop = auto()
-    Saveframe = auto()
-    FrameTag = auto()
-    LoopTag = auto()
-
-    # FrameCategory = auto()
-    # LoopCategory = auto()
-    # Namespace = auto()
 
 
 def get_namespace(
@@ -145,9 +111,18 @@ def get_namespace(
     extracted = _extract_namespace(value_str)
 
     # Determine namespace based on node type
-    if node_type in (EntryPart.Saveframe, EntryPart.Loop):
-        # For saveframes and loops, return extracted namespace (can be NO_NAMESPACE)
+    if node_type == EntryPart.Saveframe:
+        # Saveframes always use their own extracted namespace
         result = extracted
+    elif node_type == EntryPart.Loop:
+        if extracted and extracted in known_namespaces:
+            # Loop has a recognised namespace prefix — use it
+            result = extracted
+        elif parent_namespace_str is not None:
+            # Loop prefix is unregistered or absent — inherit from parent frame
+            result = parent_namespace_str
+        else:
+            result = extracted
     elif extracted and extracted in known_namespaces:
         # For tags: if extracted namespace is a registered namespace, use it (explicit prefix)
         result = extracted
@@ -200,7 +175,7 @@ def _extract_namespace(name: str) -> str:
 
 def collect_namespaces_from_frames(
     frames: List[Saveframe],
-) -> Dict[str, List[NamespaceInformation]]:
+) -> Dict[str, List[EntryPartValues]]:
     """
     Collect all namespaces from frames, loops, and tags.
 
@@ -208,7 +183,7 @@ def collect_namespaces_from_frames(
         frames: List of saveframes to process
 
     Returns:
-        Dict mapping namespace → list of NamespaceInformation objects describing
+        Dict mapping namespace → list of EntryPartValues objects describing
         where each namespace occurs (frame, loop, or tag level)
     """
     namespaces = {}
@@ -220,11 +195,9 @@ def collect_namespaces_from_frames(
         key = (frame_namespace, frame.name, frame.category, None, EntryPart.Saveframe)
         if key not in seen:
             namespaces.setdefault(frame_namespace, []).append(
-                NamespaceInformation(
+                EntryPartValues(
                     frame_name=frame.name,
                     frame_category=frame.category,
-                    loop_category=None,
-                    entry_part=EntryPart.Saveframe,
                 )
             )
             seen.add(key)
@@ -232,21 +205,27 @@ def collect_namespaces_from_frames(
         # Collect frame tags (can have explicit namespace prefixes like ccpn_peaklist_name)
         for tag_name, _tag_value in frame.tag_iterator():
             tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
-            key = (tag_namespace, frame.name, frame.category, None, EntryPart.FrameTag)
+            key = (
+                tag_namespace,
+                frame.name,
+                frame.category,
+                None,
+                EntryPart.FrameTag,
+                tag_name,
+            )
             if key not in seen:
                 namespaces.setdefault(tag_namespace, []).append(
-                    NamespaceInformation(
+                    EntryPartValues(
                         frame_name=frame.name,
                         frame_category=frame.category,
-                        loop_category=None,
-                        entry_part=EntryPart.FrameTag,
+                        tag_name=tag_name,
                     )
                 )
                 seen.add(key)
 
         for loop in frame.loops:
-            # Get loop namespace
-            loop_namespace = get_namespace(loop, EntryPart.Loop)
+            # Get loop namespace, inheriting from the parent frame if unregistered
+            loop_namespace = get_namespace(loop, EntryPart.Loop, frame_namespace)
             key = (
                 loop_namespace,
                 frame.name,
@@ -256,11 +235,10 @@ def collect_namespaces_from_frames(
             )
             if key not in seen:
                 namespaces.setdefault(loop_namespace, []).append(
-                    NamespaceInformation(
+                    EntryPartValues(
                         frame_name=frame.name,
                         frame_category=frame.category,
                         loop_category=loop.category,
-                        entry_part=EntryPart.Loop,
                     )
                 )
                 seen.add(key)
@@ -276,14 +254,15 @@ def collect_namespaces_from_frames(
                     frame.category,
                     loop.category,
                     EntryPart.LoopTag,
+                    tag_name,
                 )
                 if key not in seen:
                     namespaces.setdefault(tag_namespace, []).append(
-                        NamespaceInformation(
+                        EntryPartValues(
                             frame_name=frame.name,
                             frame_category=frame.category,
                             loop_category=loop.category,
-                            entry_part=EntryPart.LoopTag,
+                            tag_name=tag_name,
                         )
                     )
                     seen.add(key)
@@ -346,7 +325,7 @@ def filter_namespaces(
 
 def if_separator_conflicts_get_message(
     names: List[str], separators: List[str], use_escapes: bool
-) -> Optional[tuple[list[str], list[str], list[tuple[str, str]]]]:
+) -> Optional[Tuple[List[str], List[str], List[Tuple[str, str]]]]:
     """
     Check if any separator characters appear in names without escape flag enabled.
 
