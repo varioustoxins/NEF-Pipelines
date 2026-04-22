@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated, List, Set, Tuple
+from warnings import warn
 
 import typer
+from pynmrstar import Entry, Saveframe
 from tabulate import tabulate
 
 from nef_pipelines.lib.namespace_lib import (
     REGISTERED_NAMESPACES,
     collect_namespaces_from_frames,
     filter_namespaces,
+    get_namespace,
     if_separator_conflicts_get_message,
 )
 from nef_pipelines.lib.nef_lib import (
@@ -18,39 +21,54 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames,
 )
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.structures import EntryPart
+from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.tools.namespace import namespace_app
 
-#TODO [future] add output via | less --header -R --header=2 and the opportunity to remove colouring --no-colour?
-#TODO [future] add line numbers
-#TODO [future] more colour, textual
-#TODO [future] select by object type [tags, loops, etc] use selectors
-#TODO [future] output option
-#TODO [future] colour namespace parts in frame names etc
-#TODO [future] bold namespaces
+# TODO [future] add output via | less --header -R --header=2 and the opportunity to remove colouring --no-colour?
+# TODO [future] add line numbers
+# TODO [future] more colour, textual
+# TODO [future] select by object type [tags, loops, etc] use selectors
+# TODO [future] output option
+# TODO [future] colour namespace parts in frame names etc
+# TODO [future] bold namespaces
 
 
 # raised if , found in a namespace and use_separator_escapes not specified
-class NamepaceSeparatorConflict(Exception):
+class NamespaceSeparatorConflict(Exception):
     pass
 
 
-@namespace_app.command()
-def list(
+# Display names for EntryPart enum values in verbose output.
+# @ is used as a placeholder for a leading space (tabulate would strip real spaces);
+# _replace_indent_markers_in_level_column() swaps them back after table generation.
+ENTRY_PART_DISPLAY = {
+    EntryPart.Saveframe: "frame",
+    EntryPart.FrameTag: "@frame-tag",
+    EntryPart.Loop: "@loop",
+    EntryPart.LoopTag: "@@column-tag",
+}
+
+
+@namespace_app.command(name="list")
+def list_namespaces(
     namespace_selectors: Annotated[
         List[str],
         typer.Argument(
-            metavar="<NAMESPACE-SELECTOR>",
+            metavar="<NAMESPACES>",
             help="""\
                 Optional namespace patterns for filtering (supports wildcards).
-                Prefix with + to include (default), - to exclude.
-                Escape: ++namespace for literal +namespace, --namespace for literal -namespace.
+                Prefix with + to include (default), - or ! to exclude.
+                Escape: \\+namespace for literal +namespace, \\-namespace for literal -namespace  and \\, to
+                escape ,s. \\\\ escapes to a single \\ (requires --use-escapes).
                 Can be comma-separated (e.g., nef,custom) or repeated arguments.
+                Note: Use -- before selectors starting with - or use ! instead to avoid argument parsing problems
+                      to avoid option parsing (e.g., nef namespace list -- -nef or nef namespaces list !nef).
                 """,
             show_default=False,
         ),
     ] = None,
-    input: Annotated[
+    input_path: Annotated[
         Path,
         typer.Option(
             "-i",
@@ -92,84 +110,76 @@ def list(
             help="show detailed table format with frame, loop, level, program, and use columns",
         ),
     ] = False,
-    invert: Annotated[
+    no_initial_selection: Annotated[
         bool,
         typer.Option(
-            "--invert",
-            help="invert namespace selection (exclude matched, include unmatched)",
+            "--no-initial-selection",
+            help="start with empty namespace selection instead of all",
         ),
     ] = False,
+    # TODO [future] there should be a --out option...
     use_separator_escapes: Annotated[
         bool,
         typer.Option(
-            "--use-separator-escapes",
+            "--use-escapes",
             help="allow escape sequences in names (,, for comma). Required if separator found in names",
         ),
     ] = False,
 ):
     """- list namespaces in selected frames [use --verbose for details]"""
 
-    entry = read_entry_from_file_or_stdin_or_exit_error(input)
+    namespace_selectors: List[str] = namespace_selectors or []
+    frame_selectors_list: List[str] = frame_selectors or []
 
-    frames = select_frames(entry, frame_selectors, selector_type)
+    input_path, namespace_selectors = _parse_file_from_args(
+        input_path, namespace_selectors
+    )
 
-    try:
-        result = pipe(
-            frames,
-            namespace_selectors,
-            verbose,
-            invert,
-            use_separator_escapes,
-        )
-    except NamepaceSeparatorConflict:
-        exit_error("the separator conflict anmespace conflict")
+    entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
+
+    frames = select_frames(entry, frame_selectors_list, selector_type)
+
+    namespaces_to_show: Set[str] = _select_namespaces_or_exit_error_if_missing_escapes(
+        frames, namespace_selectors, use_separator_escapes, no_initial_selection
+    )
+
+    _, result = pipe(entry, frames, namespaces_to_show, verbose)
 
     print(result)
 
 
 def pipe(
-    frames: List,
-    namespace_selectors: List[str],
+    entry: Entry,
+    frames: List[Saveframe],
+    namespaces_to_show: Set[str],
     verbose: bool,
-    invert: bool,
-    use_separator_escapes: bool,
-) -> str:
+) -> Tuple[Entry, str]:
     """
     List namespaces from selected frames.
 
     Args:
-        frames: List of NEF saveframes to process
-        namespace_selectors: Optional namespace patterns with +/- prefixes
+        entry: Input NEF entry (passed through unchanged)
+        frames: Saveframes to collect namespace data from
+        namespaces_to_show: Pre-filtered set of namespaces to display
         verbose: If True, return detailed table; if False, return simple list
-        invert: If True, invert namespace selection logic
-        use_separator_escapes: If True, process escape sequences
 
     Returns:
-        String containing namespace list or table
+        (entry, text) — entry is passed through unchanged; text is the namespace list or table
     """
 
-    # Collect all namespaces from frames
     namespace_data = collect_namespaces_from_frames(frames)
-    all_namespaces = set(namespace_data.keys())
 
-    _raise_if_separator_conflicts_with_namespace(
-        all_namespaces, namespace_selectors, use_separator_escapes
-    )
-
-    namespaces_to_show = filter_namespaces(
-        all_namespaces, namespace_selectors, use_separator_escapes, invert
-    )
-
-    # Generate output
     if verbose:
-        return _generate_verbose_table(namespace_data, namespaces_to_show)
+        text = _generate_verbose_table(frames, namespace_data, namespaces_to_show)
     else:
-        return _generate_basic_list(namespaces_to_show)
+        text = _generate_basic_list(namespaces_to_show)
+
+    return entry, text
 
 
 def _raise_if_separator_conflicts_with_namespace(
-    all_namespaces: set[str],
-    namespace_selectors: list[str],
+    all_namespaces: Set[str],
+    namespace_selectors: List[str],
     use_separator_escapes: bool,
 ):
     # Check for separator conflicts in namespace names
@@ -197,10 +207,50 @@ def _raise_if_separator_conflicts_with_namespace(
             msg = f"""\
                 The separator character(s) {sep_list} found in names: {names_list}
 
-                Use --use-separator-escapes to enable escape sequences: {escape_list}
+                Use --use-escapes to enable escape sequences: {escape_list}
                 """
 
-            raise NamepaceSeparatorConflict(msg)
+            raise NamespaceSeparatorConflict(msg)
+
+
+def _parse_file_from_args(
+    input_path: Path, namespace_selectors: List[str]
+) -> Tuple[Path, List[str]]:
+    """If the first positional arg is a file, treat it as the input file."""
+    if namespace_selectors and Path(namespace_selectors[0]).is_file():
+        if input_path != STDIN:
+            exit_error(
+                f"two inputs specified: --in {input_path} and {namespace_selectors[0]}, please choose only one"
+            )
+        input_path = Path(namespace_selectors[0])
+        namespace_selectors = namespace_selectors[1:]
+    return input_path, namespace_selectors
+
+
+def _select_namespaces_or_exit_error_if_missing_escapes(
+    frames: List[Saveframe],
+    namespace_selectors: List[str],
+    use_separator_escapes: bool,
+    no_initial_selection: bool,
+) -> Set[str]:
+    """Apply selector filtering to a set of namespace names, with conflict checking and warnings."""
+
+    all_namespaces = set(collect_namespaces_from_frames(frames).keys())
+
+    try:
+        _raise_if_separator_conflicts_with_namespace(
+            all_namespaces, namespace_selectors, use_separator_escapes
+        )
+    except NamespaceSeparatorConflict as e:
+        exit_error(
+            f"a separator namespace conflict [{e}] was detected:  selectors{', '.join(namespace_selectors)}"
+        )
+    namespaces_to_show = filter_namespaces(
+        all_namespaces, namespace_selectors, use_separator_escapes, no_initial_selection
+    )
+    if len(namespaces_to_show) == 0:
+        warn(f"no namespaces selected by {namespace_selectors}")
+    return namespaces_to_show
 
 
 def _generate_basic_list(namespaces: set) -> str:
@@ -222,43 +272,53 @@ def _generate_basic_list(namespaces: set) -> str:
     return result
 
 
-def _generate_verbose_table(namespace_data: dict, namespaces_to_show: set) -> str:
+def _replace_indent_markers_in_level_column(table: str) -> str:
     """
-    Generate verbose table showing namespace details.
+    Replace @ indent markers in the Level column with spaces.
 
-    Args:
-        namespace_data: Dict mapping namespace → list of (frame_name, frame_category, loop_category, level_type) tuples
-        namespaces_to_show: Set of namespaces to include in table
-
-    Returns:
-        Formatted table string
+    tabulate strips leading spaces from cell values, so ENTRY_PART_DISPLAY uses @ as a
+    placeholder for a leading space. This function locates the Level column from the
+    header/separator lines and swaps @ back to spaces only within that column.
     """
+    lines = table.splitlines()
+    if len(lines) < 2:
+        return table
 
-    # Build table rows and track if we have any loops
-    rows = []
-    has_loops = False
-    for namespace in sorted(namespaces_to_show):
-        if namespace not in namespace_data:
-            continue
+    header_line = lines[0]
+    separator_line = lines[1]
 
-        # Get program and use info from registered namespaces
-        if namespace in REGISTERED_NAMESPACES:
-            program, use = REGISTERED_NAMESPACES[namespace]
+    level_pos = header_line.find("Level")
+    if level_pos == -1:
+        return table
+
+    # Find the dash group in the separator that contains level_pos
+    col_start = col_end = None
+    i = 0
+    while i < len(separator_line):
+        if separator_line[i] == "-":
+            start = i
+            while i < len(separator_line) and separator_line[i] == "-":
+                i += 1
+            if start <= level_pos < i:
+                col_start, col_end = start, i
+                break
         else:
-            program, use = "?", "?"
+            i += 1
 
-        # Add rows for each occurrence
-        for frame_name, frame_category, loop_category, level_type in namespace_data[
-            namespace
-        ]:
-            # Track if we have any loop entries
-            if level_type == "loop":
-                has_loops = True
+    if col_start is None:
+        return table
 
-            # Remove namespace prefix from frame category
-            display_frame_category = frame_category
-            if display_frame_category.startswith(f"{namespace}_"):
-                display_frame_category = display_frame_category[len(namespace) + 1 :]
+    result_lines = lines[:2]
+    for line in lines[2:]:
+        if len(line) > col_start:
+            segment = line[col_start:col_end]
+            segment = segment.replace("@@", "  ").replace("@", " ")
+            line = line[:col_start] + segment + line[col_end:]
+        result_lines.append(line)
+
+    return "\n".join(result_lines)
+
+
 def _build_row(
     namespace: str,
     entry_part: EntryPart,
@@ -277,13 +337,13 @@ def _build_row(
 
     display_frame_category = frame_category
     if display_frame_category.startswith(f"{namespace}_"):
-        display_frame_category = display_frame_category[len(namespace) + 1:]
+        display_frame_category = display_frame_category[len(namespace) + 1 :]
 
     loop_value = ""
     if entry_part in (EntryPart.Loop, EntryPart.LoopTag) and loop_category:
         loop_cat = loop_category.lstrip("_")
         if loop_cat.startswith(f"{namespace}_"):
-            loop_cat = loop_cat[len(namespace) + 1:]
+            loop_cat = loop_cat[len(namespace) + 1 :]
         loop_value = loop_cat
 
     tag_value = ""
@@ -292,13 +352,24 @@ def _build_row(
         if "." in tag_display:
             tag_display = tag_display.split(".", 1)[1]
         if namespace and tag_display.startswith(f"{namespace}_"):
-            tag_display = tag_display[len(namespace) + 1:]
+            tag_display = tag_display[len(namespace) + 1 :]
         tag_value = tag_display
 
-    return [namespace, level_type, frame_name, display_frame_category, loop_value, tag_value, program, use]
+    return [
+        namespace,
+        level_type,
+        frame_name,
+        display_frame_category,
+        loop_value,
+        tag_value,
+        program,
+        use,
+    ]
 
 
-def _collect_rows(frames: List[Saveframe], namespaces_to_show: Set[str]) -> Tuple[List[List], bool]:
+def _collect_rows(
+    frames: List[Saveframe], namespaces_to_show: Set[str]
+) -> Tuple[List[List], bool]:
     """Scan frames in file order and return (rows, has_loops)."""
     rows = []
     has_loops = False
@@ -306,26 +377,56 @@ def _collect_rows(frames: List[Saveframe], namespaces_to_show: Set[str]) -> Tupl
     for frame in frames:
         frame_namespace = get_namespace(frame, EntryPart.Saveframe)
 
-        row = _build_row(frame_namespace, EntryPart.Saveframe, frame.name, frame.category, namespaces_to_show)
+        row = _build_row(
+            frame_namespace,
+            EntryPart.Saveframe,
+            frame.name,
+            frame.category,
+            namespaces_to_show,
+        )
         if row:
             rows.append(row)
 
         for tag_name, _tag_value in frame.tag_iterator():
             tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
-            row = _build_row(tag_namespace, EntryPart.FrameTag, frame.name, frame.category, namespaces_to_show, tag=tag_name)
+            row = _build_row(
+                tag_namespace,
+                EntryPart.FrameTag,
+                frame.name,
+                frame.category,
+                namespaces_to_show,
+                tag=tag_name,
+            )
             if row:
                 rows.append(row)
 
         for loop in frame.loops:
             loop_namespace = get_namespace(loop, EntryPart.Loop, frame_namespace)
-            row = _build_row(loop_namespace, EntryPart.Loop, frame.name, frame.category, namespaces_to_show, loop.category)
+            row = _build_row(
+                loop_namespace,
+                EntryPart.Loop,
+                frame.name,
+                frame.category,
+                namespaces_to_show,
+                loop.category,
+            )
             if row:
                 has_loops = True
                 rows.append(row)
 
             for tag_name in loop.tags:
-                tag_namespace = get_namespace(tag_name, EntryPart.LoopTag, loop_namespace)
-                row = _build_row(tag_namespace, EntryPart.LoopTag, frame.name, frame.category, namespaces_to_show, loop.category, tag_name)
+                tag_namespace = get_namespace(
+                    tag_name, EntryPart.LoopTag, loop_namespace
+                )
+                row = _build_row(
+                    tag_namespace,
+                    EntryPart.LoopTag,
+                    frame.name,
+                    frame.category,
+                    namespaces_to_show,
+                    loop.category,
+                    tag_name,
+                )
                 if row:
                     has_loops = True
                     rows.append(row)
@@ -333,7 +434,9 @@ def _collect_rows(frames: List[Saveframe], namespaces_to_show: Set[str]) -> Tupl
     return rows, has_loops
 
 
-def _generate_verbose_table(frames: List[Saveframe], namespace_data: dict, namespaces_to_show: Set[str]) -> str:
+def _generate_verbose_table(
+    frames: List[Saveframe], namespace_data: dict, namespaces_to_show: Set[str]
+) -> str:
     """Generate verbose table showing namespace details in file order."""
 
     rows, has_loops = _collect_rows(frames, namespaces_to_show)
@@ -341,7 +444,16 @@ def _generate_verbose_table(frames: List[Saveframe], namespace_data: dict, names
     result = ""
     if rows:
         if has_loops:
-            headers = ["Namespace", "Level", "Frame", "Category", "Loop", "Tag", "Program", "Use"]
+            headers = [
+                "Namespace",
+                "Level",
+                "Frame",
+                "Category",
+                "Loop",
+                "Tag",
+                "Program",
+                "Use",
+            ]
             result = tabulate(rows, headers=headers, tablefmt="simple")
         else:
             rows_without_loop = [row[:4] + row[6:] for row in rows]
@@ -353,3 +465,85 @@ def _generate_verbose_table(frames: List[Saveframe], namespace_data: dict, names
         result = _stripe_alternate_rows(result)
 
     return result
+
+
+def _colorize_namespace_column(table: str, namespace_data: dict) -> str:
+    """
+    Apply distinct foreground colours to each namespace in the Namespace column.
+
+    Assigns a colour to each namespace based on file order and applies it to the
+    namespace text in the first column of each data row.
+    """
+    import sys
+
+    if not sys.stdout.isatty():
+        return table
+
+    # Colour palette - bright, distinct colours
+    COLOURS = [
+        "\033[38;5;33m",  # bright blue
+        "\033[38;5;35m",  # bright green
+        "\033[38;5;214m",  # orange
+        "\033[38;5;13m",  # bright magenta
+        "\033[38;5;51m",  # bright cyan
+        "\033[38;5;11m",  # bright yellow
+        "\033[38;5;9m",  # bright red
+        "\033[38;5;213m",  # pink
+    ]
+    _RESET_FG = "\033[39m"  # Reset foreground only, preserve background
+
+    # Assign colours to namespaces in file order
+    namespace_colors = {}
+    for idx, namespace in enumerate(namespace_data.keys()):
+        namespace_colors[namespace] = COLOURS[idx % len(COLOURS)]
+
+    lines = table.splitlines()
+    if len(lines) < 3:
+        return table
+
+    header_line = lines[0]
+    separator_line = lines[1]
+
+    # Find where the Namespace column ends (first separator boundary)
+    sep_end = separator_line.find(" ")
+    if sep_end == -1:
+        sep_end = len(separator_line)
+
+    result_lines = [header_line, separator_line]
+    for line in lines[2:]:
+        # Extract the namespace value from the first column
+        namespace_value = line[:sep_end].strip()
+        if namespace_value in namespace_colors:
+            color = namespace_colors[namespace_value]
+            # Replace the namespace text with coloured version
+            colored_namespace = color + namespace_value + _RESET_FG
+            # Pad to maintain alignment
+            padding = " " * (sep_end - len(namespace_value))
+            line = colored_namespace + padding + line[sep_end:]
+        result_lines.append(line)
+
+    return "\n".join(result_lines)
+
+
+def _stripe_alternate_rows(table: str) -> str:
+    """
+    Apply alternating very-light-grey ANSI background to every other data row.
+
+    Header and separator lines (first two lines) are left unstyled.
+    Only applied when stdout is a TTY so piped/redirected output stays clean.
+    """
+    import sys
+
+    if not sys.stdout.isatty():
+        return table
+
+    _GREY_BG = "\033[48;2;230;230;230m"
+    _RESET = "\033[0m"
+
+    lines = table.splitlines()
+    result_lines = lines[:2]  # header + separator untouched
+    for idx, line in enumerate(lines[2:]):
+        if idx % 2 == 1:
+            line = _GREY_BG + line + _RESET
+        result_lines.append(line)
+    return "\n".join(result_lines)
