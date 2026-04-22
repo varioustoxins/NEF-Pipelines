@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 
+import inspect
 import logging
 import sys
+from dataclasses import dataclass
 from importlib import import_module
 from textwrap import dedent
 from traceback import format_exc, print_exc
 
 import typer
 
+import nef_pipelines
 from nef_pipelines import nef_app
-from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.typer_lib import FilteredHelpGroup, patch_rich_code_theme
+from nef_pipelines.lib.util import exit_error
 
-debug_mode = False
+
+@dataclass
+class CommandFailure:
+    location: str
+    function: str
+    file: str
+    line: int
+    error: Exception
+
+
+typer_debug_mode = "--debug-typer" in sys.argv
 
 try:
     import future  # noqa: F401
@@ -48,13 +61,22 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
 def debug_callback(
     debug: bool = typer.Option(
         False, "--debug", help="Enable debug output including stack traces"
-    )
+    ),
+    debug_typer: bool = typer.Option(
+        False,
+        "--debug-typer",
+        help="Developer tool enable debugging of typer CLI interface construction",
+    ),
 ):
 
-    global debug_mode
     if debug:
+        global debug_mode
         debug_mode = True
         logging.basicConfig(level=logging.DEBUG)
+    if debug_typer:
+        global typer_debug_mode
+        logging.basicConfig(level=logging.DEBUG)
+        typer_debug_mode = True
 
 
 def create_nef_app():
@@ -142,25 +164,13 @@ def main():
         for module_name in modules:
             try:
                 import_module(module_name)
-                if debug_mode:
-                    for command_info in nef_app.app.registered_commands:
-                        try:
-                            typer.main.get_command_from_info(
-                                command_info,
-                                pretty_exceptions_short=False,
-                                rich_markup_mode="markdown",
-                            )
-                        except TypeError as e:
-                            msg = f"""\
-                                there was an error in loading the typer command line for the module {module_name}
-                                Command name: {command_info.name or command_info.callback.__name__}
-                            """
-                            raise NEFPipelinesException(msg, e)
 
             except Exception:
                 msg = f"plugin {module_name}\n{format_exc()}"
 
                 warnings.append((module_name, msg))
+
+        _if_commands_are_bad_report_and_exit_error(nef_app)
 
     except Exception as e:
         msg = """\
@@ -196,6 +206,59 @@ def main():
               """
 
         do_exit_error(msg)
+
+
+def _if_commands_are_bad_report_and_exit_error(nef_app: nef_pipelines.nef_app):
+    if typer_debug_mode:
+        bad_commands = list(_walk_the_command_tree_and_check(nef_app.app))
+        if bad_commands:
+            error_messages = ["some commands had bad typer command definitions"]
+
+            for bad_command_info in bad_commands:
+                msg = f"""
+                    failed to load command: {bad_command_info.location}
+                        function: {bad_command_info.function}
+                        file:     {bad_command_info.file}:{bad_command_info.line}
+                        error:    {bad_command_info.error}"
+                """
+                error_messages.append(dedent(msg))
+
+            msg = "\n".join(error_messages)
+            exit_error(msg)
+
+
+def _walk_the_command_tree_and_check(app):
+    """Walk every registered command/group and yield a CommandFailure
+    for each command whose typer/click param construction raises."""
+    return _walk_child_commands_and_check(app, path=("nef",))
+
+
+def _walk_child_commands_and_check(app, path):
+
+    for command_info in app.registered_commands:
+        name = command_info.name or command_info.callback.__name__
+        try:
+            typer.main.get_command_from_info(
+                command_info,
+                pretty_exceptions_short=False,
+                rich_markup_mode="markdown",
+            )
+        except Exception as e:
+            location = " ".join((*path, name))
+            yield CommandFailure(
+                location=location,
+                function=command_info.callback.__qualname__,
+                file=inspect.getsourcefile(command_info.callback) or "?",
+                line=inspect.getsourcelines(command_info.callback)[1],
+                error=e,
+            )
+
+    for group_info in app.registered_groups:
+        sub_app = group_info.typer_instance
+        if sub_app is None:
+            continue
+        sub_path = (*path, group_info.name or "?")
+        yield from _walk_child_commands_and_check(sub_app, sub_path)
 
 
 def _report_warnings(warnings):
