@@ -392,7 +392,7 @@ def exit_error(msg, exception=None):
     if debug_mode:
         print(file=sys.stderr)
         print("----------- traceback -----------", file=sys.stderr)
-        print(traceback.print_stack(), file=sys.stderr)
+        traceback.print_stack(file=sys.stderr)
         print("---------------------------------", file=sys.stderr)
         print(file=sys.stderr)
 
