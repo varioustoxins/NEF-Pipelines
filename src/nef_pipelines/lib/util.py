@@ -396,6 +396,7 @@ def exit_error(msg, exception=None):
         print("---------------------------------", file=sys.stderr)
         print(file=sys.stderr)
 
+    command = '**startup/main**' if command == "unknown" else command
     print(f"ERROR [in: {command}]: {msg[0]}", file=sys.stderr)
 
     if debug_mode:
