@@ -1,15 +1,72 @@
 import pytest
-from pynmrstar import Loop
+from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.namespace_lib import (
     NO_NAMESPACE,
     REGISTERED_NAMESPACES,
-    EntryPart,
+    collect_namespaces_from_frames,
     filter_namespaces,
     get_namespace,
     if_separator_conflicts_get_message,
 )
 from nef_pipelines.lib.nef_lib import create_nef_save_frame
+from nef_pipelines.lib.structures import EntryPart, EntryPartValues
+
+# A nef frame that contains a cross-namespace ccpn loop alongside its own nef loop.
+# pynmrstar requires all tags within one loop to share the same category prefix,
+# so cross-namespace tags appear as separate loops, not as mixed-category tags.
+CROSS_NAMESPACE_NEF = """\
+data_test
+
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+
+         1   A
+
+       stop_
+
+       loop_
+          _ccpn_chain_data.index
+          _ccpn_chain_data.chain_code
+
+         1   A
+
+       stop_
+
+    save_
+
+"""
+
+# Four frames in file order: nef, custom, test, aria — used to verify dict key order
+FILE_ORDER_NEF = """\
+data_test
+
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+    save_
+
+    save_custom_data_frame
+       _custom_data_frame.sf_category   custom_data_frame
+       _custom_data_frame.sf_framecode  custom_data_frame
+    save_
+
+    save_test_experiment
+       _test_experiment.sf_category   test_experiment
+       _test_experiment.sf_framecode  test_experiment
+    save_
+
+    save_aria_distance_restraints
+       _aria_distance_restraints.sf_category   aria_distance_restraints
+       _aria_distance_restraints.sf_framecode  aria_distance_restraints
+    save_
+
+"""
 
 
 def test_registered_namespaces_contains_nef():
@@ -194,3 +251,98 @@ def test_check_separator_conflicts_truncation():
     ]
     assert found_separators == [","]
     assert escape_sequences == [(",", ",,")]
+
+
+EXPECTED_FILE_ORDER_NAMESPACES = {
+    "nef": [
+        EntryPartValues("nef_molecular_system", "nef_molecular_system"),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", tag_name="sf_category"
+        ),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", tag_name="sf_framecode"
+        ),
+    ],
+    "custom": [
+        EntryPartValues("custom_data_frame", "custom_data_frame"),
+        EntryPartValues(
+            "custom_data_frame", "custom_data_frame", tag_name="sf_category"
+        ),
+        EntryPartValues(
+            "custom_data_frame", "custom_data_frame", tag_name="sf_framecode"
+        ),
+    ],
+    "test": [
+        EntryPartValues("test_experiment", "test_experiment"),
+        EntryPartValues("test_experiment", "test_experiment", tag_name="sf_category"),
+        EntryPartValues("test_experiment", "test_experiment", tag_name="sf_framecode"),
+    ],
+    "aria": [
+        EntryPartValues("aria_distance_restraints", "aria_distance_restraints"),
+        EntryPartValues(
+            "aria_distance_restraints",
+            "aria_distance_restraints",
+            tag_name="sf_category",
+        ),
+        EntryPartValues(
+            "aria_distance_restraints",
+            "aria_distance_restraints",
+            tag_name="sf_framecode",
+        ),
+    ],
+}
+
+EXPECTED_CROSS_NAMESPACE_NAMESPACES = {
+    "nef": [
+        EntryPartValues("nef_molecular_system", "nef_molecular_system"),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", tag_name="sf_category"
+        ),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", tag_name="sf_framecode"
+        ),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", "_nef_sequence"
+        ),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", "_nef_sequence", "index"
+        ),
+        EntryPartValues(
+            "nef_molecular_system",
+            "nef_molecular_system",
+            "_nef_sequence",
+            "chain_code",
+        ),
+    ],
+    "ccpn": [
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", "_ccpn_chain_data"
+        ),
+        EntryPartValues(
+            "nef_molecular_system", "nef_molecular_system", "_ccpn_chain_data", "index"
+        ),
+        EntryPartValues(
+            "nef_molecular_system",
+            "nef_molecular_system",
+            "_ccpn_chain_data",
+            "chain_code",
+        ),
+    ],
+}
+
+
+def test_collect_namespaces_file_order():
+    """Namespace dict keys and entries follow file first-occurrence order, not alphabetical."""
+    entry = Entry.from_string(FILE_ORDER_NEF)
+    result = collect_namespaces_from_frames(entry.frame_list)
+    assert list(result.keys()) == list(EXPECTED_FILE_ORDER_NAMESPACES.keys())
+    assert result == EXPECTED_FILE_ORDER_NAMESPACES
+
+
+def test_collect_namespaces_cross_namespace():
+    """Cross-namespace loops and their tags are attributed to the loop's own namespace, not the parent frame."""
+    entry = Entry.from_string(CROSS_NAMESPACE_NEF)
+    assert (
+        collect_namespaces_from_frames(entry.frame_list)
+        == EXPECTED_CROSS_NAMESPACE_NAMESPACES
+    )
