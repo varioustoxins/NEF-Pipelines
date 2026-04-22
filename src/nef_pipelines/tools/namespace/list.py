@@ -259,46 +259,97 @@ def _generate_verbose_table(namespace_data: dict, namespaces_to_show: set) -> st
             display_frame_category = frame_category
             if display_frame_category.startswith(f"{namespace}_"):
                 display_frame_category = display_frame_category[len(namespace) + 1 :]
+def _build_row(
+    namespace: str,
+    entry_part: EntryPart,
+    frame_name: str,
+    frame_category: str,
+    namespaces_to_show: Set[str],
+    loop_category: str = None,
+    tag: str = None,
+) -> List:
+    """Return a table row for one entry-part, or an empty list if filtered out."""
+    if namespace not in namespaces_to_show:
+        return []
 
-            # For loops, extract loop category (strip leading _ and namespace prefix)
-            loop_value = ""
-            if level_type == "loop" and loop_category:
-                loop_cat = loop_category.lstrip("_")
-                if loop_cat.startswith(f"{namespace}_"):
-                    loop_cat = loop_cat[len(namespace) + 1 :]
-                loop_value = loop_cat
+    program, use = REGISTERED_NAMESPACES.get(namespace, ("?", "?"))
+    level_type = ENTRY_PART_DISPLAY[entry_part]
 
-            rows.append(
-                [
-                    namespace,
-                    level_type,
-                    display_frame_category,
-                    frame_name,
-                    loop_value,
-                    program,
-                    use,
-                ]
-            )
+    display_frame_category = frame_category
+    if display_frame_category.startswith(f"{namespace}_"):
+        display_frame_category = display_frame_category[len(namespace) + 1:]
 
-    # Generate table
+    loop_value = ""
+    if entry_part in (EntryPart.Loop, EntryPart.LoopTag) and loop_category:
+        loop_cat = loop_category.lstrip("_")
+        if loop_cat.startswith(f"{namespace}_"):
+            loop_cat = loop_cat[len(namespace) + 1:]
+        loop_value = loop_cat
+
+    tag_value = ""
+    if entry_part in (EntryPart.FrameTag, EntryPart.LoopTag) and tag:
+        tag_display = tag.lstrip("_")
+        if "." in tag_display:
+            tag_display = tag_display.split(".", 1)[1]
+        if namespace and tag_display.startswith(f"{namespace}_"):
+            tag_display = tag_display[len(namespace) + 1:]
+        tag_value = tag_display
+
+    return [namespace, level_type, frame_name, display_frame_category, loop_value, tag_value, program, use]
+
+
+def _collect_rows(frames: List[Saveframe], namespaces_to_show: Set[str]) -> Tuple[List[List], bool]:
+    """Scan frames in file order and return (rows, has_loops)."""
+    rows = []
+    has_loops = False
+
+    for frame in frames:
+        frame_namespace = get_namespace(frame, EntryPart.Saveframe)
+
+        row = _build_row(frame_namespace, EntryPart.Saveframe, frame.name, frame.category, namespaces_to_show)
+        if row:
+            rows.append(row)
+
+        for tag_name, _tag_value in frame.tag_iterator():
+            tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
+            row = _build_row(tag_namespace, EntryPart.FrameTag, frame.name, frame.category, namespaces_to_show, tag=tag_name)
+            if row:
+                rows.append(row)
+
+        for loop in frame.loops:
+            loop_namespace = get_namespace(loop, EntryPart.Loop, frame_namespace)
+            row = _build_row(loop_namespace, EntryPart.Loop, frame.name, frame.category, namespaces_to_show, loop.category)
+            if row:
+                has_loops = True
+                rows.append(row)
+
+            for tag_name in loop.tags:
+                tag_namespace = get_namespace(tag_name, EntryPart.LoopTag, loop_namespace)
+                row = _build_row(tag_namespace, EntryPart.LoopTag, frame.name, frame.category, namespaces_to_show, loop.category, tag_name)
+                if row:
+                    has_loops = True
+                    rows.append(row)
+
+    return rows, has_loops
+
+
+def _generate_verbose_table(frames: List[Saveframe], namespace_data: dict, namespaces_to_show: Set[str]) -> str:
+    """Generate verbose table showing namespace details in file order."""
+
+    rows, has_loops = _collect_rows(frames, namespaces_to_show)
+
     result = ""
     if rows:
-        # Elide Loop column if there are no loops
         if has_loops:
-            headers = [
-                "Namespace",
-                "Level",
-                "Category",
-                "Frame",
-                "Loop",
-                "Program",
-                "Use",
-            ]
+            headers = ["Namespace", "Level", "Frame", "Category", "Loop", "Tag", "Program", "Use"]
             result = tabulate(rows, headers=headers, tablefmt="simple")
         else:
-            # Remove Loop column (index 4)
-            rows_without_loop = [row[:4] + row[5:] for row in rows]
-            headers = ["Namespace", "Level", "Category", "Frame", "Program", "Use"]
+            rows_without_loop = [row[:4] + row[6:] for row in rows]
+            headers = ["Namespace", "Level", "Frame", "Category", "Program", "Use"]
             result = tabulate(rows_without_loop, headers=headers, tablefmt="simple")
+
+        result = _replace_indent_markers_in_level_column(result)
+        result = _colorize_namespace_column(result, namespace_data)
+        result = _stripe_alternate_rows(result)
 
     return result
