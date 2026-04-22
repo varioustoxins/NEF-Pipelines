@@ -89,7 +89,7 @@ def commands(
         ),
     ] = False,
     matchers: Annotated[
-        List[str],
+        Optional[List[str]],
         typer.Argument(
             help="select commands to display multiple items, wildcards and comma separated lists are allowed"
         ),

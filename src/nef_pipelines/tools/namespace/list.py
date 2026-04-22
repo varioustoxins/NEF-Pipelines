@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, List, Set, Tuple
+from typing import Annotated, List, Optional, Set, Tuple
 from warnings import warn
 
 import typer
@@ -53,7 +53,7 @@ ENTRY_PART_DISPLAY = {
 @namespace_app.command(name="list")
 def list_namespaces(
     namespace_selectors: Annotated[
-        List[str],
+        Optional[List[str]],
         typer.Argument(
             metavar="<NAMESPACES>",
             help="""\
