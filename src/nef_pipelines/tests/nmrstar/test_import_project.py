@@ -9,7 +9,7 @@ from unittest.mock import mock_open, patch
 import typer
 from typer.testing import CliRunner
 
-from nef_pipelines.lib.test_lib import assert_lines_match
+from nef_pipelines.lib.test_lib import assert_lines_match, NOQA_E501
 from nef_pipelines.transcoders.nmrstar.importers.project_cli import project
 
 
@@ -27,23 +27,24 @@ EXPECTED_BMRB_CODE_ERROR = """\
 ERROR [in: project]:
 the file name bmr9999 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
+... for full debug information run: nef --debug nmrstar import project bmr9999 --source auto
 exiting...
 """
 
 EXPECTED_PERMISSION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path}
+ERROR [in: project]: couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path} #noqa: E501
 exiting...
-"""
+""".replace(NOQA_E501, "")
 
 EXPECTED_OWNER_NO_READ_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path}
+ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path} #noqa: E501
 exiting...
-"""
+""".replace(NOQA_E501, "")
 
 EXPECTED_PERMISSION_RESTRICTION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions.
+ERROR [in: project]: couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions. #noqa: E501
 exiting...
-"""
+""".replace(NOQA_E501, "")
 
 EXPECTED_GENERIC_PERMISSION_ERROR_PATTERN = """\
 ERROR [in: project]: couldn't read from {file_path} due to permission error. Check file permissions and ownership.
@@ -64,6 +65,7 @@ EXPECTED_UBIQUITIN_BMRB_ERROR = """\
 ERROR [in: project]:
 the file name bmr5387 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
+... for full debug information run: nef --debug nmrstar import project ubiquitin --source auto
 exiting...
 """
 
@@ -71,6 +73,7 @@ EXPECTED_NUMERIC_BMRB_ERROR = """\
 ERROR [in: project]:
 the file name 5387 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
+... for full debug information run: nef --debug nmrstar import project 5387 --source auto
 exiting...
 """
 
@@ -79,9 +82,9 @@ EXPECTED_NONEXISTENT_FILE_ERROR = (
 )
 
 EXPECTED_DIRECT_READ_ERROR_PATTERN = """\
-ERROR [in: unknown]: couldn't read an entry from the file {file_path} because [Errno 13] Permission denied: '{file_path}'
+ERROR [in: unknown]: couldn't read an entry from the file {file_path} because [Errno 13] Permission denied: '{file_path}' #noqa: E501
 exiting...
-"""
+""".replace(NOQA_E501, "")
 
 
 def test_failed_bmrb_web_fetch_fallback_to_nonexistent_file():
@@ -90,17 +93,20 @@ def test_failed_bmrb_web_fetch_fallback_to_nonexistent_file():
     app = typer.Typer()
     app.command()(project)
 
-    # Mock the web fetch to fail
-    with patch(
-        "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
-    ) as mock_web:
-        mock_web.return_value = None
+    nef_argv = ["nef", "nmrstar", "import", "project", "bmr9999", "--source", "auto"]
 
-        # This should try to fetch from web, fail, then try file "bmr9999" which doesn't exist
-        result = runner.invoke(app, ["bmr9999", "--source", "auto"])
+    with patch("sys.argv", nef_argv):
+        # Mock the web fetch to fail
+        with patch(
+            "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
+        ) as mock_web:
+            mock_web.return_value = None
 
-        assert result.exit_code != 0
-        assert_lines_match(EXPECTED_BMRB_CODE_ERROR, result.output)
+            # This should try to fetch from web, fail, then try file "bmr9999" which doesn't exist
+            result = runner.invoke(app, ["bmr9999", "--source", "auto"])
+
+            assert result.exit_code != 0
+            assert_lines_match(EXPECTED_BMRB_CODE_ERROR, result.output)
 
 
 def test_failed_file_read_permission_error_no_read():
@@ -272,16 +278,19 @@ def test_shortcut_ubiquitin_web_failure_fallback():
     app = typer.Typer()
     app.command()(project)
 
-    # Mock web fetch to fail
-    with patch(
-        "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
-    ) as mock_web:
-        mock_web.return_value = None
+    nef_argv = ["nef", "nmrstar", "import", "project", "ubiquitin", "--source", "auto"]
 
-        result = runner.invoke(app, ["ubiquitin", "--source", "auto"])
+    with patch("sys.argv", nef_argv):
+        # Mock web fetch to fail
+        with patch(
+            "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
+        ) as mock_web:
+            mock_web.return_value = None
 
-        assert result.exit_code != 0
-        assert_lines_match(EXPECTED_UBIQUITIN_BMRB_ERROR, result.output)
+            result = runner.invoke(app, ["ubiquitin", "--source", "auto"])
+
+            assert result.exit_code != 0
+            assert_lines_match(EXPECTED_UBIQUITIN_BMRB_ERROR, result.output)
 
 
 def test_numeric_file_path_error_message():
@@ -290,15 +299,18 @@ def test_numeric_file_path_error_message():
     app = typer.Typer()
     app.command()(project)
 
-    with patch(
-        "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
-    ) as mock_web:
-        mock_web.return_value = None
+    nef_argv = ["nef", "nmrstar", "import", "project", "5387", "--source", "auto"]
 
-        result = runner.invoke(app, ["5387", "--source", "auto"])
+    with patch("sys.argv", nef_argv):
+        with patch(
+            "nef_pipelines.transcoders.nmrstar.importers.project._get_bmrb_entry_from_web_or_none"
+        ) as mock_web:
+            mock_web.return_value = None
 
-        assert result.exit_code != 0
-        assert_lines_match(EXPECTED_NUMERIC_BMRB_ERROR, result.output)
+            result = runner.invoke(app, ["5387", "--source", "auto"])
+
+            assert result.exit_code != 0
+            assert_lines_match(EXPECTED_NUMERIC_BMRB_ERROR, result.output)
 
 
 def test_failed_file_read_parsing_error():
@@ -352,7 +364,7 @@ def test_direct_read_entry_from_file_or_exit_error():
             # Verify exit_error was called with the expected message
             mock_exit_error.assert_called_once()
             error_message = mock_exit_error.call_args[0][0]
-            expected_message = f"couldn't read an entry from the file {fake_path} because [Errno 13] Permission denied: '{fake_path}'"
+            expected_message = f"couldn't read an entry from the file {fake_path} because [Errno 13] Permission denied: '{fake_path}'" #noqa: E501
             assert expected_message in error_message
 
 
