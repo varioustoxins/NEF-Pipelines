@@ -25,6 +25,7 @@ class CommandFailure:
     error: Exception
 
 
+debug_mode = False
 typer_debug_mode = "--debug-typer" in sys.argv
 
 try:
