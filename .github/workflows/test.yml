@@ -44,9 +44,10 @@ jobs:
 
       - name: Run nef test with debug flags
         run: |
+          export PYTHONUNBUFFERED=1
+          export PYTHONWARNINGS=default
           nef test -vvv
-#          export PYTHONUNBUFFERED=1
-#          export PYTHONWARNINGS=default
+
 #          echo "==== Running tests with Python ${{ matrix.python-version }} ===="
 #          echo "==== Python version ===="
 #          python --version
