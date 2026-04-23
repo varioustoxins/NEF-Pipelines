@@ -44,9 +44,22 @@ jobs:
 
       - name: Run nef test with debug flags
         run: |
-          # 1. Force pytest (if used) to show everything
-          # 2. Force Python to flush logs immediately
           export PYTHONUNBUFFERED=1
-          uv run nef test --verbose || (echo "Task failed with exit code $?" && exit 1)
-#          run: |
-#          nef test
+          export PYTHONWARNINGS=default
+          echo "==== Running tests with Python ${{ matrix.python-version }} ===="
+          echo "==== Python version ===="
+          python --version
+          echo "==== Pyparsing version ===="
+          python -c "import pyparsing; print(f'pyparsing {pyparsing.__version__}')"
+          echo "==== Running nef test ===="
+          nef test -vvv 2>&1 | tee test_output.txt || {
+            echo ""
+            echo "==== TEST FAILED WITH EXIT CODE $? ===="
+            echo ""
+            echo "==== Last 200 lines of test output ===="
+            tail -n 200 test_output.txt
+            echo ""
+            echo "==== First test failure (if grep finds it) ===="
+            grep -A 10 "FAILED\|ERROR\|error:" test_output.txt | head -n 50 || echo "No clear failure pattern found"
+            exit 1
+          }
