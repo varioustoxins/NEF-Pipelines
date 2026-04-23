@@ -1222,7 +1222,7 @@ def find_substring_with_wildcard(text: str, pattern: str) -> Optional[Tuple[int,
                 return ""
             reg = fnmatch_translate(p)
             # Remove anchors and extract core pattern from (?s:...) grouping
-            reg = reg.replace(r"\Z", "")
+            reg = reg.replace(r"\Z", "").replace(r"\z", "")
             # Strip the (?s:...) wrapper if present
             if reg.startswith("(?s:") and reg.endswith(")"):
                 reg = reg[4:-1]  # Remove '(?s:' prefix and ')' suffix

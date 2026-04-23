@@ -249,6 +249,8 @@ def test_fnmatch_translate_output(pattern, expected_pattern, description):
     # Replace all group numbers (g0, g1, g20, etc.) with g0 for consistent comparison
     normalized_result = re.sub(r"\?P<g\d+>", "?P<g0>", result)
     normalized_result = re.sub(r"\?P=g\d+", "?P=g0", normalized_result)
+    # Python 3.14 changed fnmatch.translate to emit \z instead of \Z
+    normalized_result = normalized_result.replace(r"\z", r"\Z")
 
     accepted = (
         expected_pattern if isinstance(expected_pattern, set) else {expected_pattern}
