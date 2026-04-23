@@ -70,7 +70,7 @@ def test(
             quiet,
             targets,
         )
-    except SystemExit as e:
+    except BaseException as e:
         print(f"ERROR: there was error during test setup sys.exit was called {e}")
         sys.stderr.flush()
         sys.stdout.flush()
