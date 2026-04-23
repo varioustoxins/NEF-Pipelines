@@ -83,12 +83,12 @@ def peaks(
             help="input to read NEF data from [stdin = -]",
         ),
     ] = STDIN,
-    spectra: Annotated[Optional[List[str]], typer.Argument(help=SPECTRA_HELP)] = (),
+    spectra: Annotated[Optional[List[str]], typer.Argument(help=SPECTRA_HELP)] = None,
 ):
     """-  make a set of peaks for an hsqc, 13C direct detect or triple resonance spectrum from a list of shifts
     [alpha for non ccpn peak lists and 13C detect]"""
 
-    spectra = [spectrum.replace("-", "_") for spectrum in spectra]
+    spectra = [spectrum.replace("-", "_") for spectrum in spectra or []]
     if not spectra:
         spectra = [
             ExperimentType.N_HSQC,

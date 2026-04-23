@@ -735,7 +735,7 @@ def _insert_ellipsis_comments(
 
 
 def _parse_and_select_namespaces(
-    entry: Entry, namespaces: list[str] | None, no_initial_selection: bool
+    entry: Entry, namespaces: Optional[List[str]], no_initial_selection: bool
 ) -> set[str]:
     # Parse namespace selectors OUTSIDE pipe (refactoring item 2)
     # Collect actual namespaces from entry
@@ -787,7 +787,7 @@ def _apply_namespace_filtering(
 
 # TODO this should be a utilty function
 def _print_output_or_exit_error(
-    out: str | None, output_dict: dict[str, str], force: bool
+    out: Optional[str], output_dict: Dict[str, str], force: bool
 ) -> bool:
     print_entry = False
     if out is None or out == "@auto":
@@ -828,8 +828,8 @@ def _print_output_or_exit_error(
 
 # TODO this should be a utility function
 def _parse_polymorphic_entry_inputs(
-    input: Path, selectors: list[str] | None
-) -> tuple[Path, list[str] | None]:
+    input: Path, selectors: Optional[List[str]]
+) -> Tuple[Path, Optional[List[str]]]:
     if selectors and len(selectors) > 0 and Path(selectors[0]).is_file():
         if input != STDIN:
             msg = "you specified two inputs --input {input} and {putative_file} please choose only one!"
@@ -840,7 +840,7 @@ def _parse_polymorphic_entry_inputs(
     return input, selectors
 
 
-def _extract_display_modes(head: bool, middle: bool, tail: bool) -> list[Any]:
+def _extract_display_modes(head: bool, middle: bool, tail: bool) -> List[Any]:
     # Collect display modes (additive)
     display_modes = []
     if head:
@@ -854,7 +854,7 @@ def _extract_display_modes(head: bool, middle: bool, tail: bool) -> list[Any]:
     return display_modes
 
 
-def _parse_selectors(selectors: list[str] | None) -> list[Any]:
+def _parse_selectors(selectors: Optional[List[str]]) -> List[Any]:
 
     if not selectors:
         selectors = [SELECT_ALL_FRAME_CATEGORIES_AND_TAGS]  # Default

@@ -57,7 +57,7 @@ def renumber(
             ),
             show_default=False,
         ),
-    ] = (),
+    ] = None,
     input: Annotated[
         Path,
         typer.Option(
@@ -113,7 +113,7 @@ def renumber(
         reference_frames = []
 
     chain_offsets_or_starts = _get_chain_offset_pairs_or_exit_error(
-        chain_offsets_or_starts
+        chain_offsets_or_starts or []
     )
 
     reference_frames = _select_reference_frames(entry, reference_frame_selectors)

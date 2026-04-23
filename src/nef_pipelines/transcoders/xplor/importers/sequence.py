@@ -52,7 +52,7 @@ def sequence(
     file_paths: Annotated[
         Optional[List[Path]],
         typer.Argument(help="the file to read", metavar="<XPLOR-PSF-FILES>"),
-    ] = (),
+    ] = None,
 ):
     """- convert xplor psf to nef sequence"""
 
