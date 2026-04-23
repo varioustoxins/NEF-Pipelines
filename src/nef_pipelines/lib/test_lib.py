@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import contextlib
 import sys
 import traceback
 from fnmatch import fnmatchcase
@@ -13,6 +15,90 @@ from typer import Typer
 from typer.testing import CliRunner
 
 NOQA_E501 = "# noqa: E501"
+
+# TODO: click >= 8.3 — remove _STDERR_START, _STDERR_END, _marking_stderr,
+# _MarkerCliRunner, and _split_marked_output once Python 3.9 / click 8.1.x
+# support is dropped; click 8.3+ separates stdout/stderr natively.
+_STDERR_START = "\x00STDERR_START\x00"
+_STDERR_END = "\x00STDERR_END\x00"
+
+
+@contextlib.contextmanager
+def _marking_stderr():
+    """Wrap sys.stderr so every write is bracketed with START/END markers.
+
+    Legacy helper for click < 8.3 where CliRunner(mix_stderr=True) collapses
+    stdout/stderr into a single buffer. Bracketing each write (rather than each
+    line) is robust against partial writes that don't end with a newline —
+    without it, a stderr write ending mid-line followed by a stdout write would
+    be mis-classified because they share the same physical line in the buffer.
+
+    TODO: click >= 8.3 — remove this when use of 8.1.x is dropped.
+    """
+    original = sys.stderr
+
+    class _MarkedWriter:
+        encoding = getattr(original, "encoding", "utf-8")
+        errors = getattr(original, "errors", "replace")
+
+        def write(self, s):
+            if not s:
+                return 0
+            original.write(_STDERR_START + s + _STDERR_END)
+            return len(s)
+
+        def writelines(self, lines):
+            for line in lines:
+                self.write(line)
+
+        def flush(self):
+            original.flush()
+
+        def isatty(self):
+            return False
+
+    sys.stderr = _MarkedWriter()
+    try:
+        yield
+    finally:
+        sys.stderr = original
+
+
+# TODO: click >= 8.3 — remove this class when use of 8.1.x is dropped.
+class _MarkerCliRunner(CliRunner):
+    """CliRunner that marks stderr writes for post-processing on click 8.1.x."""
+
+    @contextlib.contextmanager
+    def isolation(self, input=None, env=None, color=False):
+        with super().isolation(input=input, env=env, color=color) as streams:
+            with _marking_stderr():
+                yield streams
+
+
+# TODO: click >= 8.3 — remove this helper when use of 8.1.x is dropped.
+def _split_marked_output(output: str):
+    """Split combined output into (stdout, stderr) via per-write START/END markers.
+
+    Text between _STDERR_START and _STDERR_END belongs to stderr; everything
+    outside those brackets is stdout. Works for any interleaving.
+    """
+    stdout_parts = []
+    stderr_parts = []
+    i = 0
+    while i < len(output):
+        start = output.find(_STDERR_START, i)
+        if start == -1:
+            stdout_parts.append(output[i:])
+            break
+        stdout_parts.append(output[i:start])
+        body_start = start + len(_STDERR_START)
+        end = output.find(_STDERR_END, body_start)
+        if end == -1:
+            stderr_parts.append(output[body_start:])
+            break
+        stderr_parts.append(output[body_start:end])
+        i = end + len(_STDERR_END)
+    return "".join(stdout_parts), "".join(stderr_parts)
 
 
 def read_test_data(file_path: str, root_directory: Optional[str] = None) -> str:
@@ -368,29 +454,39 @@ def run_and_report(
     :return: results object
     """
 
-    runner = CliRunner()
+    try:
+        # TODO: click >= 8.3 — remove this branch (and _MarkerCliRunner /
+        # _split_marked_output) when 8.1.x support is dropped. click 8.1.x
+        # collapses stderr into stdout when mix_stderr=True, so we recover the
+        # split by tagging every stderr line with _STDERR_MARKER.
+        runner = _MarkerCliRunner(mix_stderr=True)
+        result = runner.invoke(typer_app, args, input=input)
+        captured_stdout, captured_stderr = _split_marked_output(result.output)
+    except TypeError:
+        # click 8.3+ removed mix_stderr and separates the streams natively.
+        # Note: result.output on click 8.3 is combined — use result.stdout.
+        runner = CliRunner()
+        result = runner.invoke(typer_app, args, input=input)
+        captured_stdout = result.stdout
+        captured_stderr = result.stderr
 
-    result = runner.invoke(typer_app, args, input=input)
+    # TODO: click >= 8.3 — remove this
+    class NormalisedResult:
+        """Wraps a click Result so .stderr is always safe and merge_stderr is applied."""
 
-    if merge_stderr:
-        # TODO: this is a hack to make things work after an update in typer and click
-        # it needs to be removed in the long run
-        # Manually mix stderr into stdout for backward compatibility with existing tests
-        # In newer versions of click, stderr is separated, but our tests expect it in stdout
-        if hasattr(result, "stderr") and result.stderr:
-            # Create a new object with stdout+stderr mixed, preserving other attributes
+        def __init__(self, original, stdout, stderr):
+            self._original = original
+            self.stderr = stderr
+            self.exit_code = original.exit_code
+            self.exception = original.exception
+            self.exc_info = original.exc_info
+            if merge_stderr and stderr:
+                self.stdout = stdout + stderr
+            else:
+                self.stdout = stdout
 
-            class MixedResult:
-                def __init__(self, original_result):
-                    self._original = original_result
-                    self.stdout = original_result.stdout + original_result.stderr
-                    self.exit_code = original_result.exit_code
-                    self.exception = original_result.exception
-                    self.exc_info = original_result.exc_info
-                    if hasattr(original_result, "stderr"):
-                        self.stderr = original_result.stderr
-
-            result = MixedResult(result)
+    # TODO: click >= 8.3 — remove use of NormalisedResult
+    result = NormalisedResult(result, captured_stdout, captured_stderr)
 
     if result.exit_code != expected_exit_code:
         # TODO these shouldn't have breaks between the -'s
