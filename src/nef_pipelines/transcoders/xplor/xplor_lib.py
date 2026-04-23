@@ -276,8 +276,10 @@ _residue_number = (
     Combine((Optional("-") + Word(nums)))
     .set_results_name(RESID, list_all_matches=True)
     .set_parse_action(ppc.convert_to_integer)
-)(RESID)
-_residue_factor = (_residue_literal + _residue_number)(RESIDUE_FACTOR)
+)
+_residue_factor = (_residue_literal + _residue_number).set_results_name(
+    RESIDUE_FACTOR, list_all_matches=True
+)
 
 _named_resid = partial(_as_named_single_token, RESID)
 _residue_factor.set_parse_action(_named_resid)
@@ -287,7 +289,9 @@ _atom_literal = Suppress(CaselessLiteral(ATOM_NAME_LITERAL))
 _atom_label = Word(
     alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE
 ).set_results_name(ATOM, list_all_matches=True)
-_atom_factor = (_atom_literal + _atom_label)(ATOM_FACTOR)
+_atom_factor = (_atom_literal + _atom_label).set_results_name(
+    ATOM_FACTOR, list_all_matches=True
+)
 
 _named_atom = partial(_as_named_single_token, ATOM)
 _atom_factor.set_parse_action(_named_atom)
