@@ -66,7 +66,7 @@ def test(
     tests = _find_pytest_commands(root_path, targets)
 
     if not targets or (targets and len(tests) != 0):
-        # Build verbosity flags - default to -vvv for backward compatibility
+        # Build verbosity flags
         if quiet:
             verbosity_flags = ["-q"]
         elif verbose == 0:
@@ -77,6 +77,8 @@ def test(
 
         command = [*verbosity_flags, "--full-trace", *tests]
 
+        # Only disable warnings if explicitly requested (no --warnings flag)
+        # This allows Python warnings (like pyparsing) to be captured by pytest
         if not warnings:
             command = ["--disable-warnings", *command]
 
@@ -98,8 +100,14 @@ def test(
         if markers:
             command.extend(["-m", markers])
 
+        # Use sys.exit() instead of typer.Exit() to ensure pytest's output
+        # is fully flushed and the exit code is properly propagated
+        import sys
+
         exit_code = main(command)
-        raise typer.Exit(code=exit_code)
+        sys.stderr.flush()
+        sys.stdout.flush()
+        sys.exit(exit_code)
 
 
 def _find_pytest_root(root_path):
