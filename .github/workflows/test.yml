@@ -63,7 +63,4 @@ jobs:
 #          }
       - name: run simple test script
         run: |
-          export PYTHONUNBUFFERED=1
-          export PYTHONWARNINGS=default
-          nef test -vvv
-#          pytest -vvv
+          nef test -v
