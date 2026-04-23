@@ -45,5 +45,6 @@ jobs:
       - name: Run tests
         run: |
           # This forces Python to show exactly which library is killing the process
-          uv run python -X dev -c "import numpy; import pydantic_core; import matplotlib; print('All imports passed!')"run: |
+          uv run python -X dev -c "import numpy; import pydantic_core; import matplotlib; print('All imports passed!')"
+#          run: |
 #          nef test
