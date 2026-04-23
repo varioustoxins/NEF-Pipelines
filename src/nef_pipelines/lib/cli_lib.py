@@ -37,6 +37,8 @@ This module provides parsing and validation for several CLI constructs used thro
    - Expansion, formatting functions
 """
 
+from __future__ import annotations
+
 import re
 from enum import Enum, Flag, auto
 from textwrap import dedent
