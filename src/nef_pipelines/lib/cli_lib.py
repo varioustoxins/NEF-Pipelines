@@ -253,7 +253,7 @@ def _build_unified_grammar(chain_separator: str, range_separator: str):
 
     # Basic elements - try integer first, then fall back to string
     # Pattern for integers (positive or negative)
-    integer = pp.Regex(r"[+-]?\d+").setParseAction(lambda t: int(t[0]))
+    integer = pp.Regex(r"[+-]?\d+").set_parse_action(lambda t: int(t[0]))
 
     # Pattern for non-integer residues (anything that's not just digits/signs)
     # Exclude the range separator and chain separator from residue names
@@ -281,16 +281,16 @@ def _build_unified_grammar(chain_separator: str, range_separator: str):
             def parse_single_action(t):
                 return ("single", t[0])
 
-        closed = (residue_expr + range_sep + residue_expr).setParseAction(
+        closed = (residue_expr + range_sep + residue_expr).set_parse_action(
             lambda t: ("range", t[0], t[2])
         )
-        open_end = (residue_expr + range_sep + pp.StringEnd()).setParseAction(
+        open_end = (residue_expr + range_sep + pp.StringEnd()).set_parse_action(
             lambda t: ("range", t[0], None)
         )
-        open_start = (range_sep + residue_expr).setParseAction(
+        open_start = (range_sep + residue_expr).set_parse_action(
             lambda t: ("range", None, t[1])
         )
-        single = residue_expr.copy().setParseAction(parse_single_action)
+        single = residue_expr.copy().set_parse_action(parse_single_action)
 
         return closed | open_end | open_start | single
 
@@ -1061,8 +1061,8 @@ def _build_chain_offset_grammar(chain_separator: str, range_separator: str):
         pyparsing grammar for chain offset syntax
     """
     # Define basic tokens
-    integer = pp.Regex(r"[+-]?\d+").setParseAction(lambda t: int(t[0]))
-    signed_integer = pp.Regex(r"[+-]\d+").setParseAction(lambda t: int(t[0]))
+    integer = pp.Regex(r"[+-]?\d+").set_parse_action(lambda t: int(t[0]))
+    signed_integer = pp.Regex(r"[+-]\d+").set_parse_action(lambda t: int(t[0]))
 
     # Chain names - avoid chain separator and +
     import re
@@ -1079,25 +1079,25 @@ def _build_chain_offset_grammar(chain_separator: str, range_separator: str):
     # Full range + offset: "10..20+3"
     full_range_offset = (
         integer + range_sep + integer + signed_integer.copy()
-    ).setParseAction(lambda t: ("range_offset", t[0], t[2], int(t[3])))
+    ).set_parse_action(lambda t: ("range_offset", t[0], t[2], int(t[3])))
 
     # Open start range + offset: "..20+3"
-    open_start_offset = (range_sep + integer + signed_integer.copy()).setParseAction(
+    open_start_offset = (range_sep + integer + signed_integer.copy()).set_parse_action(
         lambda t: ("range_offset", None, t[1], int(t[2]))
     )
 
     # Open end range + offset: "10..+3"
-    open_end_offset = (integer + range_sep + signed_integer.copy()).setParseAction(
+    open_end_offset = (integer + range_sep + signed_integer.copy()).set_parse_action(
         lambda t: ("range_offset", t[0], None, int(t[2]))
     )
 
     # Single residue + offset: "15+1"
-    single_residue_offset = (integer + signed_integer.copy()).setParseAction(
+    single_residue_offset = (integer + signed_integer.copy()).set_parse_action(
         lambda t: ("range_offset", t[0], t[0], int(t[1]))
     )
 
     # Just offset: "+2"
-    just_offset = signed_integer.copy().setParseAction(
+    just_offset = signed_integer.copy().set_parse_action(
         lambda t: ("range_offset", None, None, int(t[0]))
     )
 
