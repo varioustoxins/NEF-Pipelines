@@ -70,6 +70,11 @@ def test(
             quiet,
             targets,
         )
+    except SystemExit as e:
+        print(f"ERROR: there was error during test setup sys.exit was called {e}")
+        sys.stderr.flush()
+        sys.stdout.flush()
+        sys.exit(e.code)
     except Exception as e:
         print(f"ERROR: there was error during test setup {e}")
         traceback_module.print_exc(file=sys.stderr)
