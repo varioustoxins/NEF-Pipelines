@@ -42,9 +42,11 @@ jobs:
           uv pip install --system -e ".[testing]"
           uv pip install --system streamfitter
 
-      - name: Run tests
+      - name: Run nef test with debug flags
         run: |
-          # This forces Python to show exactly which library is killing the process
-          uv run python -X dev -c "import numpy; import pydantic_core; import matplotlib; print('All imports passed!')"
+          # 1. Force pytest (if used) to show everything
+          # 2. Force Python to flush logs immediately
+          export PYTHONUNBUFFERED=1
+          uv run nef test --verbose || (echo "Task failed with exit code $?" && exit 1)
 #          run: |
 #          nef test
