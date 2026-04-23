@@ -202,7 +202,15 @@ def test_find_substring_with_wildcard(text, pattern, expected, description):
         ("chain*", r"(?s:chain.*)\Z", "trailing asterisk"),
         ("chain?", r"(?s:chain.)\Z", "trailing question mark"),
         # Patterns with both leading and trailing wildcards
-        ("*chain*", r"(?s:(?=(?P<g0>.*?chain))(?P=g0).*)\Z", "both asterisk wildcards"),
+        # Python 3.13+ uses atomic grouping (?>...) instead of lookahead+named group
+        (
+            "*chain*",
+            {
+                r"(?s:(?=(?P<g0>.*?chain))(?P=g0).*)\Z",
+                r"(?s:(?>.*?chain).*)\Z",
+            },
+            "both asterisk wildcards",
+        ),
         ("?chain?", r"(?s:.chain.)\Z", "both question marks"),
         # Patterns with wildcards in middle
         ("ch*in", r"(?s:ch.*in)\Z", "asterisk in middle"),
@@ -242,7 +250,11 @@ def test_fnmatch_translate_output(pattern, expected_pattern, description):
     normalized_result = re.sub(r"\?P<g\d+>", "?P<g0>", result)
     normalized_result = re.sub(r"\?P=g\d+", "?P=g0", normalized_result)
 
-    assert normalized_result == expected_pattern, (
+    accepted = (
+        expected_pattern if isinstance(expected_pattern, set) else {expected_pattern}
+    )
+
+    assert normalized_result in accepted, (
         f"{description}: fnmatch_translate output changed!\n"
         f"  Pattern:  {pattern!r}\n"
         f"  Expected: {expected_pattern!r}\n"

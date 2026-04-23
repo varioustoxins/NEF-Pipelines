@@ -42,8 +42,8 @@ def patch_rich_code_theme():
         # We need to create a console with a custom theme that overrides this
         original_get_console = rich_utils._get_rich_console
 
-        def patched_get_console():
-            console = original_get_console()
+        def patched_get_console(**kwargs):
+            console = original_get_console(**kwargs)
             # Create a custom theme that overrides markdown.code to have no background
             # Just specify foreground color (bold cyan) without any background
             custom_theme = Theme(
