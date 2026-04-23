@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback as traceback_module
 from pathlib import Path
 from textwrap import dedent
 from typing import List
@@ -56,7 +57,38 @@ def test(
     targets: List[str] = typer.Argument(None, help=TARGET_HELP),
 ):
     """- run the test suite"""
+    try:
+        _run_tests(
+            warnings,
+            verbose,
+            show_capture,
+            exit_first,
+            keyword,
+            traceback,
+            pdb,
+            markers,
+            quiet,
+            targets,
+        )
+    except Exception as e:
+        print(f"ERROR: there was error during test setup {e}")
+        traceback_module.print_exc(file=sys.stderr)
+        sys.stderr.flush()
+        sys.exit(1)
 
+
+def _run_tests(
+    warnings: bool,
+    verbose: int,
+    show_capture: bool,
+    exit_first: bool,
+    keyword: str,
+    traceback: str,
+    pdb: bool,
+    markers: str,
+    quiet: bool,
+    targets: List[str],
+):
     dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
     root_path = str(dir_path.parent / "nef_pipelines" / "tests")
@@ -100,18 +132,7 @@ def test(
         if markers:
             command.extend(["-m", markers])
 
-        try:
-            exit_code = main(command)
-        except SystemExit as e:
-            print(f"\nERROR: pytest failed to start:\n{e}", file=sys.stderr)
-            sys.stderr.flush()
-            sys.stdout.flush()
-            sys.exit(e.code)
-        except Exception as e:
-            print(f"\nERROR: pytest failed to start:\n{e}", file=sys.stderr)
-            sys.stderr.flush()
-            sys.exit(1)
-
+        exit_code = main(command)
         sys.stderr.flush()
         sys.stdout.flush()
         sys.exit(exit_code)
@@ -193,5 +214,4 @@ def _exit_pytest_error(output):
                ----------------------- pytest errors -----------------------
             """
     msg = dedent(msg)
-    msg = f"{msg}"
     exit_error(msg)
