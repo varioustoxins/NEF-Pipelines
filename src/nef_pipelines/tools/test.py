@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from textwrap import dedent
 from typing import List
@@ -100,11 +101,13 @@ def test(
         if markers:
             command.extend(["-m", markers])
 
-        # Use sys.exit() instead of typer.Exit() to ensure pytest's output
-        # is fully flushed and the exit code is properly propagated
-        import sys
+        try:
+            exit_code = main(command)
+        except Exception as e:
+            print(f"\nERROR: pytest failed to start:\n{e}", file=sys.stderr)
+            sys.stderr.flush()
+            sys.exit(1)
 
-        exit_code = main(command)
         sys.stderr.flush()
         sys.stdout.flush()
         sys.exit(exit_code)
