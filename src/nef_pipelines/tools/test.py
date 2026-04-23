@@ -51,6 +51,11 @@ try:
             "--traceback",
             help="traceback style: auto, long, short, line, native, no",
         ),
+        full_traceback: bool = typer.Option(
+            False,
+            "--full-traceback",
+            help="use pytests --full-trace option to show a full traceback",
+        ),
         pdb: bool = typer.Option(False, "--pdb", help="drop into debugger on failures"),
         markers: str = typer.Option(
             None,
@@ -83,7 +88,10 @@ try:
             else:
                 verbosity_flags = [f"-{'v' * verbose}"]
 
-            command = [*verbosity_flags, "--full-trace", *tests]
+            if full_traceback:
+                command = [*verbosity_flags, "--full-trace", *tests]
+            else:
+                command = [*verbosity_flags, *tests]
 
             # Only disable warnings if explicitly requested (no --warnings flag)
             # This allows Python warnings (like pyparsing) to be captured by pytest
