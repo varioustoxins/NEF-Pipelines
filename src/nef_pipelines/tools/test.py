@@ -98,7 +98,8 @@ def test(
         if markers:
             command.extend(["-m", markers])
 
-        main(command)
+        exit_code = main(command)
+        raise typer.Exit(code=exit_code)
 
 
 def _find_pytest_root(root_path):
