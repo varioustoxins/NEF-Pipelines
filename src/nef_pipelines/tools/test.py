@@ -102,6 +102,10 @@ def test(
 
         try:
             exit_code = main(command)
+        except SystemExit as e:
+            sys.stderr.flush()
+            sys.stdout.flush()
+            sys.exit(e.code)
         except Exception as e:
             print(f"\nERROR: pytest failed to start:\n{e}", file=sys.stderr)
             sys.stderr.flush()
