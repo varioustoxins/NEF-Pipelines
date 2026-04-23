@@ -144,22 +144,13 @@ def run_and_read_pytest(args: List[str]) -> Tuple[int, str, str]:
     """
     from pytest import main
 
-    original_output = sys.stdout
-    original_error = sys.stdout
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
+    stdout_buf = StringIO()
+    stderr_buf = StringIO()
 
-    retcode = main(args)
+    with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
+        retcode = main(args)
 
-    output = sys.stdout.getvalue()
-    error_output = sys.stderr.getvalue()
-
-    sys.stdout.close()
-    sys.stderr.close()
-    sys.stdout = original_output
-    sys.stderr = original_error
-
-    return retcode, output, error_output
+    return retcode, stdout_buf.getvalue(), stderr_buf.getvalue()
 
 
 def _split_test_spec(spec):
