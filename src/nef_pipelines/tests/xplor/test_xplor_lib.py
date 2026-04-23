@@ -372,7 +372,7 @@ def test_get_single_atom_selection_dihderal_restraint():
     with open(dihedrals_path, "r") as fh:
         dihdedral_restraints = fh.read()
 
-    xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
+    xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parse_string(
         dihdedral_restraints
     )
 

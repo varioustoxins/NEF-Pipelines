@@ -1112,7 +1112,7 @@ def _build_chain_offset_grammar(chain_separator: str, range_separator: str):
 
     # Full specification: A+B+C:range_offset[:range_offset]*
     full_spec = (
-        chain_group.setResultsName("chains")
+        chain_group.set_results_name("chains")
         + pp.Suppress(chain_separator)
         + range_offset_spec
         + pp.ZeroOrMore(pp.Suppress(chain_separator) + range_offset_spec)
@@ -1651,7 +1651,7 @@ def _parse_spec_with_grammar(
     use_escapes: bool,
 ) -> ParseResults:
     try:
-        result = grammar.parseString(frame_spec)
+        result = grammar.parse_string(frame_spec)
     except pp.ParseException as e:
         # Check for common error cases
         if frame_spec.count(FRAME_TAG_SEPARATOR) > 1:

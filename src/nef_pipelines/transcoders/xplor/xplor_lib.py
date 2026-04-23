@@ -275,7 +275,7 @@ _residue_literal = Suppress(_expand_literal(RESIDUE_LITERAL))
 _residue_number = (
     Combine((Optional("-") + Word(nums)))
     .set_results_name(RESID, list_all_matches=True)
-    .setParseAction(ppc.convert_to_integer)
+    .set_parse_action(ppc.convert_to_integer)
 )(RESID)
 _residue_factor = (_residue_literal + _residue_number)(RESIDUE_FACTOR)
 
@@ -299,7 +299,7 @@ _segid_factor = (_segid_literal + _segid_label)(SEGMENT_FACTOR)
 
 
 _named_segid = partial(_as_named_single_token, SEGID)
-_segid_factor.setParseAction(_named_segid)
+_segid_factor.set_parse_action(_named_segid)
 
 
 def _as_named_tokens(name, _, _1, toks):
@@ -328,10 +328,12 @@ _dihedral_restraint = Group(
     + _selection.set_results_name(ATOMS_2)
     + _selection.set_results_name(ATOMS_3)
     + _selection.set_results_name(ATOMS_4)
-    + ppc.number.set_results_name(ENERGY_CONSTANT).setParseAction(ppc.convertToFloat)
-    + ppc.number.set_results_name(ANGLE).setParseAction(ppc.convertToFloat)
-    + ppc.number.set_results_name(RANGE).setParseAction(ppc.convertToFloat)
-    + ppc.integer.set_results_name(EXPONENT).setParseAction(ppc.convertToInteger)
+    + ppc.number.set_results_name(ENERGY_CONSTANT).set_parse_action(
+        ppc.convert_to_float
+    )
+    + ppc.number.set_results_name(ANGLE).set_parse_action(ppc.convert_to_float)
+    + ppc.number.set_results_name(RANGE).set_parse_action(ppc.convert_to_float)
+    + ppc.integer.set_results_name(EXPONENT).set_parse_action(ppc.convert_to_integer)
 )
 _dihedral_restraints = OneOrMore(_dihedral_restraint)
 
@@ -339,9 +341,9 @@ _distance_restraint = Group(
     Suppress(_expand_literal(ASSIGN))
     + _selection.set_results_name(ATOMS_1)
     + _selection.set_results_name(ATOMS_2)
-    + ppc.number.set_results_name(DISTANCE).setParseAction(ppc.convertToFloat)
-    + ppc.number.set_results_name(DISTANCE_MINUS).setParseAction(ppc.convertToFloat)
-    + ppc.number.set_results_name(DISTANCE_PLUS).setParseAction(ppc.convertToFloat)
+    + ppc.number.set_results_name(DISTANCE).set_parse_action(ppc.convert_to_float)
+    + ppc.number.set_results_name(DISTANCE_MINUS).set_parse_action(ppc.convert_to_float)
+    + ppc.number.set_results_name(DISTANCE_PLUS).set_parse_action(ppc.convert_to_float)
     + rest_of_line.set_results_name(EXTRA_INFO)
 )
 
@@ -742,9 +744,9 @@ def parse_distance_restraints(
     :return:  a list of dihedral restraints
     """
     try:
-        xplor_basic_restraints = _distance_restraints.ignore(XPLOR_COMMENT).parseString(
-            restraint_text
-        )
+        xplor_basic_restraints = _distance_restraints.ignore(
+            XPLOR_COMMENT
+        ).parse_string(restraint_text)
     except ParseException as parse_exception:
         msg = f"""\
             failed to read distance restraints from the file {file_path_display_name} because:
@@ -1175,7 +1177,7 @@ def _get_atom_selections_from_selection_expression(selection_expression: ParseRe
 
 
 def _string_to_atom_selections(selection_text):
-    parse_result = _selection.parseString(selection_text, parse_all=True)
+    parse_result = _selection.parse_string(selection_text, parse_all=True)
 
     return _parse_result_to_atom_selections(parse_result)
 

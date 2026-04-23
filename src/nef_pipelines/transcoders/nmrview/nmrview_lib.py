@@ -57,34 +57,34 @@ def get_tcl_parser() -> ParserElement:
 
     # TODO this should be printables  excluding : " {  }
     simple_word = Word(initChars=printables, excludeChars='"{}')
-    simple_word.setName("simple_word")
+    simple_word.set_name("simple_word")
 
     expression = Forward()
-    expression.setName("expression")
+    expression.set_name("expression")
 
     DBL_QUOTE = Suppress('"')
     LEFT_PAREN = Suppress("{")
     RIGHT_PAREN = Suppress("}")
 
     quoted_simple_word = DBL_QUOTE + simple_word + DBL_QUOTE
-    quoted_simple_word.setName("quoted_simple_word")
+    quoted_simple_word.set_name("quoted_simple_word")
 
     quoted_complex_word = Group(DBL_QUOTE + ZeroOrMore(expression) + DBL_QUOTE)
-    quoted_complex_word.setName("quoted complex word")
+    quoted_complex_word.set_name("quoted complex word")
 
     complex_list = Group(LEFT_PAREN + ZeroOrMore(expression) + RIGHT_PAREN)
-    complex_list.setName("complex list")
+    complex_list.set_name("complex list")
 
     expression << (
         simple_word | quoted_simple_word | quoted_complex_word | complex_list
     )
 
     remainder = restOfLine()
-    remainder.setName("remainder")
+    remainder.set_name("remainder")
 
     top_level = ZeroOrMore(expression)
-    top_level.setParseAction(_process_emptys_and_singles)
-    top_level.setName("phrase") + restOfLine()
+    top_level.set_parse_action(_process_emptys_and_singles)
+    top_level.set_name("phrase") + restOfLine()
 
     return top_level
 
@@ -106,7 +106,7 @@ def parse_tcl(in_str, file_name="unknown", line_no=0) -> ParseResults:
 
     result = None
     try:
-        result = parser.parseString(in_str, parseAll=True)
+        result = parser.parse_string(in_str, parse_all=True)
     except ParseException as pe:
         line_no += pe.lineno
         msg = f"""\
@@ -168,7 +168,6 @@ def read_sequence(
     chain_code: str = "A",
     sequence_file_name: str = "unknown",
 ) -> List[SequenceResidue]:
-
     """
     read an nmrview sequence from a file
 
