@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import List
 
 import typer
+from pytest import main
 
 from nef_pipelines.lib.test_lib import run_and_read_pytest, select_matching_tests
 from nef_pipelines.lib.util import exit_error
@@ -55,8 +56,6 @@ def test(
     targets: List[str] = typer.Argument(None, help=TARGET_HELP),
 ):
     """- run the test suite"""
-
-    from pytest import main
 
     dir_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
