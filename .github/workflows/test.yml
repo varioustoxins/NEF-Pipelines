@@ -44,24 +44,24 @@ jobs:
 
       - name: Run nef test with debug flags
         run: |
-          export PYTHONUNBUFFERED=1
-          export PYTHONWARNINGS=default
-          nef test -vvv
+          echo "==== Running tests with Python ${{ matrix.python-version }} ===="
+          echo "==== Python version ===="
+          python --version
+          echo "==== Pyparsing version ===="
+          python -c "import pyparsing; print(f'pyparsing {pyparsing.__version__}')"
+          echo "==== Running nef test ===="
+          nef test -vvv 2>&1 | tee test_output.txt || {
+            echo ""
+            echo "==== TEST FAILED WITH EXIT CODE $? ===="
+            echo ""
+            echo "==== Last 200 lines of test output ===="
+            tail -n 200 test_output.txt
+            echo ""
+            echo "==== First test failure (if grep finds it) ===="
+            grep -A 10 "FAILED\|ERROR\|error:" test_output.txt | head -n 50 || echo "No clear failure pattern found"
+            exit 1
+          }
 
-#          echo "==== Running tests with Python ${{ matrix.python-version }} ===="
-#          echo "==== Python version ===="
-#          python --version
-#          echo "==== Pyparsing version ===="
-#          python -c "import pyparsing; print(f'pyparsing {pyparsing.__version__}')"
-#          echo "==== Running nef test ===="
-#          nef test -vvv 2>&1 | tee test_output.txt || {
-#            echo ""
-#            echo "==== TEST FAILED WITH EXIT CODE $? ===="
-#            echo ""
-#            echo "==== Last 200 lines of test output ===="
-#            tail -n 200 test_output.txt
-#            echo ""
-#            echo "==== First test failure (if grep finds it) ===="
-#            grep -A 10 "FAILED\|ERROR\|error:" test_output.txt | head -n 50 || echo "No clear failure pattern found"
-#            exit 1
-#          }
+#          export PYTHONUNBUFFERED=1
+#          export PYTHONWARNINGS=default
+#          nef test -vvv
