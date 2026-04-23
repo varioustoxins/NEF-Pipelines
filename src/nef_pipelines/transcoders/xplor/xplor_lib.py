@@ -272,10 +272,8 @@ def _as_named_single_token(name, _, _1, toks):
 
 # resid factor
 _residue_literal = Suppress(_expand_literal(RESIDUE_LITERAL))
-_residue_number = (
-    Combine((Optional("-") + Word(nums)))
-    .set_results_name(RESID, list_all_matches=True)
-    .set_parse_action(ppc.convert_to_integer)
+_residue_number = Combine((Optional("-") + Word(nums))).set_parse_action(
+    ppc.convert_to_integer
 )
 _residue_factor = (_residue_literal + _residue_number).set_results_name(
     RESIDUE_FACTOR, list_all_matches=True
@@ -286,9 +284,7 @@ _residue_factor.set_parse_action(_named_resid)
 
 # atom factor
 _atom_literal = Suppress(CaselessLiteral(ATOM_NAME_LITERAL))
-_atom_label = Word(
-    alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE
-).set_results_name(ATOM, list_all_matches=True)
+_atom_label = Word(alphanums + ATOM_WILDCARDS + SINGLE_QUOTE + DOUBLE_QUOTE)
 _atom_factor = (_atom_literal + _atom_label).set_results_name(
     ATOM_FACTOR, list_all_matches=True
 )
