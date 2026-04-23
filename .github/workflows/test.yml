@@ -65,4 +65,5 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           export PYTHONWARNINGS=default
-          nef --debug-typer --debug test -vvv
+          pytest -vvv
+#          nef --debug-typer --debug test -vvv
