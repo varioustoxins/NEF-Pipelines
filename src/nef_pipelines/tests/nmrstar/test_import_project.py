@@ -9,7 +9,7 @@ from unittest.mock import mock_open, patch
 import typer
 from typer.testing import CliRunner
 
-from nef_pipelines.lib.test_lib import assert_lines_match, NOQA_E501
+from nef_pipelines.lib.test_lib import NOQA_E501, assert_lines_match
 from nef_pipelines.transcoders.nmrstar.importers.project_cli import project
 
 
@@ -32,19 +32,25 @@ exiting...
 """
 
 EXPECTED_PERMISSION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path} #noqa: E501
+ERROR [in: project]: couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path} # noqa: E501
 exiting...
-""".replace(NOQA_E501, "")
+""".replace(
+    NOQA_E501, ""
+)
 
 EXPECTED_OWNER_NO_READ_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path} #noqa: E501
+ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path} # noqa: E501
 exiting...
-""".replace(NOQA_E501, "")
+""".replace(
+    NOQA_E501, ""
+)
 
 EXPECTED_PERMISSION_RESTRICTION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions. #noqa: E501
+ERROR [in: project]: couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions. # noqa: E501
 exiting...
-""".replace(NOQA_E501, "")
+""".replace(
+    NOQA_E501, ""
+)
 
 EXPECTED_GENERIC_PERMISSION_ERROR_PATTERN = """\
 ERROR [in: project]: couldn't read from {file_path} due to permission error. Check file permissions and ownership.
@@ -82,9 +88,11 @@ EXPECTED_NONEXISTENT_FILE_ERROR = (
 )
 
 EXPECTED_DIRECT_READ_ERROR_PATTERN = """\
-ERROR [in: unknown]: couldn't read an entry from the file {file_path} because [Errno 13] Permission denied: '{file_path}' #noqa: E501
+ERROR [in: unknown]: couldn't read an entry from the file {file_path} because [Errno 13] Permission denied: '{file_path}' # noqa: E501
 exiting...
-""".replace(NOQA_E501, "")
+""".replace(
+    NOQA_E501, ""
+)
 
 
 def test_failed_bmrb_web_fetch_fallback_to_nonexistent_file():
@@ -364,7 +372,7 @@ def test_direct_read_entry_from_file_or_exit_error():
             # Verify exit_error was called with the expected message
             mock_exit_error.assert_called_once()
             error_message = mock_exit_error.call_args[0][0]
-            expected_message = f"couldn't read an entry from the file {fake_path} because [Errno 13] Permission denied: '{fake_path}'" #noqa: E501
+            expected_message = f"couldn't read an entry from the file {fake_path} because [Errno 13] Permission denied: '{fake_path}'"  # noqa: E501
             assert expected_message in error_message
 
 
