@@ -21,32 +21,32 @@ from nef_pipelines.transcoders.xplor.xplor_lib import (
 
 
 def test_parse_residue_factor():
-    assert _residue_factor.parseString("residue  20")[0].get_name() == "resid"
-    assert _residue_factor.parseString("residue  20")[0][0] == 20
-    assert _residue_factor.parseString("residue  -20")[0][0] == -20
+    assert _residue_factor.parse_string("residue  20")[0].get_name() == "resid"
+    assert _residue_factor.parse_string("residue  20")[0][0] == 20
+    assert _residue_factor.parse_string("residue  -20")[0][0] == -20
 
 
 def test_parse_atom_factor():
-    assert _atom_factor.parseString("name  HD1#")[0].get_name() == "atom"
-    assert _atom_factor.parseString("name  HD1#")[0][0] == "HD1#"
+    assert _atom_factor.parse_string("name  HD1#")[0].get_name() == "atom"
+    assert _atom_factor.parse_string("name  HD1#")[0][0] == "HD1#"
 
 
 def test_parse_segid_factor():
-    assert _segid_factor.parseString("segid  HDAA")[0].get_name() == "segid"
-    assert _segid_factor.parseString("segid  HDAA")[0][0] == "HDAA"
+    assert _segid_factor.parse_string("segid  HDAA")[0].get_name() == "segid"
+    assert _segid_factor.parse_string("segid  HDAA")[0][0] == "HDAA"
 
 
 def test_parse_selection_name():
     TEST_DATA = "(segid AAAA and resid 23 and  (name HA or name HB))"
 
-    selection_result = _selection.parseString(TEST_DATA)
+    selection_result = _selection.parse_string(TEST_DATA)
 
-    assert selection_result.getName() == "selection"
+    assert selection_result.get_name() == "selection"
 
 
 def test_simple_selection_no_segid():
     TEST_DATA = "(resid 23 and name HA)"
-    result = _selection.parseString(TEST_DATA)
+    result = _selection.parse_string(TEST_DATA)
 
     assert str(result) == "[[[resid : 23, atom : HA]]]"
     assert result.get("selection")[0][0][0][0] == 23
@@ -56,7 +56,7 @@ def test_simple_selection_no_segid():
 def test_parse_selection_multiple_names():
     TEST_DATA = "(segid AAAA and resid 23 and  (name HA or name HB))"
 
-    result = _selection.parseString(TEST_DATA)
+    result = _selection.parse_string(TEST_DATA)
 
     assert str(result) == "[[[segid : AAAA, resid : 23, [[atom : HA], [atom : HB]]]]]"
 
@@ -72,7 +72,7 @@ def test_parse_dihedral():
 
     TEST_DATA = f"ASSI {SEL_1} {SEL_2} {SEL_3} {SEL_4}  1.234 4.567 7.8910 2"
 
-    result = _dihedral_restraint.parseString(TEST_DATA)[0]
+    result = _dihedral_restraint.parse_string(TEST_DATA)[0]
     assert result.get("atoms_1").as_list() == [
         [
             [
@@ -121,7 +121,7 @@ def test_read_multiple_dihedral_restraints():
     with open(path_in_test_data(__file__, "test_2_dihedrals.tbl")) as fh:
         TEST_DATA = fh.read()
 
-    result = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(TEST_DATA)
+    result = _dihedral_restraints.ignore(XPLOR_COMMENT).parse_string(TEST_DATA)
 
     assert len(result) == 2
 
@@ -208,7 +208,7 @@ def test_read_3_dihedral_restraints_incomplete():
     """
 
     with pytest.raises(ParseException) as e_info:
-        _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
+        _dihedral_restraints.ignore(XPLOR_COMMENT).parse_string(
             TEST_DATA, parse_all=True
         )
 
@@ -220,7 +220,7 @@ def test_read_multiple_noe_restraints():
     with open(path_in_test_data(__file__, "test_2_noes.tbl")) as fh:
         TEST_DATA = fh.read()
 
-    result = _distance_restraints.ignore(XPLOR_COMMENT).parseString(TEST_DATA)
+    result = _distance_restraints.ignore(XPLOR_COMMENT).parse_string(TEST_DATA)
 
     assert len(result) == 2
 
@@ -269,7 +269,7 @@ def test_read_multiple_noe_restraints():
 def test_get_single_atom_selection_correct():
     TEST_DATA = "(segid AAAA and resid 1 and  name HA)"
 
-    selected_atoms = _selection.parseString(TEST_DATA)
+    selected_atoms = _selection.parse_string(TEST_DATA)
 
     result = _get_single_atom_selection(
         selected_atoms, residue_types={("AAAA", "1"): "Ala"}
@@ -287,7 +287,7 @@ def test_get_single_atom_selection_multiple_selections():
 
     TEST_DATA = "((resid 1 and  name HA and segid AAAA) or (resid 2 and  name HB and segid BBBB))"
 
-    selected_atoms = _selection.parseString(TEST_DATA)
+    selected_atoms = _selection.parse_string(TEST_DATA)
 
     with pytest.raises(XPLORParseException):
         _get_single_atom_selection(selected_atoms, residue_types={("AAAA", "1"): "Ala"})
