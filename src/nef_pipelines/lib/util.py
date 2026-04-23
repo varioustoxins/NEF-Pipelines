@@ -412,6 +412,8 @@ def exit_error(msg, exception=None):
     print(file=sys.stderr)
 
     print("exiting...", file=sys.stderr)
+
+    sys.stderr.flush()
     sys.exit(EXIT_ERROR)
 
 
