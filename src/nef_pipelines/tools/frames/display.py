@@ -555,22 +555,28 @@ def _format_frame_end_comment() -> List[str]:
 
 
 def _format_frame_tags(frame: Saveframe, selected_tags: List[str]) -> List[str]:
-    """Format frame tags as tag-value pairs (no comments).
+    """Format frame tags by building a filtered saveframe copy and using pynmrstar str()."""
+    selected_pairs = [
+        (name, val)
+        for name, val in frame.tag_iterator()
+        if name in selected_tags or not selected_tags
+    ]
+    if not selected_pairs:
+        return []
 
-    Args:
-        frame: The saveframe to extract tags from
-        selected_tags: List of tag names to include (empty list = all tags)
+    temp = Saveframe.from_scratch(frame.name, frame.tag_prefix)
+    for name, value in selected_pairs:
+        temp.add_tag(name, value if value != "" else None)
 
-    Returns:
-        List of lines like ["   tag_name   =   tag_value", ...]
-    """
-    lines = []
-    for tag_name, tag_value in frame.tag_iterator():
-        if tag_name in selected_tags or not selected_tags:  # If empty, show all
-            # Convert empty string to '.' for NEF format
-            display_value = tag_value if tag_value != "" else "."
-            lines.append(f"   {tag_name}   =   {display_value}")
-    return lines
+    frame_lines = str(temp).split("\n")
+
+    # Strip save_ header (first line) and save_ footer
+    result = []
+    for line in frame_lines[1:]:
+        if line.strip() == "save_":
+            break
+        result.append(line)
+    return result
 
 
 def _calculate_display_indices(
