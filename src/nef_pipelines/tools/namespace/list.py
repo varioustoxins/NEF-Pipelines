@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, List, Optional, Set, Tuple
+from typing import Annotated, List, NamedTuple, Optional, Set, Tuple
 from warnings import warn
 
 import typer
@@ -30,6 +30,17 @@ from nef_pipelines.tools.namespace import namespace_app
 # TODO [future] output option
 # TODO [future] colour namespace parts in frame names etc
 # TODO [future] bold namespaces
+
+
+class NamespaceRow(NamedTuple):
+    namespace: str
+    level: str
+    frame: str
+    category: str
+    loop: str
+    tag: str
+    program: str
+    use: str
 
 
 # raised if , found in a namespace and use_separator_escapes not specified
@@ -325,10 +336,10 @@ def _build_row(
     namespaces_to_show: Set[str],
     loop_category: str = None,
     tag: str = None,
-) -> List:
-    """Return a table row for one entry-part, or an empty list if filtered out."""
+) -> Optional["NamespaceRow"]:
+    """Return a NamespaceRow for one entry-part, or None if filtered out."""
     if namespace not in namespaces_to_show:
-        return []
+        return None
 
     program, use = REGISTERED_NAMESPACES.get(namespace, ("?", "?"))
     level_type = ENTRY_PART_DISPLAY[entry_part]
@@ -353,81 +364,88 @@ def _build_row(
             tag_display = tag_display[len(namespace) + 1 :]
         tag_value = tag_display
 
-    return [
-        namespace,
-        level_type,
-        frame_name,
-        display_frame_category,
-        loop_value,
-        tag_value,
-        program,
-        use,
-    ]
+    return NamespaceRow(
+        namespace=namespace,
+        level=level_type,
+        frame=frame_name,
+        category=display_frame_category,
+        loop=loop_value,
+        tag=tag_value,
+        program=program,
+        use=use,
+    )
 
 
 def _collect_rows(
     frames: List[Saveframe], namespaces_to_show: Set[str]
-) -> Tuple[List[List], bool]:
+) -> Tuple[List[NamespaceRow], bool]:
     """Scan frames in file order and return (rows, has_loops)."""
     rows = []
     has_loops = False
 
+    def add(row, is_loop=False):
+        nonlocal has_loops
+        if row is not None:
+            rows.append(row)
+            if is_loop:
+                has_loops = True
+
     for frame in frames:
         frame_namespace = get_namespace(frame, EntryPart.Saveframe)
 
-        row = _build_row(
-            frame_namespace,
-            EntryPart.Saveframe,
-            frame.name,
-            frame.category,
-            namespaces_to_show,
-        )
-        if row:
-            rows.append(row)
-
-        for tag_name, _tag_value in frame.tag_iterator():
-            tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
-            row = _build_row(
-                tag_namespace,
-                EntryPart.FrameTag,
+        add(
+            _build_row(
+                frame_namespace,
+                EntryPart.Saveframe,
                 frame.name,
                 frame.category,
                 namespaces_to_show,
-                tag=tag_name,
             )
-            if row:
-                rows.append(row)
+        )
+
+        for tag_name, _ in frame.tag_iterator():
+            tag_namespace = get_namespace(tag_name, EntryPart.FrameTag, frame_namespace)
+            add(
+                _build_row(
+                    tag_namespace,
+                    EntryPart.FrameTag,
+                    frame.name,
+                    frame.category,
+                    namespaces_to_show,
+                    tag=tag_name,
+                )
+            )
 
         for loop in frame.loops:
             loop_namespace = get_namespace(loop, EntryPart.Loop, frame_namespace)
-            row = _build_row(
-                loop_namespace,
-                EntryPart.Loop,
-                frame.name,
-                frame.category,
-                namespaces_to_show,
-                loop.category,
+            add(
+                _build_row(
+                    loop_namespace,
+                    EntryPart.Loop,
+                    frame.name,
+                    frame.category,
+                    namespaces_to_show,
+                    loop.category,
+                ),
+                is_loop=True,
             )
-            if row:
-                has_loops = True
-                rows.append(row)
 
             for tag_name in loop.tags:
                 tag_namespace = get_namespace(
                     tag_name, EntryPart.LoopTag, loop_namespace
                 )
-                row = _build_row(
-                    tag_namespace,
-                    EntryPart.LoopTag,
-                    frame.name,
-                    frame.category,
-                    namespaces_to_show,
-                    loop.category,
-                    tag_name,
+                add(
+                    _build_row(
+                        tag_namespace,
+                        EntryPart.LoopTag,
+                        frame.name,
+                        frame.category,
+                        namespaces_to_show,
+                        loop.category,
+                        tag_name,
+                    ),
+                    is_loop=True,
                 )
-                if row:
-                    has_loops = True
-                    rows.append(row)
 
     return rows, has_loops
 
@@ -438,25 +456,19 @@ def _generate_verbose_table(
     """Generate verbose table showing namespace details in file order."""
 
     rows, has_loops = _collect_rows(frames, namespaces_to_show)
+    has_tags = any(row.tag for row in rows)
 
     result = ""
     if rows:
-        if has_loops:
-            headers = [
-                "Namespace",
-                "Level",
-                "Frame",
-                "Category",
-                "Loop",
-                "Tag",
-                "Program",
-                "Use",
-            ]
-            result = tabulate(rows, headers=headers, tablefmt="simple")
-        else:
-            rows_without_loop = [row[:4] + row[6:] for row in rows]
-            headers = ["Namespace", "Level", "Frame", "Category", "Program", "Use"]
-            result = tabulate(rows_without_loop, headers=headers, tablefmt="simple")
+        active_fields = list(NamespaceRow._fields)
+        if not has_loops:
+            active_fields.remove("loop")
+        if not has_tags:
+            active_fields.remove("tag")
+
+        headers = [f.title() for f in active_fields]
+        trimmed = [[getattr(r, f) for f in active_fields] for r in rows]
+        result = tabulate(trimmed, headers=headers, tablefmt="simple")
 
         result = _replace_indent_markers_in_level_column(result)
         result = _colorize_namespace_column(result, namespace_data)
