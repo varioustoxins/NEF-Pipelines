@@ -1,0 +1,26 @@
+data_test_seq
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1   A   -4   GLY   start    .   .
+     2   A   -3   PRO   middle   .   .
+     3   A   -2   LEU   middle   .   .
+     4   A   -1   GLY   middle   .   .
+     5   A    0   SER   middle   .   .
+     6   A    1   MET   middle   .   .
+     7   A    2   THR   end      .   .
+
+   stop_
+
+save_

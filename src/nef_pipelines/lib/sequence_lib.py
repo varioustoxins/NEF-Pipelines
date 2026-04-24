@@ -812,7 +812,7 @@ def _parse_loops_residues(loop, chain_codes_to_select):
                 is_cis=cis_peptide,
                 variants=residue_variants,
             )
-            if residue.chain_code and residue.sequence_code:
+            if residue.chain_code and residue.sequence_code is not None:
                 residues.append(residue)
 
     return residues
