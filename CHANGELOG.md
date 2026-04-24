@@ -1,278 +1,288 @@
 # Changelog
 
-## Version 0.1.0b (development)
+## Version 0.1.122 - 'The Eye Sees Only What the Software is Prepared to Comprehend'
+
+- **fixed**: `frames display` was not showing any output when only frame tags were selected
+- **fixed**: `frames display` was emitting a duplicate `# save_` block header when a frame
+  had both frame tags and loops selected
+- **fixed**: `namespace list --verbose` was not showing the Tag column when frames had
+  frame tags but no loops selected; columns are now auto-selected based on content
+- **improved**: `frames display` frame tag formatting is now correct an uses pynmrstar natively for
+  correct NEF output
+
+
+## Version 0.1.121 - 'Seeing the NEF for the Trees'
+
+- **new command**: `entry tree` - display the structure of a NEF entry as a navigable colour tree with wildcard
+  frame/tag selection and substring highlighting
+- **new command**: `frames display` - view the data in selected save-frames, loops and tags with tag filtering,
+  namespace filtering, coloured output and head/tail/middle truncation for loops
+- **new command**: `namespace list` - list the namespaces present in a NEF entry
+- **new command**: `version` is now a top-level command
+- **improved**: `help commands`  - coloured output, tree and table views, HTML export, better support for AI tools
+- **improved**: `chains rename` - now accepts a comma-separated list of chains and is a proper python pipe command
+- **improved**: `frames tabulate` was only showing the first matching frame, it now shows all the matched frames
+- **fixed**: `frames delete` now correctly deletes frames when only a single frame is present in the file
+- **fixed**: `sparky export shifts` now correctly handles shifts where sequence codes are offset from 1
+- **fixed**: `` The PDB sequence reader was incorrectly deduplicating chains with identical sequences but different
+  residue numbering
+- **fixed**: Python versions 3.9–3.14 fully supported and tested across MacOS and Linux [Ubuntu]
+- **new**: releases have names
+
+## Version 0.1.120
+
+- failed to import sparky export shifts
+
+## Version 0.1.119
+
+- bug fixing for molecular_systems residue handling, frame renaming
+- fixed pdb sequence reader to read more files [fixed SEQRES deduplication bug]
+- fix bugs in fitter output frame naming
+- added a simple sparky shift list exporter
+- add infrasttructure in advance of new feature
+
+## Version 0.1.118
+- some minor bug squashing
+- at top level --debug shows a tracback if a command fails
+- help is diplayed much mor consistently especially if no inputs are given
+- added the CCPNTutorial to the github website
+
+## Version 0.1.117 'Cian the third'
+- rcsb trim wasn't printing the entry to stdout breaking the pipeline
+
+## Version 0.1.116 'Cian returns'
+- shiftx2 tool can now calculate shifts from an input pdb file
+
+## Version 0.1.115 'Cian'
+- correct bug where pdb to alphafold file mappings weren't reported correctly
+- add the ability to retain downloaded alphafold structure
+- correct a bug where rcsb trim and rcsb align weren't exposed in the command interface
+
+## Version 0.1.114
+- initial implementation of shifts correlation: a tool to create correlation plots
+  of shifts in different shift lists by atom type
+- initial implementation of chains validate a tool to validate the the molecular system
+  is correct and that assigned atoms in the entry are part of the defined molecular systems
+- added rcsb align a tool to align rcsb files to NEF molecular systems
+- added rcsb trim a tool to trim rcsb files to NEF molecular systems
+
+## Version 0.1.113
+- add UCBShift importer for sequences and shifts
+  - sequence import supports modes for delaing with sequence conflicts
+  - shifts import supports X, Y, and combined prediction types
+  - in alpha still needs more tests and review
+
+## Version 0.1.112
+- internal changes to make installation more robust and fix bugs
+
+## Version 0.1.111
+- currently drop python 3.8 support
+- improvements to relaxation curve fitting
+  - add 3 point exponential fitter
+  - add shared parameter 3 point exponential fitter for Art Palmer T1noe experiments
+  - add linear least squares fitter [un-tested]
+  - add mean value fitter
+  - fit series can combine multiple series together
+  - when fitting provision of no noise level or monte carlo cycles are supported
+  - addproper testing for some of the fitters (bugs found)!
+- frames list only outputs entry in verbose mode
+- frames list supports one frame per line
+- frame tabulate has better frame selection
+- fix bug in shifts average
+
+## Version 0.1.110
+- remove some erroneous print statements (corrupted output stream)
+
+## Version 0.1.109
+- better handling of axis bounds for Peaklists/Spectra in NMRView and NMRPipe
+- unassigned shifts are not averaged or reported by shifts average
+- shifts average command updates the chemical_shift_list tag on spectra/PeakLists used to
+  used to build the shift list if unassigned [more and better policies coming soon]
+- better error messages and handling for Isotope codes when importing sparky peak lists
+- fit exponential fitting now has a verbosity level
+
+## Version 0.1.108
+- fix help command so it shows trees rather than tables by default
 
-initial version which supports the following (to some extents; note the beta designation)
+## Version 0.1.107
+- add the ability to assign matched peaks to peaks match
 
-### tools
+## Version 0.1.106
+- github landing page and installation instructions much improved
+- added an installation script on github for macos and linux
+- improved NMRView peak importing
+- improved peak matching conservative CSP matching
 
-- listing renaming and cloning molecular chains
-- deleting, inserting, listing and pretty printin (tabulate) save-frames
-- producing a NEF header with correct UUID
-- streaming nef files into a pipeline
-- testing itself
+## Version 0.1.105
+- improvements to error handling and reporting in shiftx2 importer
 
-#### transcoders
-- __fasta__
-  - sequence [read and write]
-- __mars__
-  - shifts [write]
-- __nmrpipe__
-  - sequences [read]
-  - shifts [read]
-  - peaks [read]
-- __nmrview__ / __nmrfx__
-  - peaks [read and write]
-  - sequence [read]
-  - shifts [read]
-- __pales__
-  - rdc restraints [write]
-  - rdc restraints template [write]
-- __pdb__
-  - sequence [read]
+## Version 0.1.104
+- changes to allow installation on windows
 
+## Version 0.1.103
+- nmrstar import shifts can create its own entry
+- valid nmrstar shift files with a more minimal set of columns are supported (for mike w)
 
-## Version 0.1.21 (development)
+## Version 0.1.102
+- try again to use pynmrstar >= 3.3.4
 
-Initial release to pypi with changes for better compatability with windows and
-linux
+## Version 0.1.101
+- now using pynmrstar >= 3.3.4 to avoid problems compiling cnmrstar during installation
 
-The `nef test` command was disabled for this release as pytest and the tests
-were not working well with the pyscaffold based release pipeline.
+## Version 0.1.100
+- add support for reading RDC restraints from NMRStar files
+- add support for download from bmrb mirrors including an auto mirror option [try all mirrors in turn] with a timeout of 10 seconds
+- the shift frame read from an nmrstar file is now called default
+- better frame headers in frames tabulate
+- more abbreviations in frames tabulate
+
+## Version 0.1.99
+- add a new install script based on UV
+
+## Version 0.1.98
+- fixed error in pales tensor frame parsing, older file versions were not being read
+
+## Version 0.1.97
+- add support for import of PALES output
+- about outputs to stdout not stderr
+- bug fixes in gdb [nmrpipe data file] reader
+
+## Version 0.1.96
+- back out lazy loading of exponential fit as the current strategy doesn't work
+
+## Version 0.1.95
+- updated to pynmrstar 3.3.3 to avoid problems building pytnmrstar.cnmrstar
+- installation now possible with uv tool including centos 7
+- added lazy loading of some module to improve startup times
+
+## Version 0.1.94
+- bug fixes for frames align and mars export
+- add tests for frames align
+
+## Version 0.1.93
+- bug fixes in mars export of shifts and unassign
+
+## Version 0.1.92
+- attempt to connect to shiftx2 multiple times as it sometimes fails
+- correct a error where float values in a star file Saveframe which had already been parsed from a \
+  str->float were getting narrowed unintentionally back to int
+
+## Version 0.1.91
+- shiftx2 wasn't trimming the output shifts to the initial PDB files sequence
+
+## Version 0.1.90
+- improvements to simulating peak lists from shifts
+  - the default chemical shift list is used by default rather than all shift lists this can avoid \
+    accidental averaging with for example a predicted chemical shift lists
+  - if mutiple shifts are selected for the same atom they are now properly averaged
+
+## Version 0.1.89
+- simulate un-labelling now select frames in a better manner and has better defaults
 
-There were no changes in the tools and transcoders provided in this release,
-as this release was mostly about removing technical debt
+## Version 0.1.88
+- fix a maths error in which wasn't aligning on the longest matching sequence
 
-## Version 0.1.22 (development)
+## Version 0.1.87
+- align now supports triming to the chain extents in a reference molecular frame
+- peak list indices now start from 1 not 0
+- bug fix in nmrstar sequence importer [entitys without sequences no longer crash the importer]
 
-The `nef test` command is once again available.
+## Version 0.1.86
+- align is now more robust: it matches to the longest matching element not the first!
 
-A reliance on caching stdin was removed
+## Version 0.1.85
+- align wasn't aligning sub-sequences correctly
+- improvements to the shiftx2 readers chain handling
 
-There were no changes in the tools and transcoders provided in this release,
-other than the test subcommand, as this release was focused on testing.
+## Version 0.1.84
+- remove bad debug code which was killing pipelines from align
 
-## Version 0.1.23 (development)
+## Version 0.1.83
+- shiftx2 reader can read all formats output by shiftx2
+- chains can now be renumber using pipes in python
+- shiftx2 can now calculate shifts using an alphafold structure looked up from a pdb code
+- added chains align command which can align the sequence of one frame to another frame by offsetting its sequence codes
 
-supports reading xplor distance restraints [but currently only single atom selections]
+## Version 0.1.82
+- better handling of residue names that don't match the read sequence
+- fixed a bug in python 3.8 where annotations were stopping the nmrstar plugin loading
+- added a github actions test to check that the main entry point runs and all plugins are loaded
 
-adds xplor nih dihedral restraints
+## Version 0.1.81
+- fit ratio requires a noise level
+- add a deep neural network peak list importer
 
-read sequences from xplor psf files
+## Version 0.1.80
+- fixed bugs
+  - tree lib not included in requirements
+  - Strenum imported from python stdlib enum not strenum
 
-minor improvements to help text and error messages
+## Version 0.1.79
+- support for the NEF relaxation data draft proposal
+- output of data to modelfree
+- minor bug fixes
 
-note: the xplor support includes a proper parser for xplor nested restraint selections
-including SEGIDentifier RESIDue and NAME including proper literal abbreviations.
+## Version 0.1.78
+- add support for reading shiftx2 shifts [alpha]
 
-## Version 0.1.24 (development)
+## Version 0.1.77
+- add display of python executable path to about --verbose
+- unassign can be filtered by chains and residue ranges
+- improvements to nmrstar project and shift reader which can
+  * work with multiple lists of shifts
+  * work with multiple sequences
+- frame clone and remove get a --input option and pipe functions
+- add a globals command to set global values through a pipe and save to clean up control frame correctly
+  this allows you to use global setting of the --force option with mars
+- updates to mars output transcoders: they now has a pipe function and checs for file overwriting
+  and have a force option
+- mars can now ouput assigned shifts and fixed assignment restraints
+- mars output now includes assigned fragments using the ccpn # syntax
+- fixed a bug where multi line strings were not being parsed correctly
 
-added support for import of RDCs from a csv file
+## Version 0.1.76
+- added ability to unassign residue ranges in nef frames
+- better reporting of errors from reading chemical shift frames
+- add missing dependency on runstat
 
-added support for segment codes to pales / dc when exporting rdcs
+## Version 0.1.75 - removed broken dependency
+- peak dimensions were incorrectly indexed causing a failure to import into CCPN suite of programs
 
-added support for exporting neff rdc restraints to xplor legacy format
+## Version 0.1.74
+- better handling of NEF-Pipelines fasta headers for round tripping
+- many more fasta format headers supported
+- correct error in handling beta sheet records in pdb files
+- pdbx reader takes sequence from SEQRES records as default
+- add initial chemical shift averager [alpha quality]
+- unassign supports creating ccpn style residue -1 entries e.g @32-1
 
-## Version 0.1.25 (development)
+## Version 0.1.73
 
-added missing test files
+- erroneous release no major updates
 
-## Version 0.1.26 (development)
+## Version 0.1.73
 
-corrected an error in how test files are searched for
+-  no major changes
 
-## version 0.1.27
+## Version 0.1.71 & 0.1.72
+improved error handling when `streamfitter` does load into `fit exponential`
 
-added support for reading MARS shift files
+## Version 0.1.70
 
+- handling fo the default file path in save wasn't working
+- simulate unaleblling improved help text
+- incosistent use of DataType in streamfitter and fit expoenetial was corrected
+- DataType replaced with IntensityMeasuremenType
 
-## version 0.1.28
+## Version 0.1.69
 
-added an about command for information about the project
+- StrEnum was imported from wrong package
 
-added support for export xcamshift chemical shift restraint files
+## Version 0.1.68
 
-added export of mars connected pseudo residue file
+- add missing dependency on parse
 
-## version 0.1.29
-
-correct error in mars export fragments (mars connected pseudo residue file)
-
-## version 0.1.30
-
-add support for writing sparky peak lists
-
-## version 0.1.31
-
-add rudimentary rpf shift list exporter
-
-add a sparky peak list importer [alpha no tests]
-
-## version 0.1.32
-
-patches to rpf exporter
-
-##  version 0.1.33
-
-add the ability to rename nef frames
-
-add a verbose option to about [lists os and python versions]
-
-add the ability to suppress assignment height and volume columns in sparky peak export
-
-## version 0.1.34
-
-shifts make peaks now has test suite
-
-## version 0.1.35
-
-minor cleanups
-
-## version 0.1.36
-
-initial support for RNA and DNA added (only surfaced in the sparky importers)
-
-sparky sequence import including RNA and DNA
-
-sparky peak import fully supported with all fields shown in the spark manual
-
-## version 0.1.37
-
-improved sparky assignment parsing which is also refactored into a reusable
-library
-
-## version 0.1.38
-
-initial experiments support for echidna peaks files
-
-## version 0.1.39
-
-fixed a bug in frames list (verbose option was ignored)
-
-## version 0.1.40
-
-fix a bug: make peaks faaled on generating empty peak lists
-
-## version 0.1.41
-
-add importers for xeasy [flya dialect] sequences, peaks and shifts
-a  number of bug fixes in the sparky and echidna tools
-
-## version 0.1.42
-
-add the ability to unassign frames in general with support for different sequence_code
-unassignment strategies and the ability to choose what is unassigned (chain_code, sequence_code
-residue_name atom_name)
-
-## version 0.1.43
-fasta input tool can read RNA/DNA sequences
-improvemenets to the xplor distance restraint reader to suppport CNS
-
-## version 0.1.44
-correct error in naming frames in restraint lists produced by xplor import distance
-
-## version 0.1.45
-removed bug in reading input streams in nmrview peak reader and updated tests
-
-## version 0.1.46
-initial support for talos [export of shifts]
-
-## version 0.1.47
-
-support for reading talos PHI PSI restraints into NEF
-
-## version 0.1.48
-
-complete support for talos including
-- sequences that don't start at residue 1
-- support for oxidised cys and protonated his variants
-- import of secondary structure to nef
-- import of S2 values to nef
-- support of chi restraints
-
-improved testing to cover all new features
-bug fixes for talos
-
-## version 0.1.49 - withdrawn [non functional release]
-
-- rename can now edit frame names
-- --pipe is now --in
-- output to csv files is supported using tabulate
-- the pdbx subcommand is now rcsb and supports mmcif
-- remove use of biopython
-- use new lighter weight mmcif pdb and fasta parsers
-
-## version 0.1.50
-release is the same as 0.1.49 but...
-- added missing packages required for installation
-
-## version 0.1.51
-- added support for reading NMR-STAR shifts and sequences
-- various bug fixes
-
-## version 0.1.52
-release is the same as 0.1.51 but...
-- added missing packages required for installation
-  - annotated-types
-  - hjson
-  - pydantic
-
-## version 0.1.53
-release is the same as 0.1.51 but...
-- added missing packages required for installation
-  - cache_tools
-
-## version 0.1.54
-- added support for reading NMR-STAR projects from disk or the web
-  - including reading shifts and sequences
-  - supports direct download from the bmrb just using an accession code
-
-## version 0.1.55
-- shifts make peaks now supports non ccpn peak lists for triple resonance spectra†
-
-† ccpn peak lists when incompletely assigned use @xx-1 to indicate the previous residue
-  and this was supported in the previous release but raw peak numbers weren't!
-
-## version 0.1.56
-- bmrb accession codes are now supported as raw numbers as well as bmrXXXXX in the nmrstar project subcommand
-
-- improve shifty output, by default it now
-  1. infills missing residues
-  2. selects a single assigned chain to output if present
-  3. outputs to a templated file name
-
-## version 0.1.57
-- upgrade pyparsing and pynmrstar
-  1. pyparsing was triggering a deprecation warning
-  2. pynmrstar had a bug in renaming frames
-
-## version 0.1.58
-- corrected a bug in Linking lookup in the nmrstar project subcommand that affected some python versions
-
-## version 0.1.59
-- corrected a bug in fasta sequence importer that affected files with spaces between residues
-- improve handling of figures of merit especially for MARS peak imports
-- spectrum dimension transfers were not correct in peak imports
-
-## version 0.1.60
-- add support for c detect spectra for idps in peak simulation code
-
-## version 0.1.61
-- use requests to download bmrb files from the web
-
-## version 0.1.62
-- use urllib3 <= / == 1.26.15 to avoid a security warning
-
-## version 0.1.63
-- remove dependance on Levenshtein which was causing compilation errors
-
-## version 0.1.64
-- update to fyeah to try to make windows installation work
-
-## version 0.1.65
-- fixed a bug in export of CO shifts reported by Pete Simpson
-
-## version 0.1.66
+## Version 0.1.66
 
 Major release with many new features and bug fixes
 
@@ -305,271 +315,273 @@ Major release with many new features and bug fixes
 - NMRStar and the BMRB
   - Add the ability to read BMRB sequences, shifts and projects [currently shifts and sequences] [commands: nmrstar import sequences and nmrstar import shifts]
 
-## version 0.1.68
+## Version 0.1.65
+- fixed a bug in export of CO shifts reported by Pete Simpson
 
-- add missing dependency on parse
+## Version 0.1.64
+- update to fyeah to try to make windows installation work
 
-## version 0.1.69
+## Version 0.1.63
+- remove dependance on Levenshtein which was causing compilation errors
 
-- StrEnum was imported from wrong package
+## Version 0.1.62
+- use urllib3 <= / == 1.26.15 to avoid a security warning
 
-## version 0.1.70
+## Version 0.1.61
+- use requests to download bmrb files from the web
 
-- handling fo the default file path in save wasn't working
-- simulate unaleblling improved help text
-- incosistent use of DataType in streamfitter and fit expoenetial was corrected
-- DataType replaced with IntensityMeasuremenType
+## Version 0.1.60
+- add support for c detect spectra for idps in peak simulation code
 
-## version 0.1.71 & 0.1.72
-improved error handling when `streamfitter` does load into `fit exponential`
+## Version 0.1.59
+- corrected a bug in fasta sequence importer that affected files with spaces between residues
+- improve handling of figures of merit especially for MARS peak imports
+- spectrum dimension transfers were not correct in peak imports
 
-## version 0.1.73
+## Version 0.1.58
+- corrected a bug in Linking lookup in the nmrstar project subcommand that affected some python versions
 
--  no major changes
+## Version 0.1.57
+- upgrade pyparsing and pynmrstar
+  1. pyparsing was triggering a deprecation warning
+  2. pynmrstar had a bug in renaming frames
 
-## version 0.1.73
+## Version 0.1.56
+- bmrb accession codes are now supported as raw numbers as well as bmrXXXXX in the nmrstar project subcommand
 
-- erroneous release no major updates
+- improve shifty output, by default it now
+  1. infills missing residues
+  2. selects a single assigned chain to output if present
+  3. outputs to a templated file name
 
-## version 0.1.74
-- better handling of NEF-Pipelines fasta headers for round tripping
-- many more fasta format headers supported
-- correct error in handling beta sheet records in pdb files
-- pdbx reader takes sequence from SEQRES records as default
-- add initial chemical shift averager [alpha quality]
-- unassign supports creating ccpn style residue -1 entries e.g @32-1
+## Version 0.1.55
+- shifts make peaks now supports non ccpn peak lists for triple resonance spectra†
 
-## version 0.1.75 - removed broken dependency
-- peak dimensions were incorrectly indexed causing a failure to import into CCPN suite of programs
+† ccpn peak lists when incompletely assigned use @xx-1 to indicate the previous residue
+  and this was supported in the previous release but raw peak numbers weren't!
 
-## version 0.1.76
-- added ability to unassign residue ranges in nef frames
-- better reporting of errors from reading chemical shift frames
-- add missing dependency on runstat
+## Version 0.1.54
+- added support for reading NMR-STAR projects from disk or the web
+  - including reading shifts and sequences
+  - supports direct download from the bmrb just using an accession code
 
-## version 0.1.77
-- add display of python executable path to about --verbose
-- unassign can be filtered by chains and residue ranges
-- improvements to nmrstar project and shift reader which can
-  * work with multiple lists of shifts
-  * work with multiple sequences
-- frame clone and remove get a --input option and pipe functions
-- add a globals command to set global values through a pipe and save to clean up control frame correctly
-  this allows you to use global setting of the --force option with mars
-- updates to mars output transcoders: they now has a pipe function and checs for file overwriting
-  and have a force option
-- mars can now ouput assigned shifts and fixed assignment restraints
-- mars output now includes assigned fragments using the ccpn # syntax
-- fixed a bug where multi line strings were not being parsed correctly
+## Version 0.1.53
+release is the same as 0.1.51 but...
+- added missing packages required for installation
+  - cache_tools
 
-## version 0.1.78
-- add support for reading shiftx2 shifts [alpha]
+## Version 0.1.52
+release is the same as 0.1.51 but...
+- added missing packages required for installation
+  - annotated-types
+  - hjson
+  - pydantic
 
-## version 0.1.79
-- support for the NEF relaxation data draft proposal
-- output of data to modelfree
-- minor bug fixes
+## Version 0.1.51
+- added support for reading NMR-STAR shifts and sequences
+- various bug fixes
 
-##  version 0.1.80
-- fixed bugs
-  - tree lib not included in requirements
-  - Strenum imported from python stdlib enum not strenum
+## Version 0.1.50
+release is the same as 0.1.49 but...
+- added missing packages required for installation
 
-## version 0.1.81
-- fit ratio requires a noise level
-- add a deep neural network peak list importer
+## Version 0.1.49 - withdrawn [non functional release]
 
-## version 0.1.82
-- better handling of residue names that don't match the read sequence
-- fixed a bug in python 3.8 where annotations were stopping the nmrstar plugin loading
-- added a github actions test to check that the main entry point runs and all plugins are loaded
+- rename can now edit frame names
+- --pipe is now --in
+- output to csv files is supported using tabulate
+- the pdbx subcommand is now rcsb and supports mmcif
+- remove use of biopython
+- use new lighter weight mmcif pdb and fasta parsers
 
-## version 0.1.83
-- shiftx2 reader can read all formats output by shiftx2
-- chains can now be renumber using pipes in python
-- shiftx2 can now calculate shifts using an alphafold structure looked up from a pdb code
-- added chains align command which can align the sequence of one frame to another frame by offsetting its sequence codes
+## Version 0.1.48
 
-## version 0.1.84
-- remove bad debug code which was killing pipelines from align
+complete support for talos including
+- sequences that don't start at residue 1
+- support for oxidised cys and protonated his variants
+- import of secondary structure to nef
+- import of S2 values to nef
+- support of chi restraints
 
-## version 0.1.85
-- align wasn't aligning sub-sequences correctly
-- improvements to the shiftx2 readers chain handling
+improved testing to cover all new features
+bug fixes for talos
 
-## version 0.1.86
-- align is now more robust: it matches to the longest matching element not the first!
+## Version 0.1.47
 
-## version 0.1.87
-- align now supports triming to the chain extents in a reference molecular frame
-- peak list indices now start from 1 not 0
-- bug fix in nmrstar sequence importer [entitys without sequences no longer crash the importer]
+support for reading talos PHI PSI restraints into NEF
 
-## version 0.1.88
-- fix a maths error in which wasn't aligning on the longest matching sequence
+## Version 0.1.46
+initial support for talos [export of shifts]
 
-## version 0.1.89
-- simulate un-labelling now select frames in a better manner and has better defaults
+## Version 0.1.45
+removed bug in reading input streams in nmrview peak reader and updated tests
 
-## version 0.1.90
-- improvements to simulating peak lists from shifts
-  - the default chemical shift list is used by default rather than all shift lists this can avoid \
-    accidental averaging with for example a predicted chemical shift lists
-  - if mutiple shifts are selected for the same atom they are now properly averaged
+## Version 0.1.44
+correct error in naming frames in restraint lists produced by xplor import distance
 
-## version 0.1.91
-- shiftx2 wasn't trimming the output shifts to the initial PDB files sequence
+## Version 0.1.43
+fasta input tool can read RNA/DNA sequences
+improvemenets to the xplor distance restraint reader to suppport CNS
 
-## version 0.1.92
-- attempt to connect to shiftx2 multiple times as it sometimes fails
-- correct a error where float values in a star file Saveframe which had already been parsed from a \
-  str->float were getting narrowed unintentionally back to int
+## Version 0.1.42
 
-## version 0.1.93
-- bug fixes in mars export of shifts and unassign
+add the ability to unassign frames in general with support for different sequence_code
+unassignment strategies and the ability to choose what is unassigned (chain_code, sequence_code
+residue_name atom_name)
 
-## version 0.1.94
-- bug fixes for frames align and mars export
-- add tests for frames align
+## Version 0.1.41
 
-## version 0.1.95
-- updated to pynmrstar 3.3.3 to avoid problems building pytnmrstar.cnmrstar
-- installation now possible with uv tool including centos 7
-- added lazy loading of some module to improve startup times
+add importers for xeasy [flya dialect] sequences, peaks and shifts
+a  number of bug fixes in the sparky and echidna tools
 
-## version 0.1.96
-- back out lazy loading of exponential fit as the current strategy doesn't work
+## Version 0.1.40
 
-## version 0.1.97
-- add support for import of PALES output
-- about outputs to stdout not stderr
-- bug fixes in gdb [nmrpipe data file] reader
+fix a bug: make peaks faaled on generating empty peak lists
 
-## version 0.1.98
-- fixed error in pales tensor frame parsing, older file versions were not being read
+## Version 0.1.39
 
-## version 0.1.99
-- add a new install script based on UV
+fixed a bug in frames list (verbose option was ignored)
 
-## version 0.1.100
-- add support for reading RDC restraints from NMRStar files
-- add support for download from bmrb mirrors including an auto mirror option [try all mirrors in turn] with a timeout of 10 seconds
-- the shift frame read from an nmrstar file is now called default
-- better frame headers in frames tabulate
-- more abbreviations in frames tabulate
+## Version 0.1.38
 
-## version 0.1.101
-- now using pynmrstar >= 3.3.4 to avoid problems compiling cnmrstar during installation
+initial experiments support for echidna peaks files
 
-## version 0.1.102
-- try again to use pynmrstar >= 3.3.4
+## Version 0.1.37
 
-## version 0.1.103
-- nmrstar import shifts can create its own entry
-- valid nmrstar shift files with a more minimal set of columns are supported (for mike w)
+improved sparky assignment parsing which is also refactored into a reusable
+library
 
-## version 0.1.104
-- changes to allow installation on windows
+## Version 0.1.36
 
-## version 0.1.105
-- improvements to error handling and reporting in shiftx2 importer
+initial support for RNA and DNA added (only surfaced in the sparky importers)
 
-## version 0.1.106
-- github landing page and installation instructions much improved
-- added an installation script on github for macos and linux
-- improved NMRView peak importing
-- improved peak matching conservative CSP matching
+sparky sequence import including RNA and DNA
 
-## version 0.1.107
-- add the ability to assign matched peaks to peaks match
+sparky peak import fully supported with all fields shown in the spark manual
 
-## version 0.1.108
-- fix help command so it shows trees rather than tables by default
+## Version 0.1.35
 
-## version 0.1.109
-- better handling of axis bounds for Peaklists/Spectra in NMRView and NMRPipe
-- unassigned shifts are not averaged or reported by shifts average
-- shifts average command updates the chemical_shift_list tag on spectra/PeakLists used to
-  used to build the shift list if unassigned [more and better policies coming soon]
-- better error messages and handling for Isotope codes when importing sparky peak lists
-- fit exponential fitting now has a verbosity level
+minor cleanups
 
-## version 0.1.110
-- remove some erroneous print statements (corrupted output stream)
+## Version 0.1.34
 
-## version 0.1.111
-- currently drop python 3.8 support
-- improvements to relaxation curve fitting
-  - add 3 point exponential fitter
-  - add shared parameter 3 point exponential fitter for Art Palmer T1noe experiments
-  - add linear least squares fitter [un-tested]
-  - add mean value fitter
-  - fit series can combine multiple series together
-  - when fitting provision of no noise level or monte carlo cycles are supported
-  - addproper testing for some of the fitters (bugs found)!
-- frames list only outputs entry in verbose mode
-- frames list supports one frame per line
-- frame tabulate has better frame selection
-- fix bug in shifts average
+shifts make peaks now has test suite
 
-## version 0.1.112
-- internal changes to make installation more robust and fix bugs
+## Version 0.1.33
 
-## Version 0.1.113
-- add UCBShift importer for sequences and shifts
-  - sequence import supports modes for delaing with sequence conflicts
-  - shifts import supports X, Y, and combined prediction types
-  - in alpha still needs more tests and review
+add the ability to rename nef frames
 
-## Version 0.1.114
-- initial implementation of shifts correlation: a tool to create correlation plots
-  of shifts in different shift lists by atom type
-- initial implementation of chains validate a tool to validate the the molecular system
-  is correct and that assigned atoms in the entry are part of the defined molecular systems
-- added rcsb align a tool to align rcsb files to NEF molecular systems
-- added rcsb trim a tool to trim rcsb files to NEF molecular systems
+add a verbose option to about [lists os and python versions]
 
-## Version 0.1.115 'Cian'
-- correct bug where pdb to alphafold file mappings weren't reported correctly
-- add the ability to retain downloaded alphafold structure
-- correct a bug where rcsb trim and rcsb align weren't exposed in the command interface
+add the ability to suppress assignment height and volume columns in sparky peak export
 
-## Version 0.1.116 'Cian returns'
-- shiftx2 tool can now calculate shifts from an input pdb file
+## Version 0.1.32
 
-## Version 0.1.117 'Cian the third'
-- rcsb trim wasn't printing the entry to stdout breaking the pipeline
+patches to rpf exporter
 
-## Version 0.1.118
-- some minor bug squashing
-- at top level --debug shows a tracback if a command fails
-- help is diplayed much mor consistently especially if no inputs are given
-- added the CCPNTutorial to the github website
+## Version 0.1.31
 
-# version 0.1.119
-- bug fixing for molecular_systems residue handling, frame renaming
-- fixed pdb sequence reader to read more files [fixed SEQRES deduplication bug]
-- fix bugs in fitter output frame naming
-- added a simple sparky shift list exporter
-- add infrasttructure in advance of new feature
+add rudimentary rpf shift list exporter
 
-# version 0.1.120
-- failed to import sparky export shifts
+add a sparky peak list importer [alpha no tests]
 
-# Version 0.1.121 - 'Seeing the NEF for the Trees'
+## Version 0.1.30
 
-- **new command**: `entry tree` - display the structure of a NEF entry as a navigable colour tree with wildcard
-  frame/tag selection and substring highlighting
-- **new command**: `frames display` - view the data in selected save-frames, loops and tags with tag filtering,
-  namespace filtering, coloured output and head/tail/middle truncation for loops
-- **new command**: `namespace list` - list the namespaces present in a NEF entry
-- **new command**: `version` is now a top-level command
-- **improved**: `help commands`  - coloured output, tree and table views, HTML export, better support for AI tools
-- **improved**: `chains rename` - now accepts a comma-separated list of chains and is a proper python pipe command
-- **improved**: `frames tabulate` was only showing the first matching frame, it now shows all the matched frames
-- **fixed**: `frames delete` now correctly deletes frames when only a single frame is present in the file
-- **fixed**: `sparky export shifts` now correctly handles shifts where sequence codes are offset from 1
-- **fixed**: `` The PDB sequence reader was incorrectly deduplicating chains with identical sequences but different
-  residue numbering
-- **fixed**: Python versions 3.9–3.14 fully supported and tested across MacOS and Linux [Ubuntu]
-- **new**: releases have names
+add support for writing sparky peak lists
+
+## Version 0.1.29
+
+correct error in mars export fragments (mars connected pseudo residue file)
+
+## Version 0.1.28
+
+added an about command for information about the project
+
+added support for export xcamshift chemical shift restraint files
+
+added export of mars connected pseudo residue file
+
+## Version 0.1.27
+
+added support for reading MARS shift files
+
+
+## Version 0.1.26 (development)
+
+corrected an error in how test files are searched for
+
+## Version 0.1.25 (development)
+
+added missing test files
+
+## Version 0.1.24 (development)
+
+added support for import of RDCs from a csv file
+
+added support for segment codes to pales / dc when exporting rdcs
+
+added support for exporting neff rdc restraints to xplor legacy format
+
+## Version 0.1.23 (development)
+
+supports reading xplor distance restraints [but currently only single atom selections]
+
+adds xplor nih dihedral restraints
+
+read sequences from xplor psf files
+
+minor improvements to help text and error messages
+
+note: the xplor support includes a proper parser for xplor nested restraint selections
+including SEGIDentifier RESIDue and NAME including proper literal abbreviations.
+
+## Version 0.1.22 (development)
+
+The `nef test` command is once again available.
+
+A reliance on caching stdin was removed
+
+There were no changes in the tools and transcoders provided in this release,
+other than the test subcommand, as this release was focused on testing.
+
+## Version 0.1.21 (development)
+
+Initial release to pypi with changes for better compatability with windows and
+linux
+
+The `nef test` command was disabled for this release as pytest and the tests
+were not working well with the pyscaffold based release pipeline.
+
+There were no changes in the tools and transcoders provided in this release,
+as this release was mostly about removing technical debt
+
+## Version 0.1.0b (development)
+
+initial version which supports the following (to some extents; note the beta designation)
+
+### tools
+
+- listing renaming and cloning molecular chains
+- deleting, inserting, listing and pretty printin (tabulate) save-frames
+- producing a NEF header with correct UUID
+- streaming nef files into a pipeline
+- testing itself
+
+#### transcoders
+- __fasta__
+  - sequence [read and write]
+- __mars__
+  - shifts [write]
+- __nmrpipe__
+  - sequences [read]
+  - shifts [read]
+  - peaks [read]
+- __nmrview__ / __nmrfx__
+  - peaks [read and write]
+  - sequence [read]
+  - shifts [read]
+- __pales__
+  - rdc restraints [write]
+  - rdc restraints template [write]
+- __pdb__
+  - sequence [read]
