@@ -3,13 +3,25 @@
 
 # Function to display help
 show_help() {
-    echo "Usage: $0 [OPTION]"
+    echo "Usage: $0 <aphorism> [OPTION]"
     echo "Release the package to PyPI."
+    echo ""
+    echo "Arguments:"
+    echo "  aphorism     Release aphorism (required, quote if it contains spaces)"
     echo ""
     echo "Options:"
     echo "  --no-bump    Skip version bumping and tagging."
     echo "  --help       Show this help message."
 }
+
+# Require aphorism as first argument
+if [[ "$#" -eq 0 || "$1" == --* ]]; then
+    echo "ERROR: aphorism is required as the first argument"
+    echo "  example: $0 \"seeing the nef for the trees\""
+    exit 1
+fi
+APHORISM="$1"
+shift
 
 # Parse options
 BUMP_VERSION=true
@@ -51,10 +63,12 @@ if [ "$BUMP_VERSION" = true ]; then
     # grab the version
     VERSION=$(ver --file $VERSION_FILE | awk '{print $3}')
 
-    # update the version in the repo
+    # update the version and aphorism in the repo
+    echo "$APHORISM" > src/nef_pipelines/APHORISM
     git add src/nef_pipelines/VERSION
+    git add src/nef_pipelines/APHORISM
     git add pyproject.toml
-    git commit -m "updated version to $VERSION" --no-verify
+    git commit -m "updated version to $VERSION: $APHORISM" --no-verify
 
     ver --file $VERSION_FILE tag
 else

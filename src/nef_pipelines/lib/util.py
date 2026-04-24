@@ -792,6 +792,15 @@ def get_version() -> str:
     return version
 
 
+def get_aphorism() -> str:
+    file_path = Path(__file__)
+    root_path = file_path.parent.parent
+    aphorism_path = root_path / "APHORISM"
+
+    with open(aphorism_path) as file_h:
+        return file_h.read().strip() or "help i don't know who i am!"
+
+
 class FStringTemplate:
     """class for makes an f string based template substitution is delayed
     until the instance is converted to a string

@@ -5,7 +5,7 @@ from textwrap import dedent, indent
 
 import typer
 
-from nef_pipelines.lib.util import get_version
+from nef_pipelines.lib.util import get_aphorism, get_version
 from nef_pipelines.tools.help import help_app
 
 VERBOSE_HELP = """\
@@ -44,7 +44,7 @@ def cmd(verbose=False):
 
     msg = f"""\
 
-        This is NEF-Pipelines version {version_data}
+        This is NEF-Pipelines version {version_data} - {get_aphorism()}
 
         For information about this program and the code please see: {NEF_PIPLINES_URL}
         For bug reporting please goto: {NEF_PIPLINES_URL}/issues
