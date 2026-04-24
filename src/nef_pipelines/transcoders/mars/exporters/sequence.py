@@ -11,6 +11,10 @@ from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.transcoders.fasta.exporters.sequence import pipe as fasta_pipe
 from nef_pipelines.transcoders.mars import export_app
 
+# TODO: add --out option supporting a filename template e.g. {entry_id}_{chain_code}.fasta
+#       so multiple chains can each get their own file (consistent with shifty export shifts);
+#       use - for stdout (single chain only in that case) basically arguments should be the target
+
 
 @export_app.command()
 def sequence(
