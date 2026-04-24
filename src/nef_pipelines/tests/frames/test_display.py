@@ -233,8 +233,8 @@ def test_default_selector():
 EXPECTED_SAVEFRAME_TAG = """\
             # save_nef_molecular_system
 
-            sf_category = nef_molecular_system
-            sf_framecode = nef_molecular_system
+            _nef_molecular_system.sf_category   nef_molecular_system
+            _nef_molecular_system.sf_framecode  nef_molecular_system
 
             # save_
 
@@ -263,21 +263,21 @@ def test_saveframe_tag_all_frames():
     EXPECTED_ALL_SF_CATEGORIES = """\
         # save_nef_molecular_system
 
-           sf_category   =   nef_molecular_system
+           _nef_molecular_system.sf_category   nef_molecular_system
 
 
         # save_
 
         # save_ccpn_additional_data_1
 
-           sf_category   =   ccpn_additional_data
+           _ccpn_additional_data.sf_category   ccpn_additional_data
 
 
         # save_
 
         # save_ccpn_additional_data_2
 
-           sf_category   =   ccpn_additional_data
+           _ccpn_additional_data.sf_category   ccpn_additional_data
 
 
         # save_
@@ -297,7 +297,7 @@ def test_wildcard_in_frame_tags():
     EXPECTED_WILDCARD_CATEGORY = """\
         # save_nef_molecular_system
 
-           sf_category   =   nef_molecular_system
+           _nef_molecular_system.sf_category   nef_molecular_system
 
 
         # save_
@@ -318,6 +318,8 @@ def test_entire_frame_vs_frame_tags():
     EXPECTED_ENTIRE_FRAME = """\
         # save_nef_molecular_system
 
+           _nef_molecular_system.sf_category   nef_molecular_system
+           _nef_molecular_system.sf_framecode  nef_molecular_system
         loop_
            _nef_sequence.index
            _nef_sequence.chain_code
@@ -345,7 +347,7 @@ def test_entire_frame_vs_frame_tags():
     EXPECTED_FRAME_TAGS_ONLY = """\
         # save_nef_molecular_system
 
-           sf_category   =   nef_molecular_system
+           _nef_molecular_system.sf_category   nef_molecular_system
 
 
         # save_
@@ -891,8 +893,8 @@ def test_tags_only():
     EXPECTED_TAGS_ONLY = """\
         # save_nef_molecular_system
 
-        sf_category = nef_molecular_system
-        sf_framecode = nef_molecular_system
+        _nef_molecular_system.sf_category   nef_molecular_system
+        _nef_molecular_system.sf_framecode  nef_molecular_system
 
         # save_
         """
@@ -1149,15 +1151,15 @@ def test_namespace_multiple():
     EXPECTED_NAMESPACE_MULTIPLE = """\
         # save_ccpn_additional_data_1
 
-           sf_category   =   ccpn_additional_data
-           sf_framecode   =   ccpn_additional_data_1
+           _ccpn_additional_data.sf_category   ccpn_additional_data
+           _ccpn_additional_data.sf_framecode  ccpn_additional_data_1
 
         # save_
 
         # save_ccpn_additional_data_2
 
-           sf_category   =   ccpn_additional_data
-           sf_framecode   =   ccpn_additional_data_2
+           _ccpn_additional_data.sf_category   ccpn_additional_data
+           _ccpn_additional_data.sf_framecode  ccpn_additional_data_2
 
         # save_
     """
@@ -1185,8 +1187,8 @@ def test_namespace_filter_tags():
     EXPECTED_NAMESPACE_FILTER_TAGS = """\
         # save_nef_chemical_shift_list_default
 
-           sf_category   =   nef_chemical_shift_list
-           sf_framecode   =   nef_chemical_shift_list_default
+           _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+           _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
 
         # save_
     """
@@ -1264,10 +1266,10 @@ def test_namespace_hierarchical_tags_only():
     path = path_in_test_data(__file__, "ubiquitin_short_unassign.nef")
 
     EXPECTED_CCPN_TAGS = """\
-        ccpn_serial   =   1
-        ccpn_auto_update   =   true
-        ccpn_is_simulated   =   false
-        ccpn_comment   =   .
+        _nef_chemical_shift_list.ccpn_serial        1
+        _nef_chemical_shift_list.ccpn_auto_update   true
+        _nef_chemical_shift_list.ccpn_is_simulated  false
+        _nef_chemical_shift_list.ccpn_comment       .
     """
 
     result = run_and_report(
@@ -1303,10 +1305,10 @@ def test_frame_tags_selector_consistent_with_tags_only():
     EXPECTED_FRAME_TAGS_NO_NEF = """\
         # save_nef_chemical_shift_list_default
 
-           ccpn_serial   =   1
-           ccpn_auto_update   =   true
-           ccpn_is_simulated   =   false
-           ccpn_comment   =   .
+           _nef_chemical_shift_list.ccpn_serial        1
+           _nef_chemical_shift_list.ccpn_auto_update   true
+           _nef_chemical_shift_list.ccpn_is_simulated  false
+           _nef_chemical_shift_list.ccpn_comment       .
 
         # save_
     """
