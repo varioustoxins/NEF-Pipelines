@@ -555,3 +555,21 @@ improved error handling when `streamfitter` does load into `fit exponential`
 
 # version 0.1.120
 - failed to import sparky export shifts
+
+# Version 0.1.121 - 'Seeing the NEF for the Trees'
+
+- **new command**: `entry tree` - display the structure of a NEF entry as a navigable colour tree with wildcard
+  frame/tag selection and substring highlighting
+- **new command**: `frames display` - view the data in selected save-frames, loops and tags with tag filtering,
+  namespace filtering, coloured output and head/tail/middle truncation for loops
+- **new command**: `namespace list` - list the namespaces present in a NEF entry
+- **new command**: `version` is now a top-level command
+- **improved**: `help commands`  - coloured output, tree and table views, HTML export, better support for AI tools
+- **improved**: `chains rename` - now accepts a comma-separated list of chains and is a proper python pipe command
+- **improved**: `frames tabulate` was only showing the first matching frame, it now shows all the matched frames
+- **fixed**: `frames delete` now correctly deletes frames when only a single frame is present in the file
+- **fixed**: `sparky export shifts` now correctly handles shifts where sequence codes are offset from 1
+- **fixed**: `` The PDB sequence reader was incorrectly deduplicating chains with identical sequences but different
+  residue numbering
+- **fixed**: Python versions 3.9–3.14 fully supported and tested across MacOS and Linux [Ubuntu]
+- **new**: releases have names
