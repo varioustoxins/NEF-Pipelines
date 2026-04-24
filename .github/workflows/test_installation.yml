@@ -37,4 +37,4 @@ jobs:
 
       - name: Check installation
         run: |
-          nef help about --version
+          nef version
