@@ -516,6 +516,24 @@ def _merge_matched_items(
             if tag not in grouped[key]["loop_tags"]:
                 grouped[key]["loop_tags"].append(tag)
 
+    # TODO: redesign — store frame_tags in a separate dict keyed by frame_name and
+    # loop items in a dict keyed by (frame_name, loop_category); attach frame tags
+    # at render time. Eliminates this post-hoc merge entirely and handles duplicate
+    # selectors naturally.
+
+    # Matching produces a (frame, None) item for frame tags AND a (frame, loop) item
+    # for each loop. Both would render their own # save_ block. Move frame tags from
+    # the (frame, None) item onto the first loop item so the frame renders as one block.
+    frame_only_keys = [k for k in grouped if k[1] is None]
+    for fname, _ in frame_only_keys:
+        loop_keys = [k for k in grouped if k[0] == fname and k[1] is not None]
+        if loop_keys:
+            target = grouped[loop_keys[0]]
+            for tag in grouped[(fname, None)]["frame_tags"]:
+                if tag not in target["frame_tags"]:
+                    target["frame_tags"].insert(0, tag)
+            del grouped[(fname, None)]
+
     # Convert back to MatchedFrameLoopAndTags objects
     merged = []
     for key, data in grouped.items():
