@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.1.123 - 'Zero Thought of Incremental Improvements bugs Pete'
+
+- **fixed**: `mars export sequence` residue 0 was silently dropped
+- **fixed**: `mars export shifts` support shifts for H and N atoms in pseudo-residue with a +1 offset (e.g. `@8+1`)
+
 ## Version 0.1.122 - 'The Eye Sees Only What the Software is Prepared to Comprehend'
 
 - **fixed**: `frames display` was not showing any output when only frame tags were selected
