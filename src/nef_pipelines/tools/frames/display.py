@@ -433,14 +433,13 @@ def _match_selectors_to_frames_and_loops(
             # For example, selecting ccpn tags from nef frames.
             # Tag-level namespace filtering happens in _filter_tags_by_namespace.
 
-            # Determine what to match based on selector type
-            if selector.loop_name is None:
-                # Frame-only selector (no loop)
-                result = _match_frame_tags(frame, selector, exact, selected_namespaces)
-                if result:
-                    matched_items.append(result)
-            else:
-                # Loop selector - match loops within this frame
+            # Always try to match frame tags
+            result = _match_frame_tags(frame, selector, exact, selected_namespaces)
+            if result:
+                matched_items.append(result)
+
+            # Also match loops if a loop name is specified
+            if selector.loop_name is not None:
                 matched_items.extend(
                     _match_loop_tags(frame, selector, exact, selected_namespaces)
                 )
