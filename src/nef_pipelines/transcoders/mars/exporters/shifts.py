@@ -50,7 +50,9 @@ REMOVE_DIGITS = str.maketrans("", "", digits)
 
 HEADINGS = (
     ("H", ("H", 0)),
+    ("H+1", ("H", -1)),
     ("N", ("N", 0)),
+    ("N+1", ("N", -1)),
     ("Ca", ("CA", 0)),
     ("Ca-1", ("CA", 1)),
     ("Cb", ("CB", 0)),
@@ -64,7 +66,9 @@ HEADINGS = (
 OUPUT_TABLE_HEADERS = (
     "",
     "H",
+    "H+1",
     "N",
+    "N+1",
     "CA",
     "CA-1",
     "CB",
@@ -82,7 +86,7 @@ class MarsAtom:
     atom_name: str
     sequence_code: Union[int, str]
     residue_name: str
-    negative_offset: int = 0
+    offset: int = 0  # 0=current, 1=i-1 (previous), -1=i+1 (next)
 
 
 # noinspection PyUnusedLocal
@@ -257,14 +261,15 @@ def _build_residue_rows(atom_shifts, headers, assigned=False):
             line.append(f"PR_{residue_num}")
 
         for heading, heading_key in HEADINGS:
-
+            if heading.upper() not in headers:
+                continue
             if heading_key in pseudo_atoms:
 
                 pseudo_atom = pseudo_atoms[heading_key]
                 shift = atom_shifts[pseudo_atom]
 
                 line.append("%-7.3f    " % shift)
-            elif heading.upper() in headers:
+            else:
                 line.append("-         ")
 
     return lines
@@ -273,7 +278,7 @@ def _build_residue_rows(atom_shifts, headers, assigned=False):
 def _build_residues(assigned_atom_shifts):
     result = {}
     for assigned_atom in assigned_atom_shifts:
-        key = (assigned_atom.atom_name, assigned_atom.negative_offset)
+        key = (assigned_atom.atom_name, assigned_atom.offset)
         result.setdefault(assigned_atom.sequence_code, {})[key] = assigned_atom
     return result
 
@@ -318,27 +323,25 @@ def _build_pseudo_atom_shifts(unassigned_shifts):
         atom_name = shift.atom.atom_name
 
         sequence_code = sequence_code.lstrip("@")
-        sequence_code_fields = sequence_code.split("-")
 
-        if len(sequence_code_fields) > 2:
-            continue
-
-        sequence_code = sequence_code_fields[0]
-        if not is_int(sequence_code):
-            continue
-        sequence_code = int(sequence_code)
-
-        negative_offset = (
-            sequence_code_fields[1] if len(sequence_code_fields) == 2 else 0
-        )
-
-        if not is_int(negative_offset):
-            continue
+        if "+" in sequence_code:
+            base, raw_offset = sequence_code.split("+", 1)
+            if not is_int(raw_offset):
+                continue
+            offset = -int(raw_offset)  # +N in notation → next residue → negative offset
+        elif "-" in sequence_code:
+            base, raw_offset = sequence_code.split("-", 1)
+            if not is_int(raw_offset):
+                continue
+            offset = int(
+                raw_offset
+            )  # -N in notation → previous residue → positive offset
         else:
-            negative_offset = int(negative_offset)
+            base, offset = sequence_code, 0
 
-        if negative_offset not in (0, 1):
+        if not is_int(base):
             continue
+        sequence_code = int(base)
 
         atom_name = atom_name.replace("@", "")
         if _has_numbers(atom_name):
@@ -348,7 +351,7 @@ def _build_pseudo_atom_shifts(unassigned_shifts):
             atom_name=atom_name,
             sequence_code=sequence_code,
             residue_name=shift.atom.residue.residue_name,
-            negative_offset=negative_offset,
+            offset=offset,
         )
 
         if not is_float(shift.value):
@@ -363,22 +366,14 @@ def _build_pseudo_atom_shifts(unassigned_shifts):
 
 
 def _filter_headings_by_pseudoatoms(base_headers, pseudo_residues):
-    atom_names = set()
+    key_to_heading = {key: name for name, key in HEADINGS}
+    present_headings = set()
     for pseudo_residue in pseudo_residues.values():
         for pseudo_atom in pseudo_residue.values():
-            offset = (
-                f"-{pseudo_atom.negative_offset}"
-                if pseudo_atom.negative_offset == 1
-                else ""
-            )
-            atom_name = pseudo_atom.atom_name.upper()
-            atom_name = "CO" if atom_name == "C" else atom_name
-            atom_names.add(f"{atom_name}{offset}")
-    headers = []
-    for header in base_headers:
-        if header == "" or header in atom_names:
-            headers.append(header)
-    return headers
+            key = (pseudo_atom.atom_name, pseudo_atom.offset)
+            if key in key_to_heading:
+                present_headings.add(key_to_heading[key].upper())
+    return [h for h in base_headers if h == "" or h.upper() in present_headings]
 
 
 def _add_m1_shifts(assigned_shifts):
@@ -408,7 +403,7 @@ def _add_m1_shifts(assigned_shifts):
                     atom_name=atom_name,
                     sequence_code=sequence_code,
                     residue_name=residue_name,
-                    negative_offset=1,
+                    offset=1,
                 )
                 new_shifts[new_atom] = assigned_shifts[mars_atom]
 

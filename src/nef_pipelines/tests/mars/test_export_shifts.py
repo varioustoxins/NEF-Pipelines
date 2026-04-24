@@ -10,6 +10,8 @@ from nef_pipelines.transcoders.mars.exporters.shifts import shifts
 app = typer.Typer()
 app.command()(shifts)
 
+INPUT_PSEUDO_OFFSETS = read_test_data("pseudo_shifts_with_offsets.nef", __file__)
+
 
 def test_export_shifts_nef5_short():
     input = read_test_data("sec5_short.neff", __file__)
@@ -43,6 +45,18 @@ def test_export_shifts_pete_co():
 
     """
 
+    assert_lines_match(result.stdout, EXPECTED, squash_spaces=True)
+
+
+def test_export_shifts_pseudo_residue_offset_columns():
+    # Regression: @8+1 and @8-1 sequence codes were silently dropped;
+    # N+1, CA-1, CA+1 columns must all appear in the output.
+    result = run_and_report(app, "--out -".split(), input=INPUT_PSEUDO_OFFSETS)
+
+    EXPECTED = """\
+              H      H+1       N      N+1      CA     CA-1
+        PR_8  8.512   8.734  120.007  124.730  55.123  52.456
+    """
     assert_lines_match(result.stdout, EXPECTED, squash_spaces=True)
 
 

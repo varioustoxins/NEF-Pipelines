@@ -1,0 +1,47 @@
+data_pseudo_offsets
+
+save_nef_molecular_system
+   _nef_molecular_system.sf_category   nef_molecular_system
+   _nef_molecular_system.sf_framecode  nef_molecular_system
+
+   loop_
+      _nef_sequence.index
+      _nef_sequence.chain_code
+      _nef_sequence.sequence_code
+      _nef_sequence.residue_name
+      _nef_sequence.linking
+      _nef_sequence.residue_variant
+      _nef_sequence.cis_peptide
+
+     1   A   7   ALA   start    .   .
+     2   A   8   GLY   middle   .   .
+     3   A   9   VAL   end      .   .
+
+   stop_
+
+save_
+
+save_nef_chemical_shift_list_default
+   _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_default
+
+   loop_
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+      _nef_chemical_shift.value_uncertainty
+      _nef_chemical_shift.element
+      _nef_chemical_shift.isotope_number
+
+     @-   @8     .   H    8.512         0.003           H    1
+     @-   @8+1   .   H    8.734         .               H    1
+     @-   @8     .   N    120.0070829   0.02413346122   N   15
+     @-   @8+1   .   N    124.7295006   .               N   15
+     @-   @8     .   CA    55.123        0.05           C   13
+     @-   @8-1   .   CA    52.456        0.04           C   13
+
+   stop_
+
+save_
