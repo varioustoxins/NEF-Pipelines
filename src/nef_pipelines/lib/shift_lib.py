@@ -29,6 +29,10 @@ def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:
     :param frames:
     :return:
     """
+    # TODO: parse @8+1 / @8-1 sequence codes here and populate Residue.offset
+    #       (+N → offset=-N, -N → offset=+N) so callers get a pre-parsed offset
+    #       instead of re-parsing the raw sequence_code string themselves (as the
+    #       mars shift exporter currently does in _build_pseudo_atom_shifts).
     shifts = []
 
     residue_field_names = [field.name for field in dataclasses.fields(SequenceResidue)]
