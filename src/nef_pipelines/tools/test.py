@@ -11,7 +11,7 @@ try:
     from pytest import main
 
     from nef_pipelines.lib.test_lib import run_and_read_pytest, select_matching_tests
-    from nef_pipelines.lib.util import exit_error
+    from nef_pipelines.lib.util import ToolCategory, exit_error
     from nef_pipelines.nef_app import app
 
     TARGET_HELP = """
@@ -21,7 +21,7 @@ try:
         """
     TARGET_HELP = dedent(TARGET_HELP)
 
-    @app.command(rich_help_panel="Housekeeping")
+    @app.command(rich_help_panel=ToolCategory.GENERAL)
     def test(
         warnings: bool = typer.Option(
             False, "-w", "--warnings", help="include all warnings"

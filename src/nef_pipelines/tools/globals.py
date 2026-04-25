@@ -11,6 +11,7 @@ from nef_pipelines.lib.nef_lib import (
     create_entry_from_stdin,
     create_nef_save_frame,
 )
+from nef_pipelines.lib.util import ToolCategory
 
 VERBOSE_HELP = """\
     display more verbose information about NEF-Pipelines as it runs
@@ -34,7 +35,7 @@ INFO = INFO.replace(r"\s+", " ")
 
 if nef_app:
     # noinspection PyUnusedLocal
-    @nef_app.app.command("globals", rich_help_panel="Housekeeping")
+    @nef_app.app.command("globals", rich_help_panel=ToolCategory.GENERAL)
     def globals_(
         verbose: bool = typer.Option(None, "-v", "--verbose", help=VERBOSE_HELP),
         force: bool = typer.Option(None, "-f", "--force", help=FORCE_HELP),

@@ -1,10 +1,10 @@
 import typer
 
 from nef_pipelines import nef_app
-from nef_pipelines.lib.util import get_aphorism, get_version
+from nef_pipelines.lib.util import ToolCategory, get_aphorism, get_version
 
 
-@nef_app.app.command(rich_help_panel="Housekeeping")
+@nef_app.app.command(rich_help_panel=ToolCategory.GENERAL)
 def version(
     verbose: bool = typer.Option(
         False, "-v", "--verbose", help="also show the release aphorism"

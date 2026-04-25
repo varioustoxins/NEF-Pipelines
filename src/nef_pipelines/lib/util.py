@@ -706,6 +706,13 @@ def get_display_file_name(file_name: Path) -> str:
     return "stdin" if file_name == STDIN else file_name
 
 
+class ToolCategory(StrEnum):
+    GENERAL = "General"
+    NEF_MANIPULATION = "NEF manipulation"
+    DATA_ANALYSIS = "Data analysis & manipulation"
+    TRANSCODERS = "Transcoders"
+
+
 class StdStream(StrEnum):
     STDIN = auto()
     STDOUT = auto()
