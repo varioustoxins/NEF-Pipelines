@@ -14,6 +14,7 @@ import nef_pipelines
 from nef_pipelines import nef_app
 from nef_pipelines.lib.typer_lib import FilteredHelpGroup, patch_rich_code_theme
 from nef_pipelines.lib.util import exit_error
+from nef_pipelines.module_registry import get_registerd_modules
 
 
 @dataclass
@@ -85,12 +86,13 @@ def create_nef_app():
     # needed to avoid partially initialised module import
     from nef_pipelines.main import debug_callback
 
-    nef_app.app = typer.Typer(
-        no_args_is_help=True,
-        callback=debug_callback,
-        rich_markup_mode="markdown",
-        cls=FilteredHelpGroup,
-    )
+    if nef_app.app is None:
+        nef_app.app = typer.Typer(
+            no_args_is_help=True,
+            callback=debug_callback,
+            rich_markup_mode="markdown",
+            cls=FilteredHelpGroup,
+        )
     return nef_app
 
 
@@ -120,49 +122,8 @@ def main():
 
     warnings = []
     try:
-        # import components which will self register, this could and will be automated
-        modules = [
-            "nef_pipelines.tools.help",
-            "nef_pipelines.tools.chains",
-            "nef_pipelines.tools.entry",
-            "nef_pipelines.tools.fit",
-            "nef_pipelines.tools.frames",
-            "nef_pipelines.tools.globals",
-            "nef_pipelines.tools.header",
-            "nef_pipelines.tools.loops",
-            "nef_pipelines.tools.namespace",
-            "nef_pipelines.tools.peaks",
-            "nef_pipelines.tools.plot",
-            "nef_pipelines.tools.save",
-            "nef_pipelines.tools.series",
-            "nef_pipelines.tools.shifts",
-            "nef_pipelines.tools.simulate",
-            "nef_pipelines.tools.sink",
-            "nef_pipelines.tools.stream",
-            "nef_pipelines.tools.test",
-            "nef_pipelines.tools.version",
-            "nef_pipelines.transcoders.csv",
-            "nef_pipelines.transcoders.deep",
-            "nef_pipelines.transcoders.echidna",
-            "nef_pipelines.transcoders.fasta",
-            "nef_pipelines.transcoders.mars",
-            "nef_pipelines.transcoders.modelfree",
-            "nef_pipelines.transcoders.nmrpipe",
-            "nef_pipelines.transcoders.nmrview",
-            "nef_pipelines.transcoders.pales",
-            "nef_pipelines.transcoders.rcsb",
-            "nef_pipelines.transcoders.rpf",
-            "nef_pipelines.transcoders.shifty",
-            "nef_pipelines.transcoders.shiftx2",
-            "nef_pipelines.transcoders.sparky",
-            "nef_pipelines.transcoders.nmrstar",
-            "nef_pipelines.transcoders.talos",
-            "nef_pipelines.transcoders.ucbshift",
-            "nef_pipelines.transcoders.xcamshift",
-            "nef_pipelines.transcoders.xeasy",
-            "nef_pipelines.transcoders.xplor",
-        ]
-        for module_name in modules:
+
+        for module_name in get_registerd_modules():
             try:
                 import_module(module_name)
 
