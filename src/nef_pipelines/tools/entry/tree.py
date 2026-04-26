@@ -95,8 +95,7 @@ def tree(
     selectors: Optional[List[str]] = typer.Argument(
         None,
         help="""\
-            select nodes to display by frame/loop/tag names (wildcards are supported and you can use
-            <FRAME>.<LOOP>:<TAG>[,<TAG>...] syntax)
+            select nodes to display by frame.loop:tag syntax or simple frame selections)
         """,
     ),
     colour_policy: ColourOutputPolicy = typer.Option(
@@ -151,7 +150,7 @@ def tree(
 
     Displays the structure  Entry → Frames → Loops → Tags  [values are not shown]
 
-    Farme/Loop/Tag selectors use progressive AND refinement - each filter narrows the previous results.
+    Frame.Loop:Tag selectors use progressive AND refinement - each filter narrows the previous results.
     Supports both simple wildcards and the frame.loop:tag syntax
 
     Namespace filtering allows including/excluding frames by namespace prefix:
@@ -166,7 +165,7 @@ def tree(
     Multiple types can be combined.
 
     Examples:
-    ```bash
+    ```
         nef entry tree file.nef                              # Full tree
         nef entry tree file.nef chain_code                   # Filter by tag name (highlights "chain" in bold red)
         nef entry tree file.nef molecular_system             # Filter by frame name
@@ -177,7 +176,7 @@ def tree(
         nef entry tree file.nef --namespace -ccpn            # Show all except ccpn frames
         nef entry tree file.nef --namespace +ccpn --no-initial-selection # Show only ccpn frames (start empty, add ccpn)
         nef entry tree file.nef chain --no-highlight         # Filter but don't highlight substring
-e.g        nef entry tree file.nef chain --node-type loop-tag   # Only show loop tags matching "chain"
+        nef entry tree file.nef chain --node-type loop-tag   # Only show loop tags matching "chain"
         nef entry tree file.nef shift --node-type frame --node-type loop  # Show frames and loops matching "shift"
         cat file.nef | nef entry tree                        # From stdin
     ```
