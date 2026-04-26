@@ -50,7 +50,10 @@ class DisplayMode(LowercaseStrEnum):
 
 
 class OutputFormat(LowercaseStrEnum):
-    """Output format - works consistently across all display modes."""
+    """Output format - works consistently across all display modes.
+
+    TODO [future] migrate to TableOutputFormat from lib/table_format_lib.py (Html and Ai/Mcp are now there).
+    """
 
     Simple = auto()  # Rich terminal with colours/boxes (default)
     Markdown = auto()  # Pure Markdown (AI-friendly, no ANSI codes)
