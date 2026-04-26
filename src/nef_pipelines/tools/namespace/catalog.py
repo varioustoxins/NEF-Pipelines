@@ -12,8 +12,8 @@ _FORMAT_HELP = "output format:\n" + "\n".join(
 )
 
 
-@namespace_app.command(name="defined")
-def defined_namespaces(
+@namespace_app.command(name="catalog")
+def catalog_namespaces(
     output_format: Annotated[
         TableOutputFormat,
         typer.Option(
@@ -24,7 +24,7 @@ def defined_namespaces(
         ),
     ] = TableOutputFormat.SIMPLE,
 ) -> None:
-    """- list the internally defined NEF namespaces, their programmes and intended use"""
+    """- list the internally registered NEF namespaces, their programmes and intended use"""
 
     result = pipe(output_format)
     print(result)
@@ -32,7 +32,7 @@ def defined_namespaces(
 
 def pipe(output_format: TableOutputFormat) -> str:
     """
-    Build a table of internally defined NEF namespaces.
+    Build a table of internally registered NEF namespaces.
 
     Args:
         output_format: Output format for the table.

@@ -5,11 +5,11 @@ import typer
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import assert_lines_match, run_and_report
-from nef_pipelines.tools.namespace.defined import defined_namespaces
+from nef_pipelines.tools.namespace.catalog import catalog_namespaces
 
 runner = CliRunner()
 app = typer.Typer()
-app.command()(defined_namespaces)
+app.command()(catalog_namespaces)
 
 _MOCK_NAMESPACES = {
     "nef": ("NEF Standard", "Data Exchange"),
@@ -64,11 +64,11 @@ EXPECTED_HTML = """\
     ],
     ids=["default", "simple", "pretty", "markdown", "ai", "html"],
 )
-def test_defined_namespaces(format_option, expected):
-    """Test that defined_namespaces formats a mocked namespace table correctly."""
+def test_catalog_namespaces(format_option, expected):
+    """Test that catalog_namespaces formats a mocked namespace table correctly."""
 
     with patch(
-        "nef_pipelines.tools.namespace.defined.get_registered_namespaces",
+        "nef_pipelines.tools.namespace.catalog.get_registered_namespaces",
         return_value=_MOCK_NAMESPACES,
     ):
         result = run_and_report(app, format_option)

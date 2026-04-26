@@ -11,5 +11,5 @@ nef_app.app.add_typer(
     rich_help_panel="NEF manipulation",
 )
 
-from nef_pipelines.tools.namespace import defined  # noqa: F401, E402
+from nef_pipelines.tools.namespace import catalog  # noqa: F401, E402
 from nef_pipelines.tools.namespace import list  # noqa: F401, E402
