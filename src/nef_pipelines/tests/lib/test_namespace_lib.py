@@ -3,10 +3,10 @@ from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.namespace_lib import (
     NO_NAMESPACE,
-    REGISTERED_NAMESPACES,
     collect_namespaces_from_frames,
     filter_namespaces,
     get_namespace,
+    get_registered_namespaces,
     if_separator_conflicts_get_message,
 )
 from nef_pipelines.lib.nef_lib import create_nef_save_frame
@@ -71,14 +71,16 @@ data_test
 
 def test_registered_namespaces_contains_nef():
     """Test that registered namespaces includes standard NEF."""
-    assert "nef" in REGISTERED_NAMESPACES
-    assert REGISTERED_NAMESPACES["nef"] == ("NEF Standard", "Data Exchange")
+    namespaces = get_registered_namespaces()
+    assert "nef" in namespaces
+    assert namespaces["nef"] == ("NEF Standard", "Data Exchange")
 
 
 def test_registered_namespaces_contains_nefpls():
     """Test that registered namespaces includes NEF Pipelines."""
-    assert "nefpls" in REGISTERED_NAMESPACES
-    assert REGISTERED_NAMESPACES["nefpls"] == (
+    namespaces = get_registered_namespaces()
+    assert "nefpls" in namespaces
+    assert namespaces["nefpls"] == (
         "NEF Pipelines",
         "Format transcoding and NEF manipulation",
     )

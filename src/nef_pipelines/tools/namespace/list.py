@@ -7,10 +7,10 @@ from pynmrstar import Entry, Saveframe
 from tabulate import tabulate
 
 from nef_pipelines.lib.namespace_lib import (
-    REGISTERED_NAMESPACES,
     collect_namespaces_from_frames,
     filter_namespaces,
     get_namespace,
+    get_registered_namespaces,
     if_separator_conflicts_get_message,
 )
 from nef_pipelines.lib.nef_lib import (
@@ -341,7 +341,7 @@ def _build_row(
     if namespace not in namespaces_to_show:
         return None
 
-    program, use = REGISTERED_NAMESPACES.get(namespace, ("?", "?"))
+    program, use = get_registered_namespaces().get(namespace, ("?", "?"))
     level_type = ENTRY_PART_DISPLAY[entry_part]
 
     display_frame_category = frame_category

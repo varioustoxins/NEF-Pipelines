@@ -19,7 +19,7 @@ NO_NAMESPACE = ""
 
 # Registered namespace mapping from NEF specification
 # TODO [for future] we should download from the NEF website and use this as a fallback
-REGISTERED_NAMESPACES = {
+_REGISTERED_NAMESPACES = {
     "nef": ("NEF Standard", "Data Exchange"),
     "nefpls": ("NEF Pipelines", "Format transcoding and NEF manipulation"),
     "amber": ("Amber", "Structure modelling and refinement"),
@@ -39,7 +39,7 @@ REGISTERED_NAMESPACES = {
 
 
 def get_registered_namespaces():
-    return {**REGISTERED_NAMESPACES}
+    return {**_REGISTERED_NAMESPACES}
 
 
 def get_namespace(
@@ -58,7 +58,7 @@ def get_namespace(
         value: Name string, Loop object, or Saveframe object
         node_type: EntryPart enum value (Saveframe, Loop, FrameTag, LoopTag)
         parent_namespace: Namespace string, Loop, or Saveframe (for tag inheritance)
-        known_namespaces: Dict of registered namespaces (defaults to REGISTERED_NAMESPACES)
+        known_namespaces: Dict of registered namespaces (defaults to get_registered_namespaces())
 
     Returns:
         Namespace string. Returns "" (null namespace) for saveframes/loops without underscore separator.
