@@ -14,6 +14,7 @@ PYTHON_VERSION=3.11
 export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
 
 yes="${NEF_PIPELINES_AUTO_INSTALL:-no}"
+test_pypi="no"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -21,13 +22,18 @@ while [[ $# -gt 0 ]]; do
       yes="yes"
       shift
       ;;
+    --test-pypi)
+      test_pypi="yes"
+      shift
+      ;;
     -h|--help)
       echo "install NEF-Pipelines"
       echo
       echo "options:"
       echo
-      echo "--yes / -y - answer yes to questions"
-      echo "--help / -h - show this message"
+      echo "--yes / -y   - answer yes to questions"
+      echo "--test-pypi  - install from test.pypi.org instead of pypi.org (for testing releases)"
+      echo "--help / -h  - show this message"
       exit 0
       shift
       ;;
@@ -180,11 +186,23 @@ fi
 if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   echo "* nef pipelines is installed, trying to update nef pipelines..."
   current_version=$( $NEF_PATH version )
-  $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade
+  if [[ $test_pypi == "yes" ]]; then
+    echo "* installing from test.pypi.org..."
+    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade \
+      --index "https://test.pypi.org/simple/" --index-strategy unsafe-best-match
+  else
+    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade
+  fi
   new_version=$( $NEF_PATH version )
   echo "* updated: $current_version -> $new_version"
 else
-  $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION}
+  if [[ $test_pypi == "yes" ]]; then
+    echo "* installing from test.pypi.org..."
+    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} \
+      --index "https://test.pypi.org/simple/" --index-strategy unsafe-best-match
+  else
+    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION}
+  fi
 fi
 
 # check if nef pipelines exists

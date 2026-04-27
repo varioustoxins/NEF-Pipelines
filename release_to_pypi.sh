@@ -11,6 +11,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --no-bump    Skip version bumping and tagging."
+    echo "  --test-pypi  Publish to test.pypi.org instead of pypi.org (implies --no-bump)."
     echo "  --help       Show this help message."
 }
 
@@ -25,9 +26,11 @@ shift
 
 # Parse options
 BUMP_VERSION=true
+TEST_PYPI=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --no-bump) BUMP_VERSION=false ;;
+        --test-pypi) TEST_PYPI=true; BUMP_VERSION=false ;;
         --help) show_help; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
     esac
@@ -83,7 +86,12 @@ git stash --message "${stash_message}"
 
 # build and publish
 tox -e build  # to build your package distribution
-tox -e publish -- --repository pypi --skip-existing
+if [ "$TEST_PYPI" = true ]; then
+    echo "Publishing to test.pypi.org..."
+    tox -e publish -- --repository testpypi --skip-existing
+else
+    tox -e publish -- --repository pypi --skip-existing
+fi
 
 git stash list | grep -q "${stash_message}"
 if [[ $? -eq 0 ]]; then
