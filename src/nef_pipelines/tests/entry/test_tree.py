@@ -602,7 +602,6 @@ def test_tree_no_highlight_flag():
 #
 #     assert result.exit_code == 0
 #     assert_lines_match(EXPECTED_OUTPUT, result.stdout)
-#
 
 
 def test_tree_null_namespace_warning():
@@ -635,3 +634,91 @@ def test_tree_null_namespace_warning():
     assert result.exit_code == 0
     assert_lines_match(EXPECTED_STDOUT, result.stdout)
     assert_lines_match(EXPECTED_STDERR, result.stderr)
+
+
+EXPECTED_AI_MINIMAL = """\
+    - **entry**: minimal_test
+      - **frame**: nef_nmr_meta_data (0 loops)
+        - **frame-tag**: sf_category
+        - **frame-tag**: sf_framecode
+        - **frame-tag**: format_name
+        - **frame-tag**: format_version
+      - **frame**: nef_molecular_system (1 loop)
+        - **frame-tag**: sf_category
+        - **frame-tag**: sf_framecode
+        - **loop**: nef_sequence (1 row)
+          - **loop-tag**: chain_code
+          - **loop-tag**: residue_name
+"""
+
+
+def test_tree_ai_format_basic():
+    """\
+    Test --output-format ai produces markdown bullet list with correct node-type labels.
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+    result = run_and_report(app, [str(path), "--output-format", "ai"])
+
+    assert result.exit_code == 0
+    assert_lines_match(EXPECTED_AI_MINIMAL, result.stdout)
+
+
+EXPECTED_AI_FILTERED = """\
+    - **entry**: minimal_test
+      - **frame**: nef_molecular_system (1 loop)
+"""
+
+
+def test_tree_ai_format_with_selector():
+    """\
+    Test --output-format ai with a selector filters to matched frame only (no --children).
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+    result = run_and_report(
+        app, [str(path), "--output-format", "ai", "molecular_system"]
+    )
+
+    assert result.exit_code == 0
+    assert_lines_match(EXPECTED_AI_FILTERED, result.stdout)
+
+
+EXPECTED_AI_FILTERED_WITH_CHILDREN = """\
+    - **entry**: minimal_test
+      - **frame**: nef_molecular_system (1 loop)
+        - **frame-tag**: sf_category
+        - **frame-tag**: sf_framecode
+        - **loop**: nef_sequence (1 row)
+          - **loop-tag**: chain_code
+          - **loop-tag**: residue_name
+"""
+
+
+def test_tree_ai_format_with_selector_and_children():
+    """\
+    Test --output-format ai with selector and --children shows the full frame subtree.
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+    result = run_and_report(
+        app, [str(path), "--output-format", "ai", "--children", "molecular_system"]
+    )
+
+    assert result.exit_code == 0
+    assert_lines_match(EXPECTED_AI_FILTERED_WITH_CHILDREN, result.stdout)
+
+
+EXPECTED_AI_NO_MATCHES = """\
+    No matching nodes found.
+"""
+
+
+def test_tree_ai_format_no_matches():
+    """\
+    Test --output-format ai with a selector that matches nothing returns the no-match message.
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+    result = run_and_report(
+        app, [str(path), "--output-format", "ai", "nonexistent_frame"]
+    )
+
+    assert result.exit_code == 0
+    assert_lines_match(EXPECTED_AI_NO_MATCHES, result.stdout)

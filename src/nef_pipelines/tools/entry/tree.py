@@ -12,6 +12,7 @@ from typing import List, Optional, Set, Tuple
 import typer
 from click import Context
 from pynmrstar import Entry, Loop, Saveframe
+from strenum import LowercaseStrEnum
 from treelib import Node, Tree
 
 from nef_pipelines.lib.cli_lib import parse_frame_loop_and_tags
@@ -53,6 +54,14 @@ from nef_pipelines.tools.entry import entry_app
 #     LOOP = auto()
 #     FRAME_TAG = auto()
 #     LOOP_TAG = auto()
+
+
+class TreeOutputFormat(LowercaseStrEnum):
+    """Output format for the tree command."""
+
+    TREE = "tree"
+    AI = "ai"
+    MARKDOWN = "markdown"
 
 
 class NefNode(Node):
@@ -144,6 +153,13 @@ def tree(
     #         (frame, loop, frame_tag, loop_tag). Can be specified multiple times
     #     """,
     # ),
+    output_format: TreeOutputFormat = typer.Option(
+        TreeOutputFormat.TREE,
+        "--output-format",
+        help="""
+            output format: tree (default, rich-rendered) or ai / markdown (markdown bullets, suitable for AI/MCP tools)
+        """,
+    ),
 ) -> None:
     """\
     - display the hierarchical tree structure of NEF entry
@@ -221,7 +237,8 @@ def tree(
         no_highlight,
         children,
         namespaces,
-        no_initial_selection,  # , node_type
+        no_initial_selection,
+        output_format,
     )
     print(output, end="")
 
@@ -234,7 +251,8 @@ def pipe(
     show_children: bool = False,
     namespace_selectors: Optional[List[str]] = None,
     no_initial_selection: bool = False,
-    # node_types: Optional[List[NodeType]] = None,
+    # TODO add an aggregate output format which included colours etc
+    output_format: TreeOutputFormat = TreeOutputFormat.TREE,
 ) -> str:
     """\
     Generate tree visualization of NEF structure.
@@ -247,8 +265,7 @@ def pipe(
         show_children: If True, preserve all descendants of first filter matches
         namespace_selectors: List of namespace filters (+nef to include, -ccpn to exclude)
         no_initial_selection: If True, start with empty namespace selection instead of all
-        node_types: Optional list of node types to restrict matches to (frame, loop, frame-tag, loop-tag)
-                    [not implimented]
+        output_format: Output format (tree for Rich-rendered, ai for markdown bullets)
 
     Returns:
         Formatted tree as string
@@ -285,6 +302,8 @@ def pipe(
 
     # Render tree with optional highlighting
     highlight_patterns = None if no_highlight else node_selectors
+    if output_format in (TreeOutputFormat.AI, TreeOutputFormat.MARKDOWN):
+        return _render_tree_as_markdown(filtered_tree)
     return _render_tree(filtered_tree, colour_policy, highlight_patterns)
 
 
@@ -813,7 +832,13 @@ def _build_nef_tree_structure(entry: Entry) -> Tree:
         Tree with complete NEF structure
     """
     tree = Tree()
-    tree.create_node(tag=entry.entry_id, identifier="entry")
+    entry_node = NefNode(
+        tag=entry.entry_id,
+        identifier="entry",
+        namespace="",
+        entry_part=EntryPart.Entry,
+    )
+    tree.add_node(entry_node)
 
     for frame in entry.frame_list:
         _add_frame_to_tree(tree, frame)
@@ -1013,3 +1038,69 @@ def _colour_nef_node(node: Node, filter_patterns: Optional[List[str]]) -> str:
     result = _apply_colour_with_optional_highlight(name, colour, match_span, metadata)
 
     return result
+
+
+def _render_tree_as_markdown(tree: Tree) -> str:
+    """\
+    Render tree as markdown bullet list for AI/MCP consumption.
+
+    Produces indented bullet points with node-type labels and row counts.
+    No Rich markup or Unicode box-drawing characters.
+
+    Args:
+        tree: Filtered tree to render
+
+    Returns:
+        Markdown-formatted string
+    """
+    if len(tree) == 0:
+        return "No matching nodes found.\n"
+
+    lines = []
+    _render_node_as_markdown(tree, tree.root, lines, depth=0)
+    return "\n".join(lines) + "\n"
+
+
+def _render_node_as_markdown(
+    tree: Tree, node_id: str, lines: List[str], depth: int
+) -> None:
+    """\
+    Recursively render a node and its children as indented markdown bullets.
+
+    Args:
+        tree: The full tree
+        node_id: Current node identifier
+        lines: Accumulator for output lines
+        depth: Current indentation depth
+    """
+    node = tree.get_node(node_id)
+    if node is None:
+        return
+
+    indent = "  " * depth
+
+    if isinstance(node, NefNode):
+        part = node.entry_part
+        if part == EntryPart.Entry:
+            label = f"**entry**: {node.tag}"
+        elif part == EntryPart.Saveframe:
+            name = node.tag.split(" ")[0]
+            loop_count = len(node.saveframe.loops) if node.saveframe else 0
+            loops_text = "loop" if loop_count == 1 else "loops"
+            label = f"**frame**: {name} ({loop_count} {loops_text})"
+        elif part == EntryPart.Loop:
+            name = node.tag.split(" ")[0]
+            row_count = len(node.loop.data) if node.loop else 0
+            rows_text = "row" if row_count == 1 else "rows"
+            label = f"**loop**: {name} ({row_count} {rows_text})"
+        elif part == EntryPart.FrameTag:
+            label = f"**frame-tag**: {node.tag}"
+        else:
+            label = f"**loop-tag**: {node.tag}"
+    else:
+        label = node.tag
+
+    lines.append(f"{indent}- {label}")
+
+    for child in tree.children(node_id):
+        _render_node_as_markdown(tree, child.identifier, lines, depth + 1)
