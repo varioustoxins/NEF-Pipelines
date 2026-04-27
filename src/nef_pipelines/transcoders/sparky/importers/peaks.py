@@ -5,7 +5,6 @@ from textwrap import dedent
 from typing import List
 
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE, convert_isotopes
 from nef_pipelines.lib.nef_lib import (
@@ -183,7 +182,7 @@ def pipe(
 
         file_name = Path(file_name).stem  # used in f method...
 
-        frame_code = f(frame_code_template)
+        frame_code = frame_code_template.format(file_name=file_name)
 
         frame = peaks_to_frame(
             sparky_peaks, dimensions, spectrometer_frequency, frame_code=frame_code
@@ -257,7 +256,7 @@ def _guess_dimensions_if_not_defined_or_throw(
         bad_dimensions = ", ".join(bad_dimensions)
 
         msg = f"""
-        for some dimensions [{bad_dimensions}] in the the file {file_name}, the isotopes are not defined 
+        for some dimensions [{bad_dimensions}] in the the file {file_name}, the isotopes are not defined
         [no useable assignments]
         """
         raise NoIsotopesOnAxisException(msg.strip())

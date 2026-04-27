@@ -3,7 +3,6 @@ from sys import stdout
 from typing import Dict, List
 
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.nef_lib import (
     is_save_frame_name_in_entry,
@@ -223,4 +222,7 @@ def _build_chains_to_filenames(
     chain_codes: List[str], file_name_template: str
 ) -> Dict[str, str]:
 
-    return {chain_code: f(file_name_template) for chain_code in chain_codes}
+    return {
+        chain_code: file_name_template.format(chain_code=chain_code)
+        for chain_code in chain_codes
+    }
