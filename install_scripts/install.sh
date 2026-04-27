@@ -4,6 +4,14 @@ UV_DIDNT_UPDATE=101
 USER_CANCELLED=102
 NEF_PIPELINES_DIDNT_INSTALL=200
 UV_MIN_VERSION=0.5.20
+PYTHON_VERSION=3.11
+# The deprecated `sklearn` stub package (sklearn==0.0.post12) is pulled in as a transitive
+# dependency somewhere in the nef-pipelines/streamfitter dependency chain. We have not been
+# able to identify which package requires it - neither nef-pipelines nor streamfitter import
+# sklearn directly, and it does not appear in their declared dependencies or lock files.
+# Without this env var, the sklearn stub refuses to build and the entire install fails.
+# Setting it here allows the stub to install silently as a no-op phantom dependency.
+export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
 
 yes="${NEF_PIPELINES_AUTO_INSTALL:-no}"
 
@@ -172,12 +180,11 @@ fi
 if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   echo "* nef pipelines is installed, trying to update nef pipelines..."
   current_version=$( $NEF_PATH version )
-  output="$(SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True $UV_PATH tool update nef-pipelines --with streamfitter --with scikit-learn 2>&1)"
-  echo "* $output"
+  $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade
   new_version=$( $NEF_PATH version )
-  echo $current_version -> $new_version
+  echo "* updated: $current_version -> $new_version"
 else
-  SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True $UV_PATH tool install nef-pipelines --with streamfitter --with scikit-learn --python 3.11 --force
+  $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION}
 fi
 
 # check if nef pipelines exists
