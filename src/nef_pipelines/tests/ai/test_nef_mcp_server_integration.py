@@ -5,14 +5,18 @@ Tests use the FastMCP Client directly against the server object (no HTTP server
 needed), which avoids event-loop binding issues and subprocess coordination.
 """
 
+import sys
+
 import pytest
-from fastmcp import Client
 
 from nef_pipelines.lib.test_lib import read_test_data
 from nef_pipelines.tools.ai.mcp_commands_lib import _RESOURCES, resource_name
 from nef_pipelines.tools.ai.server import _build_server
 
-pytest.importorskip("fastmcp")
+if sys.version_info < (3, 10):
+    pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
+
+pytest.importorskip("fastmcp.Client")
 
 EXPECTED_TOOL_NAMES = {
     "nef_read_me_first",
@@ -35,7 +39,7 @@ async def mcp_client():
     """\
     Create FastMCP client connected in-process to a fresh MCP server per test.
     """
-    async with Client(_build_server()) as client:
+    async with Client(_build_server()) as client:  # noqa: F821
         yield client
 
 

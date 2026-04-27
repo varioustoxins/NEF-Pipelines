@@ -2,6 +2,8 @@
 Tests for AI server tool functions in server_lib.py.
 """
 
+import sys
+
 import pytest
 
 from nef_pipelines.lib.test_lib import read_test_data
@@ -13,6 +15,9 @@ from nef_pipelines.tools.ai.mcp_commands_lib import (
     nef_read_me_first,
     nef_read_resource,
 )
+
+if sys.version_info < (3, 10):
+    pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
 
 pytest.importorskip("fastmcp")
 
