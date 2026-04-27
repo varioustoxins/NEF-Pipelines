@@ -157,7 +157,10 @@ def commands(
 
     try:
         output = pipe(matchers, output_format, group_by_category, display, python)
-        print(output, file=sys.stderr)
+        # Output to stdout if it's being piped or redirected (not a TTY)
+        # otherwise use stderr to keep help separate from data streams
+        out_file = sys.stdout if not sys.stdout.isatty() else sys.stderr
+        print(output, file=out_file)
     finally:
         # Restore original Rich setting
         if no_rich:
