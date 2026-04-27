@@ -31,7 +31,7 @@ _MODULES = [
     "nef_pipelines.tools.loops",
     "nef_pipelines.tools.namespace",
     "nef_pipelines.tools.peaks",
-    "nef_pipelines.tools.plot",
+    # "nef_pipelines.tools.plot",
     "nef_pipelines.tools.save",
     "nef_pipelines.tools.series",
     "nef_pipelines.tools.shifts",
