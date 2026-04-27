@@ -177,7 +177,7 @@ if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   new_version=$( $NEF_PATH version )
   echo $current_version -> $new_version
 else
-  $UV_PATH tool install nef-pipelines --with streamfitter --with rich --python 3.11 --force
+  $UV_PATH tool install nef-pipelines --with streamfitter --with rich --with PDF --python 3.11 --force
 fi
 
 # check if nef pipelines exists
