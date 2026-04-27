@@ -204,7 +204,7 @@ if ! $NEF_PIPELINES_EXISTS ; then
   exit $NEF_PIPELINES_DIDNT_INSTALL
 fi
 
-current_version=$( $NEF_PATH help version )
+current_version=$( $NEF_PATH version )
 echo "* nef pipelines should be installed and upto date at $current_version"
 echo ""
 echo "*YOU MAY NEED TO CLOSE THE SHELL AND REOPEN IT to get nef to run as a command"
