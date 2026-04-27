@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.1.124 - 'The AI is a Mirror, but the NEF is the Truth'
+## Version 0.1.125 - 'The AI is a Mirror, but the NEF is the Truth'
 
 - **added**: `nef ai server` - experimental MCP server for AI model interaction
 - **added**: `nef namespace catalog` - list the registered NEF namespaces and their usage
@@ -8,6 +8,9 @@
 - **docs**: added Bioarchiv NEF specification paper to references
 - **docs**: added Markdown document documenting the STAR format, the NEF format, NEF's interaction with n=molecular
            structure and common NEF-Pipelines options
+
+## Version 0.1.124 - yanked
+- module list included plot module which is not ready for release
 
 ## Version 0.1.123 - 'Zero Thought of Incremental Improvements bugs Pete'
 
