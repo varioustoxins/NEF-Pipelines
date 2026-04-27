@@ -172,12 +172,12 @@ fi
 if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   echo "* nef pipelines is installed, trying to update nef pipelines..."
   current_version=$( $NEF_PATH version )
-  output="$($UV_PATH tool update nef-pipelines 2>&1)"
+  output="$(SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True $UV_PATH tool update nef-pipelines --with streamfitter --with scikit-learn 2>&1)"
   echo "* $output"
   new_version=$( $NEF_PATH version )
   echo $current_version -> $new_version
 else
-  $UV_PATH tool install nef-pipelines --with streamfitter --with scikit-learn --with PDF --python 3.11 --force
+  SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True $UV_PATH tool install nef-pipelines --with streamfitter --with scikit-learn --python 3.11 --force
 fi
 
 # check if nef pipelines exists
