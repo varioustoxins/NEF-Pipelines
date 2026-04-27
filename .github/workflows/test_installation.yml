@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# TODO: Add matrix to test installation with and without optional extras
+# e.g., matrix: [ "basic", "mcp", "PDF" ]
+# This will ensure that optional dependencies don't break installation
+# and that their respective features work when enabled.
+
 jobs:
   install:
     strategy:
