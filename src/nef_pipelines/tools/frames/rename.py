@@ -6,7 +6,6 @@ from textwrap import dedent, indent
 from typing import List
 
 import typer
-from fyeah import f
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
@@ -160,7 +159,7 @@ def _exit_error_mutiple_frames_selected(
     frames = indent(dedent(frames_table), FOUR_SPACES)  # noqa: F841
 
     msg = """
-        multiple save frames were selected using the name {target_name}{category_msg} in entry {entry.entry_id}
+        multiple save frames were selected using the name {target_name}{category_msg} in entry {entry_id}
         and I can only rename one save frame at the same time...
 
         the save frames were
@@ -169,7 +168,14 @@ def _exit_error_mutiple_frames_selected(
     """
 
     msg = dedent(msg)
-    exit_error(f(msg))
+    exit_error(
+        msg.format(
+            target_name=target_name,
+            category_msg=category_msg,
+            entry_id=entry.entry_id,
+            frames=frames,
+        )
+    )
 
 
 def _exit_renames_not_pairs(old_new_names):
@@ -228,16 +234,23 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
         table = indent(dedent(table), FOUR_SPACES)
 
         template = """
-            the frame {target_name}{category_msg} wasn't found in the entry {entry.entry_id},
-            did you mean {distances[0][-1][0]} [category: {distances[0][-1][1]}]?
+            the frame {target_name}{category_msg} wasn't found in the entry {entry_id},
+            did you mean {closest_name} [category: {closest_category}]?
 
-            all the frame names in the entry {entry.entry_id} were:
+            all the frame names in the entry {entry_id} were:
 
             {table}
         """
         template = dedent(template)
 
-        msg = f(template)
+        msg = template.format(
+            target_name=target_name,
+            category_msg=category_msg,
+            entry_id=entry.entry_id,
+            closest_name=distances[0][-1][0],
+            closest_category=distances[0][-1][1],
+            table=table,
+        )
 
     exit_error(msg)
 

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.isotope_lib import Isotope
 from nef_pipelines.lib.nef_lib import (
@@ -161,7 +160,7 @@ def pipe(
 
         file_name = frame_name  # used in f method...
 
-        frame_code = f(frame_code_template)
+        frame_code = frame_code_template.format(file_name=file_name)
 
         frame = peaks_to_frame(
             peaks, dimensions, spectrometer_frequency, frame_code=frame_code

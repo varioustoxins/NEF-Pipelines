@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
@@ -103,8 +102,14 @@ def pipe(entry: Entry, lines: List[str], chain_code: str, frame_name: str):
 
         # used in f function below
         (element_1, isotope_number_1), (element_2, isotope_number_2) = isotopes
-        frame_name = f(frame_name)
-        frame_id = f(frame_name)
+        frame_name = frame_name.format(
+            chain_code=chain_code,
+            element_1=element_1,
+            isotope_number_1=isotope_number_1,
+            element_2=element_2,
+            isotope_number_2=isotope_number_2,
+        )
+        frame_id = frame_name
 
         frame = create_nef_save_frame(PIPELINES_ORDER_DATA_CATEGORY, frame_id)
 

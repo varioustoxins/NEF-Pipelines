@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
@@ -92,7 +91,7 @@ def pipe(
         include_predictions=include_predictions,
     )
 
-    frame_name = f(frame_name)
+    frame_name = frame_name.format(chain_code=chain_code)
 
     frame = create_nef_save_frame(PIPELINES_SECONDARY_STRUCTURE_CATEGORY, frame_name)
 

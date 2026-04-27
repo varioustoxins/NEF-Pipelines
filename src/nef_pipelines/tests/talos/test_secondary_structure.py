@@ -1,5 +1,4 @@
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.test_lib import (
     NOQA_E501,
@@ -62,7 +61,7 @@ def test_ss_4():
 
     phi_psi = isolate_frame(result.stdout, "nefpls_secondary_structure_A_talos")
 
-    PATCHED_EXPECTED = f(EXPECTED)
+    PATCHED_EXPECTED = EXPECTED
     assert_lines_match(PATCHED_EXPECTED, phi_psi)
 
 
@@ -113,5 +112,4 @@ def test_ss_4_first_resid_2():
 
     phi_psi = isolate_frame(result.stdout, "nefpls_secondary_structure_A_talos")
 
-    PATCHED_EXPECTED = f(EXPECTED_FIRST_RESID_2)
-    assert_lines_match(PATCHED_EXPECTED, phi_psi)
+    assert_lines_match(EXPECTED_FIRST_RESID_2, phi_psi)

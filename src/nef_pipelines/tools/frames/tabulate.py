@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Dict, List
 
 import typer
-from fyeah import f
 from ordered_set import OrderedSet
 from tabulate import tabulate as tabulate_formatter
 
@@ -351,7 +350,7 @@ def _output_loop(loop_data, frame_id, frame_category, entry_id, args, seen_files
     frame = f"{frame_category}_{frame_id}"  # noqa F841
     loop = loop_data.category.lstrip("_")  # noqa F841
     file_extension = FORMAT_TO_EXTENSION[args.out_format]
-    expanded_file_name = f(args.out)
+    expanded_file_name = args.out.format(entry=entry, frame=frame, loop=loop)
     out_name = f"{expanded_file_name}.{file_extension}"
     out_name = _replace_quoted_string(out_name)
 

@@ -7,7 +7,6 @@ from textwrap import dedent
 from typing import List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry
 
 from nef_pipelines.lib.nef_lib import (
@@ -140,7 +139,7 @@ def _create_entry_names_from_template_if_required(
                 ]
             )
 
-            new_name = f(entry_name_template)
+            new_name = entry_name_template.format(file_name=file_name)
 
             new_name = _remove_repeated_underscores(new_name)
 

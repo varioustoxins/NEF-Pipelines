@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import StrEnum
 from tabulate import tabulate
@@ -756,7 +755,9 @@ def pipe(
                     # for template expansion
                     residues = target_residue  # noqa: F841
                     spectrum = peak_list_name  # noqa: F841
-                    frame_name = f(name_template_string)
+                    frame_name = name_template_string.format(
+                        spectrum=spectrum, residues=residues
+                    )
 
                     frames.append(
                         _make_spectrum_frame(

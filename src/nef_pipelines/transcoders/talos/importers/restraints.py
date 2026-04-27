@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
-from fyeah import f
 from pynmrstar import Loop, Saveframe
 from strenum import StrEnum
 
@@ -92,7 +91,7 @@ def restraints(
         "talos_restraints_{chain_code}_{angle}",
         "-f",
         "--frame",
-        help="name for the frame that will be created default is talos_restraints_<CHAIN-CODE>",
+        help="name for the frame that will be created default is talos_restraints_<CHAIN-CODE>_<ANGLE>",
     ),
     merits: List[str] = typer.Option([], help=MERIT_HELP),
     file_name: Path = typer.Argument(..., help="input talos output file pred.tab"),
@@ -286,7 +285,7 @@ def pipe(entry, lines, file_name, chain_code, frame_name, class_to_merit=None):
         nef_sequence=nef_sequence,
     )
 
-    frame_name = f(frame_name)
+    frame_name = frame_name.format(chain_code=chain_code, angle=angle)
 
     if chain_code in nef_chain_codes:
         _exit_if_sequences_dont_match(chain_code, nef_sequence, talos_sequence)

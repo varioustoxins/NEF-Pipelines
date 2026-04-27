@@ -18,7 +18,6 @@ from textwrap import dedent
 from typing import Dict, List, Tuple
 
 import typer
-from fyeah import f
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import LowercaseStrEnum
@@ -462,7 +461,7 @@ def _create_entry_names_from_template_if_required(
                 ]
             )
             file_name = f"_{file_name}"
-            new_entry_names.append(f(entry_name_template))
+            new_entry_names.append(entry_name_template.format(file_name=file_name))
     return new_entry_names
 
 

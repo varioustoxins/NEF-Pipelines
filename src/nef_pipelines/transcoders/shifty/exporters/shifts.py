@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import typer
-from fyeah import f
 from pynmrstar import Entry, Saveframe
 from tabulate import tabulate
 
@@ -96,7 +95,9 @@ def shifts(
             exit_error(msg)
 
     if output_file is None:
-        output_file = f(file_name_template)
+        output_file = file_name_template.format(
+            nef_entry_id=nef_entry_id, chain_code=chain_code
+        )
 
     output_file = Path(output_file) if output_file != "-" else STDOUT
 

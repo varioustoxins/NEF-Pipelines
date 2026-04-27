@@ -1,5 +1,4 @@
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.test_lib import (
     NOQA_E501,
@@ -81,7 +80,7 @@ def test_pred4tab():
         result.stdout, "nef_dihedral_restraint_list_talos_restraints_A_PHI_PSI"
     )
 
-    PATCHED_EXPECTED = f(EXPECTED)
+    PATCHED_EXPECTED = EXPECTED.format(pred_4_path=pred_4_path)
     assert_lines_match(PATCHED_EXPECTED, phi_psi)
 
 
@@ -149,7 +148,7 @@ def test_pred4tab_chi1():
         result.stdout, "nef_dihedral_restraint_list_talos_restraints_A_CHI1"
     )
 
-    PATCHED_EXPECTED = f(EXPECTED_CHI1)
+    PATCHED_EXPECTED = EXPECTED_CHI1.format(pred_4_path=pred_4_path)
     assert_lines_match(PATCHED_EXPECTED, phi_psi)
 
 

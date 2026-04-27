@@ -5,7 +5,6 @@ from textwrap import dedent, indent
 from typing import Annotated, List, Optional
 
 import typer
-from fyeah import f
 from pynmrstar import Entry
 from typer import Option
 
@@ -147,7 +146,7 @@ def pipe(
         if len(peaks) == 0:
             continue
 
-        frame_name = f(name_template_string)
+        frame_name = name_template_string.format(spectrum=spectrum)
 
         dimensions = [
             {"axis_code": dimension} for dimension in spectrum_info.dimensions
@@ -423,7 +422,8 @@ def _exit_bad_spectrum_type(spectrum, known_spectra):
     spectrum_types = strings_to_tabulated_terminal_sensitive(known_spectra)
     spectrum_types = indent(spectrum_types, FOUR_SPACES)
 
-    exit_error(f(msg))
+    msg = msg.format()
+    exit_error(msg.format(spectrum=spectrum, spectrum_types=spectrum_types))
 
 
 def _exit_degnerate_spectrum_type(spectrum, known_spectra, degenerate_spectra):
@@ -439,5 +439,9 @@ def _exit_degnerate_spectrum_type(spectrum, known_spectra, degenerate_spectra):
             {spectrum_types}
         """
     msg = dedent(msg)
-
-    exit_error(f(msg))
+    msg.format(
+        spectrum=spectrum,
+        spectrum_types=spectrum_types,
+        degenerate_spectra=degenerate_spectra,
+    )
+    exit_error(msg)

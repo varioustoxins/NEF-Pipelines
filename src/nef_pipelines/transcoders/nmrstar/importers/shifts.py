@@ -7,7 +7,6 @@ from typing import List, Union
 
 import hjson
 import typer
-from fyeah import f
 from lazy_import import lazy_module
 from pynmrstar import Entry
 from tabulate import tabulate
@@ -740,5 +739,5 @@ def _exit_error_if_missing_residues(residues, shift_residues, file_name):
         missing_residue_table = tabulate(  # noqa: F841
             residue_name_table, tablefmt="plain"
         )
-        msg = f(msg)
+        msg = msg.format(missing_residue_table=missing_residue_table)
         exit_error(msg)

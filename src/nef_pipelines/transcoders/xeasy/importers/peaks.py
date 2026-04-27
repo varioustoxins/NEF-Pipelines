@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from fyeah import f
 
 from nef_pipelines.lib.nef_lib import (
     add_frames_to_entry,
@@ -106,7 +105,7 @@ def pipe(
 
         file_name = Path(file_name).stem  # used in f method...
 
-        frame_name = f(frame_name)
+        frame_name = frame_name.format(file_name=file_name)
 
         frame = peaks_to_frame(
             peaks, dimensions, spectrometer_frequency, frame_code=frame_name

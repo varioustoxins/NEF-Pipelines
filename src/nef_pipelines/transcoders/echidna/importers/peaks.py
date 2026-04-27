@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Iterator, List
 
 import typer
-from fyeah import f
 from pynmrstar import Saveframe
 
 from nef_pipelines.lib.nef_frames_lib import CCPN_MERIT, SPECTRUM_FRAME_CATEGORY
@@ -402,7 +401,7 @@ def pipe(
 
         file_name = file_name.stem  # used by f()
 
-        frame_code = f"{SPECTRUM_FRAME_CATEGORY}_{f(frame_name_template)}"
+        frame_code = f"{SPECTRUM_FRAME_CATEGORY}_{frame_name_template.format(file_name=file_name)}"
 
         frame = entry.get_saveframe_by_name(frame_code)
 

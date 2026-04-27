@@ -4,7 +4,6 @@ from textwrap import dedent, indent
 from typing import List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry, Loop, Saveframe
 from runstats import Statistics
 from strenum import LowercaseStrEnum
@@ -85,8 +84,7 @@ def pipe(
 ) -> Entry:
 
     entry_id = entry.entry_id  # noqa: F841
-    frame_name = f(frame_name)
-
+    frame_name = frame_name.format(entry_id=entry_id)
     peaks = []
     for frame in frames:
         peaks.extend(frame_to_peaks(frame))
@@ -190,5 +188,4 @@ def _exit_if_bad_frame_types_selected(frames):
             tabulate(bad_frame_table, headers=["frame name", "category"]), "    "
         )
         msg += "\n"
-        msg = f(msg)
         exit_error(msg)

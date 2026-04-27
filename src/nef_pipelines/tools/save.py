@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 
 import typer
-from fyeah import f
 from pynmrstar import Entry
 
 from nef_pipelines import nef_app
@@ -133,7 +132,7 @@ def pipe(
         file_paths = []
         for entry in entries:
             entry_id = entry.entry_id
-            file_name = f(template)
+            file_name = template.format(entry_id=entry_id)
             file_paths.append(directory / file_name)
 
     # deal with what append mode to use
@@ -168,7 +167,7 @@ def pipe(
 
         if len(entries) > 1 and write_header:
             entry_id = entry.entry_id  # noqa: F841
-            header_text = f(HEADER)
+            header_text = HEADER.format(DELIMITER=DELIMITER, entry_id=entry_id)
             print(header_text, file=file_h)
         else:
             header_text = None

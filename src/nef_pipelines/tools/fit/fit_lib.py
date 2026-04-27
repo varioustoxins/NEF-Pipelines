@@ -4,7 +4,6 @@ from math import sqrt
 from statistics import stdev
 from typing import Dict, List, OrderedDict, Tuple, Union
 
-from fyeah import f
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
 
@@ -538,7 +537,8 @@ def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> fl
 def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry: Entry):
 
     NAMESPACE = prefix  # noqa: F841
-    series_category = f(SERIES_DATA_CATEGORY)
+
+    series_category = SERIES_DATA_CATEGORY.format(NAMESPACE=NAMESPACE)
     series_data_loop = (
         series_frame.get_loop(series_category)
         if series_category in series_frame
