@@ -2,12 +2,12 @@ import sys
 from typing import TYPE_CHECKING, Callable
 
 import typer
-from nef_pipelines.lib.util import exit_error
 from rich import box
 from rich.align import Align
 from rich.console import Console
 from rich.table import Table
 
+from nef_pipelines.lib.util import exit_error
 from nef_pipelines.tools.ai import ai_app
 
 if TYPE_CHECKING:
@@ -70,6 +70,20 @@ def server(
     _build = _get_build_server_or_exit_error_if_fast_mcp_is_missing()
 
     _issue_experimental_warning()
+
+    server_transport_args = _get_transport_args(host, port, transport)
+
+    _build().run(**server_transport_args)
+
+
+def _get_transport_args(host: str, port: int, transport: str) -> dict[str, str]:
+    kwargs = {"transport": transport}
+    if transport != "stdio":
+        kwargs["host"] = host
+        kwargs["port"] = port
+    return kwargs
+
+
 def _issue_experimental_warning():
     console = Console(stderr=True)
 
@@ -93,11 +107,10 @@ def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "Fa
     try:
         from nef_pipelines.tools.ai.server_lib import _build_server as _build
     except ImportError:
-        msg = \
-            """
+        msg = """
                 ERROR: fastmcp is not installed
                 when using the install script use the --mcp-server option
-                when installing using uv use uv tool install nef-pipelines[mcp] 
+                when installing using uv use uv tool install nef-pipelines[mcp]
                 if using pip pip install nef-pipelines[mcp]
             """
         exit_error(msg)
