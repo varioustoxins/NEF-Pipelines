@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from nef_pipelines.lib.test_lib import read_test_data
-from nef_pipelines.tools.ai.mcp_commands_lib import _RESOURCES, resource_name
+from nef_pipelines.tools.ai.mcp_lib import _RESOURCES, _get_resource_name_from_filename
 from nef_pipelines.tools.ai.server import _build_server
 
 if sys.version_info < (3, 10):
@@ -28,7 +28,7 @@ EXPECTED_TOOL_NAMES = {
 }
 
 EXPECTED_RESOURCE_URIS = {
-    f"nef://{resource_name(f.name)}"
+    f"nef://{_get_resource_name_from_filename(f.name)}"
     for f in _RESOURCES.iterdir()
     if f.name.endswith(".md") and f.name != "preamble.md"
 }

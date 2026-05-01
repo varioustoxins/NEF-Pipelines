@@ -2,9 +2,9 @@ from typing import Any, Callable, Dict, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
+    _execute_command_in_process,
     _find_resource_file,
-    execute_command_in_process,
-    resource_name,
+    _get_resource_name_from_filename,
 )
 
 _MCP_TOOLS: List[Callable] = []
@@ -33,7 +33,7 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
     Returns {"commands_table": str, "success": bool, "exit_code": int, "stderr": str}.
     """
     args = ["help", "commands", "--display=table", "--format=markdown", command_pattern]
-    result = execute_command_in_process(args)
+    result = _execute_command_in_process(args)
     return {
         "commands_table": result["stdout"],
         "success": result["success"],
@@ -59,7 +59,7 @@ def nef_get_command_help(
     if group_by_category:
         args.append("--group-by-category")
     args.append(command_pattern)
-    result = execute_command_in_process(args)
+    result = _execute_command_in_process(args)
     return {
         "help_text": result["stdout"],
         "success": result["success"],
@@ -110,7 +110,9 @@ def nef_read_resource(name: str) -> Dict[str, Any]:
     Returns {"content": str, "success": bool, "available_resources": list}.
     """
     available = sorted(
-        resource_name(f.name) for f in _RESOURCES.iterdir() if f.name.endswith(".md")
+        _get_resource_name_from_filename(f.name)
+        for f in _RESOURCES.iterdir()
+        if f.name.endswith(".md")
     )
 
     f = _find_resource_file(name)
@@ -139,7 +141,7 @@ def nef_execute_command(args: List[str], nef_input: str = "") -> Dict[str, Any]:
 
     Returns {"stdout": str, "stderr": str, "exit_code": int, "success": bool}.
     """
-    return execute_command_in_process(args, nef_input)
+    return _execute_command_in_process(args, nef_input)
 
 
 @mcp_tool
@@ -184,7 +186,7 @@ def nef_execute_pipeline(
             }
 
         try:
-            result = execute_command_in_process(args, current_output)
+            result = _execute_command_in_process(args, current_output)
         except Exception as e:
             error_msg = f"Exception executing step {i}: {type(e).__name__}: {e}"
             step_results.append(

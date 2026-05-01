@@ -24,7 +24,7 @@ _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
 _RESOURCE_NAME_SEPARATOR = " - "
 
 
-def execute_command_in_process(
+def _execute_command_in_process(
     args: List[str],
     nef_input: str = "",
 ) -> Dict[str, Any]:
@@ -54,7 +54,7 @@ def execute_command_in_process(
     }
 
 
-def resource_name(filename: str) -> str:
+def _get_resource_name_from_filename(filename: str) -> str:
     """Return the resource name from a filename: stem text before the first ' - ', lowercased.
 
     The separator is space-hyphen-space so resource names that contain hyphens (e.g.
@@ -64,7 +64,7 @@ def resource_name(filename: str) -> str:
     return stem.split(_RESOURCE_NAME_SEPARATOR, 1)[0].strip().lower()
 
 
-def resource_description(filename: str) -> str:
+def _get_resource_description_from_filename(filename: str) -> str:
     """Return the resource description from a filename: stem text after the first ' - '."""
     stem = Path(filename).stem
     parts = stem.split(_RESOURCE_NAME_SEPARATOR, 1)
@@ -74,6 +74,6 @@ def resource_description(filename: str) -> str:
 def _find_resource_file(name: str):
     """Find the resource file in _RESOURCES whose name matches the given resource name."""
     for f in _RESOURCES.iterdir():
-        if f.name.endswith(".md") and resource_name(f.name) == name:
+        if f.name.endswith(".md") and _get_resource_name_from_filename(f.name) == name:
             return f
     return None

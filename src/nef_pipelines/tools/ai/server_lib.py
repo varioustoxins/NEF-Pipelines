@@ -6,8 +6,8 @@ from nef_pipelines.tools.ai.mcp_commands_lib import (  # noqa: F401 — import t
 )
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
-    resource_description,
-    resource_name,
+    _get_resource_description_from_filename,
+    _get_resource_name_from_filename,
 )
 
 
@@ -24,8 +24,8 @@ def _build_server() -> FastMCP:
     for md_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
         if not md_file.name.endswith(".md") or md_file.name == "preamble.md":
             continue
-        name = resource_name(md_file.name)
-        description = resource_description(md_file.name)
+        name = _get_resource_name_from_filename(md_file.name)
+        description = _get_resource_description_from_filename(md_file.name)
         uri = f"nef://{name}"
 
         def _make_reader(f):
