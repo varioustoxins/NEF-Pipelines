@@ -15,6 +15,7 @@ export SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
 
 yes="${NEF_PIPELINES_AUTO_INSTALL:-no}"
 test_pypi="no"
+INSTALL_MCP="false"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
       test_pypi="yes"
       shift
       ;;
+    --mcp-server)
+      INSTALL_MCP="true"
+      shift # Remove --mcp-server from processing
+      ;;
     -h|--help)
       echo "install NEF-Pipelines"
       echo
@@ -33,6 +38,7 @@ while [[ $# -gt 0 ]]; do
       echo
       echo "--yes / -y   - answer yes to questions"
       echo "--test-pypi  - install from test.pypi.org instead of pypi.org (for testing releases)"
+      echo "--mcp-server - install the MCP server (experimental take great care!)"
       echo "--help / -h  - show this message"
       exit 0
       shift
@@ -62,6 +68,14 @@ if [[ $yes == "no" ]] ; then
   fi
 fi
 
+# Define the package target based on the flag
+if [[ "$INSTALL_MCP" == "true" ]]; then
+  # Use brackets to include the extra defined in setup.cfg
+  PACKAGE_SPEC="nef-pipelines[mcp]"
+  echo "* MCP server support requested."
+else
+  PACKAGE_SPEC="nef-pipelines"
+fi
 
 # check UV exists
 UV_EXISTS=false
@@ -188,20 +202,20 @@ if [[ $NEF_PIPELINES_EXISTS == "true" ]] ; then
   current_version=$( $NEF_PATH version )
   if [[ $test_pypi == "yes" ]]; then
     echo "* installing from test.pypi.org..."
-    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade \
+    $UV_PATH tool install "${PACKAGE_SPEC}" --with streamfitter --python ${PYTHON_VERSION} --reinstall  \
       --index "https://test.pypi.org/simple/" --index-strategy unsafe-best-match
   else
-    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} --force --upgrade
+    $UV_PATH tool install "${PACKAGE_SPEC}" --with streamfitter --python ${PYTHON_VERSION} --reinstall
   fi
   new_version=$( $NEF_PATH version )
   echo "* updated: $current_version -> $new_version"
 else
   if [[ $test_pypi == "yes" ]]; then
     echo "* installing from test.pypi.org..."
-    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION} \
-      --index "https://test.pypi.org/simple/" --index-strategy unsafe-best-match
+    $UV_PATH tool install "${PACKAGE_SPEC}" --with streamfitter --python ${PYTHON_VERSION} \
+      --index "https://test.pypi.org/simple/" --index-strategy unsafe-best-match --force
   else
-    $UV_PATH tool install nef-pipelines --with streamfitter --python ${PYTHON_VERSION}
+    $UV_PATH tool install "${PACKAGE_SPEC}" --with streamfitter --python ${PYTHON_VERSION} --force
   fi
 fi
 
