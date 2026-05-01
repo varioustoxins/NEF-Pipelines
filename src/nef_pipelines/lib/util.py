@@ -21,6 +21,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NoReturn,
     Optional,
     TextIO,
     Tuple,
@@ -364,7 +365,7 @@ def _script_to_command(script: str) -> str:
     return " ".join(script_path)
 
 
-def exit_error(msg, exception=None):
+def exit_error(msg, exception=None) -> NoReturn:
     """
     print an error message and exit error
 
