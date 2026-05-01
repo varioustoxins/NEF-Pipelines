@@ -1,6 +1,7 @@
 import sys
 
 import typer
+from nef_pipelines.lib.util import exit_error
 from rich import box
 from rich.align import Align
 from rich.console import Console
@@ -59,14 +60,8 @@ def server(
     ),
 ):
     """- start the NEF MCP server"""
-    if sys.version_info < (3, 10):
-        typer.echo(
-            "ERROR: the NEF MCP server requires Python 3.10 or later. "
-            f"You are running Python {sys.version_info.major}.{sys.version_info.minor}. "
-            "Please upgrade your Python version.",
-            err=True,
-        )
-        raise typer.Exit(1)
+
+    _exit_error_if_python_lees_than_3_10()
 
     console = Console(stderr=True)
 
@@ -95,8 +90,12 @@ def server(
         )
         raise typer.Exit(1)
 
-    kwargs = {"transport": transport}
-    if transport != "stdio":
-        kwargs["host"] = host
-        kwargs["port"] = port
-    _build().run(**kwargs)
+
+def _exit_error_if_python_lees_than_3_10():
+    if sys.version_info < (3, 10):
+        msg = f"""
+            The NEF-Pipelines MCP server requires Python 3.10 or later.
+            You are running Python {sys.version_info.major}.{sys.version_info.minor}.
+            Please upgrade your Python version.
+        """
+        exit_error(msg)
