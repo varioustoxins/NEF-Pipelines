@@ -27,7 +27,6 @@ EXPECTED_BMRB_CODE_ERROR = """\
 ERROR [in: project]:
 the file name bmr9999 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
-... for full debug information run: nef --debug nmrstar import project bmr9999 --source auto
 exiting...
 """
 
@@ -71,7 +70,6 @@ EXPECTED_UBIQUITIN_BMRB_ERROR = """\
 ERROR [in: project]:
 the file name bmr5387 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
-... for full debug information run: nef --debug nmrstar import project ubiquitin --source auto
 exiting...
 """
 
@@ -79,7 +77,6 @@ EXPECTED_NUMERIC_BMRB_ERROR = """\
 ERROR [in: project]:
 the file name 5387 looks like a bmrb code but I couldn't read it
 from the bmrb website, is it correct, is you network up, is the bmrb up?
-... for full debug information run: nef --debug nmrstar import project 5387 --source auto
 exiting...
 """
 
