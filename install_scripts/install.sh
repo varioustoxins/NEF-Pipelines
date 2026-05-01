@@ -121,9 +121,9 @@ else
   echo installing uv...
   echo
   if [[ $CURL_EXISTS == "true" ]]; then
-      curl -LsSf https://astral.sh/uv/install.sh | sh
+      curl -LsSf https://astral.sh/uv/install.sh | sh && DID_UV_INSTALL=true
   elif [[ $WGET_EXISTS == "true" ]]; then
-      wget -qO- https://astral.sh/uv/install.sh | sh
+      wget -qO- https://astral.sh/uv/install.sh | sh && DID_UV_INSTALL=true
   fi
 fi
 
