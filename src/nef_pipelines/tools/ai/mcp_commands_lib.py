@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
@@ -7,7 +7,21 @@ from nef_pipelines.tools.ai.mcp_lib import (
     resource_name,
 )
 
+_MCP_TOOLS: List[Callable] = []
 
+
+def mcp_tool(fn: Callable) -> Callable:
+    """\
+    Decorator that marks a function as an MCP tool for auto-registration.
+
+    Appends the function to _MCP_TOOLS in declaration order so server_lib
+    can register them without a manual list.
+    """
+    _MCP_TOOLS.append(fn)
+    return fn
+
+
+@mcp_tool
 def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
     """
     Get a table listing of NEF pipeline commands.
@@ -28,6 +42,7 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
     }
 
 
+@mcp_tool
 def nef_get_command_help(
     command_pattern: str = "*",
     group_by_category: bool = False,
@@ -53,6 +68,7 @@ def nef_get_command_help(
     }
 
 
+@mcp_tool
 def nef_read_me_first() -> Dict[str, Any]:
     """
     Call this FIRST before using any other nef tools — once per session.
@@ -82,6 +98,7 @@ def nef_read_me_first() -> Dict[str, Any]:
     }
 
 
+@mcp_tool
 def nef_read_resource(name: str) -> Dict[str, Any]:
     """
     Read a NEF-Pipelines documentation resource by name.
@@ -112,6 +129,7 @@ def nef_read_resource(name: str) -> Dict[str, Any]:
     }
 
 
+@mcp_tool
 def nef_execute_command(args: List[str], nef_input: str = "") -> Dict[str, Any]:
     """
     Execute a single NEF command in-process and return its output.
@@ -124,6 +142,7 @@ def nef_execute_command(args: List[str], nef_input: str = "") -> Dict[str, Any]:
     return execute_command_in_process(args, nef_input)
 
 
+@mcp_tool
 def nef_execute_pipeline(
     steps: List[Dict[str, Any]],
     nef_input: str = "",
