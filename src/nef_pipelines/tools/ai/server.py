@@ -1,4 +1,5 @@
 import sys
+from typing import TYPE_CHECKING, Callable
 
 import typer
 from nef_pipelines.lib.util import exit_error
@@ -8,6 +9,9 @@ from rich.console import Console
 from rich.table import Table
 
 from nef_pipelines.tools.ai import ai_app
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 EXPERIMENTAL_BANNER_HEADING = (
     "[bold red]⚠  EXPERIMENTAL - USE WITH CAUTION  ⚠[/bold red]"
@@ -31,7 +35,7 @@ It grants an AI model direct, unsupervised access to your filesystem and
 
 
 def _build_server():
-    from nef_pipelines.tools.ai.mcp_lib import _build_server as _build
+    from nef_pipelines.tools.ai.server_lib import _build_server as _build
 
     return _build()
 
@@ -63,6 +67,7 @@ def server(
 
     _exit_error_if_python_lees_than_3_10()
 
+    _build = _get_build_server_or_exit_error_if_fast_mcp_is_missing()
     console = Console(stderr=True)
 
     table = Table(
@@ -80,15 +85,20 @@ def server(
 
     console.print(Align.center(table))
 
+
+def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "FastMCP"]:
     try:
-        from nef_pipelines.tools.ai.mcp_lib import _build_server as _build
+        from nef_pipelines.tools.ai.server_lib import _build_server as _build
     except ImportError:
-        typer.echo(
-            "ERROR: fastmcp is not installed. "
-            "Install it with: pip install 'nef_pipelines[mcp]'",
-            err=True,
-        )
-        raise typer.Exit(1)
+        msg = \
+            """
+                ERROR: fastmcp is not installed
+                when using the install script use the --mcp-server option
+                when installing using uv use uv tool install nef-pipelines[mcp] 
+                if using pip pip install nef-pipelines[mcp]
+            """
+        exit_error(msg)
+    return _build
 
 
 def _exit_error_if_python_lees_than_3_10():
