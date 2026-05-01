@@ -68,6 +68,9 @@ def server(
     _exit_error_if_python_lees_than_3_10()
 
     _build = _get_build_server_or_exit_error_if_fast_mcp_is_missing()
+
+    _issue_experimental_warning()
+def _issue_experimental_warning():
     console = Console(stderr=True)
 
     table = Table(
