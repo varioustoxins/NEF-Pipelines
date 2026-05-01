@@ -1,45 +1,79 @@
-from fastmcp import FastMCP
+import logging
+from importlib import import_module
+from importlib.resources import files
+from pathlib import Path
+from typing import Any, Dict, List
 
-from nef_pipelines.lib.util import get_version
-from nef_pipelines.tools.ai.mcp_commands_lib import (
-    _RESOURCES,
-    nef_execute_command,
-    nef_execute_pipeline,
-    nef_get_command_help,
-    nef_list_commands,
-    nef_read_me_first,
-    nef_read_resource,
-    resource_description,
-    resource_name,
-)
+from typer.testing import CliRunner
+
+from nef_pipelines.main import create_nef_app
+from nef_pipelines.module_registry import get_registerd_modules
+
+logger = logging.getLogger(__name__)
+
+_nef_app = create_nef_app()
+
+for _module_name in get_registerd_modules():
+    try:
+        import_module(_module_name)
+    except Exception:
+        pass
+
+_RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
+
+_RESOURCE_NAME_SEPARATOR = " - "
 
 
-def _build_server() -> FastMCP:
-    preamble = (_RESOURCES / "preamble.md").read_text()
-    mcp_server = FastMCP("nef-pipelines", version=get_version(), instructions=preamble)
+def execute_command_in_process(
+    args: List[str],
+    nef_input: str = "",
+) -> Dict[str, Any]:
+    """
+    Execute a NEF command in-process with stdin/stdout streaming.
 
-    for md_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
-        if not md_file.name.endswith(".md") or md_file.name == "preamble.md":
-            continue
-        name = resource_name(md_file.name)
-        description = resource_description(md_file.name)
-        uri = f"nef://{name}"
+    Returns {"stdout": str, "stderr": str, "exit_code": int, "success": bool}.
+    """
+    runner = CliRunner()
+    result = runner.invoke(
+        _nef_app.app, list(args), input=nef_input if nef_input else None
+    )
 
-        def _make_reader(f):
-            def _reader() -> str:
-                return f.read_text()
+    stderr = ""
+    if hasattr(result, "stderr") and result.stderr:
+        stderr = result.stderr
 
-            return _reader
+    stdout = result.output or ""
+    if stderr:
+        stdout = (stdout + stderr) if stdout else stderr
 
-        mcp_server.resource(uri, mime_type="text/markdown", description=description)(
-            _make_reader(md_file)
-        )
+    return {
+        "stdout": stdout,
+        "stderr": stderr,
+        "exit_code": result.exit_code,
+        "success": result.exit_code == 0,
+    }
 
-    mcp_server.tool()(nef_read_me_first)
-    mcp_server.tool()(nef_read_resource)
-    mcp_server.tool()(nef_list_commands)
-    mcp_server.tool()(nef_get_command_help)
-    mcp_server.tool()(nef_execute_command)
-    mcp_server.tool()(nef_execute_pipeline)
 
-    return mcp_server
+def resource_name(filename: str) -> str:
+    """Return the resource name from a filename: stem text before the first ' - ', lowercased.
+
+    The separator is space-hyphen-space so resource names that contain hyphens (e.g.
+    'cli-idioms', 'nmr-data') are preserved intact.
+    """
+    stem = Path(filename).stem
+    return stem.split(_RESOURCE_NAME_SEPARATOR, 1)[0].strip().lower()
+
+
+def resource_description(filename: str) -> str:
+    """Return the resource description from a filename: stem text after the first ' - '."""
+    stem = Path(filename).stem
+    parts = stem.split(_RESOURCE_NAME_SEPARATOR, 1)
+    return parts[1].strip() if len(parts) > 1 else f"{parts[0].strip()} reference"
+
+
+def _find_resource_file(name: str):
+    """Find the resource file in _RESOURCES whose name matches the given resource name."""
+    for f in _RESOURCES.iterdir():
+        if f.name.endswith(".md") and resource_name(f.name) == name:
+            return f
+    return None
