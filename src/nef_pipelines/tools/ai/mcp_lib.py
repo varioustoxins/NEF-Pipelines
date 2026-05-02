@@ -31,7 +31,7 @@ def _execute_command_in_process(
     """
     Execute a NEF command in-process with stdin/stdout streaming.
 
-    Returns {"stdout": str, "stderr": str, "exit_code": int, "success": bool}.
+    Returns {"stdout": str, "stderr": str, "exit_code": int}.
     """
     runner = CliRunner()
     result = runner.invoke(
@@ -50,7 +50,6 @@ def _execute_command_in_process(
         "stdout": stdout,
         "stderr": stderr,
         "exit_code": result.exit_code,
-        "success": result.exit_code == 0,
     }
 
 

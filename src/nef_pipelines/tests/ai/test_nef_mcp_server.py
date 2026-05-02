@@ -50,7 +50,6 @@ def test_nef_list_commands_all():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert isinstance(result["commands_table"], str)
 
@@ -76,7 +75,6 @@ def test_nef_list_commands_filtered():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     table = result["commands_table"]
@@ -96,7 +94,6 @@ def test_nef_list_commands_sparky_filter():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     table = result["commands_table"]
@@ -116,7 +113,6 @@ def test_nef_get_command_help_single_command():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert isinstance(result["help_text"], str)
 
@@ -140,7 +136,6 @@ def test_nef_get_command_help_wildcard():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     help_text = result["help_text"]
@@ -160,7 +155,6 @@ def test_nef_get_command_help_grouped():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     help_text = result["help_text"]
@@ -229,7 +223,6 @@ def test_nef_execute_command_version():
     """
     result = nef_execute_command(args=["version"])
 
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert len(result["stdout"]) > 0
 
@@ -242,7 +235,6 @@ def test_nef_execute_command_help():
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     stdout = result["stdout"]
@@ -263,7 +255,6 @@ def test_nef_execute_command_with_nef_input(simple_nef_data):
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     stdout = result["stdout"]
@@ -281,7 +272,6 @@ def test_nef_execute_command_frames_list(simple_nef_data):
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
 
     stdout = result["stdout"]
@@ -297,7 +287,6 @@ def test_nef_execute_command_invalid():
     """
     result = nef_execute_command(args=["nonexistent", "command"])
 
-    assert result["success"] is False
     assert result["exit_code"] != 0
 
 
@@ -307,7 +296,6 @@ def test_nef_execute_pipeline_empty_steps():
     """
     result = nef_execute_pipeline(steps=[])
 
-    assert result["success"] is False
     assert result["exit_code"] == -1
     assert "No steps provided" in result["stderr"]
     assert result["failed_step"] is None
@@ -323,14 +311,13 @@ def test_nef_execute_pipeline_single_step(simple_nef_data):
 
     # Verify complete response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert len(result["step_results"]) == 1
     assert result["failed_step"] is None
 
     # Verify step result structure
     step_result = result["step_results"][0]
-    assert step_result["success"] is True
+    assert step_result["exit_code"] == 0
     assert step_result["step"] == 1
 
 
@@ -345,13 +332,12 @@ def test_nef_execute_pipeline_multiple_steps(simple_nef_data):
 
     result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data)
 
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert len(result["step_results"]) == 1
     assert result["failed_step"] is None
 
     # Check step succeeded
-    assert result["step_results"][0]["success"] is True
+    assert result["step_results"][0]["exit_code"] == 0
 
 
 def test_nef_execute_pipeline_step_failure():
@@ -367,16 +353,15 @@ def test_nef_execute_pipeline_step_failure():
 
     # Verify complete error response structure
     assert isinstance(result, dict)
-    assert result["success"] is False
     assert result["exit_code"] != 0
     assert result["failed_step"] == 2  # Second step (1-indexed)
     assert len(result["step_results"]) == 2  # Should have results for first 2 steps
 
     # Verify first step succeeded
-    assert result["step_results"][0]["success"] is True
+    assert result["step_results"][0]["exit_code"] == 0
 
     # Verify second step failed
-    assert result["step_results"][1]["success"] is False
+    assert result["step_results"][1]["exit_code"] != 0
     assert result["step_results"][1]["step"] == 2
 
 
@@ -392,7 +377,7 @@ def test_nef_execute_pipeline_verbose_mode(simple_nef_data):
 
     # Verify response structure
     assert isinstance(result, dict)
-    assert result["success"] is True
+    assert result["exit_code"] == 0
     assert len(result["step_results"]) == 1
 
     # Verify verbose mode includes all expected diagnostic fields
@@ -417,7 +402,6 @@ def test_nef_execute_pipeline_with_nef_data_passthrough(simple_nef_data):
     result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data)
 
     # Should succeed - save outputs NEF to stdout
-    assert result["success"] is True
     assert result["exit_code"] == 0
     assert len(result["stdout"]) > 0
     assert "data_" in result["stdout"]  # NEF files start with data_
@@ -431,7 +415,7 @@ def test_nef_execute_pipeline_step_with_no_args():
 
     result = nef_execute_pipeline(steps=steps)
 
-    assert result["success"] is False
+    assert result["exit_code"] != 0
     assert result["failed_step"] == 1
     assert "no args" in result["stderr"].lower()
 
@@ -440,7 +424,7 @@ def test_nef_execute_command_returns_dict_structure():
     """\
     Test that nef_execute_command returns complete expected dict structure.
     """
-    EXPECTED_FIELDS = {"stdout", "stderr", "exit_code", "success"}
+    EXPECTED_FIELDS = {"stdout", "stderr", "exit_code"}
 
     result = nef_execute_command(args=["version"])
 
@@ -454,7 +438,6 @@ def test_nef_execute_command_returns_dict_structure():
     assert isinstance(result["stdout"], str)
     assert isinstance(result["stderr"], str)
     assert isinstance(result["exit_code"], int)
-    assert isinstance(result["success"], bool)
 
 
 def test_nef_execute_pipeline_returns_dict_structure():
@@ -465,7 +448,6 @@ def test_nef_execute_pipeline_returns_dict_structure():
         "stdout",
         "stderr",
         "exit_code",
-        "success",
         "step_results",
         "failed_step",
     }
@@ -482,7 +464,6 @@ def test_nef_execute_pipeline_returns_dict_structure():
     assert isinstance(result["stdout"], str)
     assert isinstance(result["stderr"], str)
     assert isinstance(result["exit_code"], int)
-    assert isinstance(result["success"], bool)
     assert isinstance(result["step_results"], list)
     assert result["failed_step"] is None or isinstance(result["failed_step"], int)
 
@@ -491,7 +472,7 @@ def test_nef_list_commands_returns_dict_structure():
     """\
     Test that nef_list_commands returns complete expected dict structure.
     """
-    EXPECTED_FIELDS = {"commands_table", "success", "exit_code", "stderr"}
+    EXPECTED_FIELDS = {"commands_table", "exit_code", "stderr"}
 
     result = nef_list_commands()
 
@@ -503,7 +484,6 @@ def test_nef_list_commands_returns_dict_structure():
 
     # Verify field types
     assert isinstance(result["commands_table"], str)
-    assert isinstance(result["success"], bool)
     assert isinstance(result["exit_code"], int)
     assert isinstance(result["stderr"], str)
 
@@ -512,7 +492,7 @@ def test_nef_get_command_help_returns_dict_structure():
     """\
     Test that nef_get_command_help returns complete expected dict structure.
     """
-    EXPECTED_FIELDS = {"help_text", "success", "exit_code", "stderr"}
+    EXPECTED_FIELDS = {"help_text", "exit_code", "stderr"}
 
     result = nef_get_command_help()
 
@@ -524,6 +504,5 @@ def test_nef_get_command_help_returns_dict_structure():
 
     # Verify field types
     assert isinstance(result["help_text"], str)
-    assert isinstance(result["success"], bool)
     assert isinstance(result["exit_code"], int)
     assert isinstance(result["stderr"], str)

@@ -36,7 +36,6 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
     result = _execute_command_in_process(args)
     return {
         "commands_table": result["stdout"],
-        "success": result["success"],
         "exit_code": result["exit_code"],
         "stderr": result.get("stderr", ""),
     }
@@ -62,7 +61,6 @@ def nef_get_command_help(
     result = _execute_command_in_process(args)
     return {
         "help_text": result["stdout"],
-        "success": result["success"],
         "exit_code": result["exit_code"],
         "stderr": result.get("stderr", ""),
     }
@@ -157,14 +155,13 @@ def nef_execute_pipeline(
     nef_input - optional NEF content to seed the first step
     verbose   - include per-step stdout/input_length/output_length in step_results
 
-    Returns {"stdout", "stderr", "exit_code", "success", "step_results", "failed_step"}.
+    Returns {"stdout", "stderr", "exit_code", "step_results", "failed_step"}.
     """
     if not steps:
         return {
             "stdout": "",
             "stderr": "No steps provided",
             "exit_code": -1,
-            "success": False,
             "step_results": [],
             "failed_step": None,
         }
@@ -180,7 +177,6 @@ def nef_execute_pipeline(
                 "stdout": "",
                 "stderr": f"Step {i} has no args. Step data: {step}",
                 "exit_code": -1,
-                "success": False,
                 "step_results": step_results,
                 "failed_step": i,
             }
@@ -194,7 +190,6 @@ def nef_execute_pipeline(
                     "step": i,
                     "args": args,
                     "exit_code": -1,
-                    "success": False,
                     "stderr": error_msg,
                 }
             )
@@ -202,7 +197,6 @@ def nef_execute_pipeline(
                 "stdout": "",
                 "stderr": error_msg,
                 "exit_code": -1,
-                "success": False,
                 "step_results": step_results,
                 "failed_step": i,
             }
@@ -211,7 +205,6 @@ def nef_execute_pipeline(
             "step": i,
             "args": args,
             "exit_code": result["exit_code"],
-            "success": result["success"],
             "stderr": result["stderr"],
         }
         if verbose:
@@ -224,13 +217,12 @@ def nef_execute_pipeline(
         if result["stderr"]:
             all_stderr_parts.append(f"[step {i}] {result['stderr']}")
 
-        if not result["success"]:
+        if result["exit_code"] != 0:
             return {
                 "stdout": result["stdout"],
                 "stderr": "\n".join(all_stderr_parts)
                 or f"Command failed with exit code {result['exit_code']}",
                 "exit_code": result["exit_code"],
-                "success": False,
                 "step_results": step_results,
                 "failed_step": i,
             }
@@ -241,7 +233,6 @@ def nef_execute_pipeline(
         "stdout": current_output,
         "stderr": "\n".join(all_stderr_parts),
         "exit_code": 0,
-        "success": True,
         "step_results": step_results,
         "failed_step": None,
     }
