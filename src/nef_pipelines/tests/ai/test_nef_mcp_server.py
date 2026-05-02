@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from nef_pipelines.lib.test_lib import read_test_data
+from nef_pipelines.lib.test_lib import assert_lines_match, isolate_frame, read_test_data
 from nef_pipelines.tools.ai.mcp_commands_lib import (
     nef_download_file,
     nef_execute_pipeline,
@@ -17,23 +17,34 @@ from nef_pipelines.tools.ai.mcp_commands_lib import (
     nef_read_resource,
     nef_upload_file,
 )
+from nef_pipelines.tools.ai.mcp_lib import (
+    CommandHelpResult,
+    CommandTableResult,
+    DownloadResult,
+    ListFilesResult,
+    ResourceResult,
+    UploadResult,
+)
 
 if sys.version_info < (3, 10):
     pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
 
 pytest.importorskip("fastmcp")
 
-# Expected structure constants
 EXPECTED_COMMON_COMMANDS = ["frames", "save", "help"]
 EXPECTED_README_SECTIONS = [
     "NEF-Pipelines",
 ]
 EXPECTED_HELP_SECTIONS = ["Usage:", "Options", "General"]
-EXPECTED_FRAMES_IN_UBIQUITIN = [
-    "nef_nmr_meta_data",
-    "nef_molecular_system",
-    "nef_chemical_shift_list",
-]
+EXPECTED_FRAMES_LIST = """\
+nef_nmr_meta_data                    nef_molecular_system
+nef_chemical_shift_list_default      nef_nmr_spectrum_k_ubi_n_hsqc`1`
+nef_nmr_spectrum_k_ubi_hnca`1`       nef_nmr_spectrum_k_ubi_hncoca`1`
+nef_nmr_spectrum_k_ubi_hncaco`1`     nef_nmr_spectrum_k_ubi_hnco`1`
+nef_nmr_spectrum_k_ubi_hncacb`1`     nef_nmr_spectrum_k_ubi_cbcaconh`1`
+nef_nmr_spectrum_mars_ubi_n_hsqc`1`  ccpn_substance_1D3Z_1|Chain.None
+ccpn_substance_mySubstance.None      ccpn_assignment
+"""
 
 
 @pytest.fixture
@@ -50,21 +61,17 @@ def test_nef_list_commands_all():
     """
     result = nef_list_commands()
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-    assert isinstance(result["commands_table"], str)
+    assert isinstance(result, CommandTableResult)
+    assert result.exit_code == 0
+    assert isinstance(result.commands_table, str)
 
-    table = result["commands_table"]
+    table = result.commands_table
 
-    # Verify it's a table (contains pipe characters)
     assert "|" in table
 
-    # Verify all expected common commands are present
     for command in EXPECTED_COMMON_COMMANDS:
         assert command in table.lower(), f"Missing command: {command}"
 
-    # Verify table has headers
     assert "Command" in table or "command" in table
     assert "Category" in table or "category" in table
 
@@ -75,16 +82,12 @@ def test_nef_list_commands_filtered():
     """
     result = nef_list_commands(command_pattern="*frames*")
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
+    assert isinstance(result, CommandTableResult)
+    assert result.exit_code == 0
 
-    table = result["commands_table"]
+    table = result.commands_table
 
-    # Should contain frames command
     assert "frames" in table.lower()
-
-    # Should be a valid table
     assert "|" in table
 
 
@@ -94,16 +97,12 @@ def test_nef_list_commands_sparky_filter():
     """
     result = nef_list_commands(command_pattern="*sparky*")
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
+    assert isinstance(result, CommandTableResult)
+    assert result.exit_code == 0
 
-    table = result["commands_table"]
+    table = result.commands_table
 
-    # Should contain sparky commands
     assert "sparky" in table.lower()
-
-    # Should be a valid table
     assert "|" in table
 
 
@@ -113,20 +112,14 @@ def test_nef_get_command_help_single_command():
     """
     result = nef_get_command_help(command_pattern="save")
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-    assert isinstance(result["help_text"], str)
+    assert isinstance(result, CommandHelpResult)
+    assert result.exit_code == 0
+    assert isinstance(result.help_text, str)
 
-    help_text = result["help_text"]
+    help_text = result.help_text
 
-    # Should contain command name
     assert "save" in help_text.lower()
-
-    # Should contain help sections
     assert "usage" in help_text.lower() or "arguments" in help_text.lower()
-
-    # Should be substantial
     assert len(help_text) > 200
 
 
@@ -136,16 +129,12 @@ def test_nef_get_command_help_wildcard():
     """
     result = nef_get_command_help(command_pattern="*frames*")
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
+    assert isinstance(result, CommandHelpResult)
+    assert result.exit_code == 0
 
-    help_text = result["help_text"]
+    help_text = result.help_text
 
-    # Should contain frames command help
     assert "frames" in help_text.lower()
-
-    # Should be substantial
     assert len(help_text) > 100
 
 
@@ -155,14 +144,12 @@ def test_nef_get_command_help_grouped():
     """
     result = nef_get_command_help(command_pattern="*", group_by_category=True)
 
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
+    assert isinstance(result, CommandHelpResult)
+    assert result.exit_code == 0
 
-    help_text = result["help_text"]
+    help_text = result.help_text
 
-    # Should contain category headers or be organized
-    assert len(help_text) > 500  # Should be comprehensive
+    assert len(help_text) > 500
 
 
 def test_nef_read_me_first():
@@ -171,12 +158,12 @@ def test_nef_read_me_first():
     """
     result = nef_read_me_first()
 
-    assert isinstance(result, dict)
-    assert result["success"] is True
-    assert isinstance(result["content"], str)
-    assert "Already oriented" in result["content"]
-    assert "NEF" in result["content"]
-    assert len(result["content"]) > 200
+    assert isinstance(result, ResourceResult)
+    assert result.success is True
+    assert isinstance(result.content, str)
+    assert "Already oriented" in result.content
+    assert "NEF" in result.content
+    assert len(result.content) > 200
 
 
 def test_nef_read_resource_readme():
@@ -185,15 +172,15 @@ def test_nef_read_resource_readme():
     """
     result = nef_read_resource("readme")
 
-    assert isinstance(result, dict)
-    assert result["success"] is True
-    assert isinstance(result["content"], str)
-    assert isinstance(result["available_resources"], list)
+    assert isinstance(result, ResourceResult)
+    assert result.success is True
+    assert isinstance(result.content, str)
+    assert isinstance(result.available_resources, list)
 
     for section in EXPECTED_README_SECTIONS:
-        assert section in result["content"], f"Missing section: {section}"
+        assert section in result.content, f"Missing section: {section}"
 
-    assert len(result["content"]) > 1000
+    assert len(result.content) > 1000
 
 
 def test_nef_read_resource_skill():
@@ -202,9 +189,9 @@ def test_nef_read_resource_skill():
     """
     result = nef_read_resource("skill")
 
-    assert isinstance(result, dict)
-    assert result["success"] is True
-    assert isinstance(result["content"], str)
+    assert isinstance(result, ResourceResult)
+    assert result.success is True
+    assert isinstance(result.content, str)
 
 
 def test_nef_read_resource_not_found():
@@ -213,10 +200,10 @@ def test_nef_read_resource_not_found():
     """
     result = nef_read_resource("nonexistent")
 
-    assert isinstance(result, dict)
-    assert result["success"] is False
-    assert isinstance(result["available_resources"], list)
-    assert len(result["available_resources"]) > 0
+    assert isinstance(result, ResourceResult)
+    assert result.success is False
+    assert isinstance(result.available_resources, list)
+    assert len(result.available_resources) > 0
 
 
 def test_nef_execute_pipeline_empty_steps():
@@ -254,7 +241,7 @@ def test_nef_execute_pipeline_multiple_steps(simple_nef_data):
     assert result.success is True
     assert result.exit_code == 0
     assert result.steps_completed == 2
-    assert "nef_molecular_system" in result.stdout
+    assert_lines_match(EXPECTED_FRAMES_LIST, result.stdout)
 
 
 def test_nef_execute_pipeline_step_failure():
@@ -276,8 +263,10 @@ def test_nef_execute_pipeline_with_nef_data_passthrough(simple_nef_data):
     result = nef_execute_pipeline(steps=[["save", "-"]], nef_input=simple_nef_data)
 
     assert result.success is True
-    assert len(result.stdout) > 0
-    assert "data_" in result.stdout
+    assert_lines_match(
+        isolate_frame(simple_nef_data, "nef_molecular_system"),
+        isolate_frame(result.stdout, "nef_molecular_system"),
+    )
 
 
 def test_nef_execute_pipeline_step_with_no_args():
@@ -336,44 +325,28 @@ def test_nef_execute_pipeline_returns_dataclass_structure():
     assert isinstance(result.success, bool)
 
 
-def test_nef_list_commands_returns_dict_structure():
+def test_nef_list_commands_returns_dataclass_structure():
     """\
-    Test that nef_list_commands returns complete expected dict structure.
+    Test that nef_list_commands returns a CommandTableResult dataclass.
     """
-    EXPECTED_FIELDS = {"commands_table", "exit_code", "stderr"}
-
     result = nef_list_commands()
 
-    # Verify complete field set
-    assert isinstance(result, dict)
-    assert (
-        set(result.keys()) == EXPECTED_FIELDS
-    ), f"Fields mismatch. Got: {set(result.keys())}"
-
-    # Verify field types
-    assert isinstance(result["commands_table"], str)
-    assert isinstance(result["exit_code"], int)
-    assert isinstance(result["stderr"], str)
+    assert isinstance(result, CommandTableResult)
+    assert isinstance(result.commands_table, str)
+    assert isinstance(result.exit_code, int)
+    assert isinstance(result.stderr, str)
 
 
-def test_nef_get_command_help_returns_dict_structure():
+def test_nef_get_command_help_returns_dataclass_structure():
     """\
-    Test that nef_get_command_help returns complete expected dict structure.
+    Test that nef_get_command_help returns a CommandHelpResult dataclass.
     """
-    EXPECTED_FIELDS = {"help_text", "exit_code", "stderr"}
-
     result = nef_get_command_help()
 
-    # Verify complete field set
-    assert isinstance(result, dict)
-    assert (
-        set(result.keys()) == EXPECTED_FIELDS
-    ), f"Fields mismatch. Got: {set(result.keys())}"
-
-    # Verify field types
-    assert isinstance(result["help_text"], str)
-    assert isinstance(result["exit_code"], int)
-    assert isinstance(result["stderr"], str)
+    assert isinstance(result, CommandHelpResult)
+    assert isinstance(result.help_text, str)
+    assert isinstance(result.exit_code, int)
+    assert isinstance(result.stderr, str)
 
 
 # --- nef_upload_file / nef_download_file / nef_list_files --------------------
@@ -387,9 +360,10 @@ def test_nef_upload_file(tmp_path, monkeypatch):
 
     result = nef_upload_file("peaks.nef", "data_test\n")
 
-    assert result["success"] is True
-    assert result["name"] == "peaks.nef"
-    assert result["bytes_written"] == len("data_test\n".encode("utf-8"))
+    assert isinstance(result, UploadResult)
+    assert result.success is True
+    assert result.name == "peaks.nef"
+    assert result.bytes_written == len("data_test\n".encode("utf-8"))
     assert (tmp_path / "peaks.nef").read_text() == "data_test\n"
 
 
@@ -401,8 +375,9 @@ def test_nef_upload_file_absolute_path_rejected(tmp_path, monkeypatch):
 
     result = nef_upload_file("/etc/passwd", "x")
 
-    assert result["success"] is False
-    assert "error" in result
+    assert isinstance(result, UploadResult)
+    assert result.success is False
+    assert bool(result.error)
 
 
 def test_nef_upload_file_traversal_rejected(tmp_path, monkeypatch):
@@ -413,8 +388,9 @@ def test_nef_upload_file_traversal_rejected(tmp_path, monkeypatch):
 
     result = nef_upload_file("../../etc/passwd", "x")
 
-    assert result["success"] is False
-    assert "error" in result
+    assert isinstance(result, UploadResult)
+    assert result.success is False
+    assert bool(result.error)
 
 
 def test_nef_upload_file_unicode_content(tmp_path, monkeypatch):
@@ -426,8 +402,9 @@ def test_nef_upload_file_unicode_content(tmp_path, monkeypatch):
 
     result = nef_upload_file("shifts.txt", content)
 
-    assert result["success"] is True
-    assert result["bytes_written"] == len(content.encode("utf-8"))
+    assert isinstance(result, UploadResult)
+    assert result.success is True
+    assert result.bytes_written == len(content.encode("utf-8"))
     assert (tmp_path / "shifts.txt").read_text(encoding="utf-8") == content
 
 
@@ -440,9 +417,10 @@ def test_nef_download_file(tmp_path, monkeypatch):
 
     result = nef_download_file("result.nef")
 
-    assert result["success"] is True
-    assert result["name"] == "result.nef"
-    assert result["content"] == "data_result\n"
+    assert isinstance(result, DownloadResult)
+    assert result.success is True
+    assert result.name == "result.nef"
+    assert result.content == "data_result\n"
 
 
 def test_nef_download_file_not_found(tmp_path, monkeypatch):
@@ -454,10 +432,11 @@ def test_nef_download_file_not_found(tmp_path, monkeypatch):
 
     result = nef_download_file("missing.nef")
 
-    assert result["success"] is False
-    assert "error" in result
-    assert "available_files" in result
-    assert "other.nef" in result["available_files"]
+    assert isinstance(result, DownloadResult)
+    assert result.success is False
+    assert bool(result.error)
+    assert bool(result.available_files)
+    assert "other.nef" in result.available_files
 
 
 def test_nef_download_file_absolute_path_rejected(tmp_path, monkeypatch):
@@ -468,8 +447,9 @@ def test_nef_download_file_absolute_path_rejected(tmp_path, monkeypatch):
 
     result = nef_download_file("/etc/passwd")
 
-    assert result["success"] is False
-    assert "error" in result
+    assert isinstance(result, DownloadResult)
+    assert result.success is False
+    assert bool(result.error)
 
 
 def test_nef_list_files_empty(tmp_path, monkeypatch):
@@ -480,9 +460,10 @@ def test_nef_list_files_empty(tmp_path, monkeypatch):
 
     result = nef_list_files()
 
-    assert result["success"] is True
-    assert result["files"] == []
-    assert "cwd" in result
+    assert isinstance(result, ListFilesResult)
+    assert result.success is True
+    assert result.files == []
+    assert bool(result.cwd)
 
 
 def test_nef_list_files_after_upload(tmp_path, monkeypatch):
@@ -495,8 +476,9 @@ def test_nef_list_files_after_upload(tmp_path, monkeypatch):
 
     result = nef_list_files()
 
-    assert result["success"] is True
-    assert sorted(result["files"]) == ["a.nef", "b.nef"]
+    assert isinstance(result, ListFilesResult)
+    assert result.success is True
+    assert sorted(result.files) == ["a.nef", "b.nef"]
 
 
 def test_nef_upload_download_roundtrip(tmp_path, monkeypatch):
@@ -509,5 +491,6 @@ def test_nef_upload_download_roundtrip(tmp_path, monkeypatch):
     nef_upload_file("ubiquitin.nef", content)
     result = nef_download_file("ubiquitin.nef")
 
-    assert result["success"] is True
-    assert result["content"] == content
+    assert isinstance(result, DownloadResult)
+    assert result.success is True
+    assert result.content == content

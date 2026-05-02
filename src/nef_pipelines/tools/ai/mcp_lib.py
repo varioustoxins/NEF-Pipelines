@@ -180,6 +180,84 @@ class PipelineResult:
         return self.exit_code == 0
 
 
+@dataclass
+class OperationResult:
+    """Base for file I/O and resource operations; success = no error."""
+
+    error: str = ""
+
+    @property
+    def success(self) -> bool:
+        """True when error is empty."""
+        return not bool(self.error)
+
+
+@dataclass
+class CommandResult:
+    """Base for command executions; success = exit_code == 0."""
+
+    exit_code: int = 0
+    stderr: str = ""
+
+    @property
+    def success(self) -> bool:
+        """True when exit_code is 0."""
+        return self.exit_code == 0
+
+
+@dataclass
+class UploadResult(OperationResult):
+    """Result of nef_upload_file."""
+
+    name: str = ""
+    bytes_written: int = 0
+
+
+@dataclass
+class DownloadResult(OperationResult):
+    """Result of nef_download_file."""
+
+    name: str = ""
+    content: str = ""
+    available_files: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ListFilesResult(OperationResult):
+    """Result of nef_list_files.
+
+    unexpected_entries elements are formatted as 'name (type)',
+    e.g. 'tmp_dir (directory)'. error is non-empty and success=False
+    whenever unexpected_entries is non-empty.
+    """
+
+    files: List[str] = field(default_factory=list)
+    cwd: str = ""
+    unexpected_entries: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ResourceResult(OperationResult):
+    """Result of nef_read_me_first and nef_read_resource."""
+
+    content: str = ""
+    available_resources: List[str] = field(default_factory=list)
+
+
+@dataclass
+class CommandTableResult(CommandResult):
+    """Result of nef_list_commands."""
+
+    commands_table: str = ""
+
+
+@dataclass
+class CommandHelpResult(CommandResult):
+    """Result of nef_get_command_help."""
+
+    help_text: str = ""
+
+
 def _execute_command_in_process(
     args: List[str],
     nef_input: str = "",

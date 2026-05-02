@@ -1,10 +1,16 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Callable, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
+    CommandHelpResult,
+    CommandTableResult,
+    DownloadResult,
+    ListFilesResult,
     PipelineResult,
+    ResourceResult,
+    UploadResult,
     _execute_command_in_process,
     _find_resource_file,
     _get_resource_name_from_filename,
@@ -28,70 +34,68 @@ def mcp_tool(fn: Callable) -> Callable:
 
 
 @mcp_tool
-def nef_upload_file(name: str, content: str) -> Dict[str, Any]:
+def nef_upload_file(name: str, content: str) -> UploadResult:
     """\
     Write a flat UTF-8 text file into the server's working directory.
 
     name    - plain filename, no path components (e.g. 'pxo.shifts').
     content - UTF-8 text content to write.
 
-    Returns {"success": bool, "name": str, "bytes_written": int}.
+    Returns UploadResult with name and bytes_written.
     bytes_written is the number of encoded UTF-8 bytes, not characters.
-    On failure, includes "error".
+    On failure, error is non-empty.
     """
     ok, error = _validate_path_in_sandbox(name)
     if not ok:
-        return {"success": False, "name": name, "bytes_written": 0, "error": error}
+        return UploadResult(name=name, error=error)
 
     path = Path(name)
     try:
         path.write_text(content, encoding="utf-8")
     except OSError as e:
-        return {"success": False, "name": name, "bytes_written": 0, "error": str(e)}
+        return UploadResult(name=name, error=str(e))
     bytes_written = len(content.encode("utf-8"))
     logger.info("nef_upload_file: %s (%d bytes)", name, bytes_written)
-    return {"success": True, "name": name, "bytes_written": bytes_written}
+    return UploadResult(name=name, bytes_written=bytes_written)
 
 
 @mcp_tool
-def nef_download_file(name: str) -> Dict[str, Any]:
+def nef_download_file(name: str) -> DownloadResult:
     """\
     Read a flat UTF-8 text file from the server's working directory.
 
     name - plain filename, no path components (e.g. 'result.nef').
 
-    Returns {"success": bool, "name": str, "content": str}.
-    On failure, includes "error" and (when the file is missing) "available_files".
+    Returns DownloadResult with name and content.
+    On failure, error is non-empty; when the file is missing, available_files is populated.
     """
     ok, error = _validate_path_in_sandbox(name)
     if not ok:
-        return {"success": False, "name": name, "content": "", "error": error}
+        return DownloadResult(name=name, error=error)
 
     path = Path(name)
     if not path.exists():
         available = sorted(f.name for f in Path.cwd().iterdir() if f.is_file())
-        return {
-            "success": False,
-            "name": name,
-            "content": "",
-            "error": f"'{name}' not found",
-            "available_files": available,
-        }
+        return DownloadResult(
+            name=name,
+            error=f"'{name}' not found",
+            available_files=available,
+        )
 
     content = path.read_text(encoding="utf-8")
     logger.info("nef_download_file: %s (%d bytes)", name, len(content))
-    return {"success": True, "name": name, "content": content}
+    return DownloadResult(name=name, content=content)
 
 
 @mcp_tool
-def nef_list_files() -> Dict[str, Any]:
+def nef_list_files() -> ListFilesResult:
     """\
     List entries in the server's working directory.
 
-    Returns {"success": bool, "files": [str], "cwd": str}.
+    Returns ListFilesResult with files and cwd.
     Any non-file entry (subdirectory, symlink, etc.) is unexpected — NEF tools
-    don't create them. When present, returns success=False with "error" and
-    "unexpected_entries". Regular files are always listed.
+    don't create them. When present, error is non-empty and unexpected_entries
+    lists them as 'name (type)' strings. Regular files are always listed.
     """
     cwd = Path.cwd()
     regular_files = []
@@ -99,13 +103,13 @@ def nef_list_files() -> Dict[str, Any]:
 
     for entry in sorted(cwd.iterdir()):
         if entry.is_symlink():
-            unexpected.append({"name": entry.name, "type": "symlink"})
+            unexpected.append(f"{entry.name} (symlink)")
         elif entry.is_file():
             regular_files.append(entry.name)
         elif entry.is_dir():
-            unexpected.append({"name": entry.name, "type": "directory"})
+            unexpected.append(f"{entry.name} (directory)")
         else:
-            unexpected.append({"name": entry.name, "type": "other"})
+            unexpected.append(f"{entry.name} (other)")
 
     logger.info(
         "nef_list_files: %d file(s), %d unexpected entry/entries",
@@ -114,21 +118,20 @@ def nef_list_files() -> Dict[str, Any]:
     )
 
     if unexpected:
-        return {
-            "success": False,
-            "error": (
+        return ListFilesResult(
+            error=(
                 "unexpected non-file entries in working directory "
                 "(NEF tools should not create these)"
             ),
-            "files": regular_files,
-            "unexpected_entries": unexpected,
-            "cwd": str(cwd),
-        }
-    return {"success": True, "files": regular_files, "cwd": str(cwd)}
+            files=regular_files,
+            cwd=str(cwd),
+            unexpected_entries=unexpected,
+        )
+    return ListFilesResult(files=regular_files, cwd=str(cwd))
 
 
 @mcp_tool
-def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
+def nef_list_commands(command_pattern: str = "*") -> CommandTableResult:
     """
     Get a table listing of NEF pipeline commands.
 
@@ -136,44 +139,44 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
                       supports wildcards and comma-separated lists
                       default: "*" (all commands)
 
-    Returns {"commands_table": str, "exit_code": int, "stderr": str}.
+    Returns CommandTableResult with commands_table. On failure, exit_code is non-zero.
     """
     args = ["help", "commands", "--display=table", "--format=markdown", command_pattern]
     result = _execute_command_in_process(args)
-    return {
-        "commands_table": result.stdout,
-        "exit_code": result.exit_code,
-        "stderr": result.stderr[0] if result.stderr else "",
-    }
+    return CommandTableResult(
+        commands_table=result.stdout,
+        exit_code=result.exit_code,
+        stderr=result.stderr[0] if result.stderr else "",
+    )
 
 
 @mcp_tool
 def nef_get_command_help(
     command_pattern: str = "*",
     group_by_category: bool = False,
-) -> Dict[str, Any]:
+) -> CommandHelpResult:
     """
     Get detailed full help documentation for NEF commands.
 
     command_pattern   - pattern to match commands (e.g., "*sparky*", "frames*", "save")
     group_by_category - if True, organise output by category with headings
 
-    Returns {"help_text": str, "exit_code": int, "stderr": str}.
+    Returns CommandHelpResult with help_text. On failure, exit_code is non-zero.
     """
     args = ["help", "commands", "--display=help", "--format=markdown"]
     if group_by_category:
         args.append("--group-by-category")
     args.append(command_pattern)
     result = _execute_command_in_process(args)
-    return {
-        "help_text": result.stdout,
-        "exit_code": result.exit_code,
-        "stderr": result.stderr[0] if result.stderr else "",
-    }
+    return CommandHelpResult(
+        help_text=result.stdout,
+        exit_code=result.exit_code,
+        stderr=result.stderr[0] if result.stderr else "",
+    )
 
 
 @mcp_tool
-def nef_read_me_first() -> Dict[str, Any]:
+def nef_read_me_first() -> ResourceResult:
     """
     Call this FIRST before using any other nef tools — once per session.
     Returns orientation: what NEF-Pipelines is, what resources to read, and what tools are available.
@@ -196,14 +199,11 @@ def nef_read_me_first() -> Dict[str, Any]:
         "`readme` · `skill` · `cli-idioms` · `nef` · `nmr-data` · `star`"
     )
 
-    return {
-        "content": skip_header + preamble + resource_footer,
-        "success": True,
-    }
+    return ResourceResult(content=skip_header + preamble + resource_footer)
 
 
 @mcp_tool
-def nef_read_resource(name: str) -> Dict[str, Any]:
+def nef_read_resource(name: str) -> ResourceResult:
     """
     Read a NEF-Pipelines documentation resource by name.
     Equivalent to reading nef://<name> via the resources interface; use this when
@@ -211,7 +211,7 @@ def nef_read_resource(name: str) -> Dict[str, Any]:
 
     name - resource to fetch: readme, skill, cli-idioms, nef, nmr-data, star, preamble
 
-    Returns {"content": str, "success": bool, "available_resources": list}.
+    Returns ResourceResult with content and available_resources. On failure, error is non-empty.
     """
     available = sorted(
         _get_resource_name_from_filename(f.name)
@@ -221,18 +221,12 @@ def nef_read_resource(name: str) -> Dict[str, Any]:
 
     f = _find_resource_file(name)
     if f is None:
-        return {
-            "content": "",
-            "success": False,
-            "error": f"Resource '{name}' not found. Available: {available}",
-            "available_resources": available,
-        }
+        return ResourceResult(
+            error=f"Resource '{name}' not found. Available: {available}",
+            available_resources=available,
+        )
 
-    return {
-        "content": f.read_text(),
-        "success": True,
-        "available_resources": available,
-    }
+    return ResourceResult(content=f.read_text(), available_resources=available)
 
 
 def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:

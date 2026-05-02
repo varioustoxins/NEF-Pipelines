@@ -24,13 +24,13 @@ of arguments.
 | `nef frames delete ccpn_*` | `['frames', 'delete', 'ccpn_*']` |
 | `nef save result.nef` | `['save', 'result.nef']` |
 
-So the full pipeline:
+So for the pipeline you would write in the shell as:
 
 ```
 nef stream my.nef | nef frames delete ccpn_* | nef save result.nef
 ```
 
-is sent as:
+this can be sent as:
 
 ```python
 nef_execute_pipeline([
@@ -41,8 +41,7 @@ nef_execute_pipeline([
 ```
 
 Each step is a list of arguments only — no `nef`, no `|`, no shell quoting. File input and output
-is currently relative to the MCP server's working directory; this is expected to move to a managed
-file registry in future.
+is currently relative to the MCP server's working directory.
 
 Use `nef_execute_pipeline(steps=[...])` for all commands — single steps and multi-step pipelines alike.
 
@@ -50,8 +49,13 @@ Use `nef_execute_pipeline(steps=[...])` for all commands — single steps and mu
 
 ## Pipeline Architecture (shell view)
 
-Every manipulation command reads NEF from stdin (`-`) and writes to stdout. `stream` opens a file
-into the pipeline; `save` closes it to disk.
+Each manipulation command can read NEF from `stdin` (`-`) and writes to `stdout`. `stream` opens a file
+into the pipeline; `save` closes it to disk. However, most import commands will create a minimal valid
+NEF entry with a `nef_nmr_metatdata` saveframe if stdin is empty; if not, use `nef header` to seed the
+pipeline - see `Bootstrapping a NEF Entry` later in this file for more information.
+
+> Note many commands also accept `--in <NEF-FILE>` to read an existing NEF file
+> directly from disk bypassing `stdin`.
 
 ```
 nef stream my.nef | nef frames delete ccpn_* | nef save result.nef
@@ -279,6 +283,28 @@ Notes:
 3. Some commands accept `@err` (stderr) and `@out` (stdout) as symmetric pseudo-paths.
 4. Some commands write to stdout when connected to a terminal but switch to stderr when stdout is
    a pipe — this avoids contaminating the NEF data stream with diagnostic output.
+---
+
+## Bootstrapping a NEF Entry
+
+Most import or simulation commands (e.g. `sparky import shifts`, `xeasy import shifts`,
+`fasta import sequence`) will create a minimal valid NEF entry automatically if `stdin` is empty.
+You do **not** need to seed the pipeline with a dummy entry. Simply call the import command
+directly as the first step:
+
+```python
+nef_execute_pipeline(steps=[
+    ["sparky", "import", "shifts", "my_shifts.txt"],
+    ["save", "output.nef"],
+])
+```
+
+Many import commands also accept `--entry-name <NAME>` to set the entry name in the resulting NEF
+file. Check `nef_get_command_help("<command>")` for the available options.
+
+If a command reports `stdin is empty` when called first in a pipeline, check its `--help` for an
+`--entry-name` option or seed the pipeline with `nef header`  — do **not** work around this by
+seeding the pipeline with `nmrstar import project ubiquitin` or similar.
 
 ---
 

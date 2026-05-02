@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from nef_pipelines.lib.test_lib import read_test_data
+from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data
 from nef_pipelines.tools.ai.mcp_lib import (
     _execute_command_in_process as execute_command_in_process,
 )
@@ -15,6 +15,28 @@ if sys.version_info < (3, 10):
     pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
 
 pytest.importorskip("fastmcp")
+
+EXPECTED_FRAMES_LIST = """\
+nef_nmr_meta_data                    nef_molecular_system
+nef_chemical_shift_list_default      nef_nmr_spectrum_k_ubi_n_hsqc`1`
+nef_nmr_spectrum_k_ubi_hnca`1`       nef_nmr_spectrum_k_ubi_hncoca`1`
+nef_nmr_spectrum_k_ubi_hncaco`1`     nef_nmr_spectrum_k_ubi_hnco`1`
+nef_nmr_spectrum_k_ubi_hncacb`1`     nef_nmr_spectrum_k_ubi_cbcaconh`1`
+nef_nmr_spectrum_mars_ubi_n_hsqc`1`  ccpn_substance_1D3Z_1|Chain.None
+ccpn_substance_mySubstance.None      ccpn_assignment
+"""
+
+EXPECTED_TABULATE_MOLECULAR_SYSTEM = """\
+nef_sequence
+------------
+  index  chain_code      sequence_code  residue_name    linking    ccpn_compound_name
+      1  A                           1  MET             start      mySubstance
+      2  A                           2  GLN             middle     mySubstance
+      3  A                           3  ILE             middle     mySubstance
+      4  A                           4  PHE             middle     mySubstance
+      5  A                           5  VAL             middle     mySubstance
+      6  A                           6  LYS             middle     mySubstance
+"""
 
 
 @pytest.fixture
@@ -52,7 +74,7 @@ def test_execute_command_with_nef_input(simple_nef_data):
     result = execute_command_in_process(["frames", "list"], nef_input=simple_nef_data)
 
     assert result.exit_code == 0
-    assert "nef_molecular_system" in result.stdout
+    assert_lines_match(EXPECTED_FRAMES_LIST, result.stdout)
 
 
 def test_execute_command_frames_tabulate(simple_nef_data):
@@ -64,7 +86,7 @@ def test_execute_command_frames_tabulate(simple_nef_data):
     )
 
     assert result.exit_code == 0
-    assert "nef_sequence" in result.stdout or "sequence" in result.stdout.lower()
+    assert_lines_match(EXPECTED_TABULATE_MOLECULAR_SYSTEM, result.stdout)
 
 
 def test_execute_command_without_nef_input_shows_help():
@@ -73,7 +95,6 @@ def test_execute_command_without_nef_input_shows_help():
     """
     result = execute_command_in_process(["frames", "list"])
 
-    # Commands without input often show help (exit 0)
     assert result.exit_code == 0
     assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
 
@@ -95,7 +116,6 @@ def test_execute_command_with_none_nef_input():
         ["help", "commands", "--display=table", "frames*"], nef_input=""
     )
 
-    # help commands command doesn't need input, should succeed
     assert result.exit_code == 0
 
 
@@ -169,11 +189,11 @@ def test_execute_command_with_explicit_input_file(tmp_path, simple_nef_data):
     # Pass explicit --in argument
     result = execute_command_in_process(
         ["frames", "list", "--in", str(test_file)],
-        nef_input="",  # Empty input, but explicit file provided
+        nef_input="",
     )
 
     assert result.exit_code == 0
-    assert "nef_molecular_system" in result.stdout
+    assert_lines_match(EXPECTED_FRAMES_LIST, result.stdout)
 
 
 def test_execute_command_preserves_args_order():
