@@ -292,132 +292,87 @@ def test_nef_execute_command_invalid():
 
 def test_nef_execute_pipeline_empty_steps():
     """\
-    Test nef_execute_pipeline with no steps.
+    Test nef_execute_pipeline with no steps is a no-op.
     """
     result = nef_execute_pipeline(steps=[])
 
-    assert result["exit_code"] == -1
-    assert "No steps provided" in result["stderr"]
-    assert result["failed_step"] is None
+    assert result.success is True
+    assert result.exit_code == 0
+    assert result.steps_completed == 0
+    assert result.stdout == ""
 
 
 def test_nef_execute_pipeline_single_step(simple_nef_data):
     """\
     Test nef_execute_pipeline with single step executes successfully.
     """
-    steps = [{"args": ["frames", "list"]}]
+    result = nef_execute_pipeline(steps=[["frames", "list"]], nef_input=simple_nef_data)
 
-    result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data)
-
-    # Verify complete response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-    assert len(result["step_results"]) == 1
-    assert result["failed_step"] is None
-
-    # Verify step result structure
-    step_result = result["step_results"][0]
-    assert step_result["exit_code"] == 0
-    assert step_result["step"] == 1
+    assert result.success is True
+    assert result.exit_code == 0
+    assert result.steps_completed == 1
+    assert len(result.stderr) == 1
 
 
 def test_nef_execute_pipeline_multiple_steps(simple_nef_data):
     """\
-    Test nef_execute_pipeline with multiple steps using NEF data.
+    Test nef_execute_pipeline chains stdout→stdin across steps.
     """
-    # Commands that accept and pass through NEF data
-    steps = [
-        {"args": ["frames", "list"]},
-    ]
+    result = nef_execute_pipeline(
+        steps=[["save", "-"], ["frames", "list"]], nef_input=simple_nef_data
+    )
 
-    result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data)
-
-    assert result["exit_code"] == 0
-    assert len(result["step_results"]) == 1
-    assert result["failed_step"] is None
-
-    # Check step succeeded
-    assert result["step_results"][0]["exit_code"] == 0
+    assert result.success is True
+    assert result.exit_code == 0
+    assert result.steps_completed == 2
+    assert "nef_molecular_system" in result.stdout
 
 
 def test_nef_execute_pipeline_step_failure():
     """\
-    Test nef_execute_pipeline stops on step failure and reports which step failed.
+    Test nef_execute_pipeline stops on step failure.
     """
-    steps = [
-        {"args": ["version"]},
-        {"args": ["nonexistent", "command"]},  # This will fail
-    ]
+    result = nef_execute_pipeline(steps=[["version"], ["nonexistent", "command"]])
 
-    result = nef_execute_pipeline(steps=steps)
-
-    # Verify complete error response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] != 0
-    assert result["failed_step"] == 2  # Second step (1-indexed)
-    assert len(result["step_results"]) == 2  # Should have results for first 2 steps
-
-    # Verify first step succeeded
-    assert result["step_results"][0]["exit_code"] == 0
-
-    # Verify second step failed
-    assert result["step_results"][1]["exit_code"] != 0
-    assert result["step_results"][1]["step"] == 2
-
-
-def test_nef_execute_pipeline_verbose_mode(simple_nef_data):
-    """\
-    Test nef_execute_pipeline with verbose mode provides complete step diagnostics.
-    """
-    EXPECTED_VERBOSE_FIELDS = ["stdout", "input_length", "output_length"]
-
-    steps = [{"args": ["frames", "list"]}]
-
-    result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data, verbose=True)
-
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-    assert len(result["step_results"]) == 1
-
-    # Verify verbose mode includes all expected diagnostic fields
-    step_result = result["step_results"][0]
-    for field in EXPECTED_VERBOSE_FIELDS:
-        assert field in step_result, f"Missing verbose field: {field}"
-
-    # Verify diagnostic values are reasonable
-    assert step_result["input_length"] > 0
-    assert step_result["output_length"] >= 0
+    assert result.success is False
+    assert result.exit_code != 0
+    assert result.steps_completed == 1
+    assert len(result.stderr) == 2
 
 
 def test_nef_execute_pipeline_with_nef_data_passthrough(simple_nef_data):
     """\
     Test that pipeline can process NEF data through save command.
     """
-    # save - outputs to stdout, which becomes next step's input
-    steps = [
-        {"args": ["save", "-"]},
-    ]
+    result = nef_execute_pipeline(steps=[["save", "-"]], nef_input=simple_nef_data)
 
-    result = nef_execute_pipeline(steps=steps, nef_input=simple_nef_data)
-
-    # Should succeed - save outputs NEF to stdout
-    assert result["exit_code"] == 0
-    assert len(result["stdout"]) > 0
-    assert "data_" in result["stdout"]  # NEF files start with data_
+    assert result.success is True
+    assert len(result.stdout) > 0
+    assert "data_" in result.stdout
 
 
 def test_nef_execute_pipeline_step_with_no_args():
     """\
-    Test nef_execute_pipeline with step missing args.
+    Test nef_execute_pipeline with empty inner list is a silent no-op.
     """
-    steps = [{}]  # No args field
+    result = nef_execute_pipeline(steps=[[]])
 
-    result = nef_execute_pipeline(steps=steps)
+    assert result.success is True
+    assert result.exit_code == 0
+    assert result.steps_completed == 0
+    assert result.stderr == [""]
 
-    assert result["exit_code"] != 0
-    assert result["failed_step"] == 1
-    assert "no args" in result["stderr"].lower()
+
+def test_nef_execute_pipeline_stderr_is_list(simple_nef_data):
+    """\
+    Test nef_execute_pipeline stderr is a list with one entry per step.
+    """
+    result = nef_execute_pipeline(
+        steps=[["frames", "list"], ["save", "-"]], nef_input=simple_nef_data
+    )
+
+    assert isinstance(result.stderr, list)
+    assert len(result.stderr) == 2
 
 
 def test_nef_execute_command_returns_dict_structure():
@@ -440,32 +395,21 @@ def test_nef_execute_command_returns_dict_structure():
     assert isinstance(result["exit_code"], int)
 
 
-def test_nef_execute_pipeline_returns_dict_structure():
+def test_nef_execute_pipeline_returns_dataclass_structure():
     """\
-    Test that nef_execute_pipeline returns complete expected dict structure.
+    Test that nef_execute_pipeline returns a PipelineResult dataclass.
     """
-    EXPECTED_FIELDS = {
-        "stdout",
-        "stderr",
-        "exit_code",
-        "step_results",
-        "failed_step",
-    }
+    from nef_pipelines.tools.ai.mcp_lib import PipelineResult
 
-    result = nef_execute_pipeline(steps=[{"args": ["version"]}])
+    result = nef_execute_pipeline(steps=[["version"]])
 
-    # Verify complete field set
-    assert isinstance(result, dict)
-    assert (
-        set(result.keys()) == EXPECTED_FIELDS
-    ), f"Fields mismatch. Got: {set(result.keys())}"
-
-    # Verify field types
-    assert isinstance(result["stdout"], str)
-    assert isinstance(result["stderr"], str)
-    assert isinstance(result["exit_code"], int)
-    assert isinstance(result["step_results"], list)
-    assert result["failed_step"] is None or isinstance(result["failed_step"], int)
+    assert isinstance(result, PipelineResult)
+    assert isinstance(result.stdout, str)
+    assert isinstance(result.stderr, list)
+    assert isinstance(result.exit_code, int)
+    assert isinstance(result.steps, list)
+    assert isinstance(result.steps_completed, int)
+    assert isinstance(result.success, bool)
 
 
 def test_nef_list_commands_returns_dict_structure():

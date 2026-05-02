@@ -31,8 +31,8 @@ def test_execute_command_help():
     """
     result = execute_command_in_process(["--help"])
 
-    assert result["exit_code"] == 0
-    assert "Usage:" in result["stdout"] or "usage:" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
 
 
 def test_execute_command_version():
@@ -41,8 +41,8 @@ def test_execute_command_version():
     """
     result = execute_command_in_process(["version"])
 
-    assert result["exit_code"] == 0
-    assert len(result["stdout"]) > 0
+    assert result.exit_code == 0
+    assert len(result.stdout) > 0
 
 
 def test_execute_command_with_nef_input(simple_nef_data):
@@ -51,8 +51,8 @@ def test_execute_command_with_nef_input(simple_nef_data):
     """
     result = execute_command_in_process(["frames", "list"], nef_input=simple_nef_data)
 
-    assert result["exit_code"] == 0
-    assert "nef_molecular_system" in result["stdout"]
+    assert result.exit_code == 0
+    assert "nef_molecular_system" in result.stdout
 
 
 def test_execute_command_frames_tabulate(simple_nef_data):
@@ -63,8 +63,8 @@ def test_execute_command_frames_tabulate(simple_nef_data):
         ["frames", "tabulate", "molecular_system"], nef_input=simple_nef_data
     )
 
-    assert result["exit_code"] == 0
-    assert "nef_sequence" in result["stdout"] or "sequence" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "nef_sequence" in result.stdout or "sequence" in result.stdout.lower()
 
 
 def test_execute_command_without_nef_input_shows_help():
@@ -74,8 +74,8 @@ def test_execute_command_without_nef_input_shows_help():
     result = execute_command_in_process(["frames", "list"])
 
     # Commands without input often show help (exit 0)
-    assert result["exit_code"] == 0
-    assert "Usage:" in result["stdout"] or "usage:" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
 
 
 def test_execute_command_save_with_empty_nef_input():
@@ -84,7 +84,7 @@ def test_execute_command_save_with_empty_nef_input():
     """
     result = execute_command_in_process(["save", "-"], nef_input="")
 
-    assert result["exit_code"] != 0
+    assert result.exit_code != 0
 
 
 def test_execute_command_with_none_nef_input():
@@ -96,7 +96,7 @@ def test_execute_command_with_none_nef_input():
     )
 
     # help commands command doesn't need input, should succeed
-    assert result["exit_code"] == 0
+    assert result.exit_code == 0
 
 
 def test_execute_command_invalid_command():
@@ -105,23 +105,21 @@ def test_execute_command_invalid_command():
     """
     result = execute_command_in_process(["nonexistent", "command"])
 
-    assert result["exit_code"] != 0
+    assert result.exit_code != 0
 
 
-def test_execute_command_returns_dict_structure():
+def test_execute_command_returns_command_result():
     """\
-    Test that execute_command_in_process returns expected dict structure.
+    Test that execute_command_in_process returns a CommandResult dataclass.
     """
+    from nef_pipelines.tools.ai.mcp_lib import CommandResult
+
     result = execute_command_in_process(["version"])
 
-    assert isinstance(result, dict)
-    assert "stdout" in result
-    assert "stderr" in result
-    assert "exit_code" in result
-
-    assert isinstance(result["stdout"], str)
-    assert isinstance(result["stderr"], str)
-    assert isinstance(result["exit_code"], int)
+    assert isinstance(result, CommandResult)
+    assert isinstance(result.stdout, str)
+    assert isinstance(result.stderr, str)
+    assert isinstance(result.exit_code, int)
 
 
 def test_execute_command_help_commands_table():
@@ -132,8 +130,8 @@ def test_execute_command_help_commands_table():
         ["help", "commands", "--display=table", "--format=markdown", "frames*"]
     )
 
-    assert result["exit_code"] == 0
-    assert "frames" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "frames" in result.stdout.lower()
 
 
 def test_execute_command_help_commands_full():
@@ -144,8 +142,8 @@ def test_execute_command_help_commands_full():
         ["help", "commands", "--display=help", "--format=markdown", "save"]
     )
 
-    assert result["exit_code"] == 0
-    assert "save" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "save" in result.stdout.lower()
 
 
 def test_execute_command_chaining_output():
@@ -158,7 +156,7 @@ def test_execute_command_chaining_output():
         ["frames", "tabulate", "molecular_system"], nef_input=simple_nef
     )
 
-    assert result1["exit_code"] == 0
+    assert result1.exit_code == 0
 
 
 def test_execute_command_with_explicit_input_file(tmp_path, simple_nef_data):
@@ -174,8 +172,8 @@ def test_execute_command_with_explicit_input_file(tmp_path, simple_nef_data):
         nef_input="",  # Empty input, but explicit file provided
     )
 
-    assert result["exit_code"] == 0
-    assert "nef_molecular_system" in result["stdout"]
+    assert result.exit_code == 0
+    assert "nef_molecular_system" in result.stdout
 
 
 def test_execute_command_preserves_args_order():
@@ -186,5 +184,5 @@ def test_execute_command_preserves_args_order():
         ["help", "commands", "--display=table", "frames*"]
     )
 
-    assert result["exit_code"] == 0
-    assert "frames" in result["stdout"].lower()
+    assert result.exit_code == 0
+    assert "frames" in result.stdout.lower()

@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass, field
 from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
@@ -24,33 +25,62 @@ _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
 _RESOURCE_NAME_SEPARATOR = " - "
 
 
+@dataclass
+class CommandResult:
+    """Result of a single in-process command execution."""
+
+    stdout: str
+    stderr: str
+    exit_code: int
+
+    @property
+    def success(self) -> bool:
+        """True when exit_code is 0."""
+        return self.exit_code == 0
+
+
+@dataclass
+class PipelineResult:
+    """Result of a multi-step pipeline execution."""
+
+    stdout: str = ""
+    stderr: List[str] = field(default_factory=list)
+    exit_code: int = 0
+    steps: List[List[str]] = field(default_factory=list)
+    steps_completed: int = 0
+
+    @property
+    def success(self) -> bool:
+        """True when exit_code is 0."""
+        return self.exit_code == 0
+
+
 def _execute_command_in_process(
     args: List[str],
     nef_input: str = "",
-) -> Dict[str, Any]:
+) -> CommandResult:
     """
     Execute a NEF command in-process with stdin/stdout streaming.
 
-    Returns {"stdout": str, "stderr": str, "exit_code": int}.
+    Returns a CommandResult with stdout, stderr, and exit_code.
     """
-    runner = CliRunner()
-    result = runner.invoke(
-        _nef_app.app, list(args), input=nef_input if nef_input else None
-    )
+    invoke_kwargs: Dict[str, Any] = dict(input=nef_input if nef_input else None)
+    try:
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+        stdout, stderr = result.output or "", result.stderr or ""
+    except TypeError:
+        runner = CliRunner()
+        result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+        stdout = result.output or ""
+        stderr = ""
+        if hasattr(result, "stderr") and result.stderr:
+            stderr = result.stderr
 
-    stderr = ""
-    if hasattr(result, "stderr") and result.stderr:
-        stderr = result.stderr
-
-    stdout = result.output or ""
     if stderr:
         stdout = (stdout + stderr) if stdout else stderr
 
-    return {
-        "stdout": stdout,
-        "stderr": stderr,
-        "exit_code": result.exit_code,
-    }
+    return CommandResult(stdout=stdout, stderr=stderr, exit_code=result.exit_code)
 
 
 def _get_resource_name_from_filename(filename: str) -> str:

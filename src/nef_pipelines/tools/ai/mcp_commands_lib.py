@@ -2,6 +2,8 @@ from typing import Any, Callable, Dict, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
+    CommandResult,
+    PipelineResult,
     _execute_command_in_process,
     _find_resource_file,
     _get_resource_name_from_filename,
@@ -30,14 +32,14 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
                       supports wildcards and comma-separated lists
                       default: "*" (all commands)
 
-    Returns {"commands_table": str, "success": bool, "exit_code": int, "stderr": str}.
+    Returns {"commands_table": str, "exit_code": int, "stderr": str}.
     """
     args = ["help", "commands", "--display=table", "--format=markdown", command_pattern]
     result = _execute_command_in_process(args)
     return {
-        "commands_table": result["stdout"],
-        "exit_code": result["exit_code"],
-        "stderr": result.get("stderr", ""),
+        "commands_table": result.stdout,
+        "exit_code": result.exit_code,
+        "stderr": result.stderr,
     }
 
 
@@ -52,7 +54,7 @@ def nef_get_command_help(
     command_pattern   - pattern to match commands (e.g., "*sparky*", "frames*", "save")
     group_by_category - if True, organise output by category with headings
 
-    Returns {"help_text": str, "success": bool, "exit_code": int, "stderr": str}.
+    Returns {"help_text": str, "exit_code": int, "stderr": str}.
     """
     args = ["help", "commands", "--display=help", "--format=markdown"]
     if group_by_category:
@@ -60,9 +62,9 @@ def nef_get_command_help(
     args.append(command_pattern)
     result = _execute_command_in_process(args)
     return {
-        "help_text": result["stdout"],
-        "exit_code": result["exit_code"],
-        "stderr": result.get("stderr", ""),
+        "help_text": result.stdout,
+        "exit_code": result.exit_code,
+        "stderr": result.stderr,
     }
 
 
@@ -135,104 +137,58 @@ def nef_execute_command(args: List[str], nef_input: str = "") -> Dict[str, Any]:
     Execute a single NEF command in-process and return its output.
 
     args      - command tokens following 'nef', e.g. ["frames", "list"]
-    nef_input - optional NEF content to supply as input
+    nef_input - optional NEF content to supply as stdin
 
-    Returns {"stdout": str, "stderr": str, "exit_code": int, "success": bool}.
+    Returns {"stdout": str, "stderr": str, "exit_code": int}.
     """
-    return _execute_command_in_process(args, nef_input)
+    result = _execute_command_in_process(args, nef_input)
+    return {
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "exit_code": result.exit_code,
+    }
+
+
+def _safe_execute_step(args: List[str], nef_input: str) -> CommandResult:
+    """Execute one pipeline step, returning a CommandResult even on exception."""
+    try:
+        return _execute_command_in_process(args, nef_input)
+    except Exception as e:
+        return CommandResult(
+            stdout="", stderr=f"Exception: {type(e).__name__}: {e}", exit_code=-1
+        )
 
 
 @mcp_tool
 def nef_execute_pipeline(
-    steps: List[Dict[str, Any]],
+    steps: List[List[str]],
     nef_input: str = "",
-    verbose: bool = False,
-) -> Dict[str, Any]:
+) -> PipelineResult:
     """
-    Execute a fully composed NEF pipeline in-process with stdout→input chaining.
+    Execute a sequence of NEF commands in-process, chaining stdout → stdin.
 
-    steps     - list of {"args": [...]} dicts, executed in order
+    steps     - list of argument lists, e.g. [["frames","list"], ["save","-"]]
+                empty list or empty inner list are both silent no-ops
     nef_input - optional NEF content to seed the first step
-    verbose   - include per-step stdout/input_length/output_length in step_results
 
-    Returns {"stdout", "stderr", "exit_code", "step_results", "failed_step"}.
+    Returns PipelineResult with stdout, stderr (one entry per step),
+    exit_code, steps, steps_completed, and success (exit_code == 0).
     """
-    if not steps:
-        return {
-            "stdout": "",
-            "stderr": "No steps provided",
-            "exit_code": -1,
-            "step_results": [],
-            "failed_step": None,
-        }
+    result = PipelineResult(steps=steps, stdout=nef_input)
 
-    current_output = nef_input
-    step_results = []
-    all_stderr_parts = []
-
-    for i, step in enumerate(steps, start=1):
-        args = step.get("args", [])
+    for args in steps:
         if not args:
-            return {
-                "stdout": "",
-                "stderr": f"Step {i} has no args. Step data: {step}",
-                "exit_code": -1,
-                "step_results": step_results,
-                "failed_step": i,
-            }
+            result.stderr.append("")
+            continue
 
-        try:
-            result = _execute_command_in_process(args, current_output)
-        except Exception as e:
-            error_msg = f"Exception executing step {i}: {type(e).__name__}: {e}"
-            step_results.append(
-                {
-                    "step": i,
-                    "args": args,
-                    "exit_code": -1,
-                    "stderr": error_msg,
-                }
-            )
-            return {
-                "stdout": "",
-                "stderr": error_msg,
-                "exit_code": -1,
-                "step_results": step_results,
-                "failed_step": i,
-            }
+        step_result = _safe_execute_step(args, result.stdout)
+        result.stderr.append(step_result.stderr or "")
+        result.exit_code = step_result.exit_code
 
-        step_result = {
-            "step": i,
-            "args": args,
-            "exit_code": result["exit_code"],
-            "stderr": result["stderr"],
-        }
-        if verbose:
-            step_result["stdout"] = result["stdout"][:1000]
-            step_result["input_length"] = len(current_output)
-            step_result["output_length"] = len(result["stdout"])
+        if step_result.exit_code == 0:
+            result.steps_completed += 1
+            result.stdout = step_result.stdout
+        else:
+            break
 
-        step_results.append(step_result)
-
-        if result["stderr"]:
-            all_stderr_parts.append(f"[step {i}] {result['stderr']}")
-
-        if result["exit_code"] != 0:
-            return {
-                "stdout": result["stdout"],
-                "stderr": "\n".join(all_stderr_parts)
-                or f"Command failed with exit code {result['exit_code']}",
-                "exit_code": result["exit_code"],
-                "step_results": step_results,
-                "failed_step": i,
-            }
-
-        current_output = result["stdout"]
-
-    return {
-        "stdout": current_output,
-        "stderr": "\n".join(all_stderr_parts),
-        "exit_code": 0,
-        "step_results": step_results,
-        "failed_step": None,
-    }
+    return result
