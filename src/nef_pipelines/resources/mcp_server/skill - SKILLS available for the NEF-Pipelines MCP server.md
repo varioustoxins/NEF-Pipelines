@@ -21,11 +21,14 @@ details see `nef://readme`; for option / selector syntax see `nef://cli-idioms`.
 
 ## Tools You Have
 
-The MCP server exposes three tools:
+The MCP server exposes six tools:
 
 1. `nef_list_commands()` — enumerate all available commands
 2. `nef_get_command_help(pattern)` — full `--help` for a command or pattern
 3. `nef_execute_pipeline(steps, nef_input=...)` — run one or more steps as a pipeline
+4. `nef_upload_file(name, content)` — write a text file into the working directory
+5. `nef_download_file(name)` — read a text file from the working directory
+6. `nef_list_files()` — list files in the working directory
 
 You do **not** have shell access to `grep`, `sed`, `awk`, `cat`, `head`, etc. when running through
 the in-process MCP executor. This is by design: NEF's hierarchical structure and arbitrary column

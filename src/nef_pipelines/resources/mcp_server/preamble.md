@@ -18,3 +18,6 @@ instructions for what to read next. Skip it only if you have already seen it thi
 2. `nef_list_commands()`        — enumerate available commands
 3. `nef_get_command_help(...)`  — full `--help` for one command
 4. `nef_execute_pipeline(...)`  — run one or more steps as a pipeline
+5. `nef_upload_file(...)`       — write a text file into the working directory
+6. `nef_download_file(...)`     — read a text file from the working directory
+7. `nef_list_files()`           — list files in the working directory

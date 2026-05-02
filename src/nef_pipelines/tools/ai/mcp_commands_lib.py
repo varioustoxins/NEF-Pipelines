@@ -1,3 +1,5 @@
+import logging
+from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
@@ -6,7 +8,10 @@ from nef_pipelines.tools.ai.mcp_lib import (
     _execute_command_in_process,
     _find_resource_file,
     _get_resource_name_from_filename,
+    _validate_path_in_sandbox,
 )
+
+logger = logging.getLogger(__name__)
 
 _MCP_TOOLS: List[Callable] = []
 
@@ -20,6 +25,106 @@ def mcp_tool(fn: Callable) -> Callable:
     """
     _MCP_TOOLS.append(fn)
     return fn
+
+
+@mcp_tool
+def nef_upload_file(name: str, content: str) -> Dict[str, Any]:
+    """\
+    Write a flat UTF-8 text file into the server's working directory.
+
+    name    - plain filename, no path components (e.g. 'pxo.shifts').
+    content - UTF-8 text content to write.
+
+    Returns {"success": bool, "name": str, "bytes_written": int}.
+    bytes_written is the number of encoded UTF-8 bytes, not characters.
+    On failure, includes "error".
+    """
+    ok, error = _validate_path_in_sandbox(name)
+    if not ok:
+        return {"success": False, "name": name, "bytes_written": 0, "error": error}
+
+    path = Path(name)
+    try:
+        path.write_text(content, encoding="utf-8")
+    except OSError as e:
+        return {"success": False, "name": name, "bytes_written": 0, "error": str(e)}
+    bytes_written = len(content.encode("utf-8"))
+    logger.info("nef_upload_file: %s (%d bytes)", name, bytes_written)
+    return {"success": True, "name": name, "bytes_written": bytes_written}
+
+
+@mcp_tool
+def nef_download_file(name: str) -> Dict[str, Any]:
+    """\
+    Read a flat UTF-8 text file from the server's working directory.
+
+    name - plain filename, no path components (e.g. 'result.nef').
+
+    Returns {"success": bool, "name": str, "content": str}.
+    On failure, includes "error" and (when the file is missing) "available_files".
+    """
+    ok, error = _validate_path_in_sandbox(name)
+    if not ok:
+        return {"success": False, "name": name, "content": "", "error": error}
+
+    path = Path(name)
+    if not path.exists():
+        available = sorted(f.name for f in Path.cwd().iterdir() if f.is_file())
+        return {
+            "success": False,
+            "name": name,
+            "content": "",
+            "error": f"'{name}' not found",
+            "available_files": available,
+        }
+
+    content = path.read_text(encoding="utf-8")
+    logger.info("nef_download_file: %s (%d bytes)", name, len(content))
+    return {"success": True, "name": name, "content": content}
+
+
+@mcp_tool
+def nef_list_files() -> Dict[str, Any]:
+    """\
+    List entries in the server's working directory.
+
+    Returns {"success": bool, "files": [str], "cwd": str}.
+    Any non-file entry (subdirectory, symlink, etc.) is unexpected — NEF tools
+    don't create them. When present, returns success=False with "error" and
+    "unexpected_entries". Regular files are always listed.
+    """
+    cwd = Path.cwd()
+    regular_files = []
+    unexpected = []
+
+    for entry in sorted(cwd.iterdir()):
+        if entry.is_symlink():
+            unexpected.append({"name": entry.name, "type": "symlink"})
+        elif entry.is_file():
+            regular_files.append(entry.name)
+        elif entry.is_dir():
+            unexpected.append({"name": entry.name, "type": "directory"})
+        else:
+            unexpected.append({"name": entry.name, "type": "other"})
+
+    logger.info(
+        "nef_list_files: %d file(s), %d unexpected entry/entries",
+        len(regular_files),
+        len(unexpected),
+    )
+
+    if unexpected:
+        return {
+            "success": False,
+            "error": (
+                "unexpected non-file entries in working directory "
+                "(NEF tools should not create these)"
+            ),
+            "files": regular_files,
+            "unexpected_entries": unexpected,
+            "cwd": str(cwd),
+        }
+    return {"success": True, "files": regular_files, "cwd": str(cwd)}
 
 
 @mcp_tool

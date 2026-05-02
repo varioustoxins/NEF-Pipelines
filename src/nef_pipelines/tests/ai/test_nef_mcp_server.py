@@ -8,11 +8,14 @@ import pytest
 
 from nef_pipelines.lib.test_lib import read_test_data
 from nef_pipelines.tools.ai.mcp_commands_lib import (
+    nef_download_file,
     nef_execute_pipeline,
     nef_get_command_help,
     nef_list_commands,
+    nef_list_files,
     nef_read_me_first,
     nef_read_resource,
+    nef_upload_file,
 )
 
 if sys.version_info < (3, 10):
@@ -371,3 +374,140 @@ def test_nef_get_command_help_returns_dict_structure():
     assert isinstance(result["help_text"], str)
     assert isinstance(result["exit_code"], int)
     assert isinstance(result["stderr"], str)
+
+
+# --- nef_upload_file / nef_download_file / nef_list_files --------------------
+
+
+def test_nef_upload_file(tmp_path, monkeypatch):
+    """\
+    Test nef_upload_file writes file content to the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    result = nef_upload_file("peaks.nef", "data_test\n")
+
+    assert result["success"] is True
+    assert result["name"] == "peaks.nef"
+    assert result["bytes_written"] == len("data_test\n".encode("utf-8"))
+    assert (tmp_path / "peaks.nef").read_text() == "data_test\n"
+
+
+def test_nef_upload_file_absolute_path_rejected(tmp_path, monkeypatch):
+    """\
+    Test nef_upload_file rejects absolute paths.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    result = nef_upload_file("/etc/passwd", "x")
+
+    assert result["success"] is False
+    assert "error" in result
+
+
+def test_nef_upload_file_traversal_rejected(tmp_path, monkeypatch):
+    """\
+    Test nef_upload_file rejects path traversal attempts.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    result = nef_upload_file("../../etc/passwd", "x")
+
+    assert result["success"] is False
+    assert "error" in result
+
+
+def test_nef_upload_file_unicode_content(tmp_path, monkeypatch):
+    """\
+    Test nef_upload_file handles unicode content correctly.
+    """
+    monkeypatch.chdir(tmp_path)
+    content = "naïve shifts: δ = 7.3 ppm\n"
+
+    result = nef_upload_file("shifts.txt", content)
+
+    assert result["success"] is True
+    assert result["bytes_written"] == len(content.encode("utf-8"))
+    assert (tmp_path / "shifts.txt").read_text(encoding="utf-8") == content
+
+
+def test_nef_download_file(tmp_path, monkeypatch):
+    """\
+    Test nef_download_file reads file content from the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "result.nef").write_text("data_result\n")
+
+    result = nef_download_file("result.nef")
+
+    assert result["success"] is True
+    assert result["name"] == "result.nef"
+    assert result["content"] == "data_result\n"
+
+
+def test_nef_download_file_not_found(tmp_path, monkeypatch):
+    """\
+    Test nef_download_file returns available files when file is missing.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "other.nef").write_text("x")
+
+    result = nef_download_file("missing.nef")
+
+    assert result["success"] is False
+    assert "error" in result
+    assert "available_files" in result
+    assert "other.nef" in result["available_files"]
+
+
+def test_nef_download_file_absolute_path_rejected(tmp_path, monkeypatch):
+    """\
+    Test nef_download_file rejects absolute paths.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    result = nef_download_file("/etc/passwd")
+
+    assert result["success"] is False
+    assert "error" in result
+
+
+def test_nef_list_files_empty(tmp_path, monkeypatch):
+    """\
+    Test nef_list_files returns empty list for empty directory.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    result = nef_list_files()
+
+    assert result["success"] is True
+    assert result["files"] == []
+    assert "cwd" in result
+
+
+def test_nef_list_files_after_upload(tmp_path, monkeypatch):
+    """\
+    Test nef_list_files lists files written by nef_upload_file.
+    """
+    monkeypatch.chdir(tmp_path)
+    nef_upload_file("a.nef", "x")
+    nef_upload_file("b.nef", "y")
+
+    result = nef_list_files()
+
+    assert result["success"] is True
+    assert sorted(result["files"]) == ["a.nef", "b.nef"]
+
+
+def test_nef_upload_download_roundtrip(tmp_path, monkeypatch):
+    """\
+    Test upload followed by download returns identical content.
+    """
+    monkeypatch.chdir(tmp_path)
+    content = "data_ubiquitin\n_nef_sequence.chain_code A\n"
+
+    nef_upload_file("ubiquitin.nef", content)
+    result = nef_download_file("ubiquitin.nef")
+
+    assert result["success"] is True
+    assert result["content"] == content

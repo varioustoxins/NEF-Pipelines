@@ -1,4 +1,6 @@
+import os
 import sys
+import tempfile
 from typing import TYPE_CHECKING, Callable
 
 import typer
@@ -73,7 +75,10 @@ def server(
 
     server_transport_args = _get_transport_args(host, port, transport)
 
+    sandbox = tempfile.TemporaryDirectory(prefix="nef_mcp_")
+    os.chdir(sandbox.name)
     _build().run(**server_transport_args)
+    sandbox.cleanup()
 
 
 def _get_transport_args(host: str, port: int, transport: str) -> dict[str, str]:
