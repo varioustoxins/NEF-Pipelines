@@ -44,8 +44,7 @@ Each step is a list of arguments only — no `nef`, no `|`, no shell quoting. Fi
 is currently relative to the MCP server's working directory; this is expected to move to a managed
 file registry in future.
 
-For one-off experiments use `nef_execute_command(...)`; for multi-step work always use
-`nef_execute_pipeline(...)`.
+Use `nef_execute_pipeline(steps=[...])` for all commands — single steps and multi-step pipelines alike.
 
 ---
 

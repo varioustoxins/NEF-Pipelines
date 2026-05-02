@@ -108,17 +108,17 @@ def test_execute_command_invalid_command():
     assert result.exit_code != 0
 
 
-def test_execute_command_returns_command_result():
+def test_execute_command_returns_pipeline_result():
     """\
-    Test that execute_command_in_process returns a CommandResult dataclass.
+    Test that execute_command_in_process returns a PipelineResult dataclass.
     """
-    from nef_pipelines.tools.ai.mcp_lib import CommandResult
+    from nef_pipelines.tools.ai.mcp_lib import PipelineResult
 
     result = execute_command_in_process(["version"])
 
-    assert isinstance(result, CommandResult)
+    assert isinstance(result, PipelineResult)
     assert isinstance(result.stdout, str)
-    assert isinstance(result.stderr, str)
+    assert isinstance(result.stderr, list)
     assert isinstance(result.exit_code, int)
 
 

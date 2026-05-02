@@ -165,20 +165,6 @@ def _validate_path_in_sandbox(path_str: str) -> Tuple[bool, str]:
 
 
 @dataclass
-class CommandResult:
-    """Result of a single in-process command execution."""
-
-    stdout: str
-    stderr: str
-    exit_code: int
-
-    @property
-    def success(self) -> bool:
-        """True when exit_code is 0."""
-        return self.exit_code == 0
-
-
-@dataclass
 class PipelineResult:
     """Result of a multi-step pipeline execution."""
 
@@ -197,11 +183,11 @@ class PipelineResult:
 def _execute_command_in_process(
     args: List[str],
     nef_input: str = "",
-) -> CommandResult:
-    """
-    Execute a NEF command in-process with stdin/stdout streaming.
+) -> PipelineResult:
+    """\
+    Execute a single NEF command in-process.
 
-    Returns a CommandResult with stdout, stderr, and exit_code.
+    Returns a PipelineResult with stderr as a single-element list.
     """
     invoke_kwargs: Dict[str, Any] = dict(input=nef_input if nef_input else None)
     try:
@@ -219,7 +205,14 @@ def _execute_command_in_process(
     if stderr:
         stdout = (stdout + stderr) if stdout else stderr
 
-    return CommandResult(stdout=stdout, stderr=stderr, exit_code=result.exit_code)
+    exit_code = result.exit_code
+    return PipelineResult(
+        stdout=stdout,
+        stderr=[stderr],
+        exit_code=exit_code,
+        steps=[list(args)],
+        steps_completed=1 if exit_code == 0 else 0,
+    )
 
 
 def _get_resource_name_from_filename(filename: str) -> str:

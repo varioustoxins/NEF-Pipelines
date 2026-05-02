@@ -8,7 +8,6 @@ import pytest
 
 from nef_pipelines.lib.test_lib import read_test_data
 from nef_pipelines.tools.ai.mcp_commands_lib import (
-    nef_execute_command,
     nef_execute_pipeline,
     nef_get_command_help,
     nef_list_commands,
@@ -217,79 +216,6 @@ def test_nef_read_resource_not_found():
     assert len(result["available_resources"]) > 0
 
 
-def test_nef_execute_command_version():
-    """\
-    Test nef_execute_command with version command.
-    """
-    result = nef_execute_command(args=["version"])
-
-    assert result["exit_code"] == 0
-    assert len(result["stdout"]) > 0
-
-
-def test_nef_execute_command_help():
-    """\
-    Test nef_execute_command with help returns complete help structure.
-    """
-    result = nef_execute_command(args=["--help"])
-
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-
-    stdout = result["stdout"]
-
-    # Verify all expected help sections are present
-    for section in EXPECTED_HELP_SECTIONS:
-        assert section in stdout, f"Missing section: {section}"
-
-    # Should be substantial
-    assert len(stdout) > 200
-
-
-def test_nef_execute_command_with_nef_input(simple_nef_data):
-    """\
-    Test nef_execute_command with NEF input returns complete frame list.
-    """
-    result = nef_execute_command(args=["frames", "list"], nef_input=simple_nef_data)
-
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-
-    stdout = result["stdout"]
-
-    # Verify all expected frames are listed
-    for frame in EXPECTED_FRAMES_IN_UBIQUITIN:
-        assert frame in stdout, f"Missing frame: {frame}"
-
-
-def test_nef_execute_command_frames_list(simple_nef_data):
-    """\
-    Test frames list command via nef_execute_command returns all frames.
-    """
-    result = nef_execute_command(args=["frames", "list"], nef_input=simple_nef_data)
-
-    # Verify response structure
-    assert isinstance(result, dict)
-    assert result["exit_code"] == 0
-
-    stdout = result["stdout"]
-
-    # Should list frames
-    for frame in EXPECTED_FRAMES_IN_UBIQUITIN:
-        assert frame in stdout, f"Missing frame: {frame}"
-
-
-def test_nef_execute_command_invalid():
-    """\
-    Test nef_execute_command with invalid command.
-    """
-    result = nef_execute_command(args=["nonexistent", "command"])
-
-    assert result["exit_code"] != 0
-
-
 def test_nef_execute_pipeline_empty_steps():
     """\
     Test nef_execute_pipeline with no steps is a no-op.
@@ -375,24 +301,19 @@ def test_nef_execute_pipeline_stderr_is_list(simple_nef_data):
     assert len(result.stderr) == 2
 
 
-def test_nef_execute_command_returns_dict_structure():
+def test_nef_execute_pipeline_help():
     """\
-    Test that nef_execute_command returns complete expected dict structure.
+    Test nef_execute_pipeline with --help returns complete help structure.
     """
-    EXPECTED_FIELDS = {"stdout", "stderr", "exit_code"}
+    result = nef_execute_pipeline(steps=[["--help"]])
 
-    result = nef_execute_command(args=["version"])
+    assert result.success is True
+    assert result.exit_code == 0
 
-    # Verify complete field set
-    assert isinstance(result, dict)
-    assert (
-        set(result.keys()) == EXPECTED_FIELDS
-    ), f"Fields mismatch. Got: {set(result.keys())}"
+    for section in EXPECTED_HELP_SECTIONS:
+        assert section in result.stdout, f"Missing section: {section}"
 
-    # Verify field types
-    assert isinstance(result["stdout"], str)
-    assert isinstance(result["stderr"], str)
-    assert isinstance(result["exit_code"], int)
+    assert len(result.stdout) > 200
 
 
 def test_nef_execute_pipeline_returns_dataclass_structure():

@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
-    CommandResult,
     PipelineResult,
     _execute_command_in_process,
     _find_resource_file,
@@ -39,7 +38,7 @@ def nef_list_commands(command_pattern: str = "*") -> Dict[str, Any]:
     return {
         "commands_table": result.stdout,
         "exit_code": result.exit_code,
-        "stderr": result.stderr,
+        "stderr": result.stderr[0] if result.stderr else "",
     }
 
 
@@ -64,7 +63,7 @@ def nef_get_command_help(
     return {
         "help_text": result.stdout,
         "exit_code": result.exit_code,
-        "stderr": result.stderr,
+        "stderr": result.stderr[0] if result.stderr else "",
     }
 
 
@@ -131,31 +130,13 @@ def nef_read_resource(name: str) -> Dict[str, Any]:
     }
 
 
-@mcp_tool
-def nef_execute_command(args: List[str], nef_input: str = "") -> Dict[str, Any]:
-    """
-    Execute a single NEF command in-process and return its output.
-
-    args      - command tokens following 'nef', e.g. ["frames", "list"]
-    nef_input - optional NEF content to supply as stdin
-
-    Returns {"stdout": str, "stderr": str, "exit_code": int}.
-    """
-    result = _execute_command_in_process(args, nef_input)
-    return {
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-        "exit_code": result.exit_code,
-    }
-
-
-def _safe_execute_step(args: List[str], nef_input: str) -> CommandResult:
-    """Execute one pipeline step, returning a CommandResult even on exception."""
+def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:
+    """Execute one pipeline step, returning a PipelineResult even on exception."""
     try:
         return _execute_command_in_process(args, nef_input)
     except Exception as e:
-        return CommandResult(
-            stdout="", stderr=f"Exception: {type(e).__name__}: {e}", exit_code=-1
+        return PipelineResult(
+            stdout="", stderr=[f"Exception: {type(e).__name__}: {e}"], exit_code=-1
         )
 
 
@@ -182,7 +163,7 @@ def nef_execute_pipeline(
             continue
 
         step_result = _safe_execute_step(args, result.stdout)
-        result.stderr.append(step_result.stderr or "")
+        result.stderr.append(step_result.stderr[0] if step_result.stderr else "")
         result.exit_code = step_result.exit_code
 
         if step_result.exit_code == 0:

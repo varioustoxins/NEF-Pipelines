@@ -17,5 +17,4 @@ instructions for what to read next. Skip it only if you have already seen it thi
 1. `nef_read_resource(name)`    — fetch any resource document by name
 2. `nef_list_commands()`        — enumerate available commands
 3. `nef_get_command_help(...)`  — full `--help` for one command
-4. `nef_execute_command(...)`   — single step (prototyping)
-5. `nef_execute_pipeline(...)`  — production multi-step pipeline
+4. `nef_execute_pipeline(...)`  — run one or more steps as a pipeline

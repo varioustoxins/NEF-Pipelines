@@ -21,12 +21,11 @@ details see `nef://readme`; for option / selector syntax see `nef://cli-idioms`.
 
 ## Tools You Have
 
-The MCP server exposes four tools:
+The MCP server exposes three tools:
 
 1. `nef_list_commands()` — enumerate all available commands
 2. `nef_get_command_help(pattern)` — full `--help` for a command or pattern
-3. `nef_execute_command(args, nef_input=...)` — run a single command (prototyping)
-4. `nef_execute_pipeline(steps, nef_input=...)` — run a multi-step pipeline (production)
+3. `nef_execute_pipeline(steps, nef_input=...)` — run one or more steps as a pipeline
 
 You do **not** have shell access to `grep`, `sed`, `awk`, `cat`, `head`, etc. when running through
 the in-process MCP executor. This is by design: NEF's hierarchical structure and arbitrary column
@@ -61,8 +60,8 @@ For each user request:
 5. Default already excludes them; the flag would *include* them. So don't pass the flag.
 6. Final command:
    ```python
-   nef_execute_command(
-       ["sparky", "export", "shifts", "-o", "output.txt", "nef_chemical_shift_list_default"],
+   nef_execute_pipeline(
+       steps=[["sparky", "export", "shifts", "-o", "output.txt", "nef_chemical_shift_list_default"]],
        nef_input=nef_text,
    )
    ```
@@ -96,9 +95,9 @@ Inspect and edit save frames.
 `tabulate` is the right way to read NEF loop content:
 
 ```python
-nef_execute_command(["frames", "tabulate", "nef_molecular_system"], nef_input=nef_text)
-nef_execute_command(["frames", "tabulate", "nef_molecular_system.nef_sequence"], nef_input=nef_text)
-nef_execute_command(["frames", "tabulate", "nef_chemical_shift_list_default"], nef_input=nef_text)
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_molecular_system"]], nef_input=nef_text)
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_molecular_system.nef_sequence"]], nef_input=nef_text)
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_chemical_shift_list_default"]], nef_input=nef_text)
 ```
 
 **Check help when:** specific frame filtering, `frame.loop:tag` selector questions, output formats
@@ -205,7 +204,7 @@ nef_execute_pipeline([
 ])
 
 # Verify
-nef_execute_command(["frames", "tabulate", "nef_molecular_system"], nef_input=open("output.nef").read())
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_molecular_system"]], nef_input=open("output.nef").read())
 ```
 
 ## Verification and Inspection
@@ -220,9 +219,9 @@ nef_execute_command(["frames", "tabulate", "nef_molecular_system"], nef_input=op
 
 ```python
 # After producing a NEF file
-nef_execute_command(["frames", "tabulate", "nef_molecular_system"], nef_input=nef_text)
-nef_execute_command(["frames", "tabulate", "nef_chemical_shift_list_default"], nef_input=nef_text)
-nef_execute_command(["frames", "list"], nef_input=nef_text)   # if unsure what frames exist
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_molecular_system"]], nef_input=nef_text)
+nef_execute_pipeline(steps=[["frames", "tabulate", "nef_chemical_shift_list_default"]], nef_input=nef_text)
+nef_execute_pipeline(steps=[["frames", "list"]], nef_input=nef_text)   # if unsure what frames exist
 ```
 
 `tabulate` supports `--format` (`csv`, `tsv`, `markdown`, `psql`, `plain`, ...) and
