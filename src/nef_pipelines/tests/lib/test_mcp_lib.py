@@ -41,7 +41,10 @@ TEST_CASES = [
     (
         "foo\x00bar",
         False,
-        "could not resolve 'foo\x00bar': embedded null byte",
+        [
+            "could not resolve 'foo\x00bar': embedded null byte",  # Python 3.10 (ValueError)
+            "could not resolve 'foo\x00bar': lstat: embedded null character in path",  # newer Python (OSError)
+        ],
         "NUL byte",
         "all",
     ),
@@ -131,6 +134,11 @@ def test_validate_path_in_sandbox(
         ), f"{description!r}: expected no error message but got: {error!r}"
     else:
         assert not ok, f"{description!r}: expected invalid but got ok=True"
-        assert (
-            error == expected_error
-        ), f"{description!r}: expected error:\n  {expected_error!r}\nbut got:\n  {error!r}"
+        if isinstance(expected_error, list):
+            assert (
+                error in expected_error
+            ), f"{description!r}: error not in expected list:\n  {expected_error!r}\nbut got:\n  {error!r}"
+        else:
+            assert (
+                error == expected_error
+            ), f"{description!r}: expected error:\n  {expected_error!r}\nbut got:\n  {error!r}"
