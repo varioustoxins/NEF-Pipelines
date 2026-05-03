@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Tuple
 from nef_pipelines.lib.util import chunks
 from typer.testing import CliRunner
 
+from nef_pipelines.lib.util import chunks
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
 
@@ -239,10 +240,42 @@ class ListFilesResult(OperationResult):
 
 @dataclass
 class ResourceResult(OperationResult):
-    """Result of nef_read_me_first and nef_read_resource."""
+    """Result of nef_read_me_first."""
 
     content: str = ""
-    available_resources: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ResourceDescriptor:
+    """A single resource entry, mirroring MCP resources/list entries."""
+
+    uri: str = ""
+    name: str = ""
+    description: str = ""
+    mime_type: str = "text/markdown"
+
+
+@dataclass
+class ResourcesListResult(OperationResult):
+    """Result of nef_resources_list, mirroring MCP resources/list."""
+
+    resources: List[ResourceDescriptor] = field(default_factory=list)
+
+
+@dataclass
+class ResourceContent:
+    """Content of a single resource, mirroring MCP resources/read contents."""
+
+    uri: str = ""
+    mime_type: str = "text/markdown"
+    text: str = ""
+
+
+@dataclass
+class ResourcesReadResult(OperationResult):
+    """Result of nef_resources_read, mirroring MCP resources/read."""
+
+    contents: List[ResourceContent] = field(default_factory=list)
 
 
 @dataclass
