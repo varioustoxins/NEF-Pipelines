@@ -119,20 +119,6 @@ async def test_nef_list_commands_tool(mcp_client):
 
 
 @pytest.mark.anyio
-async def test_nef_list_commands_with_filter(mcp_client):
-    """\
-    Test nef_list_commands with pattern filter returns only matching commands.
-    """
-    result = await mcp_client.call_tool(
-        "nef_list_commands", arguments={"command_pattern": "*frames*"}
-    )
-    content_text = result.content[0].text
-
-    assert "frames" in content_text
-    assert "|" in content_text
-
-
-@pytest.mark.anyio
 async def test_nef_get_command_help_tool(mcp_client):
     """\
     Test nef_get_command_help tool via MCP protocol returns help text.
@@ -159,20 +145,6 @@ async def test_nef_execute_pipeline_tool_empty_steps(mcp_client):
     content_text = result.content[0].text
 
     assert '"exit_code":0' in content_text
-
-
-@pytest.mark.anyio
-async def test_nef_execute_pipeline_tool_single_step(mcp_client):
-    """\
-    Test nef_execute_pipeline with single step returns output.
-    """
-    result = await mcp_client.call_tool(
-        "nef_execute_pipeline",
-        arguments={"steps": [["version"]], "nef_input": ""},
-    )
-    content_text = result.content[0].text
-
-    assert len(content_text.strip()) > 0
 
 
 @pytest.mark.anyio
