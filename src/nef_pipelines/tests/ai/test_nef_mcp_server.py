@@ -14,7 +14,8 @@ from nef_pipelines.tools.ai.mcp_commands_lib import (
     nef_list_commands,
     nef_list_files,
     nef_read_me_first,
-    nef_read_resource,
+    nef_resources_list,
+    nef_resources_read,
     nef_upload_file,
 )
 from nef_pipelines.tools.ai.mcp_lib import (
@@ -22,7 +23,11 @@ from nef_pipelines.tools.ai.mcp_lib import (
     CommandTableResult,
     DownloadResult,
     ListFilesResult,
+    ResourceContent,
+    ResourceDescriptor,
     ResourceResult,
+    ResourcesListResult,
+    ResourcesReadResult,
     UploadResult,
 )
 
@@ -158,52 +163,94 @@ def test_nef_read_me_first():
     """
     result = nef_read_me_first()
 
-    assert isinstance(result, ResourceResult)
-    assert result.success is True
-    assert isinstance(result.content, str)
+    EXPECTED = ResourceResult(content=result.content)
+    assert result == EXPECTED
     assert "Already oriented" in result.content
     assert "NEF" in result.content
+    assert "`readme`" in result.content
     assert len(result.content) > 200
 
 
-def test_nef_read_resource_readme():
+def test_nef_resources_list():
     """\
-    Test nef_read_resource returns readme content with expected sections.
+    Test nef_resources_list returns descriptors with uri, name, description, mime_type.
     """
-    result = nef_read_resource("readme")
+    result = nef_resources_list()
 
-    assert isinstance(result, ResourceResult)
+    EXPECTED = ResourcesListResult(resources=result.resources)
+    assert result == EXPECTED
     assert result.success is True
-    assert isinstance(result.content, str)
-    assert isinstance(result.available_resources, list)
 
+    names = {r.name for r in result.resources}
+    assert "readme" in names
+    assert "preamble" not in names
+
+    readme = next(r for r in result.resources if r.name == "readme")
+    EXPECTED_README = ResourceDescriptor(
+        uri="nef://readme",
+        name="readme",
+        description=readme.description,
+        mime_type="text/markdown",
+    )
+    assert readme == EXPECTED_README
+    assert readme.uri == "nef://readme"
+    assert readme.description
+
+
+def test_nef_resources_read_readme():
+    """\
+    Test nef_resources_read returns single ResourceContent with uri, mime_type, text.
+    """
+    result = nef_resources_read("readme")
+
+    EXPECTED = ResourcesReadResult(
+        contents=[
+            ResourceContent(
+                uri="nef://readme",
+                mime_type="text/markdown",
+                text=result.contents[0].text,
+            )
+        ]
+    )
+    assert result == EXPECTED
+    assert result.success is True
+
+    text = result.contents[0].text
     for section in EXPECTED_README_SECTIONS:
-        assert section in result.content, f"Missing section: {section}"
+        assert section in text, f"Missing section: {section}"
+    assert len(text) > 1000
 
-    assert len(result.content) > 1000
 
-
-def test_nef_read_resource_skill():
+def test_nef_resources_read_skills():
     """\
-    Test nef_read_resource returns skill content.
+    Test nef_resources_read returns non-empty content for skills resource.
     """
-    result = nef_read_resource("skill")
+    result = nef_resources_read("skills")
 
-    assert isinstance(result, ResourceResult)
+    EXPECTED = ResourcesReadResult(
+        contents=[
+            ResourceContent(
+                uri="nef://skills",
+                mime_type="text/markdown",
+                text=result.contents[0].text,
+            )
+        ]
+    )
+    assert result == EXPECTED
     assert result.success is True
-    assert isinstance(result.content, str)
+    assert len(result.contents[0].text) > 0
 
 
-def test_nef_read_resource_not_found():
+def test_nef_resources_read_not_found():
     """\
-    Test nef_read_resource returns failure with available list for unknown name.
+    Test nef_resources_read returns failure with error message for unknown name.
     """
-    result = nef_read_resource("nonexistent")
+    result = nef_resources_read("nonexistent")
 
-    assert isinstance(result, ResourceResult)
+    EXPECTED = ResourcesReadResult(error=result.error)
+    assert result == EXPECTED
     assert result.success is False
-    assert isinstance(result.available_resources, list)
-    assert len(result.available_resources) > 0
+    assert "nonexistent" in result.error
 
 
 def test_nef_execute_pipeline_empty_steps():

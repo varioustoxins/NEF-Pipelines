@@ -12,6 +12,11 @@ import pytest
 
 from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data
 from nef_pipelines.tools.ai.mcp_lib import _RESOURCES, _get_resource_name_from_filename
+from nef_pipelines.tools.ai.mcp_lib import (
+    _RESOURCE_NAME_SEPARATOR,
+    _RESOURCES,
+    _get_resource_name_from_filename,
+)
 from nef_pipelines.tools.ai.server_lib import _build_server
 
 if sys.version_info < (3, 10):
@@ -34,7 +39,7 @@ EXPECTED_TOOL_NAMES = {
 EXPECTED_RESOURCE_URIS = {
     f"nef://{_get_resource_name_from_filename(f.name)}"
     for f in _RESOURCES.iterdir()
-    if f.name.endswith(".md") and f.name != "preamble.md"
+    if f.name.endswith(".md") and _RESOURCE_NAME_SEPARATOR in f.name
 }
 
 EXPECTED_HELP_SECTIONS = ["Usage:", "Options", "General"]
@@ -102,7 +107,7 @@ async def test_nef_skill_resource(mcp_client):
     """\
     Test nef://skill resource returns non-empty content.
     """
-    content = await mcp_client.read_resource("nef://skill")
+    content = await mcp_client.read_resource("nef://skills")
     text = content[0].text
     assert len(text) > 0
 

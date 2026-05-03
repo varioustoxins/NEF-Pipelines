@@ -7,6 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from nef_pipelines.lib.util import chunks
 from typer.testing import CliRunner
 
 from nef_pipelines.main import create_nef_app
@@ -316,3 +317,20 @@ def _find_resource_file(name: str):
         if f.name.endswith(".md") and _get_resource_name_from_filename(f.name) == name:
             return f
     return None
+
+
+def _get_resource_list():
+    return sorted(
+        _get_resource_name_from_filename(f.name)
+        for f in _RESOURCES.iterdir()
+        if f.name.endswith(".md")
+    )
+
+
+def _build_resources_lines(available_resources) -> tuple[str, list[str]]:
+
+    resource_lines = "\n".join(
+        " · ".join(f"`{name}`" for name in row)
+        for row in chunks(available_resources, 8)
+    )
+    return resource_lines

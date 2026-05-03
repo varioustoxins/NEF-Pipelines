@@ -13,11 +13,12 @@ instructions for what to read next. Skip it only if you have already seen it thi
 - `star`       — foundational STAR syntax (rare; only when `nef` references it)
 
 **Tools:**
-0. `nef_read_me_first()`        — orientation (call first; skip if seen this session)
-1. `nef_read_resource(name)`    — fetch any resource document by name
-2. `nef_list_commands()`        — enumerate available commands
-3. `nef_get_command_help(...)`  — full `--help` for one command
-4. `nef_execute_pipeline(...)`  — run one or more steps as a pipeline
-5. `nef_upload_file(...)`       — write a text file into the working directory
-6. `nef_download_file(...)`     — read a text file from the working directory
-7. `nef_list_files()`           — list files in the working directory
+0. `nef_read_me_first()`         - orientation (call first; skip if seen this session)
+1. `nef_resources_list()`        - list resources with descriptions
+2. `nef_resources_read(name)`    - fetch any resource document by name
+3. `nef_list_commands()`         - enumerate available commands
+4. `nef_get_command_help(...)`   - full `--help` for one command
+5. `nef_execute_pipeline(...)`   - run one or more steps as a pipeline
+6. `nef_upload_file(...)`        - write a text file into the working directory
+7. `nef_download_file(...)`      - read a text file from the working directory
+8. `nef_list_files()`            - list files in the working directory

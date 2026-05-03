@@ -3,16 +3,23 @@ from pathlib import Path
 from typing import Callable, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
+    _RESOURCE_NAME_SEPARATOR,
     _RESOURCES,
     CommandHelpResult,
     CommandTableResult,
     DownloadResult,
     ListFilesResult,
     PipelineResult,
+    ResourceContent,
+    ResourceDescriptor,
     ResourceResult,
+    ResourcesListResult,
+    ResourcesReadResult,
     UploadResult,
     _execute_command_in_process,
     _find_resource_file,
+    _get_resource_description_from_filename,
+    _get_resource_list,
     _get_resource_name_from_filename,
     _validate_path_in_sandbox,
 )
@@ -192,41 +199,63 @@ def nef_read_me_first() -> ResourceResult:
         "Skip this call and proceed directly with the tools.\n\n"
         "---\n\n"
     )
+
     resource_footer = (
         "\n\n---\n\n"
         "**Resources unavailable via `nef://`?**  "
-        "Use `nef_read_resource(name)` to fetch any resource document:\n"
-        "`readme` · `skill` · `cli-idioms` · `nef` · `nmr-data` · `star`"
+        "Use nef_resources_list to list resource names and what they do\n"
+        "Use `nef_resources_read(name)` to fetch any resource document\n"
     )
 
     return ResourceResult(content=skip_header + preamble + resource_footer)
 
 
 @mcp_tool
-def nef_read_resource(name: str) -> ResourceResult:
+def nef_resources_list() -> ResourcesListResult:
+    """
+    List all available NEF-Pipelines documentation resources with their descriptions.
+    Mirrors MCP resources/list: returns uri, name, description, and mime_type per resource.
+    Use nef_resources_read(name) to fetch the full content of any resource.
+
+    Returns ResourcesListResult with a resources list. On failure, error is non-empty.
+    """
+    resources = []
+    for f in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
+        if not f.name.endswith(".md") or _RESOURCE_NAME_SEPARATOR not in f.name:
+            continue
+        name = _get_resource_name_from_filename(f.name)
+        description = _get_resource_description_from_filename(f.name)
+        resources.append(
+            ResourceDescriptor(
+                uri=f"nef://{name}",
+                name=name,
+                description=description,
+            )
+        )
+    return ResourcesListResult(resources=resources)
+
+
+@mcp_tool
+def nef_resources_read(name: str) -> ResourcesReadResult:
     """
     Read a NEF-Pipelines documentation resource by name.
+    Mirrors MCP resources/read: returns uri, mime_type, and text.
     Equivalent to reading nef://<name> via the resources interface; use this when
     the resources interface is unavailable.
 
-    name - resource to fetch: readme, skill, cli-idioms, nef, nmr-data, star, preamble
+    name - resource to fetch: readme, skills, cli-idioms, nef, nmr-data, star
 
-    Returns ResourceResult with content and available_resources. On failure, error is non-empty.
+    Returns ResourcesReadResult with a single-element contents list. On failure, error is non-empty.
     """
-    available = sorted(
-        _get_resource_name_from_filename(f.name)
-        for f in _RESOURCES.iterdir()
-        if f.name.endswith(".md")
-    )
-
     f = _find_resource_file(name)
     if f is None:
-        return ResourceResult(
+        available = _get_resource_list()
+        return ResourcesReadResult(
             error=f"Resource '{name}' not found. Available: {available}",
-            available_resources=available,
         )
-
-    return ResourceResult(content=f.read_text(), available_resources=available)
+    return ResourcesReadResult(
+        contents=[ResourceContent(uri=f"nef://{name}", text=f.read_text())]
+    )
 
 
 def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:
