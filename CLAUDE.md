@@ -119,7 +119,17 @@ The application uses a hierarchical command structure built on Typer. Commands s
 6. **ALWAYS use path_in_test_data()** - Use `path_in_test_data(filename, __file__)` to locate test data files, never hardcode paths
 7. **NEVER skip tests for missing test data** - Tests must FAIL (not skip) if required test data files are missing
 8. **ALWAYS use temporary directories for output** - Test output files must be written to temporary directories (use pytest's `tmp_path` fixture), never to the working directory or test data directories
-9. **ALWAYS use pytest parameterisation for related tests** - When multiple tests follow the same pattern with different inputs, use `@pytest.mark.parametrize` instead of writing separate test functions. This improves readability and makes tests easier to extend.
+9. **ALWAYS use pytest parameterisation for related tests** - When multiple tests follow the same pattern with different inputs, use `@pytest.mark.parametrize` instead of writing separate test functions.
+     This improves readability and makes tests easier to extend.
+10. **ALWAYS compare result dataclasses and structures by equality if possible** - Build a complete expected instance and use
+    `assert result == expected`, not a series of individual field assertions. For fields with dynamic values (error
+    messages, generated paths), capture the value first, include it in the expected instance, then separately check
+    anything else required:
+    ```python
+    EXPECTED = ChangeSandboxResult(error=result.error, old_path=str(old_cwd))
+    assert result == EXPECTED
+    assert EXPECTED_ERROR_CANCELLED in result.error.lower()
+    ```
 
 These are non-negotiable requirements, not suggestions. Apply them automatically without asking unless told otherwise.
 
@@ -267,6 +277,8 @@ CRITICAL: When writing ANY test code, automatically apply MANDATORY Testing Guid
 - ALWAYS use assert_lines_match() for NEF content comparison
 - ALWAYS use isolate_loop() for NEF loop extraction
 - ALWAYS test complete NEF structures, not partial strings
+- ALWAYS compare result dataclasses and structures by equality if possible (== against a complete expected instance,
+  not field-by-field asserts)
 
 - ALWAYS avoid line by line comments and inline comments unless they highlight in-obvious functionality or algorithms
 - NEVER use implicit strings concatenation
