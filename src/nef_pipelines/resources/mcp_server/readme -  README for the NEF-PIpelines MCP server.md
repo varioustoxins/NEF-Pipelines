@@ -2,13 +2,15 @@
 
 NEF-Pipelines is a command-line toolkit for manipulating **NEF (NMR Exchange Format)** files and
 converting NMR data between NEF and many third-party formats. You have it available via the MCP
-tools in this session — you do not need to install anything.
+tools in this session - you do not need to install anything.
 
 **For deeper detail see:**
-- `nef://cli-idioms` — option / selector / escape syntax across commands
-- `nef://nef`        — NEF STAR dialect (namespaces, saveframe categories, loop tags)
-- `nef://nmr-data`   — molecular structure and atom-name model (4-string identifier, pseudoatoms)
-- `nef://star`       — foundational STAR syntax
+- `nef://cli-idioms` - option / selector / escape syntax across commands
+- `nef://nef`        - NEF STAR dialect (namespaces, saveframe categories, loop tags)
+- `nef://nmr-data`   - molecular structure and atom-name model (4-string identifier, pseudoatoms)
+- `nef://star`       - foundational STAR syntax
+- `nef://skills`     - expert assistance for NEF (NMR Exchange Format) pipelines operations, conversions, and analysis.
+- `nef://readme`     - this document (overview, data model, command/transcoder catalogue)
 
 ---
 
@@ -69,13 +71,13 @@ save_
 NEF file.
 
 **Save frame**: named data block delimited by `save_<name>` … `save_`. Each frame has a
-**category** (the *kind* of frame — e.g. `nef_chemical_shift_list`) and a **name** (a unique
-identifier within the entry — e.g. `nef_chemical_shift_list_default`). Both are recorded inside
+**category** (the *kind* of frame - e.g. `nef_chemical_shift_list`) and a **name** (a unique
+identifier within the entry - e.g. `nef_chemical_shift_list_default`). Both are recorded inside
 the frame as `_<category>.sf_category` and `_<category>.sf_framecode` tags.
 
 **Loop**: tabular data within a frame, opened with `loop_` and closed with `stop_`. Column names
 are `_<category>.<tag>`-prefixed; rows follow as whitespace-separated values. **Tag/column order
-is arbitrary** — two semantically equivalent NEF files can list columns in different orders.
+is arbitrary** - two semantically equivalent NEF files can list columns in different orders.
 Always address columns by name, never by position.
 
 **Tag**: scalar key/value pair within a frame, written as `_<category>.<tag>   value` outside any
@@ -111,9 +113,9 @@ For the full set of selectors, option names, escape syntax, and multi-value argu
 **Discovery via MCP tools:**
 
 ```
-nef_list_commands()                  — enumerate commands
-nef_get_command_help("frames")       — help for a group or command
-nef_get_command_help("*shift*")      — wildcard pattern
+nef_list_commands()                  - enumerate commands
+nef_get_command_help("frames")       - help for a group or command
+nef_get_command_help("*shift*")      - wildcard pattern
 ```
 
 **Common options (most commands):**
@@ -132,7 +134,7 @@ nef_get_command_help("*shift*")      — wildcard pattern
 
 | Group | Subcommands | What it does |
 |---|---|---|
-| `frames` | `list`, `delete`, `tabulate`, `display`, `filter`, `insert`, `rename`, `unassign` | Inspect and edit save frames. **Use `tabulate` to read loop data — never grep/awk** |
+| `frames` | `list`, `delete`, `tabulate`, `display`, `filter`, `insert`, `rename`, `unassign` | Inspect and edit save frames. **Use `tabulate` to read loop data - never grep/awk** |
 | `chains` | `list`, `clone`, `rename`, `renumber`, `align`, `validate` | Manage molecular chains |
 | `loops` | `trim` | Loop-level operations |
 | `entry` | `rename`, `tree` | Rename the entry; show its hierarchical structure |
@@ -223,7 +225,7 @@ nef fasta import sequence --chains A protein.fasta \
 
 ## Inspecting NEF Data
 
-**Always use `nef frames tabulate`** to read NEF content — never grep, awk, or cat. NEF tag/column
+**Always use `nef frames tabulate`** to read NEF content - never grep, awk, or cat. NEF tag/column
 order is arbitrary, frames are nested, and multi-line strings span lines, so single-line text
 tools will give wrong answers. The MCP server's in-process executor does not have shell text tools
 available anyway.
