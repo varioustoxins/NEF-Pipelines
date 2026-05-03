@@ -522,7 +522,7 @@ NEF uses standard value conventions across many tags:
 
 *   **Relaxed Validation:** `nef-pipelines` does **NOT** require "Valid NEF" (i.e., mandatory meta_data or shift
     frames) in its internal streams or intermediate outputs, as this is often too restrictive for modular
-    processing. Final user-facing outputs should however be validated for standard compliance. However see section 11
+    processing. Final user-facing outputs should however be validated for standard compliance. However, see section 11
     on validation and dictionaries below for more details on this topic.
 
 > **NEF-Pipelines commands:**
