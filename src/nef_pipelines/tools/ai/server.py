@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import typer
 from rich import box
@@ -44,26 +45,33 @@ def _build_server():
 
 @ai_app.command(name="server")
 def server(
-    transport: str = typer.Option(
-        "stdio",
-        "-t",
-        "--transport",
-        help="transport to use [stdio, sse, streamable-http]",
-        metavar="<TRANSPORT>",
-    ),
-    host: str = typer.Option(
-        "127.0.0.1",
-        "--host",
-        help="host to bind to for HTTP transports",
-        metavar="<HOST>",
-    ),
-    port: int = typer.Option(
-        8000,
-        "-p",
-        "--port",
-        help="port to bind to for HTTP transports",
-        metavar="<PORT>",
-    ),
+    transport: Annotated[
+        str,
+        typer.Option("-t", "--transport", help="transport to use [stdio, sse, streamable-http]", metavar="<TRANSPORT>"),
+    ] = "stdio",
+    host: Annotated[
+        str,
+        typer.Option("--host", help="host to bind to for HTTP transports", metavar="<HOST>"),
+    ] = "127.0.0.1",
+    port: Annotated[
+        int,
+        typer.Option("-p", "--port", help="port to bind to for HTTP transports", metavar="<PORT>"),
+    ] = 8000,
+    path: Annotated[
+        Optional[str],
+        typer.Option(
+            "--path",
+            help=f"sandbox directory for MCP server operations; overrides {NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable; if not specified, creates a temporary directory",
+            metavar="<PATH>",
+        ),
+    ] = None,
+    preserve: Annotated[
+        bool,
+        typer.Option(
+            "--preserve",
+            help="preserve the auto-created temporary sandbox directory on exit; has no effect when --path or the environment variable selects the sandbox",
+        ),
+    ] = False,
 ):
     """- start the NEF MCP server"""
 
