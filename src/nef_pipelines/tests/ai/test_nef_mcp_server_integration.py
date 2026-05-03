@@ -189,9 +189,7 @@ async def test_nef_execute_pipeline_with_nef_data(mcp_client):
         ("save", "save"),
     ],
 )
-async def test_nef_list_commands_parametrized(
-    mcp_client, command_pattern, expected_keyword
-):
+async def test_nef_list_commands(mcp_client, command_pattern, expected_keyword):
     """\
     Test nef_list_commands with various patterns returns matching commands.
     """
@@ -213,7 +211,7 @@ async def test_nef_list_commands_parametrized(
         (["help", "commands", "--display=table", "frames*"], "frames"),
     ],
 )
-async def test_nef_execute_pipeline_parametrized(mcp_client, args, expected_content):
+async def test_nef_execute_pipeline(mcp_client, args, expected_content):
     """\
     Test nef_execute_pipeline with various commands returns expected content.
     """
