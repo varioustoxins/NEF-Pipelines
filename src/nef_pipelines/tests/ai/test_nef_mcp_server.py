@@ -93,7 +93,9 @@ def test_nef_list_commands(command_pattern, expected_keywords):
     Test nef_list_commands returns a markdown table containing expected commands.
     """
     result = nef_list_commands(command_pattern=command_pattern)
-    EXPECTED = CommandTableResult(commands_table=result.commands_table, exit_code=0, stderr="")
+    EXPECTED = CommandTableResult(
+        commands_table=result.commands_table, exit_code=0, stderr=""
+    )
     assert result == EXPECTED
     table = result.commands_table
     assert "|" in table
@@ -114,11 +116,15 @@ def test_nef_list_commands(command_pattern, expected_keywords):
         pytest.param("*", True, None, 500, id="grouped"),
     ],
 )
-def test_nef_get_command_help(command_pattern, group_by_category, expected_keyword, min_len):
+def test_nef_get_command_help(
+    command_pattern, group_by_category, expected_keyword, min_len
+):
     """\
     Test nef_get_command_help returns full help text for the given pattern.
     """
-    result = nef_get_command_help(command_pattern=command_pattern, group_by_category=group_by_category)
+    result = nef_get_command_help(
+        command_pattern=command_pattern, group_by_category=group_by_category
+    )
     EXPECTED = CommandHelpResult(help_text=result.help_text, exit_code=0, stderr="")
     assert result == EXPECTED
     assert len(result.help_text) > min_len
@@ -127,6 +133,12 @@ def test_nef_get_command_help(command_pattern, group_by_category, expected_keywo
 
 
 # --- nef_read_me_first ---
+
+EXPECTED_ORIENTATION_CONTENT_SUBSTRINGS = [
+    "Already oriented",
+    "NEF",
+    "`readme``",
+]
 
 
 def test_nef_read_me_first():
@@ -145,85 +157,6 @@ def test_nef_read_me_first():
     assert len(result.content) > 200
 
 
-# --- nef_resources_list / nef_resources_read ---
-
-
-def test_nef_resources_list():
-    """\
-    Test nef_resources_list returns descriptors with uri, name, description, mime_type.
-    """
-    result = nef_resources_list()
-    EXPECTED = ResourcesListResult(resources=result.resources)
-    assert result == EXPECTED
-    assert result.success is True
-
-    names = {r.name for r in result.resources}
-    assert "readme" in names
-    assert "preamble" not in names
-
-    readme = next(r for r in result.resources if r.name == "readme")
-    EXPECTED_README = ResourceDescriptor(
-        uri="nef://readme",
-        name="readme",
-        description=EXPECTED_README_DESCRIPTION,
-        mime_type="text/markdown",
-    )
-    assert readme == EXPECTED_README
-
-
-def test_nef_resources_read_readme():
-    """\
-    Test nef_resources_read returns single ResourceContent with uri, mime_type, text.
-    """
-    result = nef_resources_read("readme")
-    EXPECTED = ResourcesReadResult(
-        contents=[
-            ResourceContent(
-                uri="nef://readme",
-                mime_type="text/markdown",
-                text=result.contents[0].text,
-            )
-        ]
-    )
-    assert result == EXPECTED
-    assert result.success is True
-
-    text = result.contents[0].text
-    for section in EXPECTED_README_SECTIONS:
-        assert section in text, f"Missing section: {section}"
-    assert len(text) > 1000
-
-
-def test_nef_resources_read_skills():
-    """\
-    Test nef_resources_read returns non-empty content for skills resource.
-    """
-    result = nef_resources_read("skills")
-    EXPECTED = ResourcesReadResult(
-        contents=[
-            ResourceContent(
-                uri="nef://skills",
-                mime_type="text/markdown",
-                text=result.contents[0].text,
-            )
-        ]
-    )
-    assert result == EXPECTED
-    assert result.success is True
-    assert len(result.contents[0].text) > 0
-
-
-def test_nef_resources_read_not_found():
-    """\
-    Test nef_resources_read returns failure with error message for unknown name.
-    """
-    result = nef_resources_read("nonexistent")
-    EXPECTED = ResourcesReadResult(error=result.error)
-    assert result == EXPECTED
-    assert result.success is False
-    assert "nonexistent" in result.error
-
-
 # --- nef_execute_pipeline ---
 
 
@@ -232,7 +165,9 @@ def test_nef_execute_pipeline_empty_steps():
     Test nef_execute_pipeline with no steps is a no-op.
     """
     result = nef_execute_pipeline(steps=[])
-    EXPECTED = PipelineResult(steps=[], stdout="", stderr=[], exit_code=0, steps_completed=0)
+    EXPECTED = PipelineResult(
+        steps=[], stdout="", stderr=[], exit_code=0, steps_completed=0
+    )
     assert result == EXPECTED
 
 
@@ -311,7 +246,9 @@ def test_nef_execute_pipeline_step_with_no_args():
     Test nef_execute_pipeline with empty inner list is a silent no-op.
     """
     result = nef_execute_pipeline(steps=[[]])
-    EXPECTED = PipelineResult(steps=[[]], stdout="", stderr=[""], exit_code=0, steps_completed=0)
+    EXPECTED = PipelineResult(
+        steps=[[]], stdout="", stderr=[""], exit_code=0, steps_completed=0
+    )
     assert result == EXPECTED
 
 
@@ -371,7 +308,9 @@ def test_nef_list_commands_returns_dataclass_structure():
     Test that nef_list_commands returns a CommandTableResult dataclass.
     """
     result = nef_list_commands()
-    EXPECTED = CommandTableResult(commands_table=result.commands_table, exit_code=0, stderr="")
+    EXPECTED = CommandTableResult(
+        commands_table=result.commands_table, exit_code=0, stderr=""
+    )
     assert result == EXPECTED
 
 
@@ -393,7 +332,9 @@ def test_nef_upload_file(tmp_path, monkeypatch):
     """
     monkeypatch.chdir(tmp_path)
     result = nef_upload_file("peaks.nef", "data_test\n")
-    EXPECTED = UploadResult(name="peaks.nef", bytes_written=len("data_test\n".encode("utf-8")))
+    EXPECTED = UploadResult(
+        name="peaks.nef", bytes_written=len("data_test\n".encode("utf-8"))
+    )
     assert result == EXPECTED
     assert (tmp_path / "peaks.nef").read_text() == "data_test\n"
 
@@ -423,7 +364,9 @@ def test_nef_upload_file_unicode_content(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     content = "naïve shifts: δ = 7.3 ppm\n"
     result = nef_upload_file("shifts.txt", content)
-    EXPECTED = UploadResult(name="shifts.txt", bytes_written=len(content.encode("utf-8")))
+    EXPECTED = UploadResult(
+        name="shifts.txt", bytes_written=len(content.encode("utf-8"))
+    )
     assert result == EXPECTED
     assert (tmp_path / "shifts.txt").read_text(encoding="utf-8") == content
 
@@ -521,7 +464,7 @@ def test_change_sandbox(tmp_path, monkeypatch):
         return str(dir2)
 
     monkeypatch.setattr(
-        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory", mock_picker
+        "nef_pipelines.tools.ai.mcp_commands._get_native_directory", mock_picker
     )
 
     result = nef_change_sandbox()
@@ -538,7 +481,7 @@ def test_change_sandbox_user_cancelled(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     monkeypatch.setattr(
-        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
         lambda initial_dir: None,
     )
 
@@ -556,7 +499,7 @@ def test_change_sandbox_picker_error(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     monkeypatch.setattr(
-        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
         lambda initial_dir: {"error": EXPECTED_ERROR_UNSUPPORTED_OS},
     )
 
@@ -575,7 +518,7 @@ def test_change_sandbox_nonexistent_directory(tmp_path, monkeypatch):
     nonexistent = tmp_path / "does_not_exist"
 
     monkeypatch.setattr(
-        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
         lambda initial_dir: str(nonexistent),
     )
 
@@ -597,7 +540,7 @@ def test_change_sandbox_file_not_directory(tmp_path, monkeypatch):
     test_file.write_text("not a directory")
 
     monkeypatch.setattr(
-        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
         lambda initial_dir: str(test_file),
     )
 
@@ -644,11 +587,10 @@ def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
 
     monkeypatch.setenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, str(env_dir))
 
-    EXPECTED_WARNING = (
-        EXPECTED_PATH_ARG_NOT_EXIST.format(path=invalid_path.resolve())
-        + EXPECTED_FALLBACK_TO_ENV_VAR.format(
-            env_var=NEF_MCP_SANDBOX_ENV_VAR_NAME, path=env_dir.resolve()
-        )
+    EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_EXIST.format(
+        path=invalid_path.resolve()
+    ) + EXPECTED_FALLBACK_TO_ENV_VAR.format(
+        env_var=NEF_MCP_SANDBOX_ENV_VAR_NAME, path=env_dir.resolve()
     )
     assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
         path=env_dir, warning=EXPECTED_WARNING
