@@ -8,7 +8,6 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from nef_pipelines.lib.util import chunks
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.util import chunks
@@ -395,6 +394,7 @@ def _build_resources_lines(available_resources) -> tuple[str, list[str]]:
     )
     return resource_lines
 
+
 def _get_native_directory(initial_dir: str = ""):
     """\
     Triggers a native OS directory picker and returns the path.
@@ -411,8 +411,8 @@ def _get_native_directory(initial_dir: str = ""):
                 # Use default folder to set starting location
                 cmd = (
                     f"osascript -e 'POSIX path of (choose folder "
-                    f"with prompt \"Select your MCP Sandbox:\" "
-                    f"default location POSIX file \"{initial_dir}\")'"
+                    f'with prompt "Select your MCP Sandbox:" '
+                    f'default location POSIX file "{initial_dir}")\''
                 )
             else:
                 cmd = "osascript -e 'POSIX path of (choose folder with prompt \"Select your MCP Sandbox:\")'"
@@ -420,20 +420,20 @@ def _get_native_directory(initial_dir: str = ""):
             # Uses PowerShell to call the FolderBrowserDialog
             if initial_dir:
                 cmd = (
-                    'powershell -ExecutionPolicy Bypass -Command '
+                    "powershell -ExecutionPolicy Bypass -Command "
                     '"Add-Type -AssemblyName System.Windows.Forms; '
-                    '$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
-                    '$f.Description = \'Select your MCP Sandbox\'; '
-                    f'$f.SelectedPath = \'{initial_dir}\'; '
-                    'if($f.ShowDialog() -eq \'OK\') { $f.SelectedPath }"'
+                    "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+                    "$f.Description = 'Select your MCP Sandbox'; "
+                    f"$f.SelectedPath = '{initial_dir}'; "
+                    "if($f.ShowDialog() -eq 'OK') { $f.SelectedPath }\""
                 )
             else:
                 cmd = (
-                    'powershell -ExecutionPolicy Bypass -Command '
+                    "powershell -ExecutionPolicy Bypass -Command "
                     '"Add-Type -AssemblyName System.Windows.Forms; '
-                    '$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
-                    '$f.Description = \'Select your MCP Sandbox\'; '
-                    'if($f.ShowDialog() -eq \'OK\') { $f.SelectedPath }"'
+                    "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+                    "$f.Description = 'Select your MCP Sandbox'; "
+                    "if($f.ShowDialog() -eq 'OK') { $f.SelectedPath }\""
                 )
         elif system == "Linux":
             # Requires zenity to be installed
