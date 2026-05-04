@@ -20,10 +20,11 @@ from nef_pipelines.tools.ai.mcp_lib import (
     UploadResult,
     _execute_command_in_process,
     _find_resource_file,
+    _get_native_directory,
     _get_resource_description_from_filename,
     _get_resource_list,
     _get_resource_name_from_filename,
-    _validate_path_in_sandbox, _get_native_directory,
+    _validate_path_in_sandbox,
 )
 
 logger = logging.getLogger(__name__)
@@ -348,8 +349,3 @@ def nef_change_sandbox() -> ChangeSandboxResult:
     logger.info("nef_change_sandbox: %s -> %s", old_path, new_path)
 
     return ChangeSandboxResult(new_path=str(new_path))
-
-
-
-
-
