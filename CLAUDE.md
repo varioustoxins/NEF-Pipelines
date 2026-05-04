@@ -22,6 +22,7 @@ nefl test src/nef_pipelines/tests/entry/test_tree.py
 # Run specific test
 nefl test src/nef_pipelines/tests/entry/test_tree.py::test_tree_basic
 ```
+>NOTE: nefl is on the global path and there are versions for various version of python nefl39 nefl314 etc.
 
 ### Running Commands During Development
 ```bash
