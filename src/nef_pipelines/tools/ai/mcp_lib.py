@@ -259,8 +259,8 @@ class ChangeSandboxResult(OperationResult):
 
 
 @dataclass
-class ResourceResult(OperationResult):
-    """Result of nef_read_me_first and nef_read_resource.
+class NefStartupResult(OperationResult):
+    """Result of nef_read_me_first and nef_resources_read.
 
     information — if non-empty, show this to the user verbatim before anything else.
     It carries startup warnings and sandbox status that the AI must relay.
@@ -268,40 +268,6 @@ class ResourceResult(OperationResult):
 
     content: str = ""
     information: str = ""
-    available_resources: List[str] = field(default_factory=list)
-
-
-@dataclass
-class ResourceDescriptor:
-    """A single resource entry, mirroring MCP resources/list entries."""
-
-    uri: str = ""
-    name: str = ""
-    description: str = ""
-    mime_type: str = "text/markdown"
-
-
-@dataclass
-class ResourcesListResult(OperationResult):
-    """Result of nef_resources_list, mirroring MCP resources/list."""
-
-    resources: List[ResourceDescriptor] = field(default_factory=list)
-
-
-@dataclass
-class ResourceContent:
-    """Content of a single resource, mirroring MCP resources/read contents."""
-
-    uri: str = ""
-    mime_type: str = "text/markdown"
-    text: str = ""
-
-
-@dataclass
-class ResourcesReadResult(OperationResult):
-    """Result of nef_resources_read, mirroring MCP resources/read."""
-
-    contents: List[ResourceContent] = field(default_factory=list)
 
 
 @dataclass

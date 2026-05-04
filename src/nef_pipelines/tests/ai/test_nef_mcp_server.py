@@ -26,12 +26,8 @@ from nef_pipelines.tools.ai.mcp_lib import (
     CommandTableResult,
     DownloadResult,
     ListFilesResult,
+    NefStartupResult,
     PipelineResult,
-    ResourceContent,
-    ResourceDescriptor,
-    ResourceResult,
-    ResourcesListResult,
-    ResourcesReadResult,
     UploadResult,
 )
 from nef_pipelines.tools.ai.server import (
@@ -135,14 +131,17 @@ def test_nef_get_command_help(command_pattern, group_by_category, expected_keywo
 
 def test_nef_read_me_first():
     """\
-    Test nef_read_me_first returns orientation content with skip header and resource list in text.
+    Test nef_read_me_first returns orientation content.
     """
     result = nef_read_me_first()
-    EXPECTED = ResourceResult(content=result.content)
+    EXPECTED = NefStartupResult(
+        content=result.content,
+        information=result.information,
+    )
     assert result == EXPECTED
-    assert "Already oriented" in result.content
-    assert "NEF" in result.content
-    assert "`readme`" in result.content
+
+    for substring in EXPECTED_ORIENTATION_CONTENT_SUBSTRINGS:
+        assert substring.replace("`", "") in result.content
     assert len(result.content) > 200
 
 
