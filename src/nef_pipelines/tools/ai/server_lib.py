@@ -22,7 +22,7 @@ def _build_server() -> FastMCP:
     mcp_server = FastMCP("nef-pipelines", version=get_version(), instructions=preamble)
 
     for md_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
-        if not md_file.name.endswith(".md") or md_file.name == "preamble.md":
+        if not md_file.name.endswith(".md"):
             continue
         name = _get_resource_name_from_filename(md_file.name)
         description = _get_resource_description_from_filename(md_file.name)
