@@ -1,10 +1,12 @@
 import logging
+import os
 from pathlib import Path
 from typing import Callable, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCE_NAME_SEPARATOR,
     _RESOURCES,
+    ChangeSandboxResult,
     CommandHelpResult,
     CommandTableResult,
     DownloadResult,
@@ -21,7 +23,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     _get_resource_description_from_filename,
     _get_resource_list,
     _get_resource_name_from_filename,
-    _validate_path_in_sandbox,
+    _validate_path_in_sandbox, _get_native_directory,
 )
 
 logger = logging.getLogger(__name__)
@@ -301,3 +303,53 @@ def nef_execute_pipeline(
             break
 
     return result
+
+
+@mcp_tool
+def nef_change_sandbox() -> ChangeSandboxResult:
+    """\
+    Change the server's working directory (sandbox) to a new location using native OS dialog.
+
+    Opens a native directory picker dialog starting at the current sandbox location.
+    User selects the new sandbox directory via the OS dialog.
+
+    Returns ChangeSandboxResult with new_path on success.
+    On failure or if user cancels, error is non-empty and path remains unchanged.
+
+    Note: This changes the working directory for all subsequent operations.
+    Files in the old sandbox are not moved or copied.
+    """
+    old_path = Path.cwd()
+
+    picked = _get_native_directory(str(old_path))
+
+    if picked is None:
+        return ChangeSandboxResult(error="User cancelled directory selection")
+
+    if isinstance(picked, dict) and "error" in picked:
+        return ChangeSandboxResult(error=picked["error"])
+
+    try:
+        new_path = Path(picked).resolve()
+    except Exception as e:
+        return ChangeSandboxResult(error=f"Invalid path: {e}")
+
+    if not new_path.exists():
+        return ChangeSandboxResult(error=f"Path does not exist: {new_path}")
+
+    if not new_path.is_dir():
+        return ChangeSandboxResult(error=f"Path is not a directory: {new_path}")
+
+    try:
+        os.chdir(new_path)
+    except Exception as e:
+        return ChangeSandboxResult(error=f"Failed to change directory: {e}")
+
+    logger.info("nef_change_sandbox: %s -> %s", old_path, new_path)
+
+    return ChangeSandboxResult(new_path=str(new_path))
+
+
+
+
+

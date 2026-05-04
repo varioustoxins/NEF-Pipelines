@@ -2,8 +2,8 @@
 Tests for AI server tool functions in server_lib.py.
 """
 
-import shutil
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -34,7 +34,11 @@ from nef_pipelines.tools.ai.mcp_lib import (
     ResourcesReadResult,
     UploadResult,
 )
-from nef_pipelines.tools.ai.server import NEF_MCP_SANDBOX_ENV_VAR_NAME, _get_sandbox_path
+from nef_pipelines.tools.ai.server import (
+    NEF_MCP_SANDBOX_ENV_VAR_NAME,
+    SandboxPathResult,
+    _get_sandbox_path,
+)
 
 if sys.version_info < (3, 10):
     pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
@@ -67,7 +71,6 @@ EXPECTED_ERROR_PATH_NOT_DIRECTORY = "Path is not a directory: {path}"
 EXPECTED_PATH_ARG_NOT_EXIST = "Specified --path does not exist: {path}"
 EXPECTED_PATH_ARG_NOT_DIRECTORY = "Specified --path is not a directory: {path}"
 EXPECTED_FALLBACK_TO_ENV_VAR = " — falling back to {env_var}: {path}"
-EXPECTED_FALLBACK_TO_TEMP = " — falling back to temporary directory: {path}"
 
 
 @pytest.fixture
@@ -494,7 +497,187 @@ def test_nef_upload_download_roundtrip(tmp_path, monkeypatch):
     content = "data_ubiquitin\n_nef_sequence.chain_code A\n"
     nef_upload_file("ubiquitin.nef", content)
     result = nef_download_file("ubiquitin.nef")
+    EXPECTED = DownloadResult(name="ubiquitin.nef", content=content)
+    assert result == EXPECTED
 
-    assert isinstance(result, DownloadResult)
-    assert result.success is True
-    assert result.content == content
+
+# --- nef_change_sandbox / _get_sandbox_path ----------------------------------
+
+
+def test_change_sandbox(tmp_path, monkeypatch):
+    """\
+    Test changing sandbox to a new directory via native picker.
+    """
+    dir1 = tmp_path / "sandbox1"
+    dir2 = tmp_path / "sandbox2"
+    dir1.mkdir()
+    dir2.mkdir()
+    (dir2 / "test.txt").write_text("hello")
+
+    monkeypatch.chdir(dir1)
+    old_cwd = dir1.resolve()
+
+    def mock_picker(initial_dir):
+        assert initial_dir == str(old_cwd)
+        return str(dir2)
+
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory", mock_picker
+    )
+
+    result = nef_change_sandbox()
+
+    EXPECTED = ChangeSandboxResult(new_path=str(dir2.resolve()))
+    assert result == EXPECTED
+    assert Path.cwd() == dir2.resolve()
+
+
+def test_change_sandbox_user_cancelled(tmp_path, monkeypatch):
+    """\
+    Test that user cancelling directory picker is handled gracefully.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        lambda initial_dir: None,
+    )
+
+    result = nef_change_sandbox()
+
+    EXPECTED = ChangeSandboxResult(error=EXPECTED_ERROR_CANCELLED)
+    assert result == EXPECTED
+    assert Path.cwd() == tmp_path.resolve()
+
+
+def test_change_sandbox_picker_error(tmp_path, monkeypatch):
+    """\
+    Test that errors reported by the native picker are surfaced.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        lambda initial_dir: {"error": EXPECTED_ERROR_UNSUPPORTED_OS},
+    )
+
+    result = nef_change_sandbox()
+
+    EXPECTED = ChangeSandboxResult(error=EXPECTED_ERROR_UNSUPPORTED_OS)
+    assert result == EXPECTED
+    assert Path.cwd() == tmp_path.resolve()
+
+
+def test_change_sandbox_nonexistent_directory(tmp_path, monkeypatch):
+    """\
+    Test changing sandbox to a non-existent directory fails.
+    """
+    monkeypatch.chdir(tmp_path)
+    nonexistent = tmp_path / "does_not_exist"
+
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        lambda initial_dir: str(nonexistent),
+    )
+
+    result = nef_change_sandbox()
+
+    EXPECTED = ChangeSandboxResult(
+        error=EXPECTED_ERROR_PATH_DOES_NOT_EXIST.format(path=nonexistent.resolve()),
+    )
+    assert result == EXPECTED
+    assert Path.cwd() == tmp_path.resolve()
+
+
+def test_change_sandbox_file_not_directory(tmp_path, monkeypatch):
+    """\
+    Test changing sandbox to a file (not directory) fails.
+    """
+    monkeypatch.chdir(tmp_path)
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("not a directory")
+
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_commands_lib._get_native_directory",
+        lambda initial_dir: str(test_file),
+    )
+
+    result = nef_change_sandbox()
+
+    EXPECTED = ChangeSandboxResult(
+        error=EXPECTED_ERROR_PATH_NOT_DIRECTORY.format(path=test_file.resolve()),
+    )
+    assert result == EXPECTED
+    assert Path.cwd() == tmp_path.resolve()
+
+
+def test_sandbox_env_var_priority(tmp_path, monkeypatch):
+    """\
+    Test that --path overrides the environment variable, and env var overrides temp.
+    """
+    env_dir = tmp_path / "env_sandbox"
+    cli_dir = tmp_path / "cli_sandbox"
+    env_dir.mkdir()
+    cli_dir.mkdir()
+
+    monkeypatch.setenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, str(env_dir))
+
+    assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(path=cli_dir)
+    assert _get_sandbox_path(None) == SandboxPathResult(path=env_dir)
+
+
+def test_sandbox_temp_fallback(monkeypatch):
+    """\
+    Test that a temp directory is signalled when no path is specified.
+    """
+    monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
+
+    assert _get_sandbox_path(None) == SandboxPathResult(is_temp=True)
+
+
+def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
+    """\
+    Test that an invalid --path falls back to the environment variable with a warning.
+    """
+    env_dir = tmp_path / "env_sandbox"
+    env_dir.mkdir()
+    invalid_path = tmp_path / "does_not_exist"
+
+    monkeypatch.setenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, str(env_dir))
+
+    EXPECTED_WARNING = (
+        EXPECTED_PATH_ARG_NOT_EXIST.format(path=invalid_path.resolve())
+        + EXPECTED_FALLBACK_TO_ENV_VAR.format(
+            env_var=NEF_MCP_SANDBOX_ENV_VAR_NAME, path=env_dir.resolve()
+        )
+    )
+    assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
+        path=env_dir, warning=EXPECTED_WARNING
+    )
+
+
+def test_sandbox_invalid_path_fallback_to_temp(tmp_path, monkeypatch):
+    """\
+    Test that an invalid --path signals temp needed with a warning.
+    """
+    monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
+    invalid_path = tmp_path / "does_not_exist"
+
+    EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_EXIST.format(path=invalid_path.resolve())
+    assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
+        warning=EXPECTED_WARNING, is_temp=True
+    )
+
+
+def test_sandbox_file_not_directory_fallback(tmp_path, monkeypatch):
+    """\
+    Test that --path pointing to a file signals temp needed with a warning.
+    """
+    monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("not a directory")
+
+    EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_DIRECTORY.format(path=test_file.resolve())
+    assert _get_sandbox_path(str(test_file)) == SandboxPathResult(
+        warning=EXPECTED_WARNING, is_temp=True
+    )

@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from importlib import import_module
@@ -27,6 +28,19 @@ for _module_name in get_registerd_modules():
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
 
 _RESOURCE_NAME_SEPARATOR = " - "
+
+
+@dataclass
+class StartupContext:
+    """Sandbox configuration captured at server startup for relaying to the AI."""
+
+    sandbox_path: str = ""
+    is_temporary: bool = False
+    will_be_cleaned: bool = False
+    warning: str = ""
+
+
+_STARTUP_CONTEXT = StartupContext()
 
 # Two distinct filesystem limits matter:
 #   NAME_MAX — max length of a single filename component (e.g. "foo.txt")
@@ -239,6 +253,13 @@ class ListFilesResult(OperationResult):
 
 
 @dataclass
+class ChangeSandboxResult(OperationResult):
+    """Result of nef_change_sandbox."""
+
+    new_path: str = ""
+
+
+@dataclass
 class ResourceResult(OperationResult):
     """Result of nef_read_me_first."""
 
@@ -367,3 +388,61 @@ def _build_resources_lines(available_resources) -> tuple[str, list[str]]:
         for row in chunks(available_resources, 8)
     )
     return resource_lines
+
+def _get_native_directory(initial_dir: str = ""):
+    """\
+    Triggers a native OS directory picker and returns the path.
+    Returns None if the user cancels.
+    Returns dict with 'error' key if there's an error.
+
+    initial_dir - starting directory for the picker (optional)
+    """
+    system = sys.platform.system()
+
+    try:
+        if system == "Darwin":  # macOS
+            if initial_dir:
+                # Use default folder to set starting location
+                cmd = (
+                    f"osascript -e 'POSIX path of (choose folder "
+                    f"with prompt \"Select your MCP Sandbox:\" "
+                    f"default location POSIX file \"{initial_dir}\")'"
+                )
+            else:
+                cmd = "osascript -e 'POSIX path of (choose folder with prompt \"Select your MCP Sandbox:\")'"
+        elif system == "Windows":
+            # Uses PowerShell to call the FolderBrowserDialog
+            if initial_dir:
+                cmd = (
+                    'powershell -ExecutionPolicy Bypass -Command '
+                    '"Add-Type -AssemblyName System.Windows.Forms; '
+                    '$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
+                    '$f.Description = \'Select your MCP Sandbox\'; '
+                    f'$f.SelectedPath = \'{initial_dir}\'; '
+                    'if($f.ShowDialog() -eq \'OK\') { $f.SelectedPath }"'
+                )
+            else:
+                cmd = (
+                    'powershell -ExecutionPolicy Bypass -Command '
+                    '"Add-Type -AssemblyName System.Windows.Forms; '
+                    '$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
+                    '$f.Description = \'Select your MCP Sandbox\'; '
+                    'if($f.ShowDialog() -eq \'OK\') { $f.SelectedPath }"'
+                )
+        elif system == "Linux":
+            # Requires zenity to be installed
+            if initial_dir:
+                cmd = f"zenity --file-selection --directory --filename='{initial_dir}/' --title='Select your MCP Sandbox'"
+            else:
+                cmd = "zenity --file-selection --directory --title='Select your MCP Sandbox'"
+        else:
+            return {"error": "Unsupported Operating System"}
+
+        # Run command and capture output
+        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        path = proc.stdout.strip()
+
+        return path if path else None
+
+    except Exception as e:
+        return {"error": str(e)}
