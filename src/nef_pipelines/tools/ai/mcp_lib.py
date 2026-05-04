@@ -261,9 +261,15 @@ class ChangeSandboxResult(OperationResult):
 
 @dataclass
 class ResourceResult(OperationResult):
-    """Result of nef_read_me_first."""
+    """Result of nef_read_me_first and nef_read_resource.
+
+    information — if non-empty, show this to the user verbatim before anything else.
+    It carries startup warnings and sandbox status that the AI must relay.
+    """
 
     content: str = ""
+    information: str = ""
+    available_resources: List[str] = field(default_factory=list)
 
 
 @dataclass
