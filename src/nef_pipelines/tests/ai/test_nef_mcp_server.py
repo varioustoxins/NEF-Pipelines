@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from nef_pipelines.lib.test_lib import assert_lines_match, isolate_frame, read_test_data
-from nef_pipelines.tools.ai.mcp_commands_lib import (
+from nef_pipelines.tools.ai.mcp_commands import (
     nef_change_sandbox,
     nef_download_file,
     nef_execute_pipeline,
@@ -16,8 +16,6 @@ from nef_pipelines.tools.ai.mcp_commands_lib import (
     nef_list_commands,
     nef_list_files,
     nef_read_me_first,
-    nef_resources_list,
-    nef_resources_read,
     nef_upload_file,
 )
 from nef_pipelines.tools.ai.mcp_lib import (

@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Tuple
 
 from typer.testing import CliRunner
 
-from nef_pipelines.lib.util import chunks
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
 
@@ -25,6 +24,7 @@ for _module_name in get_registerd_modules():
         pass
 
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
+_RESOURCES_ROOT = files("nef_pipelines") / "resources"
 
 _RESOURCE_NAME_SEPARATOR = " - "
 
@@ -40,6 +40,32 @@ class StartupContext:
 
 
 _STARTUP_CONTEXT = StartupContext()
+
+
+def _build_startup_notice(ctx: StartupContext) -> str:
+    """\
+    Format a StartupContext into a markdown notice block for inclusion in
+    MCP instructions and nef_read_me_first() information.
+    """
+    if ctx.will_be_cleaned:
+        sandbox_type = "⚠ **Temporary** — will be **deleted** on exit"
+    elif ctx.is_temporary:
+        sandbox_type = "Temporary — will be **preserved** on exit (--preserve)"
+    else:
+        sandbox_type = "Persistent — files will **not** be deleted on exit"
+
+    lines = [
+        "## Sandbox Status — tell the user this immediately",
+        "",
+        f"- **Directory**: `{ctx.sandbox_path}`",
+        f"- **Type**: {sandbox_type}",
+    ]
+
+    if ctx.warning:
+        lines.append(f"- **⚠ Warning**: {ctx.warning}")
+
+    return "\n".join(lines)
+
 
 # Two distinct filesystem limits matter:
 #   NAME_MAX — max length of a single filename component (e.g. "foo.txt")
@@ -334,31 +360,6 @@ def _get_resource_description_from_filename(filename: str) -> str:
     stem = Path(filename).stem
     parts = stem.split(_RESOURCE_NAME_SEPARATOR, 1)
     return parts[1].strip() if len(parts) > 1 else f"{parts[0].strip()} reference"
-
-
-def _find_resource_file(name: str):
-    """Find the resource file in _RESOURCES whose name matches the given resource name."""
-    for f in _RESOURCES.iterdir():
-        if f.name.endswith(".md") and _get_resource_name_from_filename(f.name) == name:
-            return f
-    return None
-
-
-def _get_resource_list():
-    return sorted(
-        _get_resource_name_from_filename(f.name)
-        for f in _RESOURCES.iterdir()
-        if f.name.endswith(".md")
-    )
-
-
-def _build_resources_lines(available_resources) -> tuple[str, list[str]]:
-
-    resource_lines = "\n".join(
-        " · ".join(f"`{name}`" for name in row)
-        for row in chunks(available_resources, 8)
-    )
-    return resource_lines
 
 
 def _get_native_directory(initial_dir: str = ""):

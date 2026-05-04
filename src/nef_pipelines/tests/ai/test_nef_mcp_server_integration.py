@@ -11,7 +11,7 @@ import sys
 import pytest
 
 from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data
-from nef_pipelines.tools.ai.mcp_commands_lib import _MCP_TOOLS
+from nef_pipelines.tools.ai.mcp_commands import _GENERATED_MCP_TOOLS, _MCP_TOOLS
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCE_NAME_SEPARATOR,
     _RESOURCES,
@@ -25,7 +25,10 @@ if sys.version_info < (3, 10):
 fastmcp = pytest.importorskip("fastmcp")
 Client = fastmcp.Client
 
-EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS}
+EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS + _GENERATED_MCP_TOOLS} | {
+    "nef_resources_list",
+    "nef_resources_read",
+}
 
 EXPECTED_RESOURCE_URIS = {
     f"nef://{_get_resource_name_from_filename(f.name)}"

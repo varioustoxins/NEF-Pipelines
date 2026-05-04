@@ -6,23 +6,19 @@ from typing import Callable, List
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCE_NAME_SEPARATOR,
     _RESOURCES,
+    _RESOURCES_ROOT,
+    _STARTUP_CONTEXT,
     ChangeSandboxResult,
     CommandHelpResult,
     CommandTableResult,
     DownloadResult,
     ListFilesResult,
+    NefStartupResult,
     PipelineResult,
-    ResourceContent,
-    ResourceDescriptor,
-    ResourceResult,
-    ResourcesListResult,
-    ResourcesReadResult,
     UploadResult,
+    _build_startup_notice,
     _execute_command_in_process,
-    _find_resource_file,
     _get_native_directory,
-    _get_resource_description_from_filename,
-    _get_resource_list,
     _get_resource_name_from_filename,
     _validate_path_in_sandbox,
 )
@@ -30,6 +26,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
 logger = logging.getLogger(__name__)
 
 _MCP_TOOLS: List[Callable] = []
+_GENERATED_MCP_TOOLS: List[Callable] = []
 
 
 def mcp_tool(fn: Callable) -> Callable:
@@ -203,14 +200,15 @@ def nef_read_me_first() -> NefStartupResult:
         "---\n\n"
     )
 
-    resource_footer = (
-        "\n\n---\n\n"
-        "**Resources unavailable via `nef://`?**  "
-        "Use nef_resources_list to list resource names and what they do\n"
-        "Use `nef_resources_read(name)` to fetch any resource document\n"
-    )
+    resource_footer = """\n\n---\n\n"
+        **Resources unavailable via `nef://`?**
+        Use nef_resources_list to list resource names and what they do\n
+        Use `nef_resources_read(name)` to fetch any resource document
+        these look like the standard mcp resource functions\n"""
 
-    information = _build_startup_notice(_STARTUP_CONTEXT) if _STARTUP_CONTEXT.sandbox_path else ""
+    information = (
+        _build_startup_notice(_STARTUP_CONTEXT) if _STARTUP_CONTEXT.sandbox_path else ""
+    )
 
     return NefStartupResult(
         content=skip_header + preamble + resource_footer,

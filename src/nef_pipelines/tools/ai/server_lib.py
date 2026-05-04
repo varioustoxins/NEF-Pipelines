@@ -1,14 +1,45 @@
 from fastmcp import FastMCP
+from fastmcp.server.transforms import ResourcesAsTools
+from fastmcp.tools import Tool
 
 from nef_pipelines.lib.util import get_version
-from nef_pipelines.tools.ai.mcp_commands_lib import (  # noqa: F401 — import triggers @mcp_tool decorations
+from nef_pipelines.tools.ai.mcp_commands import (  # noqa: F401 — import triggers @mcp_tool decorations
+    _GENERATED_MCP_TOOLS,
     _MCP_TOOLS,
 )
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
+    _RESOURCES_ROOT,
+    _STARTUP_CONTEXT,
+    _build_startup_notice,
     _get_resource_description_from_filename,
     _get_resource_name_from_filename,
 )
+
+
+class _NefResourcesAsTools(ResourcesAsTools):
+    """\
+    ResourcesAsTools subclass that prefixes generated tool names with 'nef_'
+    for consistency with the rest of the NEF-Pipelines MCP tool namespace.
+
+    list_resources  → nef_list_resources
+    read_resource   → nef_read_resource
+    """
+
+    def _make_list_resources_tool(self) -> Tool:
+        tool = super()._make_list_resources_tool()
+        return tool.model_copy(update={"name": "nef_resources_list"})
+
+    def _make_read_resource_tool(self) -> Tool:
+        tool = super()._make_read_resource_tool()
+        return tool.model_copy(update={"name": "nef_resources_read"})
+
+    async def get_tool(self, name: str, call_next, *, version=None) -> Tool | None:
+        if name == "nef_resources_list":
+            return self._make_list_resources_tool()
+        if name == "nef_resources_read":
+            return self._make_read_resource_tool()
+        return await call_next(name, version=version)
 
 
 def _build_server() -> FastMCP:
@@ -22,10 +53,14 @@ def _build_server() -> FastMCP:
     """
     preamble = (_RESOURCES_ROOT / "preamble.md").read_text()
 
-    startup_notice = _build_startup_notice(_STARTUP_CONTEXT) if _STARTUP_CONTEXT.sandbox_path else ""
+    startup_notice = (
+        _build_startup_notice(_STARTUP_CONTEXT) if _STARTUP_CONTEXT.sandbox_path else ""
+    )
     instructions = preamble + ("\n\n" + startup_notice if startup_notice else "")
 
-    mcp_server = FastMCP("nef-pipelines", version=get_version(), instructions=instructions)
+    mcp_server = FastMCP(
+        "nef-pipelines", version=get_version(), instructions=instructions
+    )
 
     for md_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
         if not md_file.name.endswith(".md"):
@@ -46,5 +81,7 @@ def _build_server() -> FastMCP:
 
     for tool_fn in _MCP_TOOLS:
         mcp_server.tool()(tool_fn)
+
+    mcp_server.add_transform(_NefResourcesAsTools(mcp_server))
 
     return mcp_server
