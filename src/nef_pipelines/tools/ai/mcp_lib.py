@@ -438,9 +438,10 @@ def _get_native_directory(initial_dir: str = ""):
         elif system == "Linux":
             # Requires zenity to be installed
             if initial_dir:
-                cmd = f"zenity --file-selection --directory --filename='{initial_dir}/' --title='Select your MCP Sandbox'"
+                path_option = f"--filename='{initial_dir}/'"
             else:
-                cmd = "zenity --file-selection --directory --title='Select your MCP Sandbox'"
+                path_option = ""
+            cmd = f"zenity --file-selection --directory {path_option} --title='Select your MCP Sandbox'"
         else:
             return {"error": "Unsupported Operating System"}
 
