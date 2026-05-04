@@ -65,21 +65,31 @@ def _build_server():
 def server(
     transport: Annotated[
         str,
-        typer.Option("-t", "--transport", help="transport to use [stdio, sse, streamable-http]", metavar="<TRANSPORT>"),
+        typer.Option(
+            "-t",
+            "--transport",
+            help="transport to use [stdio, sse, streamable-http]",
+            metavar="<TRANSPORT>",
+        ),
     ] = "stdio",
     host: Annotated[
         str,
-        typer.Option("--host", help="host to bind to for HTTP transports", metavar="<HOST>"),
+        typer.Option(
+            "--host", help="host to bind to for HTTP transports", metavar="<HOST>"
+        ),
     ] = "127.0.0.1",
     port: Annotated[
         int,
-        typer.Option("-p", "--port", help="port to bind to for HTTP transports", metavar="<PORT>"),
+        typer.Option(
+            "-p", "--port", help="port to bind to for HTTP transports", metavar="<PORT>"
+        ),
     ] = 8000,
     path: Annotated[
         Optional[str],
         typer.Option(
             "--path",
-            help=f"sandbox directory for MCP server operations; overrides {NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable; if not specified, creates a temporary directory",
+            help=f"""sandbox directory for MCP server operations; overrides {NEF_MCP_SANDBOX_ENV_VAR_NAME}
+                    environment variable; if not specified, creates a temporary directory""",
             metavar="<PATH>",
         ),
     ] = None,
@@ -88,7 +98,7 @@ def server(
         typer.Option(
             "--preserve",
             help="""\
-                preserve the auto-created temporary sandbox directory on exit; has no effect when 
+                preserve the auto-created temporary sandbox directory on exit; has no effect when
                 --path or the environment variable selects the sandbox
             """,
         ),
@@ -120,9 +130,18 @@ def server(
 
     server_transport_args = _get_transport_args(host, port, transport)
 
+    import nef_pipelines.tools.ai.mcp_lib as _mcp_lib
+
+    _mcp_lib._STARTUP_CONTEXT = _mcp_lib.StartupContext(
+        sandbox_path=str(sandbox_path),
+        is_temporary=sandbox.is_temp,
+        will_be_cleaned=sandbox.is_temp and not preserve,
+        warning=warning or "",
+    )
+
     os.chdir(sandbox_path)
     try:
-        _build().run(**server_transport_args)
+        _build().run(show_banner=False, **server_transport_args)
     finally:
         if sandbox_dir is not None and not preserve:
             sandbox_dir.cleanup()
@@ -168,7 +187,9 @@ def _get_sandbox_path(path_arg: Optional[str]) -> SandboxPathResult:
             sandbox = Path(env_path).resolve()
             if sandbox.exists() and sandbox.is_dir():
                 if warning:
-                    warning += f" — falling back to {NEF_MCP_SANDBOX_ENV_VAR_NAME}: {sandbox}"
+                    warning += (
+                        f" — falling back to {NEF_MCP_SANDBOX_ENV_VAR_NAME}: {sandbox}"
+                    )
                 return SandboxPathResult(path=sandbox, warning=warning)
         except Exception:
             pass  # Fall through to temp dir
