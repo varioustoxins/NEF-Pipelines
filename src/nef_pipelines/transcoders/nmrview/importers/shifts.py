@@ -5,7 +5,7 @@ import typer
 from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.constants import NEF_PIPELINES
-from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
 from nef_pipelines.lib.sequence_lib import (
     get_chain_code_iter,
     sequence_from_entry_or_exit,
@@ -54,7 +54,7 @@ def shifts(
     """convert nmrview shift file <nmrview-shifts>.out to NEF"""
 
     try:
-        entry = read_entry_from_file_or_stdin_or_exit_error(input_path)
+        entry = read_or_create_entry_exit_error_on_bad_file(input_path, "nmrview")
 
         chain_codes = parse_comma_separated_options(chain_codes)
 
