@@ -143,12 +143,14 @@ def nef_list_commands(command_pattern: str = "*") -> CommandTableResult:
     Get a table listing of NEF pipeline commands.
 
     command_pattern - pattern to filter commands (e.g., "*sparky*", "frames*")
-                      supports wildcards and comma-separated lists
+                      supports wildcards, bash-style parsing of space-separated
+                      patterns (e.g. "sparky import")  and comma-separated lists.
                       default: "*" (all commands)
 
     Returns CommandTableResult with commands_table. On failure, exit_code is non-zero.
     """
-    args = ["help", "commands", "--display=table", "--format=markdown", command_pattern]
+    args = ["help", "commands", "--display=table", "--format=markdown"]
+    args.extend(shlex.split(command_pattern))
     result = _execute_command_in_process(args)
     return CommandTableResult(
         commands_table=result.stdout,
@@ -166,6 +168,8 @@ def nef_get_command_help(
     Get detailed full help documentation for NEF commands.
 
     command_pattern   - pattern to match commands (e.g., "*sparky*", "frames*", "save")
+                        supports wildcards and bash-style parsing of space-separated
+                        patterns (e.g. "sparky import").
     group_by_category - if True, organise output by category with headings
 
     Returns CommandHelpResult with help_text. On failure, exit_code is non-zero.
@@ -173,7 +177,7 @@ def nef_get_command_help(
     args = ["help", "commands", "--display=help", "--format=markdown"]
     if group_by_category:
         args.append("--group-by-category")
-    args.append(command_pattern)
+    args.extend(shlex.split(command_pattern))
     result = _execute_command_in_process(args)
     return CommandHelpResult(
         help_text=result.stdout,
