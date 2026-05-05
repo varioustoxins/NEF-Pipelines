@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Dict, List, Tuple
 
 from typer.testing import CliRunner
@@ -28,6 +29,25 @@ _RESOURCES_ROOT = files("nef_pipelines") / "resources"
 
 _RESOURCE_NAME_SEPARATOR = " - "
 
+_EXPERIMENTAL_BANNER = """\
+⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
+
+The NEF MCP server is EXPERIMENTAL software. It is still under development!
+
+It grants an AI model direct, unsupervised access to your filesystem and can
+**READ, WRITE and OVERWRITE** files on your disk without further confirmation.
+
+**BEFORE using this server you should:**
+  • Run only in a sandboxed or restricted directory
+  • Understand which AI model and client will connect
+  • Never expose this server on a public network interface
+  • Review the commands available via: `nef help commands`
+
+**THE AUTHORS ACCEPT NO LIABILITY FOR DATA LOSS OR UNINTENDED FILE ACCESS.**
+"""
+
+_AI_INSTRUCTION = "**⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**"
+
 
 @dataclass
 class StartupContext:
@@ -46,25 +66,80 @@ def _build_startup_notice(ctx: StartupContext) -> str:
     """\
     Format a StartupContext into a markdown notice block for inclusion in
     MCP instructions and nef_read_me_first() information.
-    """
-    if ctx.will_be_cleaned:
-        sandbox_type = "⚠ **Temporary** — will be **deleted** on exit"
-    elif ctx.is_temporary:
-        sandbox_type = "Temporary — will be **preserved** on exit (--preserve)"
-    else:
-        sandbox_type = "Persistent — files will **not** be deleted on exit"
 
+    Includes AI instruction, experimental warning, and sandbox status (if available).
+    """
     lines = [
-        "## Sandbox Status — tell the user this immediately",
+        _AI_INSTRUCTION,
         "",
-        f"- **Directory**: `{ctx.sandbox_path}`",
-        f"- **Type**: {sandbox_type}",
+        "---",
+        "",
+        _EXPERIMENTAL_BANNER,
     ]
 
-    if ctx.warning:
-        lines.append(f"- **⚠ Warning**: {ctx.warning}")
+    if ctx.sandbox_path:
+        if ctx.will_be_cleaned:
+            sandbox_type = "⚠️ **Temporary** — will be **deleted** on exit"
+        elif ctx.is_temporary:
+            sandbox_type = "**Temporary** — will be **preserved** on exit (--preserve)"
+        else:
+            sandbox_type = "**Persistent** — files will **not** be deleted on exit"
+
+        lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "## Sandbox Status",
+                "",
+                f"- **Directory**: `{ctx.sandbox_path}`",
+                f"- **Type**: {sandbox_type}",
+            ]
+        )
+
+        if ctx.warning:
+            lines.append(f"- ⚠️ **Warning**: {ctx.warning}")
 
     return "\n".join(lines)
+
+
+def _build_experimental_notice() -> str:
+    """\
+    Return the experimental warning banner with instructions for the AI.
+    Equivalent to _build_startup_notice with no sandbox path.
+    """
+    return _build_startup_notice(StartupContext())
+
+
+def _build_full_orientation(skip_header: str = "") -> str:
+    """\
+    Build the complete orientation message: preamble + warnings.
+    Used by both MCP instructions and nef_read_me_first() for consistency.
+
+    skip_header: Optional header to add (for nef_read_me_first only)
+    """
+    from importlib.resources import files
+
+    preamble_file = files("nef_pipelines") / "resources" / "preamble.md"
+    preamble = preamble_file.read_text() if preamble_file.is_file() else ""
+
+    resource_footer = """\n\n---\n\n\
+        **Resources unavailable via `nef://`?**
+        Use nef_resources_list to list resource names and what they do
+        Use `nef_resources_read(name)` to fetch any resource document
+    """
+
+    resource_footer = dedent(resource_footer)
+
+    # Always use _build_startup_notice
+    startup_notice = _build_startup_notice(_STARTUP_CONTEXT)
+
+    parts = []
+    if skip_header:
+        parts.append(skip_header)
+    parts.extend([preamble, resource_footer, "\n\n", startup_notice])
+
+    return "".join(parts)
 
 
 # Two distinct filesystem limits matter:
@@ -286,10 +361,10 @@ class ChangeSandboxResult(OperationResult):
 
 @dataclass
 class NefStartupResult(OperationResult):
-    """Result of nef_read_me_first and nef_resources_read.
+    """Result of nef_read_me_first.
 
-    information — if non-empty, show this to the user verbatim before anything else.
-    It carries startup warnings and sandbox status that the AI must relay.
+    information — if non-empty, the AI MUST show this to the user verbatim before anything else.
+    It carries startup warnings and sandbox status that must be relayed immediately.
     """
 
     content: str = ""

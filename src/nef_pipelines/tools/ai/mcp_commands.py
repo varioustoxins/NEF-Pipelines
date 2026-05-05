@@ -1,12 +1,10 @@
 import logging
 import os
+import shlex
 from pathlib import Path
 from typing import Callable, List
 
 from nef_pipelines.tools.ai.mcp_lib import (
-    _RESOURCE_NAME_SEPARATOR,
-    _RESOURCES,
-    _RESOURCES_ROOT,
     _STARTUP_CONTEXT,
     ChangeSandboxResult,
     CommandHelpResult,
@@ -16,10 +14,10 @@ from nef_pipelines.tools.ai.mcp_lib import (
     NefStartupResult,
     PipelineResult,
     UploadResult,
+    _build_full_orientation,
     _build_startup_notice,
     _execute_command_in_process,
     _get_native_directory,
-    _get_resource_name_from_filename,
     _validate_path_in_sandbox,
 )
 
@@ -195,27 +193,20 @@ def nef_read_me_first() -> NefStartupResult:
 
     IMPORTANT: if information is non-empty, show it to the user verbatim before anything else.
     """
-    preamble_file = _RESOURCES_ROOT / "preamble.md"
-    preamble = preamble_file.read_text() if preamble_file.is_file() else ""
-
     skip_header = (
         "> **Already oriented this session?** "
-        "Skip this call and proceed directly with the tools.\n\n"
+        "Skip reading this text and proceed directly with what you need to do next.\n\n"
         "---\n\n"
     )
 
-    resource_footer = """\n\n---\n\n"
-        **Resources unavailable via `nef://`?**
-        Use nef_resources_list to list resource names and what they do\n
-        Use `nef_resources_read(name)` to fetch any resource document
-        these look like the standard mcp resource functions\n"""
+    # Use the unified orientation builder for complete output
+    content = _build_full_orientation(skip_header=skip_header)
 
-    information = (
-        _build_startup_notice(_STARTUP_CONTEXT) if _STARTUP_CONTEXT.sandbox_path else ""
-    )
+    # Build startup notice for information field (unified helper)
+    information = _build_startup_notice(_STARTUP_CONTEXT)
 
     return NefStartupResult(
-        content=skip_header + preamble + resource_footer,
+        content=content,
         information=information,
     )
 

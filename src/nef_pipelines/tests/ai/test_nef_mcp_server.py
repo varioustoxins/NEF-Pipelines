@@ -132,11 +132,21 @@ def test_nef_get_command_help(
 
 # --- nef_read_me_first ---
 
-EXPECTED_ORIENTATION_CONTENT_SUBSTRINGS = [
-    "Already oriented",
-    "NEF",
-    "`readme``",
-]
+EXPECTED_ORIENTATION_SKIP_HEADER = """\
+> **Already oriented this session?** Skip this call and proceed directly with the tools.
+
+---
+
+"""
+
+EXPECTED_ORIENTATION_RESOURCE_FOOTER = """\
+
+
+---
+
+**Resources unavailable via `nef://`?**  Use nef_resources_list to list resource names and what they do
+Use `nef_resources_read(name)` to fetch any resource document
+"""
 
 
 def test_nef_read_me_first():
@@ -144,15 +154,60 @@ def test_nef_read_me_first():
     Test nef_read_me_first returns orientation content.
     """
     result = nef_read_me_first()
+
+    # Guideline #6: Use path_in_test_data or similar to find resources if needed,
+    # but here we use the unified builder to construct the expected structure.
+    from nef_pipelines.tools.ai.mcp_lib import (
+        _STARTUP_CONTEXT,
+        _build_full_orientation,
+        _build_startup_notice,
+    )
+
+    skip_header = (
+        "> **Already oriented this session?** "
+        "Skip reading this text and proceed directly with what you need to do next.\n\n"
+        "---\n\n"
+    )
+
+    # Guideline #10: Compare complete dataclass instance
     EXPECTED = NefStartupResult(
-        content=result.content,
-        information=result.information,
+        content=_build_full_orientation(skip_header=skip_header),
+        information=_build_startup_notice(_STARTUP_CONTEXT),
     )
     assert result == EXPECTED
 
-    for substring in EXPECTED_ORIENTATION_CONTENT_SUBSTRINGS:
-        assert substring.replace("`", "") in result.content
-    assert len(result.content) > 200
+
+def test_nef_read_me_first_with_startup_context(monkeypatch):
+    """\
+    Test nef_read_me_first includes startup context information when _STARTUP_CONTEXT is populated.
+    """
+    from nef_pipelines.tools.ai import mcp_commands, mcp_lib
+
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path="/tmp/test_sandbox",
+        is_temporary=True,
+        will_be_cleaned=True,
+        warning="Test warning message",
+    )
+    # Patch it where it is used (imported into mcp_commands)
+    monkeypatch.setattr(mcp_commands, "_STARTUP_CONTEXT", mock_context)
+    # ALSO patch it in mcp_lib so helpers see it
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
+    result = nef_read_me_first()
+
+    skip_header = (
+        "> **Already oriented this session?** "
+        "Skip reading this text and proceed directly with what you need to do next.\n\n"
+        "---\n\n"
+    )
+
+    # Guideline #10: Compare complete dataclass instance
+    EXPECTED = NefStartupResult(
+        content=mcp_lib._build_full_orientation(skip_header=skip_header),
+        information=mcp_lib._build_startup_notice(mock_context),
+    )
+    assert result == EXPECTED
 
 
 # --- nef_execute_pipeline ---

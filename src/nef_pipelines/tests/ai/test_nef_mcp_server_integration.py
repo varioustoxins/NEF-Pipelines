@@ -85,6 +85,22 @@ async def test_list_resources(mcp_client):
 
 
 @pytest.mark.anyio
+async def test_nef_read_me_first_tool(mcp_client):
+    """\
+    Test nef_read_me_first tool via MCP protocol returns orientation text.
+    """
+    result = await mcp_client.call_tool("nef_read_me_first", arguments={})
+    content_text = result.content[0].text
+
+    assert "Already oriented" in content_text
+    assert "nef_resources_list" in content_text
+    assert "nef_resources_read" in content_text
+    # Experimental notice is in the 'information' field of the JSON output
+    assert "EXPERIMENTAL" in content_text
+    assert "AI: You MUST show" in content_text
+
+
+@pytest.mark.anyio
 async def test_nef_readme_resource(mcp_client):
     """\
     Test nef://readme resource returns complete readme structure.
