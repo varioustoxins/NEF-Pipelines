@@ -40,8 +40,9 @@ nef_execute_pipeline([
 ])
 ```
 
-Each step is a list of arguments only — no `nef`, no `|`, no shell quoting. File input and output
-is currently relative to the MCP server's working directory.
+Each step is a list of arguments only — no `nef`, no `|`, no shell quoting. Each parameter that appears
+on the command line is now a single string value in the list. File input and output is currently relative
+to the MCP server's working directory.
 
 Use `nef_execute_pipeline(steps=[...])` for all commands — single steps and multi-step pipelines alike.
 
