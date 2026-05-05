@@ -370,10 +370,10 @@ def _get_native_directory(initial_dir: str = ""):
 
     initial_dir - starting directory for the picker (optional)
     """
-    system = sys.platform.system()
+    system = sys.platform
 
     try:
-        if system == "Darwin":  # macOS
+        if system == "darwin":  # macOS
             if initial_dir:
                 # Use default folder to set starting location
                 cmd = (
@@ -383,7 +383,7 @@ def _get_native_directory(initial_dir: str = ""):
                 )
             else:
                 cmd = "osascript -e 'POSIX path of (choose folder with prompt \"Select your MCP Sandbox:\")'"
-        elif system == "Windows":
+        elif system == "win32":
             # Uses PowerShell to call the FolderBrowserDialog
             if initial_dir:
                 cmd = (
@@ -402,7 +402,7 @@ def _get_native_directory(initial_dir: str = ""):
                     "$f.Description = 'Select your MCP Sandbox'; "
                     "if($f.ShowDialog() -eq 'OK') { $f.SelectedPath }\""
                 )
-        elif system == "Linux":
+        elif system == "linux":
             # Requires zenity to be installed
             if initial_dir:
                 path_option = f"--filename='{initial_dir}/'"
