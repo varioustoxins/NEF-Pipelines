@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 NEF_MCP_SANDBOX_ENV_VAR_NAME = "NEF_MCP_SANDBOX"
+NEF_MCP_SANDBOX_PATH_OPTION = "--sandbox-path"
 
 EXPERIMENTAL_BANNER_HEADING = (
     "[bold red]⚠  EXPERIMENTAL - USE WITH CAUTION  ⚠[/bold red]"
@@ -97,9 +98,9 @@ def server(
         bool,
         typer.Option(
             "--preserve",
-            help="""\
+            help=f"""\
                 preserve the auto-created temporary sandbox directory on exit; has no effect when
-                --path or the environment variable selects the sandbox
+                {NEF_MCP_SANDBOX_PATH_OPTION} or the environment variable selects the sandbox
             """,
         ),
     ] = False,
@@ -169,13 +170,17 @@ def _get_sandbox_path(path_arg: Optional[str]) -> SandboxPathResult:
         try:
             sandbox = Path(path_arg).resolve()
             if not sandbox.exists():
-                warning = f"Specified --path does not exist: {sandbox}"
+                warning = (
+                    f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} does not exist: {sandbox}"
+                )
             elif not sandbox.is_dir():
-                warning = f"Specified --path is not a directory: {sandbox}"
+                warning = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {sandbox}"
             else:
-                return SandboxPathResult(path=sandbox)
+                return SandboxPathResult(
+                    path=sandbox, path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option"
+                )
         except Exception as e:
-            warning = f"Invalid --path argument: {e}"
+            warning = f"Invalid {NEF_MCP_SANDBOX_PATH_OPTION} argument: {e}"
 
         # Fall through to check env var or signal temp needed
 

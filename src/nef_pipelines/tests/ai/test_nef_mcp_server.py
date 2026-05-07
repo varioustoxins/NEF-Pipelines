@@ -33,6 +33,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
 )
 from nef_pipelines.tools.ai.server import (
     NEF_MCP_SANDBOX_ENV_VAR_NAME,
+    NEF_MCP_SANDBOX_PATH_OPTION,
     SandboxPathResult,
     _get_sandbox_path,
 )
@@ -65,8 +66,8 @@ EXPECTED_ERROR_PATH_DOES_NOT_EXIST = "Path does not exist: {path}"
 EXPECTED_ERROR_PATH_NOT_DIRECTORY = "Path is not a directory: {path}"
 
 # Exact warning templates matching server.py _get_sandbox_path
-EXPECTED_PATH_ARG_NOT_EXIST = "Specified --path does not exist: {path}"
-EXPECTED_PATH_ARG_NOT_DIRECTORY = "Specified --path is not a directory: {path}"
+EXPECTED_PATH_ARG_NOT_EXIST = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} does not exist: {{path}}"
+EXPECTED_PATH_ARG_NOT_DIRECTORY = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {{path}}"
 EXPECTED_FALLBACK_TO_ENV_VAR = " — falling back to {env_var}: {path}"
 
 
@@ -622,6 +623,7 @@ def test_sandbox_env_var_priority(tmp_path, monkeypatch):
 
     assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(path=cli_dir)
     assert _get_sandbox_path(None) == SandboxPathResult(path=env_dir)
+    assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(path=cli_dir, path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option")
 
 
 def test_sandbox_temp_fallback(monkeypatch):
