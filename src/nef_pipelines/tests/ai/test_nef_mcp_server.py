@@ -13,6 +13,7 @@ from nef_pipelines.tools.ai.mcp_commands import (
     nef_download_file,
     nef_execute_pipeline,
     nef_get_command_help,
+    nef_import_files,
     nef_list_commands,
     nef_list_files,
     nef_read_me_first,
@@ -23,6 +24,8 @@ from nef_pipelines.tools.ai.mcp_lib import (
     CommandHelpResult,
     CommandTableResult,
     DownloadResult,
+    ImportFailure,
+    ImportFilesResult,
     ListFilesResult,
     NefStartupResult,
     PipelineResult,
@@ -675,3 +678,305 @@ def test_sandbox_file_not_directory_fallback(tmp_path, monkeypatch):
     assert _get_sandbox_path(str(test_file)) == SandboxPathResult(
         warning=EXPECTED_WARNING, is_temp=True
     )
+
+
+# --- nef_import_files ---------------------------------------------------------
+
+EXPECTED_ERROR_IMPORT_CANCELLED = "User cancelled file selection"
+EXPECTED_ERROR_OVERWRITE_DECLINED = "User declined to overwrite existing files"
+EXPECTED_IMPORT_VALIDATION_ERROR = "{count} file(s) failed validation"
+EXPECTED_IMPORT_FAILURE_DIRECTORY_REASON = (
+    "directory — only regular files may be imported"
+)
+EXPECTED_IMPORT_FAILURE_SYMLINK_REASON = (
+    "symbolic link — symbolic links are not allowed"
+)
+
+
+async def test_nef_import_files_success(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files copies selected files into the sandbox.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    (src_dir / "a.nef").write_text("data_a")
+    (src_dir / "b.nef").write_text("data_b")
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [src_dir / "a.nef", src_dir / "b.nef"],
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(imported=["a.nef", "b.nef"])
+    assert result == EXPECTED
+    assert (sandbox / "a.nef").read_text() == "data_a"
+    assert (sandbox / "b.nef").read_text() == "data_b"
+
+
+async def test_nef_import_files_user_cancels(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files returns error when user cancels the picker.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: None,
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(error=EXPECTED_ERROR_IMPORT_CANCELLED)
+    assert result == EXPECTED
+
+
+async def test_nef_import_files_picker_error(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files surfaces picker errors in the error field.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: {"error": "No file picker available"},
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(error="No file picker available")
+    assert result == EXPECTED
+
+
+async def test_nef_import_files_rejects_directory(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files reports a directory selection in failures.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    subdir = src_dir / "mydir"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    subdir.mkdir()
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [subdir],
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(
+        failures=[
+            ImportFailure(name="mydir", reason=EXPECTED_IMPORT_FAILURE_DIRECTORY_REASON)
+        ],
+        error=EXPECTED_IMPORT_VALIDATION_ERROR.format(count=1),
+    )
+    assert result == EXPECTED
+    assert not (sandbox / "mydir").exists()
+
+
+async def test_nef_import_files_rejects_symlink(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files reports symbolic links in failures; nothing is copied.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    real_file = src_dir / "real.nef"
+    real_file.write_text("data")
+    link = src_dir / "link.nef"
+    link.symlink_to(real_file)
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [link],
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(
+        failures=[
+            ImportFailure(
+                name="link.nef", reason=EXPECTED_IMPORT_FAILURE_SYMLINK_REASON
+            )
+        ],
+        error=EXPECTED_IMPORT_VALIDATION_ERROR.format(count=1),
+    )
+    assert result == EXPECTED
+    assert not (sandbox / "link.nef").exists()
+
+
+async def test_nef_import_files_collects_all_validation_failures(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files collects failures for all invalid files, not just the first.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    subdir = src_dir / "adir"
+    subdir.mkdir()
+    link_target = src_dir / "real.nef"
+    link_target.write_text("data")
+    link = src_dir / "link.nef"
+    link.symlink_to(link_target)
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [subdir, link],
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(
+        failures=[
+            ImportFailure(name="adir", reason=EXPECTED_IMPORT_FAILURE_DIRECTORY_REASON),
+            ImportFailure(
+                name="link.nef", reason=EXPECTED_IMPORT_FAILURE_SYMLINK_REASON
+            ),
+        ],
+        error=EXPECTED_IMPORT_VALIDATION_ERROR.format(count=2),
+    )
+    assert result == EXPECTED
+
+
+async def test_nef_import_files_copy_error_reports_partial_success(
+    tmp_path, monkeypatch
+):
+    """\
+    Test nef_import_files keeps already-copied files in imported and puts the
+    failing file in failures when an OS copy error occurs mid-operation.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    (src_dir / "good.nef").write_text("data_good")
+    bad_src = src_dir / "bad.nef"
+    bad_src.write_text("data_bad")
+
+    import shutil as _shutil
+
+    real_copy2 = _shutil.copy2
+
+    def mock_copy(src, dst):
+        if src == bad_src:
+            raise OSError("disk full")
+        real_copy2(src, dst)
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [src_dir / "good.nef", bad_src],
+    )
+    monkeypatch.setattr("nef_pipelines.tools.ai.mcp_lib.shutil.copy2", mock_copy)
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(
+        imported=["good.nef"],
+        failures=[ImportFailure(name="bad.nef", reason="disk full")],
+        error="copy failed — 'bad.nef' could not be written",
+    )
+    assert result == EXPECTED
+    assert (sandbox / "good.nef").read_text() == "data_good"
+    assert not (sandbox / "bad.nef").exists()
+
+
+async def test_nef_import_files_overwrite_confirmed(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files overwrites an existing sandbox file when confirmed.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    (src_dir / "data.nef").write_text("new content")
+    (sandbox / "data.nef").write_text("old content")
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [src_dir / "data.nef"],
+    )
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.ask_overwrite_confirmation",
+        lambda filenames: True,
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(imported=["data.nef"])
+    assert result == EXPECTED
+    assert (sandbox / "data.nef").read_text() == "new content"
+
+
+async def test_nef_import_files_overwrite_declined(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files aborts and copies nothing when user declines overwrite.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+    (src_dir / "data.nef").write_text("new content")
+    (sandbox / "data.nef").write_text("old content")
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [src_dir / "data.nef"],
+    )
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.ask_overwrite_confirmation",
+        lambda filenames: False,
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(error=EXPECTED_ERROR_OVERWRITE_DECLINED)
+    assert result == EXPECTED
+    assert (sandbox / "data.nef").read_text() == "old content"
+
+
+async def test_nef_import_files_overwrite_lists_conflicts(tmp_path, monkeypatch):
+    """\
+    Test nef_import_files passes all conflicting filenames to ask_overwrite_confirmation.
+    """
+    src_dir = tmp_path / "source"
+    sandbox = tmp_path / "sandbox"
+    src_dir.mkdir()
+    sandbox.mkdir()
+
+    for name in ("x.nef", "y.nef", "z.nef"):
+        (src_dir / name).write_text("new")
+        (sandbox / name).write_text("old")
+
+    captured = []
+
+    def mock_confirm(filenames):
+        captured.extend(filenames)
+        return True
+
+    monkeypatch.chdir(sandbox)
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
+        lambda: [src_dir / "x.nef", src_dir / "y.nef", src_dir / "z.nef"],
+    )
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.mcp_lib.ask_overwrite_confirmation",
+        mock_confirm,
+    )
+
+    result = await nef_import_files()
+
+    EXPECTED = ImportFilesResult(imported=["x.nef", "y.nef", "z.nef"])
+    assert result == EXPECTED
+    assert set(captured) == {"x.nef", "y.nef", "z.nef"}

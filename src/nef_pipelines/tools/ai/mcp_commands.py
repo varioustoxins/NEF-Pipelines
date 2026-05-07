@@ -2,7 +2,12 @@ import logging
 import os
 import shlex
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Optional
+
+try:
+    from fastmcp import Context
+except ImportError:
+    Context = object  # type: ignore[assignment,misc]
 
 from nef_pipelines.tools.ai.mcp_lib import (
     _STARTUP_CONTEXT,
@@ -10,15 +15,21 @@ from nef_pipelines.tools.ai.mcp_lib import (
     CommandHelpResult,
     CommandTableResult,
     DownloadResult,
+    ImportFilesResult,
     ListFilesResult,
     NefStartupResult,
     PipelineResult,
     UploadResult,
     _build_full_orientation,
     _build_startup_notice,
+    _confirm_sandbbox_overwrites,
+    _copy_files_to_sandbox,
     _execute_command_in_process,
     _get_native_directory,
+    _request_files_to_copy_to_sandbox_or_return_error,
+    _safe_execute_step,
     _validate_path_in_sandbox,
+    _validate_selected_files_for_sandbox,
 )
 
 logger = logging.getLogger(__name__)
@@ -133,6 +144,42 @@ def nef_list_files() -> ListFilesResult:
             unexpected_entries=unexpected,
         )
     return ListFilesResult(files=regular_files, cwd=str(cwd))
+
+
+@mcp_tool
+async def nef_import_files(ctx: Optional[Context] = None) -> ImportFilesResult:
+    """\
+    Open a native OS file picker to select files from the local filesystem and copy
+    them into the server's sandbox (working directory).
+
+    All file_paths files are validated before any are copied (all-or-none):
+    directories and symbolic links are rejected. All validation failures are
+    collected and returned together — if any file fails, nothing is copied.
+    When file_paths files already exist in the sandbox, a single native dialog
+    lists the conflicts (up to 10, then "... and N more") and asks whether to
+    overwrite all of them. Declining or cancelling aborts the operation.
+
+    Reports progress after each file is copied (e.g. "1/5 copied").
+
+   Returns ImportFilesResult with:
+        imported  - filenames successfully copied into the sandbox
+        failures  - one ImportFailure(name, reason) per file that failed validation
+                    or could not be copied; empty for operation-level failures
+                    (cancelled, no files selected, overwrite declined)
+    On failure, error is non-empty, failures may contain filenames and the causes of
+    failure and imported is empty.
+    """
+
+    file_paths, error = await _request_files_to_copy_to_sandbox_or_return_error()
+
+    result = (
+        (ImportFilesResult(error=error) if error else None)
+        or _validate_selected_files_for_sandbox(file_paths)
+        or await _confirm_sandbbox_overwrites(file_paths)
+        or await _copy_files_to_sandbox(file_paths, ctx)
+    )
+
+    return result
 
 
 @mcp_tool

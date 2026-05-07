@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -7,7 +9,7 @@ from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from typer.testing import CliRunner
 
@@ -360,6 +362,35 @@ class ChangeSandboxResult(OperationResult):
 
 
 @dataclass
+class ImportFailure:
+    """A single file that could not be imported, with a structured reason."""
+
+    name: str
+    reason: str
+
+
+@dataclass
+class ImportFilesResult(OperationResult):
+    """Result of nef_import_files.
+
+    imported  - filenames successfully copied into the sandbox.
+    failures  - one ImportFailure(name, reason) per file that could not be imported.
+    error     - non-empty whenever the operation did not complete fully.
+
+    Three distinct outcomes:
+      Full success:       imported non-empty, failures empty,  error empty.
+      Validation failure: imported empty,     failures non-empty (all bad files listed),
+                          error non-empty — nothing was copied.
+      Copy error:         imported may be non-empty (files copied before the fault),
+                          failures has exactly one entry (the file that failed and why),
+                          error non-empty — copying stopped at the first OS error.
+    """
+
+    imported: List[str] = field(default_factory=list)
+    failures: List[ImportFailure] = field(default_factory=list)
+
+
+@dataclass
 class NefStartupResult(OperationResult):
     """Result of nef_read_me_first.
 
@@ -420,6 +451,17 @@ def _execute_command_in_process(
     )
 
 
+def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:
+    """Execute one pipeline step, returning a PipelineResult even on exception."""
+    try:
+        result = _execute_command_in_process(args, nef_input)
+    except Exception as e:
+        result = PipelineResult(
+            stdout="", stderr=[f"Exception: {type(e).__name__}: {e}"], exit_code=-1
+        )
+    return result
+
+
 def _get_resource_name_from_filename(filename: str) -> str:
     """Return the resource name from a filename: stem text before the first ' - ', lowercased.
 
@@ -437,7 +479,9 @@ def _get_resource_description_from_filename(filename: str) -> str:
     return parts[1].strip() if len(parts) > 1 else f"{parts[0].strip()} reference"
 
 
-def _get_native_directory(initial_dir: str = ""):
+def _get_native_directory(
+    initial_dir: str = "",
+) -> Union[str, None, Dict[str, str]]:
     """\
     Triggers a native OS directory picker and returns the path.
     Returns None if the user cancels.
@@ -495,3 +539,271 @@ def _get_native_directory(initial_dir: str = ""):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+def select_multiple_files() -> Union[List[Path], None, Dict[str, str]]:
+    """\
+    Open a native OS file picker allowing multiple file selection.
+
+    Returns list[Path] on success, None if the user cancels,
+    or dict{"error": str} when no picker is available or an exception occurs.
+    """
+    system = sys.platform
+    try:
+        if system == "darwin":
+            script = (
+                "set ps to {}\n"
+                "try\n"
+                "    set selectedFiles to (choose file with multiple selections allowed"
+                ' with prompt "Select files to import:")\n'
+                "    repeat with f in selectedFiles\n"
+                "        set end of ps to POSIX path of f\n"
+                "    end repeat\n"
+                "on error number -128\n"
+                '    return ""\n'
+                "end try\n"
+                'set AppleScript\'s text item delimiters to "|"\n'
+                "return ps as text\n"
+            )
+            proc = subprocess.run(
+                ["osascript", "-"], input=script, capture_output=True, text=True
+            )
+            raw = proc.stdout.strip()
+            if not raw:
+                return None
+            paths = [Path(p) for p in raw.split("|") if p]
+            return paths or None
+
+        elif system == "win32":
+            ps_script = (
+                "Add-Type -AssemblyName System.Windows.Forms\n"
+                "$f = New-Object System.Windows.Forms.OpenFileDialog\n"
+                "$f.Multiselect = $true\n"
+                "$f.Title = 'Select files to import'\n"
+                "if ($f.ShowDialog() -eq 'OK') { $f.FileNames -join '|' }\n"
+            )
+            proc = subprocess.run(
+                ["powershell", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+            )
+            raw = proc.stdout.strip()
+            if not raw:
+                return None
+            paths = [Path(p) for p in raw.split("|") if p]
+            return paths or None
+
+        elif system == "linux":
+            if shutil.which("zenity"):
+                proc = subprocess.run(
+                    [
+                        "zenity",
+                        "--file-selection",
+                        "--multiple",
+                        "--separator=|",
+                        "--title=Select files to import",
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode != 0:
+                    return None
+                paths = [Path(p) for p in proc.stdout.strip().split("|") if p]
+                return paths or None
+
+            elif shutil.which("kdialog"):
+                proc = subprocess.run(
+                    ["kdialog", "--getopenfilename", ".", "--multiple"],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode != 0:
+                    return None
+                paths = [Path(p) for p in proc.stdout.strip().splitlines() if p]
+                return paths or None
+
+            return {"error": "No file picker available (install zenity or kdialog)"}
+
+        return {"error": f"Unsupported platform: {system}"}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def ask_overwrite_confirmation(filenames: List[str]) -> bool:
+    """\
+    Show a native OS dialog listing files that already exist and ask whether to
+    overwrite all of them.
+
+    Lists up to 10 filenames; when more exist, shows "... and N more".
+    Returns True to overwrite all, False to cancel (also the safe default on error).
+    """
+    _MAX_LISTED = 10
+    listed = filenames[:_MAX_LISTED]
+    remainder = len(filenames) - _MAX_LISTED
+
+    bullet_lines = [f"  - {f}" for f in listed]
+    if remainder > 0:
+        bullet_lines.append(f"  ... and {remainder} more")
+
+    msg = (
+        "These files already exist in the sandbox:\n"
+        + "\n".join(bullet_lines)
+        + "\n\nOverwrite all?"
+    )
+
+    system = sys.platform
+    try:
+        if system == "darwin":
+            as_lines = ['set msg to "These files already exist in the sandbox:"']
+            for f in listed:
+                safe_f = f.replace("\\", "\\\\").replace('"', '\\"')
+                as_lines.append(f'set msg to msg & return & "  - {safe_f}"')
+            if remainder > 0:
+                as_lines.append(
+                    f'set msg to msg & return & "  ... and {remainder} more"'
+                )
+            as_lines.append('set msg to msg & return & return & "Overwrite all?"')
+            as_lines.append(
+                "button returned of (display dialog msg"
+                ' buttons {"Cancel", "Overwrite All"} default button "Cancel")'
+            )
+            script = "\n".join(as_lines)
+            proc = subprocess.run(
+                ["osascript", "-"], input=script, capture_output=True, text=True
+            )
+            return proc.stdout.strip() == "Overwrite All"
+
+        elif system == "win32":
+            safe_msg = msg.replace('"', '`"')
+            ps_script = (
+                "Add-Type -AssemblyName System.Windows.Forms\n"
+                f'[System.Windows.Forms.MessageBox]::Show("{safe_msg}",'
+                ' "Overwrite?", "YesNo", "Question") -eq "Yes"\n'
+            )
+            proc = subprocess.run(
+                ["powershell", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+            )
+            return proc.stdout.strip().lower() == "true"
+
+        elif system == "linux":
+            if shutil.which("zenity"):
+                proc = subprocess.run(
+                    [
+                        "zenity",
+                        "--question",
+                        f"--text={msg}",
+                        "--title=Overwrite?",
+                        "--ok-label=Overwrite All",
+                        "--cancel-label=Cancel",
+                    ],
+                    capture_output=True,
+                )
+                return proc.returncode == 0
+
+            elif shutil.which("kdialog"):
+                proc = subprocess.run(
+                    ["kdialog", "--yesno", msg],
+                    capture_output=True,
+                )
+                return proc.returncode == 0
+
+    except Exception:
+        pass
+    return False
+
+
+async def _request_files_to_copy_to_sandbox_or_return_error() -> (
+    tuple[list[Path] | None | dict, str]
+):
+    selected = await asyncio.to_thread(select_multiple_files)
+
+    error = ""
+    if selected is None:
+        error = "User cancelled file selection"
+    elif isinstance(selected, dict):
+        error = selected.get("error", "Unknown picker error")
+    elif not selected:
+        error = "No files selected"
+
+    return selected, error
+
+
+def _validate_selected_files_for_sandbox(
+    selected: list[Path],
+) -> Optional[ImportFilesResult]:
+    """Type and sandbox checks on each selected path.
+
+    Returns None if all clear, ImportFilesResult to abort if any file fails.
+    """
+    failures: List[ImportFailure] = []
+    result = None
+    for source in selected:
+        if source.is_symlink():
+            failures.append(
+                ImportFailure(
+                    name=source.name,
+                    reason="symbolic link — symbolic links are not allowed",
+                )
+            )
+        elif source.is_dir():
+            failures.append(
+                ImportFailure(
+                    name=source.name,
+                    reason="directory — only regular files may be imported",
+                )
+            )
+        else:
+            ok, path_error = _validate_path_in_sandbox(source.name)
+            if not ok:
+                failures.append(ImportFailure(name=source.name, reason=path_error))
+
+    if failures:
+        result = ImportFilesResult(
+            imported=[],
+            failures=failures,
+            error=f"{len(failures)} file(s) failed validation",
+        )
+    return result
+
+
+async def _confirm_sandbbox_overwrites(
+    selected: list[Path],
+) -> Optional[ImportFilesResult]:
+    """Check for sandbox conflicts and ask the user if any exist.
+
+    Returns None if clear to proceed, ImportFilesResult to abort if declined.
+    """
+    result = None
+    conflicts = [s.name for s in selected if Path(s.name).exists()]
+    if conflicts:
+        confirmed = await asyncio.to_thread(ask_overwrite_confirmation, conflicts)
+        if not confirmed:
+            result = ImportFilesResult(
+                error="User declined to overwrite existing files"
+            )
+    return result
+
+
+async def _copy_files_to_sandbox(selected: list[Path], ctx: Any) -> ImportFilesResult:
+    error = ""
+    imported: List[str] = []
+    failures: List[ImportFailure] = []
+
+    total = len(selected)
+    for i, source in enumerate(selected, 1):
+        dest = Path(source.name)
+        try:
+            await asyncio.to_thread(shutil.copy2, source, dest)
+            imported.append(source.name)
+            logger.info("_copy_files: %s -> %s", source, dest)
+        except OSError as e:
+            failures.append(ImportFailure(name=source.name, reason=str(e)))
+            error = f"copy failed — '{source.name}' could not be written"
+            break
+        if ctx is not None:
+            await ctx.report_progress(i, total, message=f"{i}/{total} copied")
+
+    return ImportFilesResult(imported=imported, failures=failures, error=error)
