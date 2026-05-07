@@ -211,16 +211,6 @@ def nef_read_me_first() -> NefStartupResult:
     )
 
 
-def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:
-    """Execute one pipeline step, returning a PipelineResult even on exception."""
-    try:
-        return _execute_command_in_process(args, nef_input)
-    except Exception as e:
-        return PipelineResult(
-            stdout="", stderr=[f"Exception: {type(e).__name__}: {e}"], exit_code=-1
-        )
-
-
 @mcp_tool
 def nef_execute_pipeline(
     steps: List[List[str]],
