@@ -438,9 +438,6 @@ def _execute_command_in_process(
         if hasattr(result, "stderr") and result.stderr:
             stderr = result.stderr
 
-    if stderr:
-        stdout = (stdout + stderr) if stdout else stderr
-
     exit_code = result.exit_code
     return PipelineResult(
         stdout=stdout,
