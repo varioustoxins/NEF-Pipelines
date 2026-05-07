@@ -43,6 +43,8 @@ custom
 
 EXPECTED_EMPTY = ""
 
+EXPECTED_WARN_NO_NAMESPACES = "no namespaces selected by {selectors}"
+
 # Expected strings for checking specific content in verbose mode or NEF output
 EXPECTED_TAG_MYNEF_SEQUENCE = "_mynef_sequence"
 EXPECTED_TAG_NEF_CHEMICAL_SHIFT = "_nef_chemical_shift"
@@ -245,11 +247,17 @@ def test_list_verbose_mode_filtered():
     assert_lines_match(EXPECTED_VERBOSE_NEF_ONLY, result.stdout)
 
 
-def test_list_empty_result():
+def test_list_empty_result(monkeypatch):
     """Test listing with selector that matches nothing."""
+    warn_calls = []
+    monkeypatch.setattr(
+        "nef_pipelines.tools.namespace.list.warn", lambda msg: warn_calls.append(msg)
+    )
 
     result = run_and_report(app, ["-", "+nonexistent"], input=INPUT_NAMESPACE_TEST)
 
+    EXPECTED_WARN = EXPECTED_WARN_NO_NAMESPACES.format(selectors=["-", "+nonexistent"])
+    assert warn_calls == [EXPECTED_WARN]
     assert_lines_match(EXPECTED_EMPTY, result.stdout)
 
 
@@ -265,21 +273,33 @@ def test_list_with_frame_selection():
     assert_lines_match(EXPECTED_ONLY_NEF, result.stdout)
 
 
-def test_list_escaped_plus_prefix():
+def test_list_escaped_plus_prefix(monkeypatch):
     """Test escaped \\+ for literal + in namespace."""
+    warn_calls = []
+    monkeypatch.setattr(
+        "nef_pipelines.tools.namespace.list.warn", lambda msg: warn_calls.append(msg)
+    )
 
     result = run_and_report(
         app, ["--use-escapes", "-", r"\+test"], input=INPUT_NAMESPACE_TEST
     )
 
+    EXPECTED_WARN = EXPECTED_WARN_NO_NAMESPACES.format(selectors=["-", "\\+test"])
+    assert warn_calls == [EXPECTED_WARN]
     assert_lines_match(EXPECTED_EMPTY, result.stdout)
 
 
-def test_list_escaped_minus_prefix():
+def test_list_escaped_minus_prefix(monkeypatch):
     """Test escaped \\- for literal - in namespace."""
+    warn_calls = []
+    monkeypatch.setattr(
+        "nef_pipelines.tools.namespace.list.warn", lambda msg: warn_calls.append(msg)
+    )
 
     result = run_and_report(
         app, ["--use-escapes", "--", "-", r"\-test"], input=INPUT_NAMESPACE_TEST
     )
 
+    EXPECTED_WARN = EXPECTED_WARN_NO_NAMESPACES.format(selectors=["-", "\\-test"])
+    assert warn_calls == [EXPECTED_WARN]
     assert_lines_match(EXPECTED_EMPTY, result.stdout)

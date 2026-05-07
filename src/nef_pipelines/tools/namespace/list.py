@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Annotated, List, NamedTuple, Optional, Set, Tuple
-from warnings import warn
 
 import typer
 from pynmrstar import Entry, Saveframe
@@ -20,7 +19,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames,
 )
 from nef_pipelines.lib.structures import EntryPart
-from nef_pipelines.lib.util import STDIN, exit_error
+from nef_pipelines.lib.util import STDIN, exit_error, warn
 from nef_pipelines.tools.namespace import namespace_app
 
 # TODO [future] add output via | less --header -R --header=2 and the opportunity to remove colouring --no-colour?
