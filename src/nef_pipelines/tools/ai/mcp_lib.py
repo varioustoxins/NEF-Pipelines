@@ -745,7 +745,7 @@ def ask_overwrite_confirmation(filenames: List[str]) -> bool:
 
 
 async def _request_files_to_copy_to_sandbox_or_return_error() -> (
-    tuple[list[Path] | None | dict, str]
+    Tuple[Union[List[Path], None, dict], str]
 ):
     selected = await asyncio.to_thread(select_multiple_files)
 
