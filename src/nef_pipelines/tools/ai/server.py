@@ -46,14 +46,16 @@ class SandboxPathResult:
     """\
     Result of _get_sandbox_path.
 
-    path     - resolved sandbox Path, or None when is_temp is True (caller must create a temp dir)
-    warning  - non-None when a fallback occurred
-    is_temp  - True when the caller must create and later clean up a temporary directory
+    path        - resolved sandbox Path, or None when is_temp is True (caller must create a temp dir)
+    warning     - non-None when a fallback occurred
+    is_temp     - True when the caller must create and later clean up a temporary directory
+    path_source - human-readable description of where the path came from (e.g. '--sandbox-path option')
     """
 
     path: Optional[Path] = None
     warning: Optional[str] = None
     is_temp: bool = False
+    path_source: str = ""
 
 
 def _build_server():
@@ -88,7 +90,7 @@ def server(
     path: Annotated[
         Optional[str],
         typer.Option(
-            "--path",
+            "--sandbox-path",
             help=f"""sandbox directory for MCP server operations; overrides {NEF_MCP_SANDBOX_ENV_VAR_NAME}
                     environment variable; if not specified, creates a temporary directory""",
             metavar="<PATH>",
@@ -136,6 +138,7 @@ def server(
         sandbox_path=str(sandbox_path),
         is_temporary=sandbox.is_temp,
         will_be_cleaned=sandbox.is_temp and not preserve,
+        path_source=sandbox.path_source,
         warning=warning or "",
     )
 
@@ -158,7 +161,7 @@ def _get_transport_args(host: str, port: int, transport: str) -> dict[str, str]:
 def _get_sandbox_path(path_arg: Optional[str]) -> SandboxPathResult:
     """\
     Determine the sandbox path from command line arg or environment variable.
-    Priority: --path > NEF_MCP_SANDBOX env var > temporary directory.
+    Priority: --sandbox-path > NEF_MCP_SANDBOX env var > temporary directory.
 
     When is_temp is True in the result, path is None — the caller must create a temporary directory.
     If path_arg is invalid, falls back to env var or signals temp needed, with a warning.
