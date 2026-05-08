@@ -168,6 +168,7 @@ def display(
     # Handle polymorphic first arg (file vs selector)
     input, selectors = _parse_polymorphic_entry_inputs(input, selectors)
 
+    # TODO we really want a version that also displays help first...
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
     # Parse selectors OUTSIDE pipe (follows CLAUDE.md pattern)
