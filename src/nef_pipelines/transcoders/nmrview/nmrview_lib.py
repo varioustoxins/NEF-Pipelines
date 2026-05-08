@@ -56,7 +56,7 @@ def get_tcl_parser() -> ParserElement:
     """
 
     # TODO this should be printables  excluding : " {  }
-    simple_word = Word(initChars=printables, excludeChars='"{}')
+    simple_word = Word(init_chars=printables, exclude_chars='"{}')
     simple_word.set_name("simple_word")
 
     expression = Forward()

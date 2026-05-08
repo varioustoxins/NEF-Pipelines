@@ -238,7 +238,7 @@ def _parse_residue_ranges_with_pyparsing(
     grammar = _build_unified_grammar(chain_separator, range_separator)
 
     try:
-        parsed = grammar.parseString(spec, parseAll=True)
+        parsed = grammar.parse_string(spec, parse_all=True)
         return _convert_structured_parse_results(parsed.asList(), chain_separator, spec)
     except pp.ParseException as e:
         raise ResidueRangeParsingException(f"Failed to parse '{spec}': {str(e)}")
@@ -979,7 +979,7 @@ def parse_chain_offset_syntax(
                 continue
 
             try:
-                tokens = grammar.parseString(part, parseAll=True)
+                tokens = grammar.parse_string(part, parse_all=True)
                 range_offsets = _convert_chain_offset_tokens(tokens)
                 results.extend(range_offsets)
             except pp.ParseException as e:
@@ -1698,7 +1698,7 @@ def _build_frame_loop_tag_grammar(use_escapes: bool) -> ParserElement | StringEn
         # Allow any character including placeholders (null bytes from escape processing)
         identifier = pp.CharsNotIn(forbidden_chars)
     else:
-        identifier = pp.Word(pp.printables, excludeChars=forbidden_chars)
+        identifier = pp.Word(pp.printables, exclude_chars=forbidden_chars)
 
     # Tag names (anything except separators, with optional whitespace)
     tag_name = pp.Combine(

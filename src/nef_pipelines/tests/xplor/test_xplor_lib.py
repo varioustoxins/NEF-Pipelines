@@ -297,7 +297,7 @@ def test_convert_selection_to_selection_expressions_double():
     selection_text = (
         "((segid AAAA and resid 1 and name HA) or (segid BBBB and resid 2 and name HB))"
     )
-    result = _selection.parseString(selection_text, parse_all=True)
+    result = _selection.parse_string(selection_text, parse_all=True)
 
     selections = _get_selection_expressions_from_selection(result, selection_text)
     assert len(selections) == 2
@@ -307,7 +307,7 @@ def test_convert_selection_to_selection_expressions_double():
 
 def test_convert_selection_to_selection_expressions_single():
     selection_text = "(segid AAAA and resid 1 and name HA)"
-    result = _selection.parseString(selection_text, parse_all=True)
+    result = _selection.parse_string(selection_text, parse_all=True)
 
     selections = _get_selection_expressions_from_selection(result, selection_text)
 
@@ -321,7 +321,7 @@ def test_convert_selection_to_selection_expressions_double_sub_selection():
         "((segid AAAA or segid BBBB) and (resid 1 or resid 2) and (name HA or name HB)))"
     )
 
-    result = _selection.parseString(selection_text, parse_all=True)
+    result = _selection.parse_string(selection_text, parse_all=True)
 
     selections = _get_selection_expressions_from_selection(result, selection_text)
 

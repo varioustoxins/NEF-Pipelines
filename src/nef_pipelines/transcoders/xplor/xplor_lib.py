@@ -663,9 +663,9 @@ def parse_dihedral_restraints(
     :return:  a list of dihedral restraints
     """
     try:
-        xplor_basic_restraints = _dihedral_restraints.ignore(XPLOR_COMMENT).parseString(
-            restraint_text
-        )
+        xplor_basic_restraints = _dihedral_restraints.ignore(
+            XPLOR_COMMENT
+        ).parse_string(restraint_text)
     except ParseException as parse_exception:
         msg = f"""\
             failed to read dihedral restraints from the file {file_path_display_name} because:
