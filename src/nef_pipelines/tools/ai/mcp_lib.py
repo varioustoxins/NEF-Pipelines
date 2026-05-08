@@ -254,11 +254,17 @@ def _validate_path_in_sandbox(path_str: str) -> Tuple[bool, str]:
             error = f"'{path_str}' is a Windows network path"
             is_error = True
 
-    # Step 4: reject reserved system names (CON, NUL, COM1 etc.) — no-op on
-    # POSIX, future-proofing for Windows.
-    if not is_error and candidate.is_reserved():
-        error = f"'{path_str}' is a reserved system name"
-        is_error = True
+    # Step 4: reject reserved system names (CON, NUL, COM1 etc.) — Windows only,
+    # always a no-op on POSIX. os.path.isreserved() (3.13+) replaces the deprecated
+    # PurePath.is_reserved() which is removed in Python 3.15.
+    if not is_error and sys.platform == "win32":
+        if hasattr(os.path, "isreserved"):
+            is_reserved = os.path.isreserved(str(candidate))
+        else:
+            is_reserved = candidate.is_reserved()
+        if is_reserved:
+            error = f"'{path_str}' is a reserved system name"
+            is_error = True
 
     # Step 5: per-component length check — catch offending component before
     # resolution so the error names it explicitly.
