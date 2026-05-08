@@ -1,6 +1,10 @@
+import asyncio
+import functools
+import inspect
 import logging
 import os
 import shlex
+import uuid
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -10,7 +14,6 @@ except ImportError:
     Context = object  # type: ignore[assignment,misc]
 
 from nef_pipelines.tools.ai.mcp_lib import (
-    _STARTUP_CONTEXT,
     ChangeSandboxResult,
     CommandHelpResult,
     CommandTableResult,
@@ -20,9 +23,10 @@ from nef_pipelines.tools.ai.mcp_lib import (
     NefStartupResult,
     PipelineResult,
     UploadResult,
+    WarningsShownResult,
     _build_full_orientation,
     _build_startup_notice,
-    _confirm_sandbbox_overwrites,
+    _confirm_sandbox_overwrites,
     _copy_files_to_sandbox,
     _execute_command_in_process,
     _get_native_directory,
@@ -37,14 +41,58 @@ logger = logging.getLogger(__name__)
 _MCP_TOOLS: List[Callable] = []
 _GENERATED_MCP_TOOLS: List[Callable] = []
 
+_ORIENTATION_TOKEN: str = ""
+_WARNINGS_SHOWN: bool = False
+
+_ORIENTATION_ERROR = """\
+ERROR: nef_warnings_shown has not been called yet. \
+You MUST call nef_read_me_first, show the warnings to the user verbatim \
+including information about the sandbox, \
+then call nef_warnings_shown with the token from the warnings text.\
+"""
+
+_UNGUARDED_TOOLS = {"nef_read_me_first", "nef_warnings_shown"}
+
+_ERROR_READ_ME_FIRST_NOT_CALLED = "nef_read_me_first has not been called — call it first and show warnings to the user"
+_ERROR_ALREADY_UNLOCKED = "Invalid token — tools are already unlocked, you don't need to call this command again!"
+_ERROR_INVALID_TOKEN = """\
+Invalid token. Extract the ORIENTATION-TOKEN from the information field \
+of nef_read_me_first and pass it here.\
+"""
+
+
+def _orientation_guard(fn: Callable) -> Callable:
+    """Wrap a tool so it errors until nef_warnings_shown has been called."""
+    return_type = fn.__annotations__.get("return")
+
+    if asyncio.iscoroutinefunction(fn):
+
+        @functools.wraps(fn)
+        async def wrapper(*args, **kwargs):
+            if not _WARNINGS_SHOWN:
+                return return_type(error=_ORIENTATION_ERROR)
+            return await fn(*args, **kwargs)
+
+    else:
+
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not _WARNINGS_SHOWN:
+                return return_type(error=_ORIENTATION_ERROR)
+            return fn(*args, **kwargs)
+
+    wrapper.__signature__ = inspect.signature(fn)
+    return wrapper
+
 
 def mcp_tool(fn: Callable) -> Callable:
     """\
     Decorator that marks a function as an MCP tool for auto-registration.
-
-    Appends the function to _MCP_TOOLS in declaration order so server_lib
-    can register them without a manual list.
+    All tools except nef_read_me_first and nef_warnings_shown are wrapped
+    with _orientation_guard.
     """
+    if fn.__name__ not in _UNGUARDED_TOOLS:
+        fn = _orientation_guard(fn)
     _MCP_TOOLS.append(fn)
     return fn
 
@@ -135,10 +183,7 @@ def nef_list_files() -> ListFilesResult:
 
     if unexpected:
         return ListFilesResult(
-            error=(
-                "unexpected non-file entries in working directory "
-                "(NEF tools should not create these)"
-            ),
+            error="unexpected non-file entries in working directory (NEF tools should not create these)",
             files=regular_files,
             cwd=str(cwd),
             unexpected_entries=unexpected,
@@ -175,7 +220,7 @@ async def nef_import_files(ctx: Optional[Context] = None) -> ImportFilesResult:
     result = (
         (ImportFilesResult(error=error) if error else None)
         or _validate_selected_files_for_sandbox(file_paths)
-        or await _confirm_sandbbox_overwrites(file_paths)
+        or await _confirm_sandbox_overwrites(file_paths)
         or await _copy_files_to_sandbox(file_paths, ctx)
     )
 
@@ -238,24 +283,65 @@ def nef_read_me_first() -> NefStartupResult:
     Returns orientation: what NEF-Pipelines is, what resources to read, and what tools are available.
     If you have already received this content in the current session, skip this call.
 
-    IMPORTANT: if information is non-empty, show it to the user verbatim before anything else.
+    IMPORTANT: if information is non-empty, show it to the user verbatim before anything else,
+    then call nef_warnings_shown with the token found at the end of the information text.
     """
-    skip_header = (
-        "> **Already oriented this session?** "
-        "Skip reading this text and proceed directly with what you need to do next.\n\n"
-        "---\n\n"
-    )
+    global _ORIENTATION_TOKEN
 
-    # Use the unified orientation builder for complete output
+    skip_header = """\
+> **Already oriented this session?** \
+Skip reading this text and proceed directly with what you need to do next.
+
+---
+
+"""
+
     content = _build_full_orientation(skip_header=skip_header)
 
-    # Build startup notice for information field (unified helper)
-    information = _build_startup_notice(_STARTUP_CONTEXT)
+    if _WARNINGS_SHOWN:
+        return NefStartupResult(content=content, information="")
+
+    if not _ORIENTATION_TOKEN:
+        _ORIENTATION_TOKEN = str(uuid.uuid4())
+
+    information = _build_startup_notice()
+    information += f"""\
+
+
+ORIENTATION-TOKEN: {_ORIENTATION_TOKEN}
+AI: You MUST show all of the above to the user verbatim before using this token. \
+Then call nef_warnings_shown(token="{_ORIENTATION_TOKEN}") to unlock the NEF tools.\
+"""
 
     return NefStartupResult(
         content=content,
         information=information,
     )
+
+
+@mcp_tool
+def nef_warnings_shown(token: str) -> WarningsShownResult:
+    """\
+    Call this after nef_read_me_first, once you have shown the warnings to the user verbatim.
+
+    token - the ORIENTATION-TOKEN value from the information field of nef_read_me_first.
+            You MUST show all warnings to the user before calling this.
+
+    Returns WarningsShownResult with success=True on success.
+    On failure, error is non-empty and the tools remain locked.
+    """
+    global _WARNINGS_SHOWN
+
+    if not _ORIENTATION_TOKEN:
+        return WarningsShownResult(error=_ERROR_READ_ME_FIRST_NOT_CALLED)
+
+    if token != _ORIENTATION_TOKEN:
+        if _WARNINGS_SHOWN:
+            return WarningsShownResult(error=_ERROR_ALREADY_UNLOCKED)
+        return WarningsShownResult(error=_ERROR_INVALID_TOKEN)
+
+    _WARNINGS_SHOWN = True
+    return WarningsShownResult(success=True)
 
 
 @mcp_tool

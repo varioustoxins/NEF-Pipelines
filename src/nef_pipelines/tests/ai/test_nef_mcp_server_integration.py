@@ -25,6 +25,18 @@ if sys.version_info < (3, 10):
 fastmcp = pytest.importorskip("fastmcp")
 Client = fastmcp.Client
 
+from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data  # noqa: E402
+from nef_pipelines.tools.ai.mcp_commands import (  # noqa: E402
+    _GENERATED_MCP_TOOLS,
+    _MCP_TOOLS,
+)
+from nef_pipelines.tools.ai.mcp_lib import (  # noqa: E402
+    _RESOURCE_NAME_SEPARATOR,
+    _RESOURCES,
+    _get_resource_name_from_filename,
+)
+from nef_pipelines.tools.ai.server_lib import _build_server  # noqa: E402
+
 EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS + _GENERATED_MCP_TOOLS} | {
     "nef_resources_list",
     "nef_resources_read",
@@ -54,9 +66,19 @@ async def mcp_client(tmp_path, monkeypatch):
     """\
     Create FastMCP client connected in-process to a fresh server, with cwd
     set to a temporary sandbox directory (matching the real server behaviour).
+    Calls nef_read_me_first and nef_warnings_shown to satisfy the orientation guard.
     """
     monkeypatch.chdir(tmp_path)
     async with Client(_build_server()) as client:
+        result = await client.call_tool("nef_read_me_first", arguments={})
+        data = json.loads(result.content[0].text)
+        token_match = re.search(
+            r"ORIENTATION-TOKEN: (\S+)", data.get("information", "")
+        )
+        if token_match:
+            await client.call_tool(
+                "nef_warnings_shown", arguments={"token": token_match.group(1)}
+            )
         yield client
 
 

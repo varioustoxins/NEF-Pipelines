@@ -2,13 +2,21 @@
 Tests for AI server tool functions in server_lib.py.
 """
 
+import re
 import sys
+from importlib.resources import files as _pkg_files
 from pathlib import Path
 
 import pytest
 
+import nef_pipelines.tools.ai.mcp_commands as mcp_commands
+import nef_pipelines.tools.ai.mcp_lib as mcp_lib
 from nef_pipelines.lib.test_lib import assert_lines_match, isolate_frame, read_test_data
 from nef_pipelines.tools.ai.mcp_commands import (
+    _ERROR_ALREADY_UNLOCKED,
+    _ERROR_INVALID_TOKEN,
+    _ERROR_READ_ME_FIRST_NOT_CALLED,
+    _ORIENTATION_ERROR,
     nef_change_sandbox,
     nef_download_file,
     nef_execute_pipeline,
@@ -18,6 +26,7 @@ from nef_pipelines.tools.ai.mcp_commands import (
     nef_list_files,
     nef_read_me_first,
     nef_upload_file,
+    nef_warnings_shown,
 )
 from nef_pipelines.tools.ai.mcp_lib import (
     ChangeSandboxResult,
@@ -30,6 +39,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     NefStartupResult,
     PipelineResult,
     UploadResult,
+    WarningsShownResult,
 )
 from nef_pipelines.tools.ai.server import (
     NEF_MCP_SANDBOX_ENV_VAR_NAME,
@@ -66,9 +76,19 @@ EXPECTED_ERROR_PATH_DOES_NOT_EXIST = "Path does not exist: {path}"
 EXPECTED_ERROR_PATH_NOT_DIRECTORY = "Path is not a directory: {path}"
 
 # Exact warning templates matching server.py _get_sandbox_path
-EXPECTED_PATH_ARG_NOT_EXIST = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} does not exist: {{path}}"
-EXPECTED_PATH_ARG_NOT_DIRECTORY = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {{path}}"
+EXPECTED_PATH_ARG_NOT_EXIST = (
+    f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} does not exist: {{path}}"
+)
+EXPECTED_PATH_ARG_NOT_DIRECTORY = (
+    f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {{path}}"
+)
 EXPECTED_FALLBACK_TO_ENV_VAR = " — falling back to {env_var}: {path}"
+
+
+@pytest.fixture(autouse=True)
+def _orientation_ready(monkeypatch):
+    """Set _WARNINGS_SHOWN=True for all unit tests by default."""
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", True)
 
 
 @pytest.fixture
@@ -136,80 +156,113 @@ def test_nef_get_command_help(
 
 # --- nef_read_me_first ---
 
-EXPECTED_ORIENTATION_SKIP_HEADER = """\
-> **Already oriented this session?** Skip this call and proceed directly with the tools.
+_FIXED_TOKEN = "fixed-test-token-00000000"
+
+_ORIENTATION_SKIP_HEADER = """\
+> **Already oriented this session?** \
+Skip reading this text and proceed directly with what you need to do next.
 
 ---
 
 """
 
-EXPECTED_ORIENTATION_RESOURCE_FOOTER = """\
+_RESOURCE_FOOTER = (
+    "\n\n---\n\n"
+    "**Resources unavailable via `nef://`?**\n"
+    "Use nef_resources_list to list resource names and what they do\n"
+    "Use `nef_resources_read(name)` to fetch any resource document\n"
+)
 
+_DEFAULT_STARTUP_NOTICE = """\
+**⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**
 
 ---
 
-**Resources unavailable via `nef://`?**  Use nef_resources_list to list resource names and what they do
-Use `nef_resources_read(name)` to fetch any resource document
-"""
+⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
+
+The NEF-Pipelines MCP server is EXPERIMENTAL software. It is still under development!
+
+In **sandbox mode** (default) the AI is restricted to a single directory.
+With **--no-sandbox** it has direct, unsupervised access to your filesystem and can
+**READ, WRITE and OVERWRITE** files anywhere without further confirmation.
+
+**THE AUTHORS ACCEPT NO LIABILITY FOR BUGS, DATA LOSS OR UNINTENDED FILE ACCESS.**"""
+
+_TOKEN_SUFFIX = (
+    f"\n\nORIENTATION-TOKEN: {_FIXED_TOKEN}\n"
+    f"AI: You MUST show all of the above to the user verbatim before using this token. "
+    f'Then call nef_warnings_shown(token="{_FIXED_TOKEN}") to unlock the NEF tools.'
+)
 
 
-def test_nef_read_me_first():
+def _orientation_content(startup_notice: str) -> str:
+    preamble = (_pkg_files("nef_pipelines") / "resources" / "preamble.md").read_text()
+    return (
+        _ORIENTATION_SKIP_HEADER + preamble + _RESOURCE_FOOTER + "\n\n" + startup_notice
+    )
+
+
+def test_nef_read_me_first(monkeypatch):
     """\
-    Test nef_read_me_first returns orientation content.
+    Test nef_read_me_first returns orientation content with a token in information.
     """
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", _FIXED_TOKEN)
+
     result = nef_read_me_first()
 
-    # Guideline #6: Use path_in_test_data or similar to find resources if needed,
-    # but here we use the unified builder to construct the expected structure.
-    from nef_pipelines.tools.ai.mcp_lib import (
-        _STARTUP_CONTEXT,
-        _build_full_orientation,
-        _build_startup_notice,
-    )
-
-    skip_header = (
-        "> **Already oriented this session?** "
-        "Skip reading this text and proceed directly with what you need to do next.\n\n"
-        "---\n\n"
-    )
-
-    # Guideline #10: Compare complete dataclass instance
     EXPECTED = NefStartupResult(
-        content=_build_full_orientation(skip_header=skip_header),
-        information=_build_startup_notice(_STARTUP_CONTEXT),
+        content=_orientation_content(_DEFAULT_STARTUP_NOTICE),
+        information=_DEFAULT_STARTUP_NOTICE + _TOKEN_SUFFIX,
     )
     assert result == EXPECTED
 
 
 def test_nef_read_me_first_with_startup_context(monkeypatch):
     """\
-    Test nef_read_me_first includes startup context information when _STARTUP_CONTEXT is populated.
+    Test nef_read_me_first includes startup context when _STARTUP_CONTEXT is set.
     """
-    from nef_pipelines.tools.ai import mcp_commands, mcp_lib
+    SANDBOX_PATH = "/tmp/test_sandbox"
+    WARNING_TEXT = "Test warning message"
 
     mock_context = mcp_lib.StartupContext(
-        sandbox_path="/tmp/test_sandbox",
+        sandbox_path=SANDBOX_PATH,
         is_temporary=True,
         will_be_cleaned=True,
-        warning="Test warning message",
+        warning=WARNING_TEXT,
     )
-    # Patch it where it is used (imported into mcp_commands)
-    monkeypatch.setattr(mcp_commands, "_STARTUP_CONTEXT", mock_context)
-    # ALSO patch it in mcp_lib so helpers see it
     monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", _FIXED_TOKEN)
 
     result = nef_read_me_first()
 
-    skip_header = (
-        "> **Already oriented this session?** "
-        "Skip reading this text and proceed directly with what you need to do next.\n\n"
-        "---\n\n"
-    )
+    SANDBOX_STARTUP_NOTICE = """\
+**⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**
 
-    # Guideline #10: Compare complete dataclass instance
+---
+
+⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
+
+The NEF-Pipelines MCP server is EXPERIMENTAL software. It is still under development!
+
+The server is in **sandbox mode**. The AI is restricted to a single directory:
+
+**`/tmp/test_sandbox`**
+
+It can **READ, WRITE and OVERWRITE** files within this directory without further confirmation.
+
+**⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
+
+Ask the AI to change the sandbox to another directory if you want more permanent storage.
+
+**THE AUTHORS ACCEPT NO LIABILITY FOR BUGS, DATA LOSS OR UNINTENDED FILE ACCESS.**
+
+⚠️ **Warning**: Test warning message"""
+
     EXPECTED = NefStartupResult(
-        content=mcp_lib._build_full_orientation(skip_header=skip_header),
-        information=mcp_lib._build_startup_notice(mock_context),
+        content=_orientation_content(SANDBOX_STARTUP_NOTICE),
+        information=SANDBOX_STARTUP_NOTICE + _TOKEN_SUFFIX,
     )
     assert result == EXPECTED
 
@@ -621,9 +674,12 @@ def test_sandbox_env_var_priority(tmp_path, monkeypatch):
 
     monkeypatch.setenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, str(env_dir))
 
-    assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(path=cli_dir)
-    assert _get_sandbox_path(None) == SandboxPathResult(path=env_dir)
-    assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(path=cli_dir, path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option")
+    assert _get_sandbox_path(str(cli_dir)) == SandboxPathResult(
+        path=cli_dir, path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option"
+    )
+    assert _get_sandbox_path(None) == SandboxPathResult(
+        path=env_dir, path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable"
+    )
 
 
 def test_sandbox_temp_fallback(monkeypatch):
@@ -651,7 +707,9 @@ def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
         env_var=NEF_MCP_SANDBOX_ENV_VAR_NAME, path=env_dir.resolve()
     )
     assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
-        path=env_dir, warning=EXPECTED_WARNING
+        path=env_dir,
+        warning=EXPECTED_WARNING,
+        path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable",
     )
 
 
@@ -982,3 +1040,89 @@ async def test_nef_import_files_overwrite_lists_conflicts(tmp_path, monkeypatch)
     EXPECTED = ImportFilesResult(imported=["x.nef", "y.nef", "z.nef"])
     assert result == EXPECTED
     assert set(captured) == {"x.nef", "y.nef", "z.nef"}
+
+
+# --- orientation guard ---
+
+
+def test_orientation_guard_blocks_tool_before_warnings_shown(tmp_path, monkeypatch):
+    """\
+    Test that tools return an error if nef_warnings_shown has not been called.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+
+    result = nef_list_files()
+    EXPECTED = ListFilesResult(error=_ORIENTATION_ERROR)
+    assert result == EXPECTED
+
+
+def test_orientation_guard_unblocked_after_warnings_shown(tmp_path, monkeypatch):
+    """\
+    Test that calling nef_read_me_first then nef_warnings_shown unblocks subsequent tools.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "")
+
+    startup = nef_read_me_first()
+    token = re.search(r"ORIENTATION-TOKEN: (\S+)", startup.information).group(1)
+    nef_warnings_shown(token=token)
+
+    result = nef_list_files()
+    EXPECTED = ListFilesResult(files=[], cwd=result.cwd)
+    assert result == EXPECTED
+
+
+# --- nef_warnings_shown ---
+
+
+def test_warnings_shown_rejects_wrong_token(monkeypatch):
+    """\
+    Test that nef_warnings_shown rejects a wrong token.
+    """
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "correct-token")
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+
+    result = nef_warnings_shown(token="wrong-token")
+    EXPECTED = WarningsShownResult(error=_ERROR_INVALID_TOKEN)
+    assert result == EXPECTED
+    assert not mcp_commands._WARNINGS_SHOWN
+
+
+def test_warnings_shown_rejects_when_read_me_first_not_called(monkeypatch):
+    """\
+    Test that nef_warnings_shown errors if nef_read_me_first was never called.
+    """
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "")
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+
+    result = nef_warnings_shown(token="any-token")
+    EXPECTED = WarningsShownResult(error=_ERROR_READ_ME_FIRST_NOT_CALLED)
+    assert result == EXPECTED
+    assert not mcp_commands._WARNINGS_SHOWN
+
+
+def test_warnings_shown_rejects_wrong_token_when_already_unlocked(monkeypatch):
+    """\
+    Test that nef_warnings_shown returns a clear message if tools are already unlocked.
+    """
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "correct-token")
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", True)
+
+    result = nef_warnings_shown(token="wrong-token")
+    EXPECTED = WarningsShownResult(error=_ERROR_ALREADY_UNLOCKED)
+    assert result == EXPECTED
+
+
+def test_warnings_shown_accepts_correct_token(monkeypatch):
+    """\
+    Test that nef_warnings_shown succeeds with the correct token.
+    """
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "correct-token")
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+
+    result = nef_warnings_shown(token="correct-token")
+    EXPECTED = WarningsShownResult(success=True)
+    assert result == EXPECTED
+    assert mcp_commands._WARNINGS_SHOWN

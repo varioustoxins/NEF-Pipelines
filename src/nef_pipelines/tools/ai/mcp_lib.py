@@ -435,6 +435,13 @@ class NefStartupResult(OperationResult):
 
 
 @dataclass
+class WarningsShownResult(OperationResult):
+    """Result of nef_warnings_shown."""
+
+    success: bool = False
+
+
+@dataclass
 class CommandTableResult(CommandResult):
     """Result of nef_list_commands."""
 
