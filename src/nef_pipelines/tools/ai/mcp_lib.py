@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
-from textwrap import dedent
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from typer.testing import CliRunner
@@ -151,13 +150,12 @@ def _build_full_orientation(skip_header: str = "") -> str:
     preamble_file = files("nef_pipelines") / "resources" / "preamble.md"
     preamble = preamble_file.read_text() if preamble_file.is_file() else ""
 
-    resource_footer = """\n\n---\n\n\
-        **Resources unavailable via `nef://`?**
-        Use nef_resources_list to list resource names and what they do
-        Use `nef_resources_read(name)` to fetch any resource document
-    """
-
-    resource_footer = dedent(resource_footer)
+    resource_footer = (
+        "\n\n---\n\n"
+        "**Resources unavailable via `nef://`?**\n"
+        "Use nef_resources_list to list resource names and what they do\n"
+        "Use `nef_resources_read(name)` to fetch any resource document\n"
+    )
 
     # Always use _build_startup_notice
     startup_notice = _build_startup_notice(_STARTUP_CONTEXT)
