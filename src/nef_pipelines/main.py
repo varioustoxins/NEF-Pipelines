@@ -5,8 +5,10 @@ import logging
 import sys
 from dataclasses import dataclass
 from importlib import import_module
+from pathlib import Path
 from textwrap import dedent
 from traceback import format_exc, print_exc
+from typing import Optional
 
 import typer
 
@@ -50,6 +52,9 @@ EXIT_ERROR = 1
 
 patch_rich_code_theme()
 
+# path for the sandbox
+_sandbox_path = None
+
 
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     msg = dedent(msg)
@@ -60,7 +65,7 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
-def debug_callback(
+def main_callback(
     debug: bool = typer.Option(
         False, "--debug", help="Enable debug output including stack traces"
     ),
@@ -69,27 +74,38 @@ def debug_callback(
         "--debug-typer",
         help="Developer tool enable debugging of typer CLI interface construction",
     ),
+    sandbox_path: Optional[Path] = typer.Option(
+        None,
+        "--sandbox-path",
+        help="""
+            Path to the Sandbox folder, generaly for use by MCP servers / AIs when set
+            attempting to write outside this path will lead to errors...
+        """,
+    ),
 ):
 
     if debug:
         global debug_mode
         debug_mode = True
         logging.basicConfig(level=logging.DEBUG)
+
     if debug_typer:
         global typer_debug_mode
         logging.basicConfig(level=logging.DEBUG)
         typer_debug_mode = True
 
+    _sandbox_path = sandbox_path  # noqa F841
+
 
 def create_nef_app():
 
     # needed to avoid partially initialised module import
-    from nef_pipelines.main import debug_callback
+    from nef_pipelines.main import main_callback
 
     if nef_app.app is None:
         nef_app.app = typer.Typer(
             no_args_is_help=True,
-            callback=debug_callback,
+            callback=main_callback,
             rich_markup_mode="markdown",
             cls=FilteredHelpGroup,
         )
