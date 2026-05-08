@@ -6,18 +6,10 @@ needed), which avoids event-loop binding issues and subprocess coordination.
 """
 
 import json
+import re
 import sys
 
 import pytest
-
-from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data
-from nef_pipelines.tools.ai.mcp_commands import _GENERATED_MCP_TOOLS, _MCP_TOOLS
-from nef_pipelines.tools.ai.mcp_lib import (
-    _RESOURCE_NAME_SEPARATOR,
-    _RESOURCES,
-    _get_resource_name_from_filename,
-)
-from nef_pipelines.tools.ai.server_lib import _build_server
 
 if sys.version_info < (3, 10):
     pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
