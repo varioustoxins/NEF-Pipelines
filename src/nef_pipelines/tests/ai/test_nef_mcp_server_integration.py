@@ -82,7 +82,7 @@ async def mcp_client(tmp_path, monkeypatch):
         yield client
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_list_tools(mcp_client):
     """\
     Test that all expected tools are registered with the MCP server.
@@ -94,7 +94,7 @@ async def test_list_tools(mcp_client):
     ), f"Missing or extra tools. Got: {tool_names}"
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_list_resources(mcp_client):
     """\
     Test that all documentation resources are registered as MCP resources.
@@ -106,7 +106,7 @@ async def test_list_resources(mcp_client):
     ), f"Missing or extra resources. Got: {resource_uris}"
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_read_me_first_tool(mcp_client):
     """\
     Test nef_read_me_first tool via MCP protocol returns orientation text.
@@ -122,7 +122,7 @@ async def test_nef_read_me_first_tool(mcp_client):
     assert "AI: You MUST show" in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_readme_resource(mcp_client):
     """\
     Test nef://readme resource returns complete readme structure.
@@ -134,7 +134,7 @@ async def test_nef_readme_resource(mcp_client):
     assert "```" in text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_skill_resource(mcp_client):
     """\
     Test nef://skill resource returns non-empty content.
@@ -144,7 +144,7 @@ async def test_nef_skill_resource(mcp_client):
     assert len(text) > 0
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_list_commands_tool(mcp_client):
     """\
     Test nef_list_commands tool via MCP protocol returns a markdown table.
@@ -159,7 +159,7 @@ async def test_nef_list_commands_tool(mcp_client):
     assert "|" in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_get_command_help_tool(mcp_client):
     """\
     Test nef_get_command_help tool via MCP protocol returns help text.
@@ -174,7 +174,7 @@ async def test_nef_get_command_help_tool(mcp_client):
     assert len(content_text) > 200
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_execute_pipeline_tool_empty_steps(mcp_client):
     """\
     Test nef_execute_pipeline with no steps is a no-op returning success.
@@ -188,7 +188,7 @@ async def test_nef_execute_pipeline_tool_empty_steps(mcp_client):
     assert '"exit_code":0' in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_execute_pipeline_tool_help(mcp_client):
     """\
     Test nef_execute_pipeline with --help returns complete help structure.
@@ -204,7 +204,7 @@ async def test_nef_execute_pipeline_tool_help(mcp_client):
     assert len(content_text) > 200
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_execute_pipeline_with_nef_data(mcp_client):
     """\
     Test nef_execute_pipeline with NEF input data returns frame list.
@@ -221,7 +221,7 @@ async def test_nef_execute_pipeline_with_nef_data(mcp_client):
     assert_lines_match(EXPECTED_FRAMES_LIST, stdout)
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "command_pattern,expected_keyword",
     [
@@ -243,7 +243,7 @@ async def test_nef_list_commands(mcp_client, command_pattern, expected_keyword):
     assert "|" in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "args,expected_content",
     [
@@ -266,7 +266,7 @@ async def test_nef_execute_pipeline(mcp_client, args, expected_content):
         assert expected_content in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_upload_file_tool(mcp_client):
     """\
     Test nef_upload_file writes a file via MCP protocol.
@@ -280,7 +280,7 @@ async def test_nef_upload_file_tool(mcp_client):
     assert data["name"] == "test.nef"
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_download_file_tool(mcp_client):
     """\
     Test nef_download_file reads back a file written by nef_upload_file.
@@ -299,7 +299,7 @@ async def test_nef_download_file_tool(mcp_client):
     assert "data_ubiquitin" in data["content"]
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_list_files_tool(mcp_client):
     """\
     Test nef_list_files returns files written by nef_upload_file.
@@ -318,7 +318,7 @@ async def test_nef_list_files_tool(mcp_client):
     assert "b.nef" in content_text
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_nef_upload_file_rejected_absolute(mcp_client):
     """\
     Test nef_upload_file rejects absolute paths via MCP protocol.
@@ -329,3 +329,18 @@ async def test_nef_upload_file_rejected_absolute(mcp_client):
     data = json.loads(result.content[0].text)
 
     assert bool(data["error"])
+
+
+@pytest.mark.asyncio
+async def test_orientation_guard_blocks_tool_in_integration(tmp_path, monkeypatch):
+    """\
+    Test that the guard error is surfaced via MCP protocol before nef_warnings_shown.
+    """
+    import nef_pipelines.tools.ai.mcp_commands as _cmd
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(_cmd, "_WARNINGS_SHOWN", False)
+    async with Client(_build_server()) as client:
+        result = await client.call_tool("nef_list_files", arguments={})
+        data = json.loads(result.content[0].text)
+        assert "nef_warnings_shown" in data["error"]
