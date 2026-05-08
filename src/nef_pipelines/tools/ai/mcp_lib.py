@@ -798,7 +798,7 @@ def _validate_selected_files_for_sandbox(
     return result
 
 
-async def _confirm_sandbbox_overwrites(
+async def _confirm_sandbox_overwrites(
     selected: list[Path],
 ) -> Optional[ImportFilesResult]:
     """Check for sandbox conflicts and ask the user if any exist.
