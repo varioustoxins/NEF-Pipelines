@@ -31,22 +31,15 @@ _RESOURCES_ROOT = files("nef_pipelines") / "resources"
 
 _RESOURCE_NAME_SEPARATOR = " - "
 
-_EXPERIMENTAL_BANNER = """\
+_EXPERIMENTAL_HEADER = """\
 ⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
 
-The NEF MCP server is EXPERIMENTAL software. It is still under development!
-
-It grants an AI model direct, unsupervised access to your filesystem and can
-**READ, WRITE and OVERWRITE** files on your disk without further confirmation.
-
-**BEFORE using this server you should:**
-  • Run only in a sandboxed or restricted directory
-  • Understand which AI model and client will connect
-  • Never expose this server on a public network interface
-  • Review the commands available via: `nef help commands`
-
-**THE AUTHORS ACCEPT NO LIABILITY FOR DATA LOSS OR UNINTENDED FILE ACCESS.**
+The NEF-Pipelines MCP server is EXPERIMENTAL software. It is still under development!\
 """
+
+_LIABILITY = (
+    "**THE AUTHORS ACCEPT NO LIABILITY FOR BUGS, DATA LOSS OR UNINTENDED FILE ACCESS.**"
+)
 
 _AI_INSTRUCTION = "**⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**"
 
@@ -58,51 +51,84 @@ class StartupContext:
     sandbox_path: str = ""
     is_temporary: bool = False
     will_be_cleaned: bool = False
+    no_sandbox: bool = False
+    path_source: str = ""
     warning: str = ""
 
 
 _STARTUP_CONTEXT = StartupContext()
 
 
-def _build_startup_notice(ctx: StartupContext) -> str:
+def _build_startup_notice(ctx: Optional[StartupContext] = None) -> str:
     """\
     Format a StartupContext into a markdown notice block for inclusion in
     MCP instructions and nef_read_me_first() information.
-
-    Includes AI instruction, experimental warning, and sandbox status (if available).
+    Defaults to the module-level _STARTUP_CONTEXT so callers always get
+    the current server state even when _STARTUP_CONTEXT is replaced at startup.
     """
-    lines = [
-        _AI_INSTRUCTION,
-        "",
-        "---",
-        "",
-        _EXPERIMENTAL_BANNER,
-    ]
+    if ctx is None:
+        ctx = _STARTUP_CONTEXT
+    if ctx.no_sandbox:
+        body = f"""\
+With **--no-sandbox** the AI has direct, unsupervised access to your filesystem and can
+**READ, WRITE and OVERWRITE** files anywhere without further confirmation.
 
-    if ctx.sandbox_path:
+**BEFORE using this server you should:**
+  - Ensure you restrict the server so it won't overwrite important files
+    [are you using a container or an isolated server?]
+  - Understand which AI model and client will connect
+  - Never expose this server on a public network interface
+  - Review the commands available via: `nef help commands`
+
+{_LIABILITY}"""
+
+    elif ctx.sandbox_path:
         if ctx.will_be_cleaned:
-            sandbox_type = "⚠️ **Temporary** — will be **deleted** on exit"
+            cleanup = """\
+**⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
+
+Ask the AI to change the sandbox to another directory if you want more permanent storage."""
         elif ctx.is_temporary:
-            sandbox_type = "**Temporary** — will be **preserved** on exit (--preserve)"
+            cleanup = """\
+**⚠️ THE SANDBOX WILL NOT BE CLEARED AT SHUTDOWN** (--preserve-sandbox was used). \
+A new sandbox will be created on next server start. \
+The sandbox may be cleared at computer reboot. \
+This option is mainly present for debugging."""
         else:
-            sandbox_type = "**Persistent** — files will **not** be deleted on exit"
+            cleanup = f"""\
+The server is using a **user defined sandbox** \
+defined by the **{ctx.path_source}**. \
+The AI is restricted to this user supplied directory."""
 
-        lines.extend(
-            [
-                "",
-                "---",
-                "",
-                "## Sandbox Status",
-                "",
-                f"- **Directory**: `{ctx.sandbox_path}`",
-                f"- **Type**: {sandbox_type}",
-            ]
-        )
+        warning_line = f"\n\n⚠️ **Warning**: {ctx.warning}" if ctx.warning else ""
 
-        if ctx.warning:
-            lines.append(f"- ⚠️ **Warning**: {ctx.warning}")
+        body = f"""\
+The server is in **sandbox mode**. The AI is restricted to a single directory:
 
-    return "\n".join(lines)
+**`{ctx.sandbox_path}`**
+
+It can **READ, WRITE and OVERWRITE** files within this directory without further confirmation.
+
+{cleanup}
+
+{_LIABILITY}{warning_line}"""
+
+    else:
+        body = f"""\
+In **sandbox mode** (default) the AI is restricted to a single directory.
+With **--no-sandbox** it has direct, unsupervised access to your filesystem and can
+**READ, WRITE and OVERWRITE** files anywhere without further confirmation.
+
+{_LIABILITY}"""
+
+    return f"""\
+{_AI_INSTRUCTION}
+
+---
+
+{_EXPERIMENTAL_HEADER}
+
+{body}"""
 
 
 def _build_experimental_notice() -> str:
