@@ -197,7 +197,11 @@ def _get_sandbox_path(path_arg: Optional[str]) -> SandboxPathResult:
                     warning += (
                         f" — falling back to {NEF_MCP_SANDBOX_ENV_VAR_NAME}: {sandbox}"
                     )
-                return SandboxPathResult(path=sandbox, warning=warning)
+                return SandboxPathResult(
+                    path=sandbox,
+                    warning=warning,
+                    path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable",
+                )
         except Exception:
             pass  # Fall through to temp dir
 
