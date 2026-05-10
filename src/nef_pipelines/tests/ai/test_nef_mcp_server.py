@@ -6,6 +6,7 @@ import re
 import sys
 from importlib.resources import files as _pkg_files
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -430,8 +431,12 @@ def test_nef_execute_pipeline_step_missing_nef_prefix():
         steps=[["frames", "list"]],
         stdout="",
         stderr=[
-            "each step must start with 'nef' — got ['frames', 'list']. "
-            'Example: ["nef", "frames", "list"]'
+            dedent(
+                """
+                each step must start with 'nef' — got ['frames', 'list'].
+                Example: ["nef", "frames", "list"]
+            """
+            )
         ],
         exit_code=1,
         steps_completed=0,
