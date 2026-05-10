@@ -53,7 +53,7 @@ EXIT_ERROR = 1
 patch_rich_code_theme()
 
 # path for the sandbox
-_sandbox_path = None
+in_server_mode = False
 
 
 def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
@@ -74,15 +74,16 @@ def main_callback(
         "--debug-typer",
         help="Developer tool enable debugging of typer CLI interface construction",
     ),
-    sandbox_path: Optional[Path] = typer.Option(
-        None,
-        "--sandbox-path",
+    server_mode: Optional[bool] = typer.Option(
+        False,
+        "--server",
         help="""
-            Path to the Sandbox folder, generaly for use by MCP servers / AIs when set
-            attempting to write outside this path will lead to errors...
+            indicates to the runtime that its running inside an mcp server
         """,
     ),
 ):
+    global in_server_mode
+    in_server_mode = server_mode
 
     if debug:
         global debug_mode
