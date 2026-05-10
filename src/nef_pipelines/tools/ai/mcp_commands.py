@@ -6,6 +6,7 @@ import os
 import shlex
 import uuid
 from pathlib import Path
+from textwrap import dedent
 from typing import Callable, List, Optional
 
 try:
@@ -352,7 +353,8 @@ def nef_execute_pipeline(
     """
     Execute a sequence of NEF commands in-process, chaining stdout → stdin.
 
-    steps     - list of argument lists, e.g. [["frames","list"], ["save","-"]]
+    steps     - list of argument lists, e.g. [["nef", "frames", "list"], ["nef", "save", "-"]]
+                each step must start with 'nef'.
                 empty list or empty inner list are both silent no-ops
     nef_input - optional NEF content to seed the first step
 
@@ -366,7 +368,16 @@ def nef_execute_pipeline(
             result.stderr.append("")
             continue
 
-        step_result = _safe_execute_step(args, result.stdout)
+        if args[0] != "nef":
+            msg = f"""
+                    each step must start with 'nef' — got {args!r}.
+                    Example: ["nef", "frames", "list"]
+                """
+            result.stderr.append(dedent(msg))
+            result.exit_code = 1
+            break
+
+        step_result = _safe_execute_step(args[1:], result.stdout)  # strip leading "nef"
         result.stderr.append(step_result.stderr[0] if step_result.stderr else "")
         result.exit_code = step_result.exit_code
 

@@ -285,12 +285,14 @@ def test_nef_execute_pipeline_single_step(simple_nef_data):
     """\
     Test nef_execute_pipeline with single step executes successfully.
     """
-    result = nef_execute_pipeline(steps=[["frames", "list"]], nef_input=simple_nef_data)
+    result = nef_execute_pipeline(
+        steps=[["nef", "frames", "list"]], nef_input=simple_nef_data
+    )
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=0,
-        steps=[["frames", "list"]],
+        steps=[["nef", "frames", "list"]],
         steps_completed=1,
     )
     assert result == EXPECTED
@@ -302,13 +304,14 @@ def test_nef_execute_pipeline_multiple_steps(simple_nef_data):
     Test nef_execute_pipeline chains stdout→stdin across steps.
     """
     result = nef_execute_pipeline(
-        steps=[["save", "-"], ["frames", "list"]], nef_input=simple_nef_data
+        steps=[["nef", "save", "-"], ["nef", "frames", "list"]],
+        nef_input=simple_nef_data,
     )
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=0,
-        steps=[["save", "-"], ["frames", "list"]],
+        steps=[["nef", "save", "-"], ["nef", "frames", "list"]],
         steps_completed=2,
     )
     assert result == EXPECTED
@@ -319,12 +322,14 @@ def test_nef_execute_pipeline_step_failure():
     """\
     Test nef_execute_pipeline stops on step failure.
     """
-    result = nef_execute_pipeline(steps=[["version"], ["nonexistent", "command"]])
+    result = nef_execute_pipeline(
+        steps=[["nef", "version"], ["nef", "nonexistent", "command"]]
+    )
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=result.exit_code,
-        steps=[["version"], ["nonexistent", "command"]],
+        steps=[["nef", "version"], ["nef", "nonexistent", "command"]],
         steps_completed=1,
     )
     assert result == EXPECTED
@@ -336,12 +341,14 @@ def test_nef_execute_pipeline_with_nef_data_passthrough(simple_nef_data):
     """\
     Test that pipeline can process NEF data through save command.
     """
-    result = nef_execute_pipeline(steps=[["save", "-"]], nef_input=simple_nef_data)
+    result = nef_execute_pipeline(
+        steps=[["nef", "save", "-"]], nef_input=simple_nef_data
+    )
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=0,
-        steps=[["save", "-"]],
+        steps=[["nef", "save", "-"]],
         steps_completed=1,
     )
     assert result == EXPECTED
@@ -367,13 +374,14 @@ def test_nef_execute_pipeline_stderr_is_list(simple_nef_data):
     Test nef_execute_pipeline stderr is a list with one entry per step.
     """
     result = nef_execute_pipeline(
-        steps=[["frames", "list"], ["save", "-"]], nef_input=simple_nef_data
+        steps=[["nef", "frames", "list"], ["nef", "save", "-"]],
+        nef_input=simple_nef_data,
     )
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=result.exit_code,
-        steps=[["frames", "list"], ["save", "-"]],
+        steps=[["nef", "frames", "list"], ["nef", "save", "-"]],
         steps_completed=result.steps_completed,
     )
     assert result == EXPECTED
@@ -384,12 +392,12 @@ def test_nef_execute_pipeline_help():
     """\
     Test nef_execute_pipeline with --help returns complete help structure.
     """
-    result = nef_execute_pipeline(steps=[["--help"]])
+    result = nef_execute_pipeline(steps=[["nef", "--help"]])
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=0,
-        steps=[["--help"]],
+        steps=[["nef", "--help"]],
         steps_completed=1,
     )
     assert result == EXPECTED
@@ -402,13 +410,31 @@ def test_nef_execute_pipeline_returns_dataclass_structure():
     """\
     Test that nef_execute_pipeline returns a PipelineResult dataclass.
     """
-    result = nef_execute_pipeline(steps=[["version"]])
+    result = nef_execute_pipeline(steps=[["nef", "version"]])
     EXPECTED = PipelineResult(
         stdout=result.stdout,
         stderr=result.stderr,
         exit_code=0,
-        steps=[["version"]],
+        steps=[["nef", "version"]],
         steps_completed=1,
+    )
+    assert result == EXPECTED
+
+
+def test_nef_execute_pipeline_step_missing_nef_prefix():
+    """\
+    Test nef_execute_pipeline returns an error if a step does not start with 'nef'.
+    """
+    result = nef_execute_pipeline(steps=[["frames", "list"]])
+    EXPECTED = PipelineResult(
+        steps=[["frames", "list"]],
+        stdout="",
+        stderr=[
+            "each step must start with 'nef' — got ['frames', 'list']. "
+            'Example: ["nef", "frames", "list"]'
+        ],
+        exit_code=1,
+        steps_completed=0,
     )
     assert result == EXPECTED
 

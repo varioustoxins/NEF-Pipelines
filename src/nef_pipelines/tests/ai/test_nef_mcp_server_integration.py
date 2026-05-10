@@ -187,7 +187,7 @@ async def test_nef_execute_pipeline_tool_help(mcp_client):
     """
     result = await mcp_client.call_tool(
         "nef_execute_pipeline",
-        arguments={"steps": [["--help"]], "nef_input": ""},
+        arguments={"steps": [["nef", "--help"]], "nef_input": ""},
     )
     content_text = result.content[0].text
 
@@ -205,7 +205,7 @@ async def test_nef_execute_pipeline_with_nef_data(mcp_client):
 
     result = await mcp_client.call_tool(
         "nef_execute_pipeline",
-        arguments={"steps": [["frames", "list"]], "nef_input": simple_nef},
+        arguments={"steps": [["nef", "frames", "list"]], "nef_input": simple_nef},
     )
     content_text = result.content[0].text
     stdout = json.loads(content_text)["stdout"]
@@ -239,9 +239,9 @@ async def test_nef_list_commands(mcp_client, command_pattern, expected_keyword):
 @pytest.mark.parametrize(
     "args,expected_content",
     [
-        (["version"], ""),
-        (["--help"], "Usage:"),
-        (["help", "commands", "--display=table", "frames*"], "frames"),
+        (["nef", "version"], ""),
+        (["nef", "--help"], "Usage:"),
+        (["nef", "help", "commands", "--display=table", "frames*"], "frames"),
     ],
 )
 async def test_nef_execute_pipeline(mcp_client, args, expected_content):

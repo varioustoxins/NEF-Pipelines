@@ -18,11 +18,11 @@ Examples in this document are written as shell pipelines for clarity. When using
 do **not** type shell commands — you call `nef_execute_pipeline` with each pipeline step as a list
 of arguments.
 
-| Shell pipeline | MCP equivalent |
-|---|---|
-| `nef stream my.nef` | `['stream', 'my.nef']` |
-| `nef frames delete ccpn_*` | `['frames', 'delete', 'ccpn_*']` |
-| `nef save result.nef` | `['save', 'result.nef']` |
+| Shell pipeline | MCP equivalent                        |
+|---|---------------------------------------|
+| `nef stream my.nef` | `['nef', 'stream', 'my.nef']`          |
+| `nef frames delete ccpn_*` | `['nef', 'frames', 'delete', 'ccpn_*']` |
+| `nef save result.nef` | `['nef', 'save', 'result.nef']`         |
 
 So for the pipeline you would write in the shell as:
 
@@ -34,13 +34,13 @@ this can be sent as:
 
 ```python
 nef_execute_pipeline([
-    ['stream', 'my.nef'],
-    ['frames', 'delete', 'ccpn_*'],
-    ['save', 'result.nef'],
+    ['nef', 'stream', 'my.nef'],
+    ['nef', 'frames', 'delete', 'ccpn_*'],
+    ['nef', 'save', 'result.nef'],
 ])
 ```
 
-Each step is a list of arguments only — no `nef`, no `|`, no shell quoting. Each parameter that appears
+Each step is a list of arguments only — no `|`, no shell quoting. Each parameter that appears
 on the command line is now a single string value in the list. File input and output is currently relative
 to the MCP server's working directory.
 
@@ -288,15 +288,15 @@ Notes:
 
 ## Bootstrapping a NEF Entry
 
-Most import or simulation commands (e.g. `sparky import shifts`, `xeasy import shifts`,
-`fasta import sequence`) will create a minimal valid NEF entry automatically if `stdin` is empty.
+Most import or simulation commands (e.g. `nef sparky import shifts`, `nef xeasy import shifts`,
+`nef fasta import sequence`) will create a minimal valid NEF entry automatically if `stdin` is empty.
 You do **not** need to seed the pipeline with a dummy entry. Simply call the import command
 directly as the first step:
 
 ```python
 nef_execute_pipeline(steps=[
-    ["sparky", "import", "shifts", "my_shifts.txt"],
-    ["save", "output.nef"],
+    ["nef", "sparky", "import", "shifts", "my_shifts.txt"],
+    ["nef", "save", "output.nef"],
 ])
 ```
 
