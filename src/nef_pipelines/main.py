@@ -30,6 +30,8 @@ class CommandFailure:
 
 debug_mode = False
 typer_debug_mode = "--debug-typer" in sys.argv
+if typer_debug_mode:
+    logging.basicConfig(level=logging.DEBUG)
 
 try:
     import future  # noqa: F401
@@ -65,12 +67,15 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
-def  main_callback(
+def main_callback(
     ctx: typer.Context,
     debug: bool = typer.Option(
         False, "--debug", help="Enable debug output including stack traces"
     ),
-    debug_typer: bool = typer.Option(
+    # NOTE: this is defined here so that it appears in the list of options shown by typer
+    #      however, it is set at the top of the file because it needs to be set before
+    #      typer interprts commands...
+    _debug_typer: bool = typer.Option(
         False,
         "--debug-typer",
         help="Developer tool enable debugging of typer CLI interface construction",
@@ -90,11 +95,6 @@ def  main_callback(
         global debug_mode
         debug_mode = True
         logging.basicConfig(level=logging.DEBUG)
-
-    if debug_typer:
-        global typer_debug_mode
-        logging.basicConfig(level=logging.DEBUG)
-
 
     if server_mode:
         # remove the ai command if we are running inside an AI server
