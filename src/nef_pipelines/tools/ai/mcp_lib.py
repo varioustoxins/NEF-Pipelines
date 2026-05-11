@@ -313,7 +313,19 @@ def _validate_path_in_sandbox(path_str: str) -> Tuple[bool, str]:
 
 
 @dataclass
-class PipelineResult:
+class OperationResult:
+    """Base for file I/O and resource operations; success = no error."""
+
+    error: str = ""
+
+    @property
+    def success(self) -> bool:
+        """True when error is empty."""
+        return not bool(self.error)
+
+
+@dataclass
+class PipelineResult(OperationResult):
     """Result of a multi-step pipeline execution."""
 
     stdout: str = ""
@@ -324,20 +336,8 @@ class PipelineResult:
 
     @property
     def success(self) -> bool:
-        """True when exit_code is 0."""
-        return self.exit_code == 0
-
-
-@dataclass
-class OperationResult:
-    """Base for file I/O and resource operations; success = no error."""
-
-    error: str = ""
-
-    @property
-    def success(self) -> bool:
-        """True when error is empty."""
-        return not bool(self.error)
+        """True when exit_code is 0 and no error."""
+        return self.exit_code == 0 and not bool(self.error)
 
 
 @dataclass

@@ -96,7 +96,6 @@ def  main_callback(
         logging.basicConfig(level=logging.DEBUG)
 
 
-    _sandbox_path = sandbox_path  # noqa F841
     if server_mode:
         # remove the ai command if we are running inside an AI server
         if "ai" in ctx.command.commands:
@@ -108,6 +107,10 @@ def  main_callback(
                 This is for security and to avoid recursion.
             """
             exit_error(msg)
+
+    if ctx.invoked_subcommand is None:
+        print(ctx.get_help())
+        raise typer.Exit()
 
 
 def create_nef_app():
