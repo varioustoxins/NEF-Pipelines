@@ -65,7 +65,8 @@ def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
     sys.exit(exit_code)
 
 
-def main_callback(
+def  main_callback(
+    ctx: typer.Context,
     debug: bool = typer.Option(
         False, "--debug", help="Enable debug output including stack traces"
     ),
@@ -93,9 +94,20 @@ def main_callback(
     if debug_typer:
         global typer_debug_mode
         logging.basicConfig(level=logging.DEBUG)
-        typer_debug_mode = True
+
 
     _sandbox_path = sandbox_path  # noqa F841
+    if server_mode:
+        # remove the ai command if we are running inside an AI server
+        if "ai" in ctx.command.commands:
+            del ctx.command.commands["ai"]
+
+        if ctx.invoked_subcommand == "ai":
+            msg = """
+                The 'ai' commands are not available when running inside an AI server.
+                This is for security and to avoid recursion.
+            """
+            exit_error(msg)
 
 
 def create_nef_app():
@@ -106,6 +118,7 @@ def create_nef_app():
     if nef_app.app is None:
         nef_app.app = typer.Typer(
             no_args_is_help=True,
+            invoke_without_command=True,
             callback=main_callback,
             rich_markup_mode="markdown",
             cls=FilteredHelpGroup,
