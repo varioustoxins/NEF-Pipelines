@@ -51,7 +51,7 @@ def test_execute_command_help():
     """\
     Test executing help command (no NEF input required).
     """
-    result = execute_command_in_process(["--help"])
+    result = execute_command_in_process(["nef", "--help"])
 
     assert result.exit_code == 0
     assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
@@ -61,7 +61,7 @@ def test_execute_command_version():
     """\
     Test executing version command (no NEF input required).
     """
-    result = execute_command_in_process(["version"])
+    result = execute_command_in_process(["nef", "version"])
 
     assert result.exit_code == 0
     assert len(result.stdout) > 0
@@ -71,7 +71,9 @@ def test_execute_command_with_nef_input(simple_nef_data):
     """\
     Test executing command with NEF input via temporary file.
     """
-    result = execute_command_in_process(["frames", "list"], nef_input=simple_nef_data)
+    result = execute_command_in_process(
+        ["nef", "frames", "list"], nef_input=simple_nef_data
+    )
 
     assert result.exit_code == 0
     assert_lines_match(EXPECTED_FRAMES_LIST, result.stdout)
@@ -82,7 +84,7 @@ def test_execute_command_frames_tabulate(simple_nef_data):
     Test frames tabulate command with NEF input and a frame selector.
     """
     result = execute_command_in_process(
-        ["frames", "tabulate", "molecular_system"], nef_input=simple_nef_data
+        ["nef", "frames", "tabulate", "molecular_system"], nef_input=simple_nef_data
     )
 
     assert result.exit_code == 0
@@ -93,7 +95,7 @@ def test_execute_command_without_nef_input_shows_help():
     """\
     Test that some commands show help when called without input.
     """
-    result = execute_command_in_process(["frames", "list"])
+    result = execute_command_in_process(["nef", "frames", "list"])
 
     assert result.exit_code == 0
     assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
@@ -103,7 +105,7 @@ def test_execute_command_save_with_empty_nef_input():
     """\
     Test executing save command with empty NEF input fails.
     """
-    result = execute_command_in_process(["save", "-"], nef_input="")
+    result = execute_command_in_process(["nef", "save", "-"], nef_input="")
 
     assert result.exit_code != 0
 
@@ -113,7 +115,7 @@ def test_execute_command_with_none_nef_input():
     Test executing command with None as NEF input (should not create temp file).
     """
     result = execute_command_in_process(
-        ["help", "commands", "--display=table", "frames*"], nef_input=""
+        ["nef", "help", "commands", "--display=table", "frames*"], nef_input=""
     )
 
     assert result.exit_code == 0
@@ -123,7 +125,7 @@ def test_execute_command_invalid_command():
     """\
     Test executing invalid command returns failure.
     """
-    result = execute_command_in_process(["nonexistent", "command"])
+    result = execute_command_in_process(["nef", "nonexistent", "command"])
 
     assert result.exit_code != 0
 
@@ -134,7 +136,7 @@ def test_execute_command_returns_pipeline_result():
     """
     from nef_pipelines.tools.ai.mcp_lib import PipelineResult
 
-    result = execute_command_in_process(["version"])
+    result = execute_command_in_process(["nef", "version"])
 
     assert isinstance(result, PipelineResult)
     assert isinstance(result.stdout, str)
@@ -147,7 +149,7 @@ def test_execute_command_help_commands_table():
     Test help commands with table format.
     """
     result = execute_command_in_process(
-        ["help", "commands", "--display=table", "--format=markdown", "frames*"]
+        ["nef", "help", "commands", "--display=table", "--format=markdown", "frames*"]
     )
 
     assert result.exit_code == 0
@@ -159,7 +161,7 @@ def test_execute_command_help_commands_full():
     Test help commands with full documentation.
     """
     result = execute_command_in_process(
-        ["help", "commands", "--display=help", "--format=markdown", "save"]
+        ["nef", "help", "commands", "--display=help", "--format=markdown", "save"]
     )
 
     assert result.exit_code == 0
@@ -173,7 +175,7 @@ def test_execute_command_chaining_output():
     simple_nef = read_test_data("ubiquitin_short.nef", __file__)
 
     result1 = execute_command_in_process(
-        ["frames", "tabulate", "molecular_system"], nef_input=simple_nef
+        ["nef", "frames", "tabulate", "molecular_system"], nef_input=simple_nef
     )
 
     assert result1.exit_code == 0
@@ -188,7 +190,7 @@ def test_execute_command_with_explicit_input_file(tmp_path, simple_nef_data):
 
     # Pass explicit --in argument
     result = execute_command_in_process(
-        ["frames", "list", "--in", str(test_file)],
+        ["nef", "frames", "list", "--in", str(test_file)],
         nef_input="",
     )
 
@@ -201,7 +203,7 @@ def test_execute_command_preserves_args_order():
     Test that arguments are passed in correct order.
     """
     result = execute_command_in_process(
-        ["help", "commands", "--display=table", "frames*"]
+        ["nef", "help", "commands", "--display=table", "frames*"]
     )
 
     assert result.exit_code == 0

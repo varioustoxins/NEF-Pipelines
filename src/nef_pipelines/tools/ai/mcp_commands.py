@@ -240,7 +240,7 @@ def nef_list_commands(command_pattern: str = "*") -> CommandTableResult:
 
     Returns CommandTableResult with commands_table. On failure, exit_code is non-zero.
     """
-    args = ["help", "commands", "--display=table", "--format=markdown"]
+    args = ["nef", "help", "commands", "--display=table", "--format=markdown"]
     args.extend(shlex.split(command_pattern))
     result = _execute_command_in_process(args)
     return CommandTableResult(
@@ -265,7 +265,7 @@ def nef_get_command_help(
 
     Returns CommandHelpResult with help_text. On failure, exit_code is non-zero.
     """
-    args = ["help", "commands", "--display=help", "--format=markdown"]
+    args = ["nef", "help", "commands", "--display=help", "--format=markdown"]
     if group_by_category:
         args.append("--group-by-category")
     args.extend(shlex.split(command_pattern))
@@ -377,7 +377,9 @@ def nef_execute_pipeline(
             result.exit_code = 1
             break
 
-        step_result = _safe_execute_step(args[1:], result.stdout)  # strip leading "nef"
+        #  inject global --server flag
+        injected_args = [args[0], "--server"] + args[1:]
+        step_result = _safe_execute_step(injected_args, result.stdout)
         result.stderr.append(step_result.stderr[0] if step_result.stderr else "")
         result.exit_code = step_result.exit_code
 

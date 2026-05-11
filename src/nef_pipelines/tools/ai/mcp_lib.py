@@ -462,27 +462,39 @@ def _execute_command_in_process(
 
     Returns a PipelineResult with stderr as a single-element list.
     """
-    invoke_kwargs: Dict[str, Any] = dict(input=nef_input if nef_input else None)
-    try:
-        runner = CliRunner(mix_stderr=False)
-        result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
-        stdout, stderr = result.output or "", result.stderr or ""
-    except TypeError:
-        runner = CliRunner()
-        result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
-        stdout = result.output or ""
-        stderr = ""
-        if hasattr(result, "stderr") and result.stderr:
-            stderr = result.stderr
 
-    exit_code = result.exit_code
-    return PipelineResult(
-        stdout=stdout,
-        stderr=[stderr],
-        exit_code=exit_code,
-        steps=[list(args)],
-        steps_completed=1 if exit_code == 0 else 0,
-    )
+    result = None
+    if args and args[0] != "nef":
+        return PipelineResult(
+            error="only nef and it sub commands are currently supported"
+        )
+    elif args:
+        # CliRunner.invoke expects arguments after the program name.
+        # If "nef" is present as the first argument, we strip it.
+        args = args[1:]
+
+        invoke_kwargs: Dict[str, Any] = dict(input=nef_input if nef_input else None)
+        try:
+            runner = CliRunner(mix_stderr=False)
+            result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+            stdout, stderr = result.output or "", result.stderr or ""
+        except TypeError:
+            runner = CliRunner()
+            result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+            stdout = result.output or ""
+            stderr = ""
+            if hasattr(result, "stderr") and result.stderr:
+                stderr = result.stderr
+
+        exit_code = result.exit_code
+        result = PipelineResult(
+            stdout=stdout,
+            stderr=[stderr],
+            exit_code=exit_code,
+            steps=[list(args)],
+            steps_completed=1 if exit_code == 0 else 0,
+        )
+    return result
 
 
 def _safe_execute_step(args: List[str], nef_input: str) -> PipelineResult:

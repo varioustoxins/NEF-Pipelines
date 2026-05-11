@@ -1157,3 +1157,14 @@ def test_warnings_shown_accepts_correct_token(monkeypatch):
     EXPECTED = WarningsShownResult(success=True)
     assert result == EXPECTED
     assert mcp_commands._WARNINGS_SHOWN
+
+
+def test_execute_command_invalid_namespace():
+    """
+    Test that the low-level runner rejects commands outside the 'nef' namespace.
+    """
+    from nef_pipelines.tools.ai.mcp_lib import _execute_command_in_process
+
+    # We test the internal function directly to verify the safety net
+    result = _execute_command_in_process(["not-nef", "version"])
+    assert result.error == "only nef and it sub commands are currently supported"
