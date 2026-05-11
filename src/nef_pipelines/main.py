@@ -5,7 +5,6 @@ import logging
 import sys
 from dataclasses import dataclass
 from importlib import import_module
-from pathlib import Path
 from textwrap import dedent
 from traceback import format_exc, print_exc
 from typing import Optional
