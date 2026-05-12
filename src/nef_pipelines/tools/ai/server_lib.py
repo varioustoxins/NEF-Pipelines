@@ -4,7 +4,6 @@ from fastmcp.tools import Tool
 
 from nef_pipelines.lib.util import get_version
 from nef_pipelines.tools.ai.mcp_commands import (  # noqa: F401 — import triggers @mcp_tool decorations
-    _GENERATED_MCP_TOOLS,
     _MCP_TOOLS,
 )
 from nef_pipelines.tools.ai.mcp_lib import (

@@ -40,7 +40,6 @@ from nef_pipelines.tools.ai.mcp_lib import (
 logger = logging.getLogger(__name__)
 
 _MCP_TOOLS: List[Callable] = []
-_GENERATED_MCP_TOOLS: List[Callable] = []
 
 _ORIENTATION_TOKEN: str = ""
 _WARNINGS_SHOWN: bool = False

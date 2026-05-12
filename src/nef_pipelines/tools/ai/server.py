@@ -6,10 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import typer
-from rich import box
-from rich.align import Align
 from rich.console import Console
-from rich.table import Table
 
 from nef_pipelines.lib.util import exit_error
 from nef_pipelines.tools.ai import ai_app
@@ -19,26 +16,6 @@ if TYPE_CHECKING:
 
 NEF_MCP_SANDBOX_ENV_VAR_NAME = "NEF_MCP_SANDBOX"
 NEF_MCP_SANDBOX_PATH_OPTION = "--sandbox-path"
-
-EXPERIMENTAL_BANNER_HEADING = (
-    "[bold red]⚠  EXPERIMENTAL - USE WITH CAUTION  ⚠[/bold red]"
-)
-
-EXPERIMENTAL_BANNER_BODY = """
-The NEF MCP server is EXPERIMENTAL software.
-It is still under Development!
-
-It grants an AI model direct, unsupervised access to your filesystem and
-[bold red]READ, WRITE and OVERWRITE[/bold red] files on your disk without further confirmation.
-
-[bold]BEFORE starting this server you should:[/bold]
-  • Run only in a sandboxed or restricted directory
-  • Understand which AI model and client will connect
-  • Never expose this server on a public network interface
-  • Review the commands available via: [cyan]nef help commands[/cyan]
-
-[bold red]THE AUTHORS ACCEPT NO LIABILITY FOR DATA LOSS OR UNINTENDED FILE ACCESS.[/bold red]
-"""
 
 
 @dataclass
@@ -56,12 +33,6 @@ class SandboxPathResult:
     warning: Optional[str] = None
     is_temp: bool = False
     path_source: str = ""
-
-
-def _build_server():
-    from nef_pipelines.tools.ai.server_lib import _build_server as _build
-
-    return _build()
 
 
 @ai_app.command(name="server")
@@ -222,25 +193,6 @@ def _print_sandbox_warning(warning: str):
         f"\n[yellow]⚠  WARNING:[/yellow] {warning}\n",
         style="bold yellow",
     )
-
-
-def _issue_experimental_warning():
-    console = Console(stderr=True)
-
-    table = Table(
-        box=box.DOUBLE,
-        show_header=False,
-        show_edge=True,
-        border_style="bold red",
-        padding=(1, 2),
-        expand=False,
-    )
-
-    table.add_row(Align.center(EXPERIMENTAL_BANNER_HEADING))
-    table.add_section()
-    table.add_row(EXPERIMENTAL_BANNER_BODY.strip())
-
-    console.print(Align.center(table))
 
 
 def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "FastMCP"]:

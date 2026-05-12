@@ -130,14 +130,6 @@ With **--no-sandbox** it has direct, unsupervised access to your filesystem and 
 {body}"""
 
 
-def _build_experimental_notice() -> str:
-    """\
-    Return the experimental warning banner with instructions for the AI.
-    Equivalent to _build_startup_notice with no sandbox path.
-    """
-    return _build_startup_notice(StartupContext())
-
-
 def _build_full_orientation(skip_header: str = "") -> str:
     """\
     Build the complete orientation message: preamble + warnings.
