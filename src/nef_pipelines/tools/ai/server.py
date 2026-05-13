@@ -95,19 +95,22 @@ def server(
     if sandbox.is_temp:
         sandbox_dir = tempfile.TemporaryDirectory(prefix="nef_mcp_")
         sandbox_path = Path(sandbox_dir.name)
-        warning = sandbox.warning
-        if warning:
-            warning += f" — falling back to temporary directory: {sandbox_path}"
+        sandbox_warning = sandbox.warning
+        if sandbox_warning:
+            sandbox_warning += f" — falling back to temporary directory: {sandbox_path}"
     else:
         # is_temp=False implies path is not None (enforced by _get_sandbox_path)
         if sandbox.path is None:
-            exit_error("sandbox.path must not be None when is_temp=False, contact the developers this is a bug")
+            exit_error(
+                "sandbox.path must not be None when is_temp=False, contact the developers this is a bug"
+            )
         sandbox_path = sandbox.path
-        warning = sandbox.warning
+        sandbox_warning = sandbox.warning
 
-    if warning:
-        _print_sandbox_warning(warning)
-    _print_sandbox_location(sandbox_path)
+    if sandbox_warning:
+        warn(sandbox_warning)
+
+    info(f"Sandbox directory: {sandbox_path}")
 
     server_transport_args = _get_transport_args(host, port, transport)
 
@@ -118,7 +121,7 @@ def server(
         is_temporary=sandbox.is_temp,
         will_be_cleaned=sandbox.is_temp and not preserve,
         path_source=sandbox.path_source,
-        warning=warning or "",
+        warning=sandbox_warning or "",
     )
 
     try:
