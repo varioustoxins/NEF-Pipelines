@@ -3,13 +3,18 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from textwrap import dedent
 from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import typer
-from rich.console import Console
 
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.preferences_storage_lib import get_config_file_path
+from nef_pipelines.lib.util import exit_error, info, warn
 from nef_pipelines.tools.ai import ai_app
+from nef_pipelines.tools.ai.sandbox_lib import (
+    get_sandbox_preference,
+    validate_sandbox_path,
+)
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -131,68 +136,111 @@ def _get_transport_args(host: str, port: int, transport: str) -> dict[str, str]:
 
 def _get_sandbox_path(path_arg: Optional[str]) -> SandboxPathResult:
     """\
-    Determine the sandbox path from command line arg or environment variable.
-    Priority: --sandbox-path > NEF_MCP_SANDBOX env var > temporary directory.
+    Determine the sandbox path from (in priority order):
+    1. --sandbox-path command line argument
+    2. Persistent TOML preference
+    3. NEF_MCP_SANDBOX environment variable
+    4. Temporary directory (fallback)
 
+    If a sandbox is specified but invalid: warns and uses it anyway (allows user to fix without restart).
+    Only falls back to next priority if current priority is NOT specified.
     When is_temp is True in the result, path is None — the caller must create a temporary directory.
-    If path_arg is invalid, falls back to env var or signals temp needed, with a warning.
     """
-    warning = None
+    result = _try_command_line_sandbox(path_arg)
 
-    # 1. Command line takes priority (with fallback on error)
+    if result is None:
+        result = _try_preference_sandbox()
+
+    if result is None:
+        result = _try_environment_sandbox()
+
+    if result is None:
+        result = SandboxPathResult(is_temp=True)
+
+    return result
+
+
+def _try_command_line_sandbox(path_arg: Optional[str]) -> Optional[SandboxPathResult]:
+    """Check if sandbox path was provided via command line argument."""
+    result = None
     if path_arg is not None:
         try:
-            sandbox = Path(path_arg).resolve()
-            if not sandbox.exists():
-                warning = (
-                    f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} does not exist: {sandbox}"
-                )
-            elif not sandbox.is_dir():
-                warning = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {sandbox}"
-            else:
-                return SandboxPathResult(
-                    path=sandbox, path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option"
-                )
+            sandbox = Path(path_arg).expanduser().resolve()
+            error = validate_sandbox_path(sandbox)
+            warning = None
+            if error:
+                warning = f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} {error}"
+
+            result = SandboxPathResult(
+                path=sandbox,
+                warning=warning,
+                path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option",
+            )
         except Exception as e:
-            warning = f"Invalid {NEF_MCP_SANDBOX_PATH_OPTION} argument: {e}"
+            result = SandboxPathResult(
+                path=None,
+                warning=f"Invalid {NEF_MCP_SANDBOX_PATH_OPTION} argument: {e}",
+                is_temp=True,
+                path_source="",
+            )
+    return result
 
-        # Fall through to check env var or signal temp needed
 
-    # 2. Check environment variable
+def _try_preference_sandbox() -> Optional[SandboxPathResult]:
+    """Check if sandbox path exists in persistent preferences."""
+    pref_path = get_sandbox_preference()
+    result = None
+    if pref_path:
+        error = validate_sandbox_path(pref_path)
+        env_path = os.environ.get(NEF_MCP_SANDBOX_ENV_VAR_NAME)
+        note = ""
+        warning = None
+        if env_path:
+            config_file = get_config_file_path()
+            env_var_name = NEF_MCP_SANDBOX_ENV_VAR_NAME
+            note = f" (Note: {env_var_name}={env_path} is set but overridden by saved preference in {config_file})"
+        if error:
+            if note:
+                warning = f"""\
+                    Saved preference is invalid: {error}
+                    {note}
+                """
+                warning = dedent(warning.strip())
+            else:
+                warning = f"Saved preference is invalid: {error}"
+        elif note:
+            warning = note.strip()
+
+        result = SandboxPathResult(
+            path=pref_path,
+            warning=warning,
+            path_source="saved preference (use 'nef ai sandbox' to change)",
+        )
+    return result
+
+
+def _try_environment_sandbox() -> Optional[SandboxPathResult]:
+    """Check if sandbox path is specified via environment variable."""
     env_path = os.environ.get(NEF_MCP_SANDBOX_ENV_VAR_NAME)
+    result = None
     if env_path:
         try:
-            sandbox = Path(env_path).resolve()
-            if sandbox.exists() and sandbox.is_dir():
-                if warning:
-                    warning += (
-                        f" — falling back to {NEF_MCP_SANDBOX_ENV_VAR_NAME}: {sandbox}"
-                    )
-                return SandboxPathResult(
-                    path=sandbox,
-                    warning=warning,
-                    path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable",
-                )
-        except Exception:
-            pass  # Fall through to temp dir
+            sandbox = Path(env_path).expanduser().resolve()
+            error = validate_sandbox_path(sandbox)
+            warning = None
+            if error:
+                warning = f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} is invalid: {error}"
 
-    # 3. Signal that a temporary directory is needed; caller creates it
-    return SandboxPathResult(warning=warning, is_temp=True)
-
-
-def _print_sandbox_location(sandbox_path: Path):
-    """Print the sandbox location to stderr."""
-    console = Console(stderr=True)
-    console.print(f"\n[cyan]Sandbox directory:[/cyan] {sandbox_path}\n", style="bold")
-
-
-def _print_sandbox_warning(warning: str):
-    """Print a warning about sandbox path issues to stderr."""
-    console = Console(stderr=True)
-    console.print(
-        f"\n[yellow]⚠  WARNING:[/yellow] {warning}\n",
-        style="bold yellow",
-    )
+            result = SandboxPathResult(
+                path=sandbox,
+                warning=warning,
+                path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable",
+            )
+        except Exception as e:
+            result = SandboxPathResult(
+                warning=f"Invalid {NEF_MCP_SANDBOX_ENV_VAR_NAME}: {e}", is_temp=True
+            )
+    return result
 
 
 def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "FastMCP"]:
