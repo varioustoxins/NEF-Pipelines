@@ -99,6 +99,9 @@ def server(
         if warning:
             warning += f" — falling back to temporary directory: {sandbox_path}"
     else:
+        # is_temp=False implies path is not None (enforced by _get_sandbox_path)
+        if sandbox.path is None:
+            exit_error("sandbox.path must not be None when is_temp=False, contact the developers this is a bug")
         sandbox_path = sandbox.path
         warning = sandbox.warning
 
