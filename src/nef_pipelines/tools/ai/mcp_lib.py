@@ -14,6 +14,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
+from nef_pipelines.tools.ai.sandbox_lib import validate_sandbox_path
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,39 @@ def _max_length_path() -> int:
         return os.pathconf(os.getcwd(), "PC_PATH_MAX")
     except (OSError, ValueError, AttributeError):
         return _DEFAULT_MAX_PATH_LENGTH
+
+
+def _validate_sandbox() -> Tuple[bool, str, Optional[Path]]:
+    """
+    Validate that the sandbox is configured and valid.
+
+    Returns (True, "", sandbox_path) on success,
+            (False, error_message, None) on failure.
+    """
+    sandbox_path_str = _STARTUP_CONTEXT.sandbox_path
+    if not sandbox_path_str:
+        return False, "Sandbox is not set", None
+
+    sandbox_path = Path(sandbox_path_str)
+
+    validation_error = validate_sandbox_path(sandbox_path)
+    if validation_error:
+        return False, f"Sandbox is invalid: {validation_error}", None
+
+    return True, "", sandbox_path
+
+
+def _chdir_to_sandbox(sandbox_path: Path) -> Tuple[bool, str]:
+    """
+    Change current directory to the sandbox.
+
+    Returns (True, "") on success, (False, error_message) on failure.
+    """
+    try:
+        os.chdir(sandbox_path)
+        return True, ""
+    except OSError as e:
+        return False, f"Cannot access sandbox {sandbox_path}: {e}"
 
 
 def _validate_path_in_sandbox(path_str: str) -> Tuple[bool, str]:

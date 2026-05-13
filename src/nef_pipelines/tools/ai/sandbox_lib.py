@@ -65,10 +65,10 @@ def validate_sandbox_path(path: Path) -> Optional[str]:
     error = None
 
     if not path.exists():
-        error = f"Path does not exist: {path}"
+        error = f"does not exist: {path}"
     elif not path.is_dir():
-        error = f"Path is not a directory: {path}"
+        error = f"is not a directory: {path}"
     elif not os.access(path, os.W_OK):
-        error = f"Path is not writable: {path}"
+        error = f"is not writable: {path}"
 
     return error

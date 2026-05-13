@@ -118,7 +118,6 @@ def server(
         warning=warning or "",
     )
 
-    os.chdir(sandbox_path)
     try:
         _build().run(show_banner=False, **server_transport_args)
     finally:

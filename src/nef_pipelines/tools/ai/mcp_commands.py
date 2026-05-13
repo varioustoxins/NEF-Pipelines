@@ -27,6 +27,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     WarningsShownResult,
     _build_full_orientation,
     _build_startup_notice,
+    _chdir_to_sandbox,
     _confirm_sandbox_overwrites,
     _copy_files_to_sandbox,
     _execute_command_in_process,
@@ -34,6 +35,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     _request_files_to_copy_to_sandbox_or_return_error,
     _safe_execute_step,
     _validate_path_in_sandbox,
+    _validate_sandbox,
     _validate_selected_files_for_sandbox,
 )
 
@@ -109,6 +111,15 @@ def nef_upload_file(name: str, content: str) -> UploadResult:
     bytes_written is the number of encoded UTF-8 bytes, not characters.
     On failure, error is non-empty.
     """
+    # Validate and chdir to sandbox
+    ok, error, sandbox_path = _validate_sandbox()
+    if not ok:
+        return UploadResult(name=name, error=error)
+
+    ok, error = _chdir_to_sandbox(sandbox_path)
+    if not ok:
+        return UploadResult(name=name, error=error)
+
     ok, error = _validate_path_in_sandbox(name)
     if not ok:
         return UploadResult(name=name, error=error)
@@ -133,6 +144,15 @@ def nef_download_file(name: str) -> DownloadResult:
     Returns DownloadResult with name and content.
     On failure, error is non-empty; when the file is missing, available_files is populated.
     """
+    # Validate and chdir to sandbox
+    ok, error, sandbox_path = _validate_sandbox()
+    if not ok:
+        return DownloadResult(name=name, error=error)
+
+    ok, error = _chdir_to_sandbox(sandbox_path)
+    if not ok:
+        return DownloadResult(name=name, error=error)
+
     ok, error = _validate_path_in_sandbox(name)
     if not ok:
         return DownloadResult(name=name, error=error)
@@ -161,6 +181,15 @@ def nef_list_files() -> ListFilesResult:
     don't create them. When present, error is non-empty and unexpected_entries
     lists them as 'name (type)' strings. Regular files are always listed.
     """
+    # Validate and chdir to sandbox
+    ok, error, sandbox_path = _validate_sandbox()
+    if not ok:
+        return ListFilesResult(error=error)
+
+    ok, error = _chdir_to_sandbox(sandbox_path)
+    if not ok:
+        return ListFilesResult(error=error)
+
     cwd = Path.cwd()
     regular_files = []
     unexpected = []
@@ -214,6 +243,14 @@ async def nef_import_files(ctx: Optional[Context] = None) -> ImportFilesResult:
     On failure, error is non-empty, failures may contain filenames and the causes of
     failure and imported is empty.
     """
+    # Validate and chdir to sandbox
+    ok, error, sandbox_path = _validate_sandbox()
+    if not ok:
+        return ImportFilesResult(error=error)
+
+    ok, error = _chdir_to_sandbox(sandbox_path)
+    if not ok:
+        return ImportFilesResult(error=error)
 
     file_paths, error = await _request_files_to_copy_to_sandbox_or_return_error()
 
@@ -360,6 +397,19 @@ def nef_execute_pipeline(
     Returns PipelineResult with stdout, stderr (one entry per step),
     exit_code, steps, steps_completed, and success (exit_code == 0).
     """
+    # Validate and chdir to sandbox
+    ok, error, sandbox_path = _validate_sandbox()
+    if not ok:
+        return PipelineResult(
+            steps=steps, stdout=nef_input, exit_code=1, stderr=[error]
+        )
+
+    ok, error = _chdir_to_sandbox(sandbox_path)
+    if not ok:
+        return PipelineResult(
+            steps=steps, stdout=nef_input, exit_code=1, stderr=[error]
+        )
+
     result = PipelineResult(steps=steps, stdout=nef_input)
 
     for args in steps:
