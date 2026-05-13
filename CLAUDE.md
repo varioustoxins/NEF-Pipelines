@@ -154,6 +154,21 @@ The package follows PyScaffold conventions with src-layout:
   - Examples: `colour` not `color`, `colour_policy` not `color_policy`, `ColourOutputPolicy` not `ColorOutputPolicy`
   - This applies to: CLI option names (`--colour-policy`), parameter names, class names, enum values, docstrings, help text, and comments
 
+### Assert Statements
+
+- **NEVER use `assert` statements in production/runtime code** - asserts are ONLY for test files
+- Asserts can be disabled with `python -O` (optimize flag) and should never be relied upon for runtime validation
+- In production code, use proper error handling instead:
+  ```python
+  # WRONG: assert in runtime code
+  assert value is not None, "value cannot be None"
+
+  # CORRECT: proper error handling
+  if value is None:
+      raise ValueError("value cannot be None")
+  ```
+- Asserts are acceptable ONLY in test files (`test_*.py` or `*_test.py`)
+
 ### Import Guidelines
 
 - **Imports MUST be at the top level of the module** unless there is a specific technical reason
