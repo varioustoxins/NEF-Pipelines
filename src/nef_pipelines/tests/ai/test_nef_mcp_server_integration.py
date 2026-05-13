@@ -15,13 +15,12 @@ if sys.version_info < (3, 10):
     pytest.skip("MCP server requires Python 3.10 or later", allow_module_level=True)
 
 fastmcp = pytest.importorskip("fastmcp")
+import nef_pipelines.tools.ai.mcp_lib as mcp_lib  # noqa E402
+
 Client = fastmcp.Client
 
 from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data  # noqa: E402
-from nef_pipelines.tools.ai.mcp_commands import (  # noqa: E402
-    _GENERATED_MCP_TOOLS,
-    _MCP_TOOLS,
-)
+from nef_pipelines.tools.ai.mcp_commands import _MCP_TOOLS  # noqa: E402
 from nef_pipelines.tools.ai.mcp_lib import (  # noqa: E402
     _RESOURCE_NAME_SEPARATOR,
     _RESOURCES,
@@ -29,7 +28,7 @@ from nef_pipelines.tools.ai.mcp_lib import (  # noqa: E402
 )
 from nef_pipelines.tools.ai.server_lib import _build_server  # noqa: E402
 
-EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS + _GENERATED_MCP_TOOLS} | {
+EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS} | {
     "nef_resources_list",
     "nef_resources_read",
 }
@@ -60,6 +59,16 @@ async def mcp_client(tmp_path, monkeypatch):
     set to a temporary sandbox directory (matching the real server behaviour).
     Calls nef_read_me_first and nef_warnings_shown to satisfy the orientation guard.
     """
+
+    # Initialize startup context with the temp sandbox
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(tmp_path),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
     monkeypatch.chdir(tmp_path)
     async with Client(_build_server()) as client:
         result = await client.call_tool("nef_read_me_first", arguments={})

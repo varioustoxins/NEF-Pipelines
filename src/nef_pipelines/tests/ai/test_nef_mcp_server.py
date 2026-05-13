@@ -92,6 +92,25 @@ def _orientation_ready(monkeypatch):
     monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", True)
 
 
+def _setup_sandbox_context(monkeypatch, sandbox_path):
+    """Helper to set up startup context for a sandbox path."""
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox_path),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
+
+@pytest.fixture(autouse=True)
+def _default_sandbox(monkeypatch, tmp_path):
+    """Provide a default sandbox for all tests (can be overridden by individual tests)."""
+    _setup_sandbox_context(monkeypatch, tmp_path)
+    monkeypatch.chdir(tmp_path)
+    yield tmp_path
+
+
 @pytest.fixture
 def simple_nef_data():
     """\
@@ -207,6 +226,8 @@ def test_nef_read_me_first(monkeypatch):
     """\
     Test nef_read_me_first returns orientation content with a token in information.
     """
+    # Reset to empty startup context for this test
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext())
     monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
     monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", _FIXED_TOKEN)
 
@@ -471,7 +492,7 @@ def test_nef_upload_file(tmp_path, monkeypatch):
     """\
     Test nef_upload_file writes file content to the working directory.
     """
-    monkeypatch.chdir(tmp_path)
+
     result = nef_upload_file("peaks.nef", "data_test\n")
     EXPECTED = UploadResult(
         name="peaks.nef", bytes_written=len("data_test\n".encode("utf-8"))
@@ -491,7 +512,6 @@ def test_nef_upload_file_path_rejected(tmp_path, monkeypatch, path):
     """\
     Test nef_upload_file rejects absolute paths and path traversal attempts.
     """
-    monkeypatch.chdir(tmp_path)
     result = nef_upload_file(path, "x")
     EXPECTED = UploadResult(name=path, error=result.error)
     assert result == EXPECTED
@@ -502,7 +522,6 @@ def test_nef_upload_file_unicode_content(tmp_path, monkeypatch):
     """\
     Test nef_upload_file handles unicode content correctly.
     """
-    monkeypatch.chdir(tmp_path)
     content = "naïve shifts: δ = 7.3 ppm\n"
     result = nef_upload_file("shifts.txt", content)
     EXPECTED = UploadResult(
@@ -516,7 +535,6 @@ def test_nef_download_file(tmp_path, monkeypatch):
     """\
     Test nef_download_file reads file content from the working directory.
     """
-    monkeypatch.chdir(tmp_path)
     (tmp_path / "result.nef").write_text("data_result\n")
     result = nef_download_file("result.nef")
     EXPECTED = DownloadResult(name="result.nef", content="data_result\n")
@@ -527,7 +545,6 @@ def test_nef_download_file_not_found(tmp_path, monkeypatch):
     """\
     Test nef_download_file returns available files when file is missing.
     """
-    monkeypatch.chdir(tmp_path)
     (tmp_path / "other.nef").write_text("x")
     result = nef_download_file("missing.nef")
     EXPECTED = DownloadResult(
@@ -542,7 +559,6 @@ def test_nef_download_file_absolute_path_rejected(tmp_path, monkeypatch):
     """\
     Test nef_download_file rejects absolute paths.
     """
-    monkeypatch.chdir(tmp_path)
     result = nef_download_file("/etc/passwd")
     EXPECTED = DownloadResult(name="/etc/passwd", error=result.error)
     assert result == EXPECTED
@@ -553,7 +569,6 @@ def test_nef_list_files_empty(tmp_path, monkeypatch):
     """\
     Test nef_list_files returns empty list for empty directory.
     """
-    monkeypatch.chdir(tmp_path)
     result = nef_list_files()
     EXPECTED = ListFilesResult(files=[], cwd=result.cwd)
     assert result == EXPECTED
@@ -564,7 +579,6 @@ def test_nef_list_files_after_upload(tmp_path, monkeypatch):
     """\
     Test nef_list_files lists files written by nef_upload_file.
     """
-    monkeypatch.chdir(tmp_path)
     nef_upload_file("a.nef", "x")
     nef_upload_file("b.nef", "y")
     result = nef_list_files()
@@ -576,7 +590,6 @@ def test_nef_upload_download_roundtrip(tmp_path, monkeypatch):
     """\
     Test upload followed by download returns identical content.
     """
-    monkeypatch.chdir(tmp_path)
     content = "data_ubiquitin\n_nef_sequence.chain_code A\n"
     nef_upload_file("ubiquitin.nef", content)
     result = nef_download_file("ubiquitin.nef")
@@ -619,7 +632,6 @@ def test_change_sandbox_user_cancelled(tmp_path, monkeypatch):
     """\
     Test that user cancelling directory picker is handled gracefully.
     """
-    monkeypatch.chdir(tmp_path)
 
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
@@ -637,7 +649,6 @@ def test_change_sandbox_picker_error(tmp_path, monkeypatch):
     """\
     Test that errors reported by the native picker are surfaced.
     """
-    monkeypatch.chdir(tmp_path)
 
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_commands._get_native_directory",
@@ -655,7 +666,6 @@ def test_change_sandbox_nonexistent_directory(tmp_path, monkeypatch):
     """\
     Test changing sandbox to a non-existent directory fails.
     """
-    monkeypatch.chdir(tmp_path)
     nonexistent = tmp_path / "does_not_exist"
 
     monkeypatch.setattr(
@@ -676,7 +686,6 @@ def test_change_sandbox_file_not_directory(tmp_path, monkeypatch):
     """\
     Test changing sandbox to a file (not directory) fails.
     """
-    monkeypatch.chdir(tmp_path)
     test_file = tmp_path / "test.txt"
     test_file.write_text("not a directory")
 
@@ -717,6 +726,10 @@ def test_sandbox_temp_fallback(monkeypatch):
     """\
     Test that a temp directory is signalled when no path is specified.
     """
+    # Mock get_sandbox_preference to return None
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
+    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
 
     assert _get_sandbox_path(None) == SandboxPathResult(is_temp=True)
@@ -724,50 +737,66 @@ def test_sandbox_temp_fallback(monkeypatch):
 
 def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
     """\
-    Test that an invalid --path falls back to the environment variable with a warning.
+    Test that an invalid --path is used anyway with a warning (does NOT fall back).
     """
+    # Mock get_sandbox_preference to return None so we test CLI arg behavior
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
+    )
+
     env_dir = tmp_path / "env_sandbox"
     env_dir.mkdir()
     invalid_path = tmp_path / "does_not_exist"
 
     monkeypatch.setenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, str(env_dir))
 
-    EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_EXIST.format(
-        path=invalid_path.resolve()
-    ) + EXPECTED_FALLBACK_TO_ENV_VAR.format(
-        env_var=NEF_MCP_SANDBOX_ENV_VAR_NAME, path=env_dir.resolve()
-    )
+    # With new behavior: invalid CLI arg is used with warning, no fallback
+    EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_EXIST.format(path=invalid_path.resolve())
     assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
-        path=env_dir,
+        path=invalid_path.resolve(),
         warning=EXPECTED_WARNING,
-        path_source=f"{NEF_MCP_SANDBOX_ENV_VAR_NAME} environment variable",
+        path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option",
     )
 
 
 def test_sandbox_invalid_path_fallback_to_temp(tmp_path, monkeypatch):
     """\
-    Test that an invalid --path signals temp needed with a warning.
+    Test that an invalid --path is used anyway with a warning (does NOT fall back to temp).
     """
+    # Mock get_sandbox_preference to return None
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
+    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
     invalid_path = tmp_path / "does_not_exist"
 
+    # With new behavior: invalid CLI arg is used with warning, no fallback
     EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_EXIST.format(path=invalid_path.resolve())
     assert _get_sandbox_path(str(invalid_path)) == SandboxPathResult(
-        warning=EXPECTED_WARNING, is_temp=True
+        path=invalid_path.resolve(),
+        warning=EXPECTED_WARNING,
+        path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option",
     )
 
 
 def test_sandbox_file_not_directory_fallback(tmp_path, monkeypatch):
     """\
-    Test that --path pointing to a file signals temp needed with a warning.
+    Test that --path pointing to a file is used anyway with a warning (does NOT fall back).
     """
+    # Mock get_sandbox_preference to return None
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
+    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
     test_file = tmp_path / "test.txt"
     test_file.write_text("not a directory")
 
+    # With new behavior: invalid CLI arg (file) is used with warning, no fallback
     EXPECTED_WARNING = EXPECTED_PATH_ARG_NOT_DIRECTORY.format(path=test_file.resolve())
     assert _get_sandbox_path(str(test_file)) == SandboxPathResult(
-        warning=EXPECTED_WARNING, is_temp=True
+        path=test_file.resolve(),
+        warning=EXPECTED_WARNING,
+        path_source=f"{NEF_MCP_SANDBOX_PATH_OPTION} option",
     )
 
 
@@ -795,6 +824,15 @@ async def test_nef_import_files_success(tmp_path, monkeypatch):
     (src_dir / "a.nef").write_text("data_a")
     (src_dir / "b.nef").write_text("data_b")
 
+    # Set up startup context for the sandbox
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
@@ -813,7 +851,7 @@ async def test_nef_import_files_user_cancels(tmp_path, monkeypatch):
     """\
     Test nef_import_files returns error when user cancels the picker.
     """
-    monkeypatch.chdir(tmp_path)
+
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
         lambda: None,
@@ -829,7 +867,7 @@ async def test_nef_import_files_picker_error(tmp_path, monkeypatch):
     """\
     Test nef_import_files surfaces picker errors in the error field.
     """
-    monkeypatch.chdir(tmp_path)
+
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
         lambda: {"error": "No file picker available"},
@@ -851,6 +889,14 @@ async def test_nef_import_files_rejects_directory(tmp_path, monkeypatch):
     src_dir.mkdir()
     sandbox.mkdir()
     subdir.mkdir()
+
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
 
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
@@ -882,6 +928,14 @@ async def test_nef_import_files_rejects_symlink(tmp_path, monkeypatch):
     real_file.write_text("data")
     link = src_dir / "link.nef"
     link.symlink_to(real_file)
+
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
 
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
@@ -918,6 +972,14 @@ async def test_nef_import_files_collects_all_validation_failures(tmp_path, monke
     link = src_dir / "link.nef"
     link.symlink_to(link_target)
 
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
@@ -952,6 +1014,14 @@ async def test_nef_import_files_copy_error_reports_partial_success(
     (src_dir / "good.nef").write_text("data_good")
     bad_src = src_dir / "bad.nef"
     bad_src.write_text("data_bad")
+
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
 
     import shutil as _shutil
 
@@ -992,6 +1062,14 @@ async def test_nef_import_files_overwrite_confirmed(tmp_path, monkeypatch):
     (src_dir / "data.nef").write_text("new content")
     (sandbox / "data.nef").write_text("old content")
 
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
         "nef_pipelines.tools.ai.mcp_lib.select_multiple_files",
@@ -1019,6 +1097,14 @@ async def test_nef_import_files_overwrite_declined(tmp_path, monkeypatch):
     sandbox.mkdir()
     (src_dir / "data.nef").write_text("new content")
     (sandbox / "data.nef").write_text("old content")
+
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
 
     monkeypatch.chdir(sandbox)
     monkeypatch.setattr(
@@ -1050,6 +1136,14 @@ async def test_nef_import_files_overwrite_lists_conflicts(tmp_path, monkeypatch)
         (src_dir / name).write_text("new")
         (sandbox / name).write_text("old")
 
+    mock_context = mcp_lib.StartupContext(
+        sandbox_path=str(sandbox),
+        is_temporary=True,
+        will_be_cleaned=False,
+        path_source="test fixture",
+    )
+    monkeypatch.setattr(mcp_lib, "_STARTUP_CONTEXT", mock_context)
+
     captured = []
 
     def mock_confirm(filenames):
@@ -1080,7 +1174,6 @@ def test_orientation_guard_blocks_tool_before_warnings_shown(tmp_path, monkeypat
     """\
     Test that tools return an error if nef_warnings_shown has not been called.
     """
-    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
 
     result = nef_list_files()
@@ -1092,7 +1185,6 @@ def test_orientation_guard_unblocked_after_warnings_shown(tmp_path, monkeypatch)
     """\
     Test that calling nef_read_me_first then nef_warnings_shown unblocks subsequent tools.
     """
-    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
     monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", "")
 
