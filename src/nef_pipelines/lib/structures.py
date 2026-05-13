@@ -58,6 +58,14 @@ class EntryPartValues:
 class NEFPipelinesException(Exception): ...  # noqa: E701
 
 
+class NEFPipelinesInternalError(NEFPipelinesException):
+    """Exception raised when an internal invariant is violated.
+
+    This indicates a programming error, not a user error.
+    These exceptions should never occur in correct code.
+    """
+
+
 # TODO: to avoid circular import, move to constants
 UNUSED = "."
 PSEUDO_PREFIX = "@"
