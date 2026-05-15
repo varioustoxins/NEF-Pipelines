@@ -15,6 +15,7 @@ from nef_pipelines.tools.ai.sandbox_lib import (
     get_sandbox_preference,
     set_sandbox_preference,
     validate_sandbox_path,
+    is_path_in_sandbox,
 )
 
 
@@ -112,3 +113,37 @@ def test_validate_sandbox_path(tmp_path):
     file = tmp_path / "file.txt"
     file.write_text("content")
     assert "not a directory" in validate_sandbox_path(file)
+
+
+def test_is_path_in_sandbox(tmp_path):
+    """Test is_path_in_sandbox containment checking."""
+
+
+    sandbox = tmp_path.resolve()
+
+    # Inside sandbox
+    file_inside = (sandbox / "file.txt").resolve()
+    assert is_path_in_sandbox(file_inside, sandbox) is True
+
+    # Sandbox root itself
+    assert is_path_in_sandbox(sandbox, sandbox) is True
+
+    # Outside sandbox
+    outside = tmp_path.parent.resolve()
+    assert is_path_in_sandbox(outside, sandbox) is False
+
+    # Sibling path (false positive without separator check)
+    # Create at parent level with name that would match prefix without separator check
+    sibling_dir = tmp_path.parent / (tmp_path.name + "foo")
+    sibling_dir.mkdir(exist_ok=True)
+    sibling = sibling_dir
+    assert is_path_in_sandbox(sibling, sandbox) is False
+
+    # Nested subdirectory []
+    subdir_1 = sandbox / "sub" / "deep"
+
+    assert is_path_in_sandbox(subdir_1, sandbox) is True
+
+    subdir_2 = sandbox / "sub" / "deep"
+    subdir_2.mkdir(parents=True)
+    assert is_path_in_sandbox(subdir_2, sandbox) is True

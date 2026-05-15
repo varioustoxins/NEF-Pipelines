@@ -15,6 +15,7 @@ from typer.testing import CliRunner
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
 from nef_pipelines.tools.ai.sandbox_lib import validate_sandbox_path
+from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox, validate_sandbox_path
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +315,7 @@ def _validate_path_in_sandbox(path_str: str) -> Tuple[bool, str]:
             is_error = True
 
     # Step 7: reject paths that escape the sandbox — the structural safety check.
-    if not is_error and not target.is_relative_to(root):
+    if not is_error and not is_path_in_sandbox(target, root):
         error = f"'{path_str}' resolves outside the sandbox"
         is_error = True
 

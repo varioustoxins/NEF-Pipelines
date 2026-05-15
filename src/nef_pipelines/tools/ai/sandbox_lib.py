@@ -72,3 +72,34 @@ def validate_sandbox_path(path: Path) -> Optional[str]:
         error = f"is not writable: {path}"
 
     return error
+
+
+def is_path_in_sandbox(path: Path, sandbox: Path) -> bool:
+    """Check if a path is contained within a sandbox directory.
+
+    Resolves both paths internally before checking containment. This is a
+    minimal runtime containment check suitable for use in validation and
+    audit hooks.
+
+    Args:
+        path: Path to check (will be resolved internally)
+        sandbox: Sandbox root (will be resolved internally)
+
+    Returns:
+        True if path is inside or equal to sandbox, False otherwise.
+
+    Notes:
+        - Resolves both paths to handle symlinks and relative paths
+        - Uses os.path.normcase() for explicit case-folding on Windows
+        - Separator check prevents "/foo/bar" from matching "/foo/barbaz"
+        - On POSIX, normcase() is a no-op; case handling via Path.resolve()
+        - Returns True when path == sandbox (caller decides if that's valid)
+    """
+    path_resolved = path.resolve()
+    sandbox_resolved = sandbox.resolve()
+
+    path_norm = os.path.normcase(os.path.normpath(str(path_resolved)))
+    sandbox_norm = os.path.normcase(os.path.normpath(str(sandbox_resolved)))
+    if path_norm == sandbox_norm:
+        return True
+    return path_norm.startswith(sandbox_norm + os.sep)
