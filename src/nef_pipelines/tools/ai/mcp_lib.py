@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
-from nef_pipelines.tools.ai.sandbox_lib import validate_sandbox_path
+from nef_pipelines.tools.ai.sandbox_audit import SandboxViolation, audit_sandbox_writes
 from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox, validate_sandbox_path
 
 logger = logging.getLogger(__name__)
@@ -485,7 +485,7 @@ def _execute_command_in_process(
     nef_input: str = "",
 ) -> PipelineResult:
     """\
-    Execute a single NEF command in-process.
+    Execute a single NEF command in-process with sandbox write auditing.
 
     Returns a PipelineResult with stderr as a single-element list.
     """
@@ -500,18 +500,44 @@ def _execute_command_in_process(
         # If "nef" is present as the first argument, we strip it.
         args = args[1:]
 
+        # Get current sandbox path (already changed to sandbox by caller)
+        sandbox_path = Path.cwd()
+
         invoke_kwargs: Dict[str, Any] = dict(input=nef_input if nef_input else None)
-        try:
-            runner = CliRunner(mix_stderr=False)
-            result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
-            stdout, stderr = result.output or "", result.stderr or ""
-        except TypeError:
-            runner = CliRunner()
-            result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
-            stdout = result.output or ""
-            stderr = ""
-            if hasattr(result, "stderr") and result.stderr:
-                stderr = result.stderr
+
+        # Wrap execution in audit context to monitor file writes
+        violation_error = None
+        with audit_sandbox_writes(sandbox_path) as audit_state:
+            try:
+                runner = CliRunner(mix_stderr=False)
+                result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+                stdout, stderr = result.output or "", result.stderr or ""
+            except SandboxViolation as e:
+                # Audit hook caught a sandbox violation (or backstop re-raised it)
+                violation_error = str(e)
+            except TypeError:
+                runner = CliRunner()
+                result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+                stdout = result.output or ""
+                stderr = ""
+                if hasattr(result, "stderr") and result.stderr:
+                    stderr = result.stderr
+
+            # CliRunner swallowed the SandboxViolation; record it and clear it so
+            # the backstop in audit_sandbox_writes.__exit__ does not re-raise
+            # after we've already handled it.
+            if audit_state.violation_error and not violation_error:
+                violation_error = audit_state.violation_error
+                audit_state.violation_error = None
+
+        if violation_error:
+            return PipelineResult(
+                stdout="",
+                stderr=[violation_error],
+                exit_code=1,
+                steps=[list(args)],
+                steps_completed=0,
+            )
 
         exit_code = result.exit_code
         result = PipelineResult(

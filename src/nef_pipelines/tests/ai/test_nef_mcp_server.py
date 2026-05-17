@@ -42,6 +42,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     UploadResult,
     WarningsShownResult,
 )
+from nef_pipelines.tools.ai.sandbox_audit import audit_sandbox_writes
 from nef_pipelines.tools.ai.server import (
     NEF_MCP_SANDBOX_ENV_VAR_NAME,
     NEF_MCP_SANDBOX_PATH_OPTION,
@@ -84,6 +85,12 @@ EXPECTED_PATH_ARG_NOT_DIRECTORY = (
     f"Specified {NEF_MCP_SANDBOX_PATH_OPTION} is not a directory: {{path}}"
 )
 EXPECTED_FALLBACK_TO_ENV_VAR = " — falling back to {env_var}: {path}"
+
+# Exact error templates matching sandbox_audit.py audit hook
+EXPECTED_SANDBOX_VIOLATION_PREFIX = (
+    "Sandbox violation: attempted write outside sandbox:"
+)
+EXPECTED_PATH_RESOLVES_OUTSIDE = "'{path}' resolves outside the sandbox"
 
 
 @pytest.fixture(autouse=True)
@@ -1251,6 +1258,19 @@ def test_warnings_shown_accepts_correct_token(monkeypatch):
     assert mcp_commands._WARNINGS_SHOWN
 
 
+def test_audit_sandbox_writes_raises_on_nesting(tmp_path):
+    """
+    Test that audit_sandbox_writes raises RuntimeError if nested.
+    """
+
+    EXPECTED_ERROR = "audit_sandbox_writes does not support nesting - a sandbox context is already active"
+
+    with pytest.raises(RuntimeError, match=EXPECTED_ERROR):
+        with audit_sandbox_writes(tmp_path):
+            with audit_sandbox_writes(tmp_path):
+                pass
+
+
 def test_execute_command_invalid_namespace():
     """
     Test that the low-level runner rejects commands outside the 'nef' namespace.
@@ -1260,3 +1280,186 @@ def test_execute_command_invalid_namespace():
     # We test the internal function directly to verify the safety net
     result = _execute_command_in_process(["not-nef", "version"])
     assert result.error == "only nef and it sub commands are currently supported"
+
+
+def test_nef_upload_file_respects_sandbox_audit(tmp_path, monkeypatch):
+    """
+    Test that nef_upload_file is protected by audit hook during pipeline execution.
+    """
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+
+    monkeypatch.setattr(
+        mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext(sandbox_path=str(sandbox))
+    )
+    monkeypatch.chdir(sandbox)
+
+    # Upload inside sandbox - should work
+    result = nef_upload_file("allowed.txt", "content")
+    EXPECTED_SUCCESS = UploadResult(
+        name="allowed.txt", bytes_written=len("content".encode("utf-8"))
+    )
+    assert result == EXPECTED_SUCCESS
+    assert (sandbox / "allowed.txt").exists()
+    assert (sandbox / "allowed.txt").read_text() == "content"
+
+    # Path validation already prevents this, but audit hook is backup layer
+    # Upload with relative path escape attempt - should be caught by path validation
+    result = nef_upload_file("../outside.txt", "content")
+    EXPECTED_FAILURE = UploadResult(
+        name="../outside.txt",
+        bytes_written=0,
+        error=EXPECTED_PATH_RESOLVES_OUTSIDE.format(path="../outside.txt"),
+    )
+    assert result == EXPECTED_FAILURE
+
+
+def test_real_nef_save_command_respects_sandbox(tmp_path, monkeypatch, simple_nef_data):
+    """
+    End-to-end test: real NEF save command writes file inside sandbox.
+    """
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+
+    monkeypatch.setattr(
+        mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext(sandbox_path=str(sandbox))
+    )
+    monkeypatch.chdir(sandbox)
+
+    result = nef_execute_pipeline(
+        steps=[["nef", "save", "output.nef"]], nef_input=simple_nef_data
+    )
+
+    EXPECTED = PipelineResult(
+        stdout=result.stdout,
+        stderr=result.stderr,
+        exit_code=0,
+        steps=[["nef", "save", "output.nef"]],
+        steps_completed=1,
+    )
+    assert result == EXPECTED
+
+    # Side effects: file written inside sandbox with complete content matching pipeline output
+    assert (sandbox / "output.nef").exists()
+    assert_lines_match(result.stdout, (sandbox / "output.nef").read_text())
+
+
+def test_real_nef_command_blocked_from_writing_outside_sandbox(
+    tmp_path, monkeypatch, simple_nef_data
+):
+    """
+    End-to-end test: NEF command cannot write files outside sandbox (absolute path).
+    """
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+
+    monkeypatch.setattr(
+        mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext(sandbox_path=str(sandbox))
+    )
+    monkeypatch.chdir(sandbox)
+
+    # Try to save to absolute path outside sandbox
+    outside_file = outside / "evil.nef"
+    result = nef_execute_pipeline(
+        steps=[["nef", "save", str(outside_file)]], nef_input=simple_nef_data
+    )
+
+    # stdout remains as nef_input on failure; exit_code is always 1 on SandboxViolation
+    EXPECTED = PipelineResult(
+        stdout=simple_nef_data,
+        stderr=result.stderr,
+        exit_code=1,
+        steps=[["nef", "save", str(outside_file)]],
+        steps_completed=0,
+    )
+    assert result == EXPECTED
+    assert EXPECTED_SANDBOX_VIOLATION_PREFIX in result.stderr[0]
+
+    # Side effect: file was NOT created
+    assert not outside_file.exists()
+
+
+def test_real_nef_command_blocked_from_path_traversal(
+    tmp_path, monkeypatch, simple_nef_data
+):
+    """
+    End-to-end test: NEF command cannot write files outside sandbox (relative path traversal).
+    """
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+
+    monkeypatch.setattr(
+        mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext(sandbox_path=str(sandbox))
+    )
+    monkeypatch.chdir(sandbox)
+
+    # Try to save using relative path traversal
+    result = nef_execute_pipeline(
+        steps=[["nef", "save", "../evil.nef"]], nef_input=simple_nef_data
+    )
+
+    # stdout remains as nef_input on failure; exit_code is always 1 on SandboxViolation
+    EXPECTED = PipelineResult(
+        stdout=simple_nef_data,
+        stderr=result.stderr,
+        exit_code=1,
+        steps=[["nef", "save", "../evil.nef"]],
+        steps_completed=0,
+    )
+    assert result == EXPECTED
+    assert EXPECTED_SANDBOX_VIOLATION_PREFIX in result.stderr[0]
+
+    # Side effect: file was NOT created
+    assert not (tmp_path / "evil.nef").exists()
+
+
+def test_real_nef_pipeline_multi_step_with_file_writes(
+    tmp_path, monkeypatch, simple_nef_data
+):
+    """
+    End-to-end test: multi-step pipeline with file writes stays in sandbox.
+    """
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+
+    monkeypatch.setattr(
+        mcp_lib, "_STARTUP_CONTEXT", mcp_lib.StartupContext(sandbox_path=str(sandbox))
+    )
+    monkeypatch.chdir(sandbox)
+
+    # Execute two separate save commands to verify multiple file writes work
+    result1 = nef_execute_pipeline(
+        steps=[["nef", "save", "step1.nef"]], nef_input=simple_nef_data
+    )
+    result2 = nef_execute_pipeline(
+        steps=[["nef", "save", "step2.nef"]], nef_input=simple_nef_data
+    )
+
+    # Test complete structures with dynamic stdout/stderr captured
+    EXPECTED1 = PipelineResult(
+        stdout=result1.stdout,
+        stderr=result1.stderr,
+        exit_code=0,
+        steps=[["nef", "save", "step1.nef"]],
+        steps_completed=1,
+    )
+    EXPECTED2 = PipelineResult(
+        stdout=result2.stdout,
+        stderr=result2.stderr,
+        exit_code=0,
+        steps=[["nef", "save", "step2.nef"]],
+        steps_completed=1,
+    )
+    assert result1 == EXPECTED1
+    assert result2 == EXPECTED2
+
+    # Side effects: files written inside sandbox with complete content matching pipeline output
+    assert (sandbox / "step1.nef").exists()
+    assert (sandbox / "step2.nef").exists()
+    assert_lines_match(result1.stdout, (sandbox / "step1.nef").read_text())
+    assert_lines_match(result2.stdout, (sandbox / "step2.nef").read_text())
+
+    # No files written outside sandbox
+    assert list(tmp_path.glob("*.nef")) == []
