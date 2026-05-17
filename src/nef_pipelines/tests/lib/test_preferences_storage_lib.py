@@ -1,3 +1,4 @@
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +12,11 @@ from nef_pipelines.lib.preferences_storage_lib import (
     save_config,
     set_config_value,
 )
+
+if sys.version_info < (3, 10):
+    pytest.skip(
+        "AI sandbox features require Python 3.10 or later", allow_module_level=True
+    )
 
 
 @pytest.fixture
