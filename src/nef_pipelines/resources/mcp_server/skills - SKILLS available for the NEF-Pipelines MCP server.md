@@ -19,6 +19,26 @@ details see `nef://readme`; for option / selector syntax see `nef://cli-idioms`.
   inter-residue assignment contexts)
 - **`cis_peptide` values** — `.` (unknown / unused), `true`, `false`
 
+## Sandbox
+
+The MCP server has a sandbox and if its active file operations are confined to a single **sandbox directory** -
+the server's working directory. You cannot read or write files outside it and only the user is allowed to
+change it. **without** the sandbox you can write anywhere on the server within the restraints applied by its
+operating system.
+
+- **The sandbox status is shown** in the startup notice from `nef_read_me_first` (the `**\`/path\`**` line).
+- **To check the current sandbox path** at any time, call `nef_list_files()` — the result includes
+  a `cwd` field with the absolute path and `sandboxed` a flag showing if the sandbox is active.
+- **To move the sandbox** to a different directory, call `nef_change_sandbox()`. This opens a native
+  OS directory-picker dialog for the user to choose the new location. The change takes effect
+  immediately for all subsequent tool calls. Always tell the user the new path after a change.
+- **The sandbox is process-global**: if more than one AI client connects to the same server process,
+  they share one sandbox and a sandbox change affects all of them.
+- **Files are not moved** when the sandbox changes. If a user wants to work with files from the old
+  sandbox in the new one, ask them to use `nef_import_files()` to copy them in.
+- **Uploads and downloads** are always relative to the current sandbox — plain filenames only,
+  no path separators.
+
 ## Tools You Have
 
 The MCP server exposes six tools:
