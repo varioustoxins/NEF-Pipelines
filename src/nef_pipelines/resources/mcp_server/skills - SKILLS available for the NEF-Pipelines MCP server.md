@@ -71,8 +71,8 @@ The MCP server exposes ten tools:
 
 You do **not** have shell access to `grep`, `sed`, `awk`, `cat`, `head`, etc. when running through
 the in-process MCP executor. This is by design: NEF's hierarchical structure and arbitrary column
-order mean text tools give wrong answers. Use `frames tabulate` `frames show` and `frames list`
-to inspect data, `entry tree` to examine logical struxture` and the structured commands above for
+order mean text tools give wrong answers. Use `frames tabulate`, `frames display` and `frames list`
+to inspect data, `entry tree` to examine logical structure, and the structured commands above for
 everything else.
 
 ## Standard Operating Procedure
