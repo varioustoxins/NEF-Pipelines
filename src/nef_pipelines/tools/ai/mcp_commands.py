@@ -27,7 +27,7 @@ from nef_pipelines.tools.ai.mcp_lib import (
     WarningsShownResult,
     _build_full_orientation,
     _build_startup_notice,
-    _chdir_to_sandbox,
+    _is_sandboxed,
     _confirm_sandbox_overwrites,
     _copy_files_to_sandbox,
     _execute_command_in_process,
@@ -195,6 +195,7 @@ def nef_list_files() -> ListFilesResult:
         len(unexpected),
     )
 
+    sandboxed = _is_sandboxed()
     if unexpected:
         return ListFilesResult(
             error="unexpected non-file entries in working directory (NEF tools should not create these)",
@@ -202,7 +203,7 @@ def nef_list_files() -> ListFilesResult:
             cwd=str(cwd),
             unexpected_entries=unexpected,
         )
-    return ListFilesResult(files=regular_files, cwd=str(cwd))
+    return ListFilesResult(files=regular_files, cwd=str(cwd), sandboxed=sandboxed)
 
 
 @mcp_tool

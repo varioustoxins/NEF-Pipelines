@@ -60,6 +60,13 @@ class StartupContext:
 _STARTUP_CONTEXT = StartupContext()
 
 
+def _is_sandboxed() -> bool:
+    """Return True if the server is running in sandbox mode (i.e. --no-sandbox was NOT passed).
+    Reads _STARTUP_CONTEXT at call time so it reflects the value set by server.py at startup.
+    """
+    return not _STARTUP_CONTEXT.no_sandbox
+
+
 def _build_startup_notice(ctx: Optional[StartupContext] = None) -> str:
     """\
     Format a StartupContext into a markdown notice block for inclusion in
@@ -392,6 +399,7 @@ class ListFilesResult(OperationResult):
 
     files: List[str] = field(default_factory=list)
     cwd: str = ""
+    sandboxed: bool = True
     unexpected_entries: List[str] = field(default_factory=list)
 
 
