@@ -66,7 +66,9 @@ pip install -r requirements.txt
 ## Architecture Overview
 
 ### Plugin-based Architecture
-The application uses a hierarchical command structure built on Typer. Commands self-register through module imports in `main.py:78-114`. The main entry point creates a Typer app and imports all tool and transcoder modules.
+The application uses a hierarchical command structure built on Typer. Commands self-register through module imports in
+`main.py:78-114`. The main entry point creates a Typer app and imports all tool and transcoder modules.
+>Note Typer commands should be created with the more modern annotation style of definitions.
 
 ### Core Components
 
