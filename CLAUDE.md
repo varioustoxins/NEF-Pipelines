@@ -133,6 +133,7 @@ The application uses a hierarchical command structure built on Typer. Commands s
     assert result == EXPECTED
     assert EXPECTED_ERROR_CANCELLED in result.error.lower()
     ```
+11. **ALWAYS use nef_pipelines.lib.test_lib.run_and_report** don't use typer.testing.CliRunner
 
 These are non-negotiable requirements, not suggestions. Apply them automatically without asking unless told otherwise.
 
