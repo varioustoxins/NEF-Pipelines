@@ -156,6 +156,8 @@ The package follows PyScaffold conventions with src-layout:
 - **ALWAYS use British spelling** for all user-facing text, variable names, function names, and documentation
   - Examples: `colour` not `color`, `colour_policy` not `color_policy`, `ColourOutputPolicy` not `ColorOutputPolicy`
   - This applies to: CLI option names (`--colour-policy`), parameter names, class names, enum values, docstrings, help text, and comments
+- Favour dataclasses as opposed to full classes unless needed NEF-Piplines is designed around  **simple data structures and functions**
+  when possible they should be immutable and sortable
 
 ### Assert Statements
 
