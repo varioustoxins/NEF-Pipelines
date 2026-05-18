@@ -300,6 +300,24 @@ def test_nef_read_me_first_with_startup_context(monkeypatch):
     assert result == EXPECTED
 
 
+def test_nef_read_me_first_no_sandbox(monkeypatch):
+    """\
+    Test nef_read_me_first shows the --no-sandbox warning when no_sandbox=True.
+    """
+    monkeypatch.setattr(
+        mcp_lib,
+        "_STARTUP_CONTEXT",
+        mcp_lib.StartupContext(no_sandbox=True),
+    )
+    monkeypatch.setattr(mcp_commands, "_WARNINGS_SHOWN", False)
+    monkeypatch.setattr(mcp_commands, "_ORIENTATION_TOKEN", _FIXED_TOKEN)
+
+    result = nef_read_me_first()
+
+    assert "without a sandbox; --no-sandbox was passed" in result.information
+    assert "READ, WRITE and OVERWRITE" in result.information
+
+
 # --- nef_execute_pipeline ---
 
 
