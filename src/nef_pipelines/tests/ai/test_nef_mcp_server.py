@@ -266,29 +266,33 @@ def test_nef_read_me_first_with_startup_context(monkeypatch):
 
     result = nef_read_me_first()
 
-    SANDBOX_STARTUP_NOTICE = """\
-**⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**
+    sandbox_path = Path.cwd()
 
----
+    SANDBOX_STARTUP_NOTICE = f"""\
+        **⚠️ AI: You MUST show the following to the user as the last thing in your current response. ⚠️**
 
-⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
+        ---
 
-The NEF-Pipelines MCP server is EXPERIMENTAL software. It is still under development!
+        ⚠️  **EXPERIMENTAL - USE WITH CAUTION**  ⚠️
 
-The server is in **sandbox mode**. The AI is restricted to a single directory:
+        The NEF-Pipelines MCP server is EXPERIMENTAL software. It is still under development!
 
-**`/tmp/test_sandbox`**
+        The server is in **sandbox mode**. The AI is restricted to a single directory:
 
-It can **READ, WRITE and OVERWRITE** files within this directory without further confirmation.
+        **`{sandbox_path}`**
 
-**⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
+        It can **READ, WRITE and OVERWRITE** files within this directory without further confirmation.
 
-Ask the AI to change the sandbox to another directory if you want more permanent storage.
+        **⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
 
-**THE AUTHORS ACCEPT NO LIABILITY FOR BUGS, DATA LOSS OR UNINTENDED FILE ACCESS.**
+        Ask the AI to change the sandbox to another directory if you want more permanent storage.
 
-⚠️ **Warning**: Test warning message"""
+        **THE AUTHORS ACCEPT NO LIABILITY FOR BUGS, DATA LOSS OR UNINTENDED FILE ACCESS.**
 
+        ⚠️ **Warning**: {WARNING_TEXT}
+    """
+
+    SANDBOX_STARTUP_NOTICE = dedent(SANDBOX_STARTUP_NOTICE)
     EXPECTED = NefStartupResult(
         content=_orientation_content(SANDBOX_STARTUP_NOTICE),
         information=SANDBOX_STARTUP_NOTICE + _TOKEN_SUFFIX,
