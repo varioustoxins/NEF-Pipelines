@@ -270,7 +270,8 @@ The `explode` tool was recently refactored to follow this pattern:
 - DO NOT add legacy support unless asked to
 
 ## ALWAYS use multi line strings and avoid implicit concatenation
-when providing Multi line string options especially to typer as help text use triple quotes and a line escapes _DO_ _NOT_ use implicit string concatenation across lines
+when multi line strings are needed use triple quotes and a line escapes _DO_ _NOT_ use implicit string concatenation
+across lines. Also multiline strings should be indented for readability.
 
 e.g. USE this
 
@@ -285,7 +286,7 @@ test= "This is a long multi line string it goes on and on and on  and on  and on
       " on  and on and on  and on  and on  and on  and on  and on  and on  and on  and"
       " on  and on  and on"
 
-If need be add a decent and a trim so the multi line string doesn't have prepended white space
+If needs be add a decent and a strip so the multi line string doesn't have prepended white space
 DO NOT push the strings to column 1
 
 
