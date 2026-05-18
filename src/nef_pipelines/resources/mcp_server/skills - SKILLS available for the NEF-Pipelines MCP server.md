@@ -41,14 +41,33 @@ operating system.
 
 ## Tools You Have
 
-The MCP server exposes six tools:
+The MCP server exposes ten tools:
 
-1. `nef_list_commands()` — enumerate all available commands
-2. `nef_get_command_help(pattern)` — full `--help` for a command or pattern
-3. `nef_execute_pipeline(steps, nef_input=...)` — run one or more steps as a pipeline
-4. `nef_upload_file(name, content)` — write a text file into the working directory
-5. `nef_download_file(name)` — read a text file from the working directory
-6. `nef_list_files()` — list files in the working directory
+### Session setup (call once at the start of each session)
+
+1. `nef_read_me_first()` — **call this first**, before any other tool. Returns orientation text
+   (what NEF-Pipelines is, what tools are available, the current sandbox path and status).
+   Show the `information` field to the user verbatim, then call `nef_warnings_shown` to unlock
+   the remaining tools.
+2. `nef_warnings_shown(token)` — unlock the tools after showing the user the startup warnings.
+   Pass the `ORIENTATION-TOKEN` value from the `nef_read_me_first` information field.
+
+### File management
+
+3. `nef_upload_file(name, content)` — write a UTF-8 text file into the sandbox.
+4. `nef_download_file(name)` — read a UTF-8 text file from the sandbox.
+5. `nef_list_files()` — list files in the sandbox; result includes `cwd` (the current sandbox path).
+6. `nef_import_files()` — open a native OS file-picker so the user can copy files from anywhere
+   on their filesystem into the sandbox. Use this when the user wants to bring in local files.
+7. `nef_change_sandbox()` — open a native OS directory-picker to move the sandbox to a new
+   location. Tell the user the new path after calling this.
+
+### NEF pipeline execution
+
+8. `nef_list_commands(pattern="*")` — list available NEF commands, optionally filtered by pattern.
+9. `nef_get_command_help(pattern, group_by_category=False)` — full `--help` for one or more commands.
+10. `nef_execute_pipeline(steps, nef_input="")` — run a sequence of NEF commands chained
+    stdin→stdout. Each step is a list starting with `"nef"`, e.g. `["nef", "frames", "list"]`.
 
 You do **not** have shell access to `grep`, `sed`, `awk`, `cat`, `head`, etc. when running through
 the in-process MCP executor. This is by design: NEF's hierarchical structure and arbitrary column
