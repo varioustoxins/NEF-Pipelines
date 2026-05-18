@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from typer.testing import CliRunner
 
+from nef_pipelines.lib.util import warn
 from nef_pipelines.main import create_nef_app
 from nef_pipelines.module_registry import get_registerd_modules
 from nef_pipelines.tools.ai.sandbox_audit import SandboxViolation, audit_sandbox_writes
@@ -20,13 +21,19 @@ from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox, validate_sand
 
 logger = logging.getLogger(__name__)
 
-_nef_app = create_nef_app()
+_nef_app = None
 
-for _module_name in get_registerd_modules():
-    try:
-        import_module(_module_name)
-    except Exception:
-        pass
+
+def create_nef_pipelines_app():
+    global _nef_app
+    _nef_app = create_nef_app()
+
+    for module_name in get_registerd_modules():
+        try:
+            import_module(module_name)
+        except Exception:
+            warn(f"module {module_name} failed to load")
+
 
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
 _RESOURCES_ROOT = files("nef_pipelines") / "resources"

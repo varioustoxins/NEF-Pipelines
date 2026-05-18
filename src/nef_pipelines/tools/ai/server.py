@@ -11,6 +11,7 @@ import typer
 from nef_pipelines.lib.preferences_storage_lib import get_config_file_path
 from nef_pipelines.lib.util import exit_error, info, warn
 from nef_pipelines.tools.ai import ai_app
+from nef_pipelines.tools.ai.mcp_lib import create_nef_pipelines_app
 from nef_pipelines.tools.ai.sandbox_audit import install_audit_hook
 from nef_pipelines.tools.ai.sandbox_lib import (
     get_sandbox_preference,
@@ -129,6 +130,8 @@ def server(
 
     # Install audit hook to monitor file writes during pipeline execution
     install_audit_hook()
+
+    create_nef_pipelines_app()
 
     try:
         _build().run(show_banner=False, **server_transport_args)
