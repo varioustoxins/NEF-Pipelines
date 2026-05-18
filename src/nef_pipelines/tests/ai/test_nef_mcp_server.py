@@ -294,7 +294,7 @@ def test_nef_read_me_first_with_startup_context(monkeypatch, tmp_path):
         ⚠️ **Warning**: {WARNING_TEXT}
     """
 
-    SANDBOX_STARTUP_NOTICE = dedent(SANDBOX_STARTUP_NOTICE)
+    SANDBOX_STARTUP_NOTICE = dedent(SANDBOX_STARTUP_NOTICE).rstrip("\n")
     EXPECTED = NefStartupResult(
         content=_orientation_content(SANDBOX_STARTUP_NOTICE),
         information=SANDBOX_STARTUP_NOTICE + _TOKEN_SUFFIX,
