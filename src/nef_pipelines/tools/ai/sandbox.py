@@ -100,6 +100,7 @@ def command(action: SandboxStorageAction, path: Optional[Path] = None) -> list[s
         # Success - get the resolved path from preferences
         saved_path = get_sandbox_preference()
         output_lines.append(f"Sandbox preference set to: {saved_path}")
+        warn("this will not take effect until you restart your AI / MCP server")
 
     elif action == SandboxStorageAction.GET:
         current_path = get_sandbox_preference()
@@ -109,6 +110,7 @@ def command(action: SandboxStorageAction, path: Optional[Path] = None) -> list[s
     elif action == SandboxStorageAction.CLEAR:
         set_sandbox_preference("")
         output_lines.append("Sandbox preference cleared")
+        warn("this will not take effect until you restart your AI / MCP server")
 
     elif action == SandboxStorageAction.SHOW:
         current_path = get_sandbox_preference()
