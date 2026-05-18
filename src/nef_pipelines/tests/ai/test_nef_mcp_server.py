@@ -604,6 +604,29 @@ def test_nef_list_files_empty(tmp_path, monkeypatch):
     assert bool(result.cwd)
 
 
+def test_nef_list_files_sandboxed_true(monkeypatch):
+    """\
+    Test nef_list_files returns sandboxed=True when running in sandbox mode.
+    """
+    result = nef_list_files()
+    EXPECTED = ListFilesResult(files=[], cwd=result.cwd, sandboxed=True)
+    assert result == EXPECTED
+
+
+def test_nef_list_files_sandboxed_false(monkeypatch):
+    """\
+    Test nef_list_files returns sandboxed=False when --no-sandbox was passed.
+    """
+    monkeypatch.setattr(
+        mcp_lib,
+        "_STARTUP_CONTEXT",
+        mcp_lib.StartupContext(no_sandbox=True),
+    )
+    result = nef_list_files()
+    EXPECTED = ListFilesResult(files=[], cwd=result.cwd, sandboxed=False)
+    assert result == EXPECTED
+
+
 def test_nef_list_files_after_upload(tmp_path, monkeypatch):
     """\
     Test nef_list_files lists files written by nef_upload_file.
