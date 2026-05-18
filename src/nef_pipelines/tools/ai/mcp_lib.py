@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from typer.testing import CliRunner
@@ -78,18 +79,20 @@ def _build_startup_notice(ctx: Optional[StartupContext] = None) -> str:
         ctx = _STARTUP_CONTEXT
     if ctx.no_sandbox:
         body = f"""\
-With **--no-sandbox** the AI has direct, unsupervised access to your filesystem and can
-**READ, WRITE and OVERWRITE** files anywhere without further confirmation.
+            This server is running **without a sandbox; --no-sandbox was passed**. The AI has direct,
+            unsupervised access to your filesystem and can **READ, WRITE and OVERWRITE** files anywhere
+            the operating system allows without further confirmation.
 
-**BEFORE using this server you should:**
-  - Ensure you restrict the server so it won't overwrite important files
-    [are you using a container or an isolated server?]
-  - Understand which AI model and client will connect
-  - Never expose this server on a public network interface
-  - Review the commands available via: `nef help commands`
+            **BEFORE using this server you should:**
+              - Ensure you restrict the server so it won't overwrite important files
+                [are you using a container or an isolated server?]
+              - Understand which AI model and client will connect
+              - Never expose this server on a public network interface
+              - Review the commands available via: `nef help commands`
 
-{_LIABILITY}"""
-
+            {_LIABILITY}
+        """
+        body = dedent(body.strip())
     elif ctx.sandbox_path:
         if ctx.will_be_cleaned:
             cleanup = """\
