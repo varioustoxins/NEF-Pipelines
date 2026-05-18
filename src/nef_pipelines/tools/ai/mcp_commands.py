@@ -420,7 +420,9 @@ def nef_execute_pipeline(
 @mcp_tool
 def nef_change_sandbox() -> ChangeSandboxResult:
     """\
-    Change the server's working directory (sandbox) to a new location using native OS dialog.
+    Change the server's working directory (sandbox) to a new location using native OS dialog,
+    The AI client has no influence over where the sandox is or what the suggested new location
+    for the new sandbox is.
 
     Opens a native directory picker dialog starting at the current sandbox location.
     User selects the new sandbox directory via the OS dialog.
@@ -430,6 +432,9 @@ def nef_change_sandbox() -> ChangeSandboxResult:
 
     Note: This changes the working directory for all subsequent operations.
     Files in the old sandbox are not moved or copied.
+
+    Note: If multiple AI clients are connected to the same server process, this change
+    affects all of them.
     """
     old_path = Path.cwd()
 
