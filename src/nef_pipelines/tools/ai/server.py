@@ -113,6 +113,8 @@ def server(
 
     info(f"Sandbox directory: {sandbox_path}")
 
+    os.chdir(sandbox_path)
+
     server_transport_args = _get_transport_args(host, port, transport)
 
     import nef_pipelines.tools.ai.mcp_lib as _mcp_lib
