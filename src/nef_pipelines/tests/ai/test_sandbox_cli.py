@@ -72,11 +72,8 @@ def test_sandbox_cli_show(temp_config_dir, tmp_path, runner):
     assert EXPECTED_FIELD_NAME in result.output
 
 
-def test_sandbox_cli_set_nonexistent(temp_config_dir, tmp_path, runner):
-    """
-    Test setting nonexistent path.
-    Requirement 1: Should be possible to set a nonexistent path.
-    """
+def test_sandbox_cli_set_nonexistent_path_allowed(temp_config_dir, tmp_path, runner):
+    """Test setting a nonexistent path is allowed."""
     nonexistent = tmp_path / "does_not_exist"
 
     result = runner.invoke(ai_app, ["sandbox", "set", str(nonexistent)])
