@@ -247,15 +247,17 @@ def test_nef_read_me_first(monkeypatch):
     assert result == EXPECTED
 
 
-def test_nef_read_me_first_with_startup_context(monkeypatch):
+def test_nef_read_me_first_with_startup_context(monkeypatch, tmp_path):
     """\
     Test nef_read_me_first includes startup context when _STARTUP_CONTEXT is set.
+    The sandbox path shown is the current working directory (cwd is the source of truth).
     """
-    SANDBOX_PATH = "/tmp/test_sandbox"
     WARNING_TEXT = "Test warning message"
 
+    monkeypatch.chdir(tmp_path)
+
     mock_context = mcp_lib.StartupContext(
-        sandbox_path=SANDBOX_PATH,
+        sandbox_path=str(tmp_path),
         is_temporary=True,
         will_be_cleaned=True,
         warning=WARNING_TEXT,
