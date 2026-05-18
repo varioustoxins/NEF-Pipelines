@@ -95,28 +95,38 @@ def _build_startup_notice(ctx: Optional[StartupContext] = None) -> str:
         body = dedent(body.strip())
     elif ctx.sandbox_path:
         if ctx.will_be_cleaned:
-            cleanup = """\
-**⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
+            cleanup = dedent(
+                """\
+                **⚠️ THE SANDBOX IS A TEMPORARY DIRECTORY AND WILL BE DELETED AT SERVER / AI SHUTDOWN.**
 
-Ask the AI to change the sandbox to another directory if you want more permanent storage."""
+                Ask the AI to change the sandbox to another directory if you want more permanent storage.
+            """
+            ).strip()
         elif ctx.is_temporary:
-            cleanup = """\
-**⚠️ THE SANDBOX WILL NOT BE CLEARED AT SHUTDOWN** (--preserve-sandbox was used). \
-A new sandbox will be created on next server start. \
-The sandbox may be cleared at computer reboot. \
-This option is mainly present for debugging."""
+            cleanup = dedent(
+                """\
+                **⚠️ THE SANDBOX WILL NOT BE CLEARED AT SHUTDOWN** (--preserve-sandbox was used).
+                A new sandbox will be created on next server start.
+                The sandbox may be cleared at computer reboot.
+                This option is mainly present for debugging.
+            """
+            ).strip()
         else:
-            cleanup = f"""\
-The server is using a **user defined sandbox** \
-defined by the **{ctx.path_source}**. \
-The AI is restricted to this user supplied directory."""
+            cleanup = dedent(
+                f"""\
+                The server is using a **user defined sandbox**
+                defined by the **{ctx.path_source}**.
+                The AI is restricted to this user supplied directory.
+            """
+            ).strip()
 
         warning_line = f"\n\n⚠️ **Warning**: {ctx.warning}" if ctx.warning else ""
 
+        current_sandbox = Path.cwd()
         body = f"""\
 The server is in **sandbox mode**. The AI is restricted to a single directory:
 
-**`{ctx.sandbox_path}`**
+**`{current_sandbox}`**
 
 It can **READ, WRITE and OVERWRITE** files within this directory without further confirmation.
 
@@ -125,12 +135,15 @@ It can **READ, WRITE and OVERWRITE** files within this directory without further
 {_LIABILITY}{warning_line}"""
 
     else:
-        body = f"""\
-In **sandbox mode** (default) the AI is restricted to a single directory.
-With **--no-sandbox** it has direct, unsupervised access to your filesystem and can
-**READ, WRITE and OVERWRITE** files anywhere without further confirmation.
+        body = dedent(
+            f"""\
+            In **sandbox mode** (default) the AI is restricted to a single directory.
+            With **--no-sandbox** it has direct, unsupervised access to your filesystem and can
+            **READ, WRITE and OVERWRITE** files anywhere without further confirmation.
 
-{_LIABILITY}"""
+            {_LIABILITY}
+        """
+        ).strip()
 
     return f"""\
 {_AI_INSTRUCTION}
