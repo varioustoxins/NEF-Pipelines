@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import typer
 
+import nef_pipelines.tools.ai.mcp_lib as mcp_lib
 from nef_pipelines.lib.preferences_storage_lib import get_config_file_path
 from nef_pipelines.lib.util import exit_error, info, warn
 from nef_pipelines.tools.ai import ai_app
@@ -118,9 +119,7 @@ def server(
 
     server_transport_args = _get_transport_args(host, port, transport)
 
-    import nef_pipelines.tools.ai.mcp_lib as _mcp_lib
-
-    _mcp_lib._STARTUP_CONTEXT = _mcp_lib.StartupContext(
+    mcp_lib._STARTUP_CONTEXT = mcp_lib.StartupContext(
         sandbox_path=str(sandbox_path),
         is_temporary=sandbox.is_temp,
         will_be_cleaned=sandbox.is_temp and not preserve,
