@@ -122,6 +122,7 @@ import mmap
 import os
 import sys
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -180,13 +181,13 @@ class SandboxViolation(PermissionError):
     """
 
 
+@dataclass
 class _AuditState:
     """Thread-local state for sandbox audit hook."""
 
-    def __init__(self):
-        self.is_active = False
-        self.sandbox_path: Optional[Path] = None
-        self.violation_error: Optional[str] = None
+    is_active: bool = False
+    sandbox_path: Optional[Path] = None
+    violation_error: Optional[str] = None
 
 
 _audit_state = threading.local()
