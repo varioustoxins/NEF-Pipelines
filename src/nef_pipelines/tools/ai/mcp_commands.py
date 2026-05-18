@@ -166,7 +166,8 @@ def nef_list_files() -> ListFilesResult:
     """\
     List entries in the server's working directory.
 
-    Returns ListFilesResult with files and cwd.
+    Returns ListFilesResult with files, cwd, and sandboxed.
+    sandboxed is True when the server is running in sandbox mode (--no-sandbox was not passed).
     Any non-file entry (subdirectory, symlink, etc.) is unexpected — NEF tools
     don't create them. When present, error is non-empty and unexpected_entries
     lists them as 'name (type)' strings. Regular files are always listed.
@@ -201,6 +202,7 @@ def nef_list_files() -> ListFilesResult:
             error="unexpected non-file entries in working directory (NEF tools should not create these)",
             files=regular_files,
             cwd=str(cwd),
+            sandboxed=sandboxed,
             unexpected_entries=unexpected,
         )
     return ListFilesResult(files=regular_files, cwd=str(cwd), sandboxed=sandboxed)
