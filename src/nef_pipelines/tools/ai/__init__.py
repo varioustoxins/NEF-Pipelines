@@ -1,7 +1,7 @@
 from typer import Typer
 
+from nef_pipelines import nef_app
 from nef_pipelines.lib.util import ToolCategory
-from nef_pipelines.main import nef_app
 
 ai_app = Typer()
 

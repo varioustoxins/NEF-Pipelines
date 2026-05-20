@@ -374,7 +374,7 @@ def exit_error(msg, exception=None) -> NoReturn:
     """
 
     # this has to be imported after complete initialisation has occured and after this module has been initialised...
-    from nef_pipelines.main import debug_mode
+    from nef_pipelines.nef_app_runner import debug_mode
 
     # This should only happen in verbose mode
     if exception is not None:

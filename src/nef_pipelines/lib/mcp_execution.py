@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 from typer.testing import CliRunner
 
-from nef_pipelines.main import create_nef_app
+from nef_pipelines.nef_app_runner import create_nef_app
 
 # Initialize the nef app once at module load
 _nef_app = create_nef_app()
@@ -89,9 +89,19 @@ def execute_command_in_process(
 
     # Debug: log what we're receiving
     import sys
-    print(f"[DEBUG] execute_command_in_process called with:", file=sys.stderr)
+
+    print("[DEBUG] execute_command_in_process called with:", file=sys.stderr)
     print(f"[DEBUG]   args: {args}", file=sys.stderr)
-    print(f"[DEBUG]   nef_input type: {type(nef_input)}, len: {len(nef_input) if nef_input else 'N/A'}, repr: {repr(nef_input[:50] if nef_input else nef_input)}", file=sys.stderr)
+    input_type = type(nef_input)
+    length = len(nef_input) if nef_input else "N/A"
+    representation = repr(nef_input[:50] if nef_input else nef_input)
+    msg = (
+        f"[DEBUG]   nef_input type: {input_type}, len: {length}, repr: {representation}"
+    )
+    print(
+        msg,
+        file=sys.stderr,
+    )
     print(f"[DEBUG]   bool(nef_input): {bool(nef_input)}", file=sys.stderr)
 
     try:
@@ -99,15 +109,15 @@ def execute_command_in_process(
         # Empty string, None, or whitespace-only should NOT create temp file or add --in
         if nef_input:
             with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.nef', delete=False
+                mode="w", suffix=".nef", delete=False
             ) as f:
                 f.write(nef_input)
                 temp_file = Path(f.name)
 
             # Add temp file as input argument if not already specified
             # Only add if we actually created a temp file
-            if '--in' not in args and '-i' not in args and '--input' not in args:
-                args = list(args) + ['--in', str(temp_file)]
+            if "--in" not in args and "-i" not in args and "--input" not in args:
+                args = list(args) + ["--in", str(temp_file)]
 
         # Use CliRunner to execute command in-process
         # CliRunner automatically captures stdout/stderr
@@ -119,7 +129,7 @@ def execute_command_in_process(
         # Handle stderr - newer click versions may separate it
         # Many nef commands write output to stderr, so we combine both
         stderr = ""
-        if hasattr(result, 'stderr') and result.stderr:
+        if hasattr(result, "stderr") and result.stderr:
             stderr = result.stderr
 
         # Combine stdout and stderr to ensure we capture all output

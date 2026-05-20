@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 
 from nef_pipelines.lib.test_lib import assert_lines_match
 from nef_pipelines.lib.util import get_version
-from nef_pipelines.main import create_nef_app
+from nef_pipelines.nef_app_runner import create_nef_app
 from nef_pipelines.tools.header import header
 
 create_nef_app()

@@ -1,6 +1,6 @@
 from typer import Typer
 
-from nef_pipelines.main import nef_app
+from nef_pipelines import nef_app
 
 namespace_app = Typer()
 

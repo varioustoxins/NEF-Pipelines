@@ -1,305 +1,36 @@
 #!/usr/bin/env python3
 
-import inspect
-import logging
 import sys
-from dataclasses import dataclass
-from importlib import import_module
-from textwrap import dedent
-from traceback import format_exc, print_exc
-from typing import Optional
-
-import typer
-
-import nef_pipelines
-from nef_pipelines import nef_app
-from nef_pipelines.lib.typer_lib import FilteredHelpGroup, patch_rich_code_theme
-from nef_pipelines.lib.util import exit_error
-from nef_pipelines.module_registry import get_registerd_modules
-
-
-@dataclass
-class CommandFailure:
-    location: str
-    function: str
-    file: str
-    line: int
-    error: Exception
-
-
-debug_mode = False
-typer_debug_mode = "--debug-typer" in sys.argv
-if typer_debug_mode:
-    logging.basicConfig(level=logging.DEBUG)
-
-try:
-    import future  # noqa: F401
-except Exception:
-    pass
 
 MINIMUM_VERSION = (3, 9)
-if not sys.version_info >= MINIMUM_VERSION:
+if sys.version_info < MINIMUM_VERSION:
     print(
-        "Error; minimum version required id %i.%i [and python 2 is not supported]"
-        % MINIMUM_VERSION,
+        f"Error: minimum Python version required is "
+        f"{MINIMUM_VERSION[0]}.{MINIMUM_VERSION[1]} [python 2 is not supported]",
         file=sys.stderr,
     )
     print("exiting...", file=sys.stderr)
-
-# for pynmrstar to avoid WARNING:root:Loop with no data on line: xx
-logging.getLogger("pynmrstar").setLevel(logging.ERROR)
-
-EXIT_ERROR = 1
-
-patch_rich_code_theme()
-
-# path for the sandbox
-in_server_mode = False
-
-
-def do_exit_error(msg, trace_back=True, exit_code=EXIT_ERROR):
-    msg = dedent(msg)
-    if trace_back:
-        print_exc()
-    print(msg, file=sys.stderr)
-    print("exiting...", file=sys.stderr)
-    sys.exit(exit_code)
-
-
-def main_callback(
-    ctx: typer.Context,
-    debug: bool = typer.Option(
-        False, "--debug", help="Enable debug output including stack traces"
-    ),
-    # NOTE: this is defined here so that it appears in the list of options shown by typer
-    #      however, it is set at the top of the file because it needs to be set before
-    #      typer interprts commands...
-    _debug_typer: bool = typer.Option(
-        False,
-        "--debug-typer",
-        help="Developer tool enable debugging of typer CLI interface construction",
-    ),
-    server_mode: Optional[bool] = typer.Option(
-        False,
-        "--server",
-        help="""
-            indicates to the runtime that its running inside an mcp server
-        """,
-    ),
-):
-    global in_server_mode
-    in_server_mode = server_mode
-
-    if debug:
-        global debug_mode
-        debug_mode = True
-        logging.basicConfig(level=logging.DEBUG)
-
-    if server_mode:
-        # remove the ai command if we are running inside an AI server
-        if "ai" in ctx.command.commands:
-            del ctx.command.commands["ai"]
-
-        if ctx.invoked_subcommand == "ai":
-            msg = """
-                The 'ai' commands are not available when running inside an AI server.
-                This is for security and to avoid recursion.
-            """
-            exit_error(msg)
-
-    if ctx.invoked_subcommand is None:
-        print(ctx.get_help())
-        raise typer.Exit()
-
-
-def create_nef_app():
-
-    # needed to avoid partially initialised module import
-    from nef_pipelines.main import main_callback
-
-    if nef_app.app is None:
-        nef_app.app = typer.Typer(
-            no_args_is_help=True,
-            invoke_without_command=True,
-            callback=main_callback,
-            rich_markup_mode="markdown",
-            cls=FilteredHelpGroup,
-        )
-    return nef_app
+    sys.exit(2)
 
 
 def main():
     try:
-        import typer
-        from click import ClickException
-
-    except Exception as e:
-
-        msg = """\
-
-             Initialisation error: one of the core libraries [click/typer] is missing from your environment
-             please make sure they are installed and try again
-             exiting..."""
-        do_exit_error(msg, e)
-
-    try:
-        nef_app = create_nef_app()
-
-    except Exception as e:
-        msg = """\
-
-                 Initialisation error: failed to start the typer app, message the developer
-                 exiting..."""
-        do_exit_error(msg, e)
-
-    warnings = []
-    try:
-
-        for module_name in get_registerd_modules():
-            try:
-                import_module(module_name)
-
-            except Exception:
-                msg = f"plugin {module_name}\n{format_exc()}"
-
-                warnings.append((module_name, msg))
-
-        _if_commands_are_bad_report_and_exit_error(nef_app)
-
-    except Exception as e:
-        msg = """\
-
-             Initialisation error: failed to load a plugin, remove the plugin or contact the developer
-             """
-
-        do_exit_error(msg, e)
-
-    try:
-
-        nef_app.app
-
-        command = typer.main.get_command(nef_app.app)
-
-        command(prog_name="nef", standalone_mode=False)
-
-        _report_warnings(warnings)
-
-    except ClickException as e:
-        e.show()
-        do_exit_error(
-            f"inputs: {' '.join(sys.argv[1:])}", trace_back=False, exit_code=e.exit_code
+        import click  # noqa: F401
+        import typer  # noqa: F401
+    except ImportError as e:
+        print(
+            "Initialisation error: one of the core libraries [click/typer] is missing "
+            f"from your environment ({e}).\n"
+            "Install with: pip install typer click\n"
+            "exiting...",
+            file=sys.stderr,
         )
+        sys.exit(2)
 
-    except Exception as e:
+    # Safe to import the runner only after core dependencies are confirmed available
+    from nef_pipelines.nef_app_runner import run
 
-        msg = f"""\
-
-              Runtime error: failed to process the data using the plugin and commands, check you inputs or report a bug
-              inputs: {' '.join(sys.argv[1:])}
-              message: {e}
-              """
-
-        do_exit_error(msg)
-
-
-def _if_commands_are_bad_report_and_exit_error(nef_app: nef_pipelines.nef_app):
-    if typer_debug_mode:
-        bad_commands = list(_walk_the_command_tree_and_check(nef_app.app))
-        if bad_commands:
-            error_messages = ["some commands had bad typer command definitions"]
-
-            for bad_command_info in bad_commands:
-                msg = f"""
-                    failed to load command: {bad_command_info.location}
-                        function: {bad_command_info.function}
-                        file:     {bad_command_info.file}:{bad_command_info.line}
-                        error:    {bad_command_info.error}"
-                """
-                error_messages.append(dedent(msg))
-
-            msg = "\n".join(error_messages)
-            exit_error(msg)
-
-
-def _walk_the_command_tree_and_check(app):
-    """Walk every registered command/group and yield a CommandFailure
-    for each command whose typer/click param construction raises."""
-    return _walk_child_commands_and_check(app, path=("nef",))
-
-
-def _walk_child_commands_and_check(app, path):
-
-    for command_info in app.registered_commands:
-        name = command_info.name or command_info.callback.__name__
-        try:
-            typer.main.get_command_from_info(
-                command_info,
-                pretty_exceptions_short=False,
-                rich_markup_mode="markdown",
-            )
-        except Exception as e:
-            location = " ".join((*path, name))
-            yield CommandFailure(
-                location=location,
-                function=command_info.callback.__qualname__,
-                file=inspect.getsourcefile(command_info.callback) or "?",
-                line=inspect.getsourcelines(command_info.callback)[1],
-                error=e,
-            )
-
-    for group_info in app.registered_groups:
-        sub_app = group_info.typer_instance
-        if sub_app is None:
-            continue
-        sub_path = (*path, group_info.name or "?")
-        yield from _walk_child_commands_and_check(sub_app, sub_path)
-
-
-def _report_warnings(warnings):
-    if warnings:
-
-        bad_modules = []
-        for module_name, warning in warnings:
-            bad_modules.append(module_name)
-
-            lines = warning.split("\n")
-            max_line_length = max([len(line) for line in lines])
-            msg = f"error in {module_name}"
-            line_length_m_module_name = max_line_length - len(msg)
-            stars_2_m1 = (line_length_m_module_name // 2) - 2
-
-            header = f"{'*' * stars_2_m1} {msg} {'*' * stars_2_m1}"
-            discrepancy = max_line_length - len(header)
-            header = f'{header}{"*" * discrepancy}'
-
-            print(file=sys.stderr)
-            print(header)
-            print(file=sys.stderr)
-            print(warning, file=sys.stderr)
-            print("*" * max_line_length)
-
-        NEW_LINE = "\n    "
-        msg = f"""
-                WARNING: the following plugins failed to load:
-
-                    {NEW_LINE.join(bad_modules)}
-
-                the remaining plugins will work but NEF-Pipelines is working  with reduced capabilities. The modules
-                that failed to load and the causes of the problem are listed above please report this to the authors
-                at github: https://github.com/varioustoxins/NEF-Pipelines/issues
-            """
-        msg = dedent(msg)
-        print(msg, file=sys.stderr)
-
-    # # to get rid of messages about broken pipes when SIGPIPE is recieved
-    # Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
-    # BrokenPipeError: [Errno 32] Broken pipe
-    # https://stackoverflow.com/questions/26692284/how-to-prevent-brokenpipeerror-when-doing-a-flush-in-python
-    # note: https://docs.python.org/3/library/signal.html#note-on-sigpipe
-    #      doesn't appear to work for us, not quite sure why
-    # note: I added a flush of stderr to remove any dangling output
-    sys.stderr.flush()
-    sys.stderr.close()
+    run()
 
 
 if __name__ == "__main__":

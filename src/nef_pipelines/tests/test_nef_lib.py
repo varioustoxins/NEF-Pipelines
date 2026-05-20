@@ -23,7 +23,7 @@ from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe
 from nef_pipelines.lib.structures import SaveframeNameParts
 from nef_pipelines.lib.test_lib import assert_lines_match, path_in_test_data
 from nef_pipelines.lib.util import STDIN
-from nef_pipelines.main import EXIT_ERROR
+from nef_pipelines.nef_app_runner import EXIT_ERROR
 
 ITER_TEST_DATA = """\
     loop_

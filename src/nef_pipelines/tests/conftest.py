@@ -21,6 +21,6 @@ def _fixed_terminal_size(monkeypatch):
 
 
 def pytest_configure(config):
-    from nef_pipelines.main import create_nef_app
+    from nef_pipelines.nef_app_runner import create_nef_app
 
     create_nef_app()

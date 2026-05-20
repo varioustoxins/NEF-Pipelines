@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from importlib import import_module
 from importlib.resources import files
 from pathlib import Path
 from textwrap import dedent
@@ -13,26 +12,22 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from typer.testing import CliRunner
 
+import nef_pipelines
 from nef_pipelines.lib.util import warn
-from nef_pipelines.main import create_nef_app
-from nef_pipelines.module_registry import get_registerd_modules
+from nef_pipelines.nef_app_runner import create_nef_app
 from nef_pipelines.tools.ai.sandbox_audit import SandboxViolation, audit_sandbox_writes
 from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox, validate_sandbox_path
 
 logger = logging.getLogger(__name__)
 
-_nef_app = None
-
 
 def create_nef_pipelines_app():
-    global _nef_app
-    _nef_app = create_nef_app()
+    from nef_pipelines.nef_app_runner import load_nef_modules_and_build_failure
 
-    for module_name in get_registerd_modules():
-        try:
-            import_module(module_name)
-        except Exception:
-            warn(f"module {module_name} failed to load")
+    create_nef_app()  # idempotent; populates nef_pipelines.nef_app singleton
+    failure_message = load_nef_modules_and_build_failure()
+    if failure_message:
+        warn(failure_message)
 
 
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
@@ -525,14 +520,18 @@ def _execute_command_in_process(
         with audit_sandbox_writes(sandbox_path) as audit_state:
             try:
                 runner = CliRunner(mix_stderr=False)
-                result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+                result = runner.invoke(
+                    nef_pipelines.nef_app.app, list(args), **invoke_kwargs
+                )
                 stdout, stderr = result.output or "", result.stderr or ""
             except SandboxViolation as e:
                 # Audit hook caught a sandbox violation (or backstop re-raised it)
                 violation_error = str(e)
             except TypeError:
                 runner = CliRunner()
-                result = runner.invoke(_nef_app.app, list(args), **invoke_kwargs)
+                result = runner.invoke(
+                    nef_pipelines.nef_app.app, list(args), **invoke_kwargs
+                )
                 stdout = result.output or ""
                 stderr = ""
                 if hasattr(result, "stderr") and result.stderr:
