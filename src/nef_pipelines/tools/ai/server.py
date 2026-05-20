@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import typer
 
+import nef_pipelines
 import nef_pipelines.tools.ai.mcp_lib as mcp_lib
 from nef_pipelines.lib.preferences_storage_lib import get_config_file_path
 from nef_pipelines.lib.util import exit_error, info, warn
@@ -131,6 +132,20 @@ def server(
     install_audit_hook()
 
     create_nef_pipelines_app()
+
+    # Security: remove the ai command group so the AI cannot access sandbox management
+    # commands (nef ai sandbox, nef ai server) which would allow it to escape the sandbox.
+    # ai/__init__.py runs at package import time (before server startup code), so we
+    # remove it post-load rather than preventing registration.
+
+    nef_pipelines.nef_app.app.registered_groups = [
+        g for g in nef_pipelines.nef_app.app.registered_groups if g.name != "ai"
+    ]
+    if any(g.name == "ai" for g in nef_pipelines.nef_app.app.registered_groups):
+        exit_error(
+            "Security error: the 'ai' command is still registered after removal attempt. "
+            "The server cannot start safely."
+        )
 
     try:
         _build().run(show_banner=False, **server_transport_args)
