@@ -294,7 +294,11 @@ DO NOT push the strings to column 1
 when you have completed a coding task check if there is unused code and ask if you should remove it
 
 ## Repo management
-when you have added new files tou should git add them
+when you have added new files you should git add them
+
+## Worktrees
+After any Agent tool call that uses `isolation: "worktree"`, always remove the worktree when the work is done:
+`git worktree remove --force <path>`
 
 # IMPORTANT INSTRUCTION REMINDERS
 Do what has been asked; nothing more, nothing less.
