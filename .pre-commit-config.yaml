@@ -17,6 +17,17 @@ repos:
   - id: mixed-line-ending
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
+- repo: local
+  hooks:
+    - id: generate-skill-index
+      name: Generate skill index
+      entry: python scripts/generate_skill_index.py
+      language: system
+      files: ^src/nef_pipelines/resources/mcp_server/skill/.*\.md$
+      pass_filenames: false
+      always_run: false
+
+
 ## If you want to avoid flake8 errors due to unused vars or imports:
 # - repo: https://github.com/myint/autoflake
 #   rev: v1.4
