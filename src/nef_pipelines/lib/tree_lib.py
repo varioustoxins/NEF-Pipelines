@@ -7,7 +7,6 @@ Provides reusable functions for working with treelib Trees:
 - Helper functions for tree manipulation
 """
 
-import sys
 from enum import auto
 from fnmatch import fnmatchcase
 from io import StringIO
@@ -42,6 +41,7 @@ def render_tree(
     colour_callback: Optional[Callable[[Node, Optional[List[str]]], str]] = None,
     colour_policy: ColourOutputPolicy = ColourOutputPolicy.AUTO,
     filter_patterns: Optional[List[str]] = None,
+    output_is_tty: bool = True,
 ) -> str:
     """\
     Render tree using Rich with customizable node colouring.
@@ -49,26 +49,32 @@ def render_tree(
     Args:
         tree: treelib.Tree object to render
         colour_callback: Function (node, filter_patterns) -> styled_string for custom colouring
-        colour_policy: ColourPolicy.PLAIN (no colours), ColourPolicy.AUTO (detect terminal),
+        colour_policy: ColourPolicy.PLAIN (no colours), ColourPolicy.AUTO (use output_is_tty),
                     or ColourPolicy.COLOR (force colours)
         filter_patterns: Optional list of patterns used to filter tree (for highlighting)
+        output_is_tty: Whether output destination is a TTY (used with AUTO policy)
 
     Returns:
         Formatted tree string with ANSI codes (or plain if colour_mode=PLAIN)
     """
 
     with StringIO() as output_buffer:
+        # Determine console settings based on colour policy
         if colour_policy == ColourOutputPolicy.PLAIN:
-            console = Console(
-                file=output_buffer, force_terminal=False, color_system=None
-            )
+            force_terminal = False
+            color_system = None
         elif colour_policy == ColourOutputPolicy.COLOR:
-            # Force terminal output (for testing or explicit colour request)
-            console = Console(file=output_buffer, force_terminal=True)
-        else:  # ColorPolicy.AUTO
-            # Auto-detect: force terminal if stdout is a tty
-            # (needed because we render to StringIO, not directly to stdout)
-            console = Console(file=output_buffer, force_terminal=sys.stdout.isatty())
+            force_terminal = True
+            color_system = "auto"
+        else:  # ColorPolicy.AUTO - use caller-provided TTY status
+            force_terminal = output_is_tty
+            color_system = "auto"
+
+        console = Console(
+            file=output_buffer,
+            force_terminal=force_terminal,
+            color_system=color_system,
+        )
 
         root = tree.get_node(tree.root)
         root_styled = (

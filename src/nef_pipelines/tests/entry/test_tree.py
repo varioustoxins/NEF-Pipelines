@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import typer
 from typer.testing import CliRunner
 
@@ -625,11 +627,14 @@ def test_tree_null_namespace_warning():
 
     path = path_in_test_data(__file__, "bad_namespace.nef")
     # Use --namespace filtering to trigger the null namespace check
-    result = run_and_report(
-        app,
-        ["--colour-policy", "plain", str(path), "--namespace", "+nef"],
-        merge_stderr=False,
-    )
+    from unittest.mock import patch
+
+    with patch("nef_pipelines.tools.entry.tree.is_stdout_tty", return_value=True):
+        result = run_and_report(
+            app,
+            ["--colour-policy", "plain", str(path), "--namespace", "+nef"],
+            merge_stderr=False,
+        )
 
     assert result.exit_code == 0
     assert_lines_match(EXPECTED_STDOUT, result.stdout)
@@ -722,3 +727,35 @@ def test_tree_ai_format_no_matches():
 
     assert result.exit_code == 0
     assert_lines_match(EXPECTED_AI_NO_MATCHES, result.stdout)
+
+
+def test_tree_redirect_to_stderr_when_not_terminal():
+    """
+    Test that when stdout is NOT a terminal, the tree is written to stderr.
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+    with patch("nef_pipelines.tools.entry.tree.is_stdout_tty", return_value=False):
+        result = run_and_report(
+            app, ["--colour-policy", "plain", str(path)], merge_stderr=False
+        )
+
+    assert result.exit_code == 0
+    assert result.stdout == ""
+    assert_lines_match(EXPECTED_OUTPUT_MINIMAL, result.stderr)
+
+
+def test_tree_write_to_stdout_when_terminal():
+    """
+    Test that when stdout IS a terminal, the tree is written to stdout.
+    """
+    path = path_in_test_data(__file__, "minimal_tree.nef")
+
+    # Patch where it's USED (tree namespace), not where it's DEFINED (util)
+    with patch("nef_pipelines.tools.entry.tree.is_stdout_tty", return_value=True):
+        result = run_and_report(
+            app, ["--colour-policy", "plain", str(path)], merge_stderr=False
+        )
+
+    assert result.exit_code == 0
+    assert result.stderr == ""
+    assert_lines_match(EXPECTED_OUTPUT_MINIMAL, result.stdout)

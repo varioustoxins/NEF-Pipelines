@@ -5,6 +5,7 @@ Displays the hierarchical structure of NEF entries as a tree:
 Entry → Frames → Loops → Tags
 """
 
+import sys
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
@@ -38,8 +39,11 @@ from nef_pipelines.lib.tree_lib import (
 )
 from nef_pipelines.lib.util import (
     STDIN,
+    close_stream_if_closeable,
     exit_error,
     find_substring_with_wildcard,
+    is_stdout_tty,
+    open_file_to_write_or_exit_error,
     parse_comma_separated_options,
     warn,
 )
@@ -160,6 +164,12 @@ def tree(
             output format: tree (default, rich-rendered) or ai / markdown (markdown bullets, suitable for AI/MCP tools)
         """,
     ),
+    output_path: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="write output to file instead of stdout/stderr",
+    ),
 ) -> None:
     """\
     - display the hierarchical tree structure of NEF entry
@@ -230,17 +240,29 @@ def tree(
     #     no_highlight: bool = False
     #     children
 
-    output = pipe(
-        entry,
-        selectors,
-        colour_policy,
-        no_highlight,
-        children,
-        namespaces,
-        no_initial_selection,
-        output_format,
-    )
-    print(output, end="")
+    # Determine output destination and its TTY status
+    if output_path:
+        output_stream = open_file_to_write_or_exit_error(output_path, "w")
+        stream_is_a_tty = False
+    else:
+        output_stream = sys.stdout if is_stdout_tty() else sys.stderr
+        stream_is_a_tty = output_stream.isatty()
+
+    try:
+        output = pipe(
+            entry,
+            selectors,
+            colour_policy,
+            no_highlight,
+            children,
+            namespaces,
+            no_initial_selection,
+            output_format,
+            stream_is_a_tty,
+        )
+        print(output, file=output_stream, end="")
+    finally:
+        close_stream_if_closeable(output_stream)
 
 
 def pipe(
@@ -253,6 +275,7 @@ def pipe(
     no_initial_selection: bool = False,
     # TODO add an aggregate output format which included colours etc
     output_format: TreeOutputFormat = TreeOutputFormat.TREE,
+    output_is_tty: bool = True,
 ) -> str:
     """\
     Generate tree visualization of NEF structure.
@@ -304,7 +327,7 @@ def pipe(
     highlight_patterns = None if no_highlight else node_selectors
     if output_format in (TreeOutputFormat.AI, TreeOutputFormat.MARKDOWN):
         return _render_tree_as_markdown(filtered_tree)
-    return _render_tree(filtered_tree, colour_policy, highlight_patterns)
+    return _render_tree(filtered_tree, colour_policy, highlight_patterns, output_is_tty)
 
 
 def _filter_tree_by_node_selectors(
@@ -853,6 +876,7 @@ def _render_tree(
     tree: Tree,
     colour_policy: ColourOutputPolicy,
     filter_patterns: Optional[List[str]] = None,
+    output_is_tty: bool = True,
 ) -> str:
     """\
     Render tree as string (coloured or plain).
@@ -861,6 +885,7 @@ def _render_tree(
         tree: Tree to render
         colour_policy: ColorPolicy for output (plain, auto, colour)
         filter_patterns: Optional filter patterns used for highlighting
+        output_is_tty: Whether output destination is a TTY (for AUTO colour policy)
 
     Returns:
         Formatted tree string
@@ -873,6 +898,7 @@ def _render_tree(
         _colour_nef_node,
         colour_policy,
         filter_patterns=filter_patterns,
+        output_is_tty=output_is_tty,
     )
 
 

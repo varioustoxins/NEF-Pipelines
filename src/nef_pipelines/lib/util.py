@@ -56,6 +56,9 @@ FOUR_SPACES = " " * 4
 STDIN = Path("-")
 STDOUT = Path("-")
 
+ALT_STDOUT = Path("@out")
+ALT_STDERR = Path("@err")
+
 NEWLINE = "\n"
 
 
@@ -1148,7 +1151,7 @@ def expand_template_or_exit_error(template: str, **variables: Any) -> str:
     Apply template variable substitution with error handling.
 
     This function performs string template substitution using Python's str.format() method,
-    and calls exit_error with anl error message if invalid template variables are used.
+    and calls exit_error with an error message if invalid template variables are used.
 
     Args:
         template: Template string with {variable} placeholders (e.g., "file_{name}_{type}")
@@ -1264,3 +1267,95 @@ def find_substring_with_wildcard(text: str, pattern: str) -> Optional[Tuple[int,
         result = (0, len(text)) if fnmatchcase(text, pattern) else None
 
     return result
+
+
+def is_stdout_tty() -> bool:
+    """Check if stdout is a TTY (terminal). Separate function for testability, allows easy mocking."""
+    return sys.stdout.isatty()
+
+
+def is_stderr_tty() -> bool:
+    """Check if stderr is a TTY (terminal). Separate function for testability, allows easy mocking."""
+    return sys.stderr.isatty()
+
+
+def is_stdin_tty() -> bool:
+    """Check if stderr is a TTY (terminal). Separate function for testability, allows easy mocking."""
+    return sys.stdin.isatty()
+
+
+def stream_is_tty(stream: TextIO):
+    is_tty = False
+    if stream is sys.stderr:
+        is_tty = is_stderr_tty()
+    elif stream is sys.stdout:
+        is_tty = is_stdout_tty()
+    elif stream is sys.stdin():
+        is_tty = is_stdin_tty()
+    return is_tty
+
+
+def open_file_to_write_or_exit_error(file_path: Path, flags: str) -> TextIO:
+    """
+    Open a file to write or exit with an error.
+        Args:
+
+        file_path: Path to the file to open as a string or Path, can also include -, @out and @err for stdout and stderr
+        flags: Standard python flags to pass to open, eg w, a, etc
+
+        Returns:
+            the output stream
+    """
+    if not str(file_path) in [
+        str(stream) for stream in (STDOUT, ALT_STDOUT, ALT_STDERR)
+    ]:
+
+        msg = None
+        try:
+            stream = open(file_path, flags)
+        except FileNotFoundError:
+            msg = f"Error: The file {file_path} does not exist. Please check the path."
+        except PermissionError:
+            msg = f"Error: You do not have permission to read the file {file_path}."
+        except IsADirectoryError:
+            msg = f"Error: The path {file_path} points to a directory, not a file."
+        except OSError as e:
+            msg = f"An unexpected OS error occurred when opening {file_path} to write with the flags {flags}: {e}"
+
+        if msg:
+            exit_error(msg)
+
+    elif str(file_path) in (str[STDOUT], str(ALT_STDOUT)):
+        stream = sys.stdout
+    elif str(file_path) == str(ALT_STDERR):
+        stream = sys.stderr
+    else:
+        stream = sys.stderr
+
+    return stream
+
+
+def close_stream_if_closeable(stream: TextIO):
+    """
+    Close file streams and ignore stdout and stderr streams.
+
+    Args:
+        stream: file stream to close or stdout/stdderr
+
+    Returns:
+
+    """
+    if not stream_is_std(stream):
+        stream.close()
+
+
+def stream_is_std(stream: TextIO) -> bool:
+    """
+    Check if a stream is a system stream [stdin, stdout, stderr]
+    Args:
+        stream: the stream to check
+
+    Returns:
+        if it's a system stream
+    """
+    return stream in (sys.stdin, sys.stderr, sys.stdout)
