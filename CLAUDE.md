@@ -7,6 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NEF-Pipelines is a Python package for manipulating NEF (NMR Exchange Format) files. It provides command-line tools for converting between NEF and various NMR software formats (nmrview, sparky, mars, xplor, etc.) and for manipulating NEF file components like molecular chains, frames, and spectra.
 
+## NEF Format Documentation
+
+**Essential reading for working with NEF files:**
+
+- [STAR File Format](src/nef_pipelines/resources/mcp_server/star-file-format%20-%20STAR%20format%20reference%20-%20read%20before%20working%20with%20NEF%20files%20.md) - STAR format reference
+- [NEF File Format](src/nef_pipelines/resources/mcp_server/nef-file-format%20-%20NEF%20STAR%20dialect%20reference%20-%20%20read%20before%20working%20with%20NEF%20files.md) - NEF STAR dialect reference (read before working with NEF files)
+- [CLI Idioms](src/nef_pipelines/resources/mcp_server/cli-idioms%20-%20NEF-Pipelines%20CLI%20common%20idioms%20and%20patterns.md) - Common NEF-Pipelines command patterns and idioms
+- [NEF NMR Data Model](src/nef_pipelines/resources/mcp_server/nef-nmr-data-model%20-%20NEF%20Molecular%20Structure%20and%20NMR%20Data%20Model.md) - NEF molecular structure and NMR data model
+
+
 ## Development Commands
 
 ### IMPORTANT: Use `nefl` for Local Development
@@ -265,6 +275,22 @@ The `explode` tool was recently refactored to follow this pattern:
   - Using `warnings.warn` instead leaks `UserWarning` exceptions into pytest's warning summary, making test noise that
     is hard to distinguish from real issues.
   - In tests, mock a custom warn via `monkeypatch.setattr("module.path.warn", ...)` and assert on the captured message.
+
+## Temp files are banned in production code
+
+**NEVER write data to temporary files in production / pipeline code.**  All data must flow
+in memory (Python objects, `io.StringIO`, `io.BytesIO`).
+
+- Do **not** use `tempfile.gettempdir()`,`tempfile.NamedTemporaryFile`, `tempfile.mkstemp`,
+ `tempfile.TemporaryFile`, `tempfile.SpooledTemporaryFile`, `tempfile.TemporaryDirectory`,
+  or `tempfile.mkdtemp` in any production (non-test) module without asking.
+- Test files (`test_*.py`) **may** use any of these freely — the ban applies
+  only to the tools they exercise, not the test harness itself.
+- An AST meta-test (`test_meta_no_tempfile_writes.py`) enforces this rule automatically.
+
+**Why:** writing temp files in a sandboxed MCP process triggers sandbox violations because
+`/var/tmp` is outside the MCP sandbox root.  In-memory data flow also avoids I/O overhead
+and file-cleanup boilerplate.
 
 ## Legacy support
 - DO NOT add legacy support unless asked to
