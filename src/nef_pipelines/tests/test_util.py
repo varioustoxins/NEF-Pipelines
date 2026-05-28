@@ -7,10 +7,13 @@ import pytest
 from nef_pipelines.lib.util import (
     STDOUT,
     exit_if_file_has_bytes_and_no_force,
+    find_index_of_first_unescaped,
     find_substring_with_wildcard,
     fnmatch_one_of,
     strip_characters_left,
     strip_characters_right,
+    to_ordinal,
+    unescape_backslashes,
 )
 
 
@@ -263,3 +266,122 @@ def test_fnmatch_translate_output(pattern, expected_pattern, description):
         f"  Got:      {result!r}\n"
         f"  Normalized: {normalized_result!r}"
     )
+
+
+@pytest.mark.parametrize(
+    "string,char,expected",
+    [
+        # No escapes
+        ("hello.world", ".", 5),
+        ("no_dot_here", ".", None),
+        # Single escape
+        (r"hello\.world", ".", None),
+        (r"hello\world", ".", None),
+        # Multiple chars, first unescaped
+        ("a.b.c", ".", 1),
+        (r"a\.b.c", ".", 4),
+        # Escaped backslash followed by unescaped char
+        (r"hello\\.world", ".", 7),
+        (r"cat\\\\.egory", ".", 7),  # 4 backslashes then dot at position 7
+        # All escaped
+        (r"a\.b\.c\.", ".", None),
+        # Odd vs even backslashes
+        (r"test\*pattern", "*", None),  # Escaped
+        (r"test\\*pattern", "*", 6),  # Backslash escaped, asterisk not
+        (r"test\\\*pattern", "*", None),  # Both escaped
+        (r"test\\\\*pattern", "*", 8),  # Two backslashes, asterisk unescaped
+        # Empty string
+        ("", ".", None),
+        # Just the char
+        (".", ".", 0),
+        # Char at start
+        (".hello", ".", 0),
+    ],
+)
+def test_find_first_unescaped(string, char, expected):
+    """Test finding first unescaped character."""
+    assert find_index_of_first_unescaped(string, char) == expected
+
+
+@pytest.mark.parametrize(
+    "escaped,expected",
+    [
+        # No escapes
+        ("hello", "hello"),
+        # Escaped dots
+        (r"hello\.world", "hello.world"),
+        (r"cat\.egory", "cat.egory"),
+        (r"frame\.with\.dots", "frame.with.dots"),
+        # Escaped backslashes
+        (r"hello\\world", r"hello\world"),
+        (r"cat\\egory", r"cat\egory"),
+        # Escaped asterisks
+        (r"test\*pattern", "test*pattern"),
+        (r"file\*.txt", "file*.txt"),
+        # Escaped question marks
+        (r"test\?pattern", "test?pattern"),
+        # Escaped colons
+        (r"frame\:name", "frame:name"),
+        # Escaped commas
+        (r"tag1\,2", "tag1,2"),
+        # Mixed escapes
+        (r"cat\.egory\\test", r"cat.egory\test"),
+        (r"test\*\.pattern", "test*.pattern"),
+        (r"a\*b\.c\\d", r"a*b.c\d"),
+        # Multiple consecutive escapes
+        (r"cat\\\\.egory", r"cat\\.egory"),
+        (r"test\\\\value", r"test\\value"),
+        (r"test\\\\.value", r"test\\.value"),
+        # Trailing backslash pair unescapes to single
+        (r"test\\", "test\\"),
+        # Empty string
+        ("", ""),
+        # Just backslash pair unescapes to single
+        (r"\\", "\\"),
+        # All backslashes
+        (r"\\\\", r"\\"),
+        # Invalid escape sequences (left unchanged)
+        (r"test\pattern", r"test\pattern"),
+        (r"hello\world", r"hello\world"),
+        (r"foo\bar\baz", r"foo\bar\baz"),
+    ],
+)
+def test_unescape_backslashes(escaped, expected):
+    """Test unescaping backslash sequences."""
+    assert unescape_backslashes(escaped) == expected
+
+
+@pytest.mark.parametrize(
+    "n,expected",
+    [
+        # Basic cases
+        (0, "0th"),
+        (1, "1st"),
+        (2, "2nd"),
+        (3, "3rd"),
+        (4, "4th"),
+        (5, "5th"),
+        # Teens - all use 'th'
+        (11, "11th"),
+        (12, "12th"),
+        (13, "13th"),
+        # Twenties
+        (20, "20th"),
+        (21, "21st"),
+        (22, "22nd"),
+        (23, "23rd"),
+        (24, "24th"),
+        # Hundreds
+        (100, "100th"),
+        (101, "101st"),
+        (102, "102nd"),
+        (103, "103rd"),
+        (111, "111th"),
+        (112, "112th"),
+        (113, "113th"),
+        (121, "121st"),
+    ],
+)
+def test_ordinal(n, expected):
+    """Test ordinal number formatting."""
+    assert to_ordinal(n) == expected

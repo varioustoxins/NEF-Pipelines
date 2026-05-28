@@ -1359,3 +1359,159 @@ def stream_is_std(stream: TextIO) -> bool:
         if it's a system stream
     """
     return stream in (sys.stdin, sys.stderr, sys.stdout)
+
+
+def find_index_of_first_unescaped(s: str, char: str) -> Optional[int]:
+    """Find position of first occurrence of char not escaped by backslash.
+
+    A character is escaped if preceded by an odd number of backslashes.
+    Args:
+        s: String to search
+        char: Character to find (must be single character)
+
+    Returns:
+        Position of first unescaped occurrence, or None if not found
+    """
+    consecutive_backslashes = 0
+    match_index = None
+
+    for i, c in enumerate(s):
+        # 1. Check for a match FIRST.
+        if c == char and consecutive_backslashes % 2 == 0:
+            match_index = i
+            break  # We found the first one, so exit the loop immediately
+
+        # 2. THEN update the backslash counter for the next loop iteration
+        if c == "\\":
+            consecutive_backslashes += 1
+        else:
+            consecutive_backslashes = 0
+
+    return match_index
+
+
+# this is a much faster [800x] version but harder to understand...
+# a version using nasty while loops is even faster ~ 1027x
+# def find_fast(s: str, char: str) -> Optional[int]:
+#     """Fast find using C-optimized search, generators, and a single return."""
+#
+#     # 1. Our custom iterator that yields potential match indices
+#     def iter_indices() -> Iterator[int]:
+#         start = 0
+#         # The walrus operator (:=) assigns and evaluates in one step
+#         while (idx := s.find(char, start)) != -1:
+#             yield idx
+#             start = idx + 1
+#
+#     # 2. A quick helper to validate the backslashes
+#     def is_unescaped(idx: int) -> bool:
+#         count = 0
+#         i = idx - 1
+#         while i >= 0 and s[i] == "\\":
+#             count += 1
+#             i -= 1
+#         return count % 2 == 0
+#
+#     # 3. The Single Return
+#     # next() consumes the iterator lazily. It stops exactly at the first index
+#     # that passes the check. If the iterator empties out, it defaults to None.
+#     return next((idx for idx in iter_indices() if is_unescaped(idx)), None)
+#
+#
+# def find_fast(s: str, char: str) -> Optional[int]:
+#     start = 0
+#     while True:
+#         idx = s.find(char, start)
+#         if idx == -1:
+#             return None
+#
+#         backslash_count = 0
+#         i = idx - 1
+#         while i >= 0 and s[i] == "\\":
+#             backslash_count += 1
+#             i -= 1
+#
+#         if backslash_count % 2 == 0:
+#             return idx
+#         start = idx + 1
+
+# Valid escape sequences for frame.loop:tag selectors
+DEFAULT_ESCAPES = {".", "*", "?", ":", ",", "\\"}
+
+
+def unescape_backslashes(
+    s: str, escapes: Tuple[str, ...] = tuple(DEFAULT_ESCAPES)
+) -> str:
+    r"""Remove backslash escape sequences from string.
+
+    Processes only recognized escape sequences, the defaults are:
+    - \\\\ → \\
+    - \\. → .
+    - \\* → *
+    - \\? → ?
+    - \\: → :
+    - \\, → ,
+
+    Invalid escape sequences (e.g., \\p) are left unchanged.
+    Note: to escape itself \ must be in the escapes and "\\" is equivalent to \ in python!
+
+    Args:
+        s: String with escape sequences
+
+    Returns:
+        String with escapes processed
+    """
+
+    escapes_set = set(escapes)
+    # Removed the exception block. Since \\ -> \ is a valid rule,
+    # '\\' MUST be allowed in the escapes set.
+
+    result = []
+    it = iter(s)
+
+    for char in it:
+        if char == "\\":
+            # Check if next character forms a valid escape
+            next_char = next(it, None)
+            if next_char is None:
+                # Trailing backslash - keep it
+                result.append(char)
+            elif next_char in escapes_set:
+                # Valid escape - unescape it (this gracefully handles \\ -> \ now)
+                result.append(next_char)
+            else:
+                # Invalid escape - keep both characters
+                result.append(char)
+                result.append(next_char)
+        else:
+            result.append(char)
+
+    return "".join(result)
+
+
+def to_ordinal(n: int) -> str:
+    """Convert integer to ordinal string (1st, 2nd, 3rd, 4th, etc.).
+
+    Args:
+        n: Integer to convert
+
+    Returns:
+        Ordinal string representation
+
+    Examples:
+        >>> to_ordinal(1)
+        '1st'
+        >>> to_ordinal(2)
+        '2nd'
+        >>> to_ordinal(3)
+        '3rd'
+        >>> to_ordinal(11)
+        '11th'
+        >>> to_ordinal(21)
+        '21st'
+    """
+    if 10 <= n % 100 <= 13:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
