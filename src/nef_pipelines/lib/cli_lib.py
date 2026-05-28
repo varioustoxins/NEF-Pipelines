@@ -1636,7 +1636,7 @@ def _detect_escape_sequences(spec: str) -> str:
 
 
 def _insert_frame_loop_tag_placeholders(
-    frame_spec: str | Any, use_escapes: bool
+    frame_spec: Union[str, Any], use_escapes: bool
 ) -> Any:
     if use_escapes:
         for seq, placeholder in _FRAME_LOOP_AND_TAG_PLACEHOLDERS.items():
@@ -1646,7 +1646,7 @@ def _insert_frame_loop_tag_placeholders(
 
 def _parse_spec_with_grammar(
     frame_spec: str,
-    grammar: ParserElement | StringEnd,
+    grammar: Union[ParserElement, StringEnd],
     original_spec: str,
     use_escapes: bool,
 ) -> ParseResults:
@@ -1685,7 +1685,7 @@ def _parse_spec_with_grammar(
     return result
 
 
-def _build_frame_loop_tag_grammar(use_escapes: bool) -> ParserElement | StringEnd:
+def _build_frame_loop_tag_grammar(use_escapes: bool) -> Union[ParserElement, StringEnd]:
     # Build pyparsing grammar
     frame_tag_sep = pp.Literal(FRAME_TAG_SEPARATOR).suppress()
     frame_loop_sep = pp.Literal(FRAME_LOOP_SEPARATOR)

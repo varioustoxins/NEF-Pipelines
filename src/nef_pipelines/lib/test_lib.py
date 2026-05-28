@@ -430,7 +430,7 @@ def path_in_test_data(root: str, file_name: str) -> str:
 def run_and_report(
     typer_app: Typer,
     args: List[str],
-    input: str | bytes | IO[AnyStr] | None = None,
+    input: Union[str, bytes, IO[AnyStr], None] = None,
     expected_exit_code: int = 0,
     # separate_stderr = False # see below
     merge_stderr: bool = True,
