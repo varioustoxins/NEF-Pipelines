@@ -1,8 +1,23 @@
 """
 CLI utility functions for command-line interface parsing and processing.
 
-*TODO* double character escapes need to be supported to avoid over complication and custom separators
+*TODO* double character escapes (::, .., ,,) can be removed - not used in the wild, backslash escapes preferred
 *TODO* support for custom separators needs to be withdrawn
+
+*TODO* Add backslash escape support to parse_frame_loop_and_tags for delimiter and wildcard characters:
+       - Use find_first_unescaped() and unescape_backslashes() from lib.util
+       - Escape delimiters: \\. (dot), \\: (colon), \\, (comma)
+       - Escape wildcards: \\* (asterisk), \\? (question mark), \\\\ (backslash)
+       Examples:
+         frame\\.with\\.dots.loop:col           # frame name "frame.with.dots"
+         frame.loop\\:name:col                  # loop name "loop:name"
+         frame.loop:col\\,one,col\\,two         # columns "col,one" and "col,two"
+         frame\\*.loop\\*:col\\*                # all literals, no wildcards
+       Implementation:
+         1. Find unescaped : → split frame.loop from columns
+         2. Find unescaped . → split frame from loop
+         3. Find unescaped , → split column list
+         4. unescape_backslashes() on all parts
 
 This module provides parsing and validation for several CLI constructs used throughout NEF pipelines:
 
