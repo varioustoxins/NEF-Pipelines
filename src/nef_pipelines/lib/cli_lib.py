@@ -927,11 +927,11 @@ def analyze_nef_entry_for_separator_conflicts(
             for row in loop.data:
                 for idx in chain_indices:
                     if idx < len(row) and row[idx] not in [".", "?", ""]:
-                        chain_codes.add(row[idx])
+                        chain_codes.add(str(row[idx]))
 
                 for idx in sequence_indices:
                     if idx < len(row) and row[idx] not in [".", "?", ""]:
-                        sequence_codes.add(row[idx])
+                        sequence_codes.add(str(row[idx]))
 
     # Check for separator conflicts in chain codes
     for chain_code in chain_codes:
