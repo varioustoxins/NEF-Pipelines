@@ -2479,6 +2479,103 @@ def test_parse_selector_lists(selectors, use_escapes, no_initial_selection, expe
     )
     assert result == expected
 
+
+# Test parse_frame_loop_selectors_and_get_errors
+NEF_FOR_SELECTOR_TESTS = """\
+    data_test
+
+    save_nef_chemical_shift_list_shifts
+       _nef_chemical_shift_list.sf_category  nef_chemical_shift_list
+
+       loop_
+          _nef_chemical_shift.chain_code
+          _nef_chemical_shift.value
+
+         A  123.22
+
+       stop_
+    save_
+
+    save_nef_distance_restraint_list_dist
+       _nef_distance_restraint_list.sf_category  nef_distance_restraint_list
+
+       loop_
+          _nef_distance_restraint.index
+
+         1
+
+       stop_
+    save_
+"""
+
+
+@pytest.mark.parametrize(
+    "selector",
+    [
+        "shifts.chemical_shift",  # explicit frame.loop
+        "*.chemical_shift",  # wildcard frame
+        "shifts.*",  # wildcard loop
+        "shifts.",  # bare trailing dot (same as shifts.*)
+    ],
+)
+def test_parse_frame_loop_selectors_and_get_errors_valid(selector):
+    """Test that valid frame.loop selectors (explicit and wildcard) all resolve correctly."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    shifts_frame = entry.get_saveframe_by_name("nef_chemical_shift_list_shifts")
+    chemical_shift_loop = shifts_frame.get_loop("_nef_chemical_shift")
+
+    expected_loops = [
+        FrameLoopsAndTags(
+            frame=shifts_frame,
+            loops=[chemical_shift_loop],
+            frame_tags=[],
+            loop_tags={"_nef_chemical_shift": []},
+        )
+    ]
+
+    loops, errors = parse_frame_loop_selectors_and_get_errors(entry, [selector])
+    assert loops == expected_loops
+    assert errors == []
+
+
+@pytest.mark.parametrize(
+    "selector,expected_error",
+    [
+        (
+            "shifts:some_tag",
+            dedent(
+                """\
+            the 1st selector shifts:some_tag is bad because its is selecting the frame
+            tags: some_tag. Use the frame.loop syntax without frame tags."""
+            ).strip(),
+        ),
+        (
+            "shifts.chemical_shift:chain_code",
+            dedent(
+                """\
+            the 1st selector shifts.chemical_shift:chain_code is bad because it is selecting
+            selecting the columns: chain_code. Use the frame.loop syntax without columns."""
+            ).strip(),
+        ),
+        (
+            "shifts",
+            dedent(
+                """\
+            the 1st selector shifts is bad because does not have
+            a loop name, use the frame.loop syntax with a loop to select loops."""
+            ).strip(),
+        ),
+    ],
+)
+def test_parse_frame_loop_selectors_and_get_errors_invalid(selector, expected_error):
+    """Test that invalid selectors (frame tags, column selectors, bare frame) are rejected."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+    loops, errors = parse_frame_loop_selectors_and_get_errors(entry, [selector])
+    assert loops == []
+    assert errors == [expected_error]
+
+
 def test_parse_frame_loop_selectors_slash_joins_selectors():
     """Two bare loop selectors joined by / resolve to two separate FrameLoopsAndTags."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)

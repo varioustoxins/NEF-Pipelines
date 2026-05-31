@@ -2122,3 +2122,82 @@ def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
             merged.append(tag)
     return merged
 
+
+def parse_loop_selectors_and_get_errors(
+        entry: Entry, selectors: list[str]
+) -> Tuple[List[FrameLoopsAndTags], List[str]]:
+    """Parse selectors and resolve to loop objects.
+
+    Validates that selectors are frame.loop format only (no tags/columns).
+
+    Supports slash-separated selectors within a single argument:
+        "frame1.loop1/frame2.loop2" → two selectors
+
+    Args:
+        entry: NEF entry to select from
+        selectors: List of selector strings (frame.loop format, optionally slash-separated)
+
+    Returns:
+        List of FrameLoopsAndTags with resolved frame/loop objects (one per matched frame)
+
+    Raises:
+        BadFrameLoopTagSyntaxException: If selector includes tags or columns
+    """
+    valid_selectors = []
+    errors = []
+
+    # Expand slash-separated selectors
+    expanded_selectors = []
+    for selector in selectors:
+        expanded_selectors.extend(_split_selectors_on_slash(selector))
+
+    for i, spec in enumerate(expanded_selectors, start=1):
+        try:
+            selection = parse_frame_loop_and_tags(spec)
+
+            # Validate: reject selectors with frame tags (frame:tag syntax)
+            if selection.frame_tags and selection.frame_tags not in [[], ['*'], None]:
+                tags = ', '.join(selection.frame_tags)
+                ordinal = to_ordinal(i)
+                msg = \
+                    f"""
+                    the {ordinal} selector {spec} is bad because its is selecting the frame
+                    tags: {tags}. Use the frame.loop syntax without frame tags.
+                """
+
+                errors.append(dedent(msg).strip())
+                continue
+
+            # Validate: reject selectors with loop tags/columns (frame.loop:col syntax)
+            if selection.loop_tags and selection.loop_tags != ['*']:
+                tags = ', '.join(selection.loop_tags)
+                msg = \
+                f"""
+                    the {to_ordinal(i)} selector {spec} is bad because it is selecting
+                    selecting the columns: {tags}. Use the frame.loop syntax without columns.
+                """
+                errors.append(dedent(msg).strip())
+                continue
+
+            if selection.loop_name is None:
+                msg = f"""
+                     the {to_ordinal(i)} selector {spec} is bad because does not have
+                     a loop name, use the frame.loop syntax with a loop to select loops.
+                """
+                errors.append(dedent(msg).strip())
+                continue
+
+            valid_selectors.append(selection)
+
+        except BadFrameLoopTagSyntaxException as e:
+            # e.args = (original_spec, reason), so e.args[1] is the reason message
+            reason = e.args[1] if len(e.args) > 1 else str(e)
+            msg = f"""\
+                the {to_ordinal(i)} selector: {spec} is invalid because
+                {reason},
+                the format should be frame.loop.
+            """
+            errors.append(dedent(msg).strip())
+
+    result = selection_to_frame_loops_and_tags(entry, valid_selectors)
+    return result, errors
