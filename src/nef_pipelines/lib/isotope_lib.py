@@ -1,3 +1,7 @@
+"""
+    NMR isotope definitions, gyromagnetic ratios, and typical 1H spectrometer frequencies.
+"""
+
 import string
 from enum import auto
 from typing import List, Sequence, Union

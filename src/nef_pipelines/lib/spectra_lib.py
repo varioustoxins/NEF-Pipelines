@@ -1,3 +1,8 @@
+"""
+    Utilities for handling NMR experiments: classification (HSQC, HNCA, ...), magnetisation transfers, and
+    a default spectrometer-frequency constant.
+"""
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, Tuple, Union

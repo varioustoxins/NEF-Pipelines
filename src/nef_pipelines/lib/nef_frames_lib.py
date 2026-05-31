@@ -1,3 +1,7 @@
+"""
+    String constants for NEF saveframe/loop categories and standard tag names (shift list, spectrum, peaks, dimensions).
+"""
+
 NEF = "nef"
 SF = "sf"
 

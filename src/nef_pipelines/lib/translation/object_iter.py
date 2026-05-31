@@ -1,3 +1,7 @@
+"""
+    Identity-aware set and recursive object-walker used by the chemical-component translator.
+"""
+
 from collections.abc import MutableSet
 from dataclasses import dataclass
 from typing import Optional, Union

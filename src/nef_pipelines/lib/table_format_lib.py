@@ -1,3 +1,7 @@
+"""
+    Utilities for building tabular output formats (simple, pretty, markdown, html, ai, etc).
+"""
+
 from strenum import LowercaseStrEnum
 
 

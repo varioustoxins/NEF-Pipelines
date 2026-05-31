@@ -1,3 +1,7 @@
+"""
+    Pytest helpers for invoking Typer commands and asserting on NEF entry / loop contents.
+"""
+
 from __future__ import annotations
 
 import contextlib
@@ -14,91 +18,9 @@ from pynmrstar import Entry
 from typer import Typer
 from typer.testing import CliRunner
 
+from nef_pipelines.lib.cli_runner_lib import _MarkerCliRunner, _split_marked_output
+
 NOQA_E501 = "# noqa: E501"
-
-# TODO: click >= 8.3 — remove _STDERR_START, _STDERR_END, _marking_stderr,
-# _MarkerCliRunner, and _split_marked_output once Python 3.9 / click 8.1.x
-# support is dropped; click 8.3+ separates stdout/stderr natively.
-_STDERR_START = "\x00STDERR_START\x00"
-_STDERR_END = "\x00STDERR_END\x00"
-
-
-@contextlib.contextmanager
-def _marking_stderr():
-    """Wrap sys.stderr so every write is bracketed with START/END markers.
-
-    Legacy helper for click < 8.3 where CliRunner(mix_stderr=True) collapses
-    stdout/stderr into a single buffer. Bracketing each write (rather than each
-    line) is robust against partial writes that don't end with a newline —
-    without it, a stderr write ending mid-line followed by a stdout write would
-    be mis-classified because they share the same physical line in the buffer.
-
-    TODO: click >= 8.3 — remove this when use of 8.1.x is dropped.
-    """
-    original = sys.stderr
-
-    class _MarkedWriter:
-        encoding = getattr(original, "encoding", "utf-8")
-        errors = getattr(original, "errors", "replace")
-
-        def write(self, s):
-            if not s:
-                return 0
-            original.write(_STDERR_START + s + _STDERR_END)
-            return len(s)
-
-        def writelines(self, lines):
-            for line in lines:
-                self.write(line)
-
-        def flush(self):
-            original.flush()
-
-        def isatty(self):
-            return False
-
-    sys.stderr = _MarkedWriter()
-    try:
-        yield
-    finally:
-        sys.stderr = original
-
-
-# TODO: click >= 8.3 — remove this class when use of 8.1.x is dropped.
-class _MarkerCliRunner(CliRunner):
-    """CliRunner that marks stderr writes for post-processing on click 8.1.x."""
-
-    @contextlib.contextmanager
-    def isolation(self, input=None, env=None, color=False):
-        with super().isolation(input=input, env=env, color=color) as streams:
-            with _marking_stderr():
-                yield streams
-
-
-# TODO: click >= 8.3 — remove this helper when use of 8.1.x is dropped.
-def _split_marked_output(output: str):
-    """Split combined output into (stdout, stderr) via per-write START/END markers.
-
-    Text between _STDERR_START and _STDERR_END belongs to stderr; everything
-    outside those brackets is stdout. Works for any interleaving.
-    """
-    stdout_parts = []
-    stderr_parts = []
-    i = 0
-    while i < len(output):
-        start = output.find(_STDERR_START, i)
-        if start == -1:
-            stdout_parts.append(output[i:])
-            break
-        stdout_parts.append(output[i:start])
-        body_start = start + len(_STDERR_START)
-        end = output.find(_STDERR_END, body_start)
-        if end == -1:
-            stderr_parts.append(output[body_start:])
-            break
-        stderr_parts.append(output[body_start:end])
-        i = end + len(_STDERR_END)
-    return "".join(stdout_parts), "".join(stderr_parts)
 
 
 def read_test_data(file_path: str, root_directory: Optional[str] = None) -> str:
@@ -518,33 +440,14 @@ def assert_frame_category_exists(
     set exact to True.
 
     Args:
-        entry (Entry): The NEF entry to check.
-        category (str): The category to look for in the entry.
-        count (int, optional): The expected number of frames in the category. Defaults to 1.
-        exact (bool, optional): If True, the number of frames with the category must match the expected count exactly.
+        entry: The NEF entry to check.
+        category: The category to look for in the entry.
+        count: The expected number of frames in the category. Defaults to 1.
+        exact: If True, the number of frames with the category must match the expected count exactly.
+
     Raises:
         AssertionError: If the number of frames with the category does not match the expected count.
     """
-
-    """
-      Asserts that the specified category exists in the given entry and that the number of frames in that category
-      matches the expected count [default >1].
-
-      This function checks if the specified category exists in the given NEF entry. If the category exists, it then
-      checks if the number of frames in that category is greater than or equal to the expected count. If the 'exact'
-      parameter is set to True, the function checks if the number of frames in the category exactly matches
-      the expected count.
-
-      Args:
-          entry (Union[Entry, str]): The NEF entry to check. This can be an Entry object or a string.
-          category (str): The category to look for in the entry.
-          count (int, optional): The expected number of frames in the category. Defaults to 1.
-          exact (bool, optional): If True, the number of frames with the category must match the expected
-          count exactly. Defaults to False.
-
-      Raises:
-          AssertionError: If the number of frames with the category does not match the expected count.
-      """
 
     if isinstance(entry, str):
         entry = Entry.from_string(entry)

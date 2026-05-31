@@ -1,3 +1,7 @@
+"""
+    Load chemical-component definitions (ChemComp objects) from JSON or XML files.
+"""
+
 import json
 import traceback
 from json import JSONDecodeError
@@ -12,8 +16,7 @@ from nef_pipelines.lib.translation.object_iter import ObjectIter
 from nef_pipelines.lib.util import exit_error, nef_pipelines_root
 
 
-class ChemCompFormatException(Exception):
-    ...
+class ChemCompFormatException(Exception): ...
 
 
 def _items_in(target):

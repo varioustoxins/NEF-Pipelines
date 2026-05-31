@@ -1,3 +1,9 @@
+"""
+    Small Typer/Click helpers (introspect caller frame to capture the active command's arguments).
+
+    TODO - this should be retired it is no longer the way commands are handled
+"""
+
 from argparse import Namespace
 from inspect import currentframe, getargvalues, getouterframes
 

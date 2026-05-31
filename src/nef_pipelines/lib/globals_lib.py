@@ -1,3 +1,9 @@
+"""
+    Process-wide key/value store for cross-command shared state.
+
+    These are used to hold state on the nef command itself
+"""
+
 import copy
 
 _globals = {}

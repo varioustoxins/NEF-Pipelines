@@ -1,3 +1,7 @@
+"""
+    Core NEF/STAR helpers: reading and writing entries, selecting frames and loops, iterating loop rows.
+"""
+
 import sys
 from collections.abc import MutableMapping
 from enum import auto

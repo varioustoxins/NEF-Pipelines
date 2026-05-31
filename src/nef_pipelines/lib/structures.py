@@ -1,3 +1,8 @@
+"""
+    Core dataclasses shared across system,
+    eg: AtomLabel, SequenceResidue, ShiftData, NewPeak, selector results, etc
+"""
+
 import math
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -64,6 +69,16 @@ class NEFPipelinesInternalError(NEFPipelinesException):
     This indicates a programming error, not a user error.
     These exceptions should never occur in correct code.
     """
+
+    ...
+
+
+class NEFBadLoopSelectionException(NEFPipelinesException):
+    """Exception raised when a loop selection is incorrecly defined in
+    in FrameLoopAndTags.
+    """
+
+    ...
 
 
 # TODO: to avoid circular import, move to constants
@@ -133,14 +148,13 @@ class SaveframeNameParts:
     Parsed components of a NEF frame name.
 
     Frame names follow the pattern: <namespace>_<category>[_<identity>][`<counter>`]
+    When identity is None, this represents a singleton frame with no instance name.
 
     Example: nef_molecular_system_protein_A`1`
         namespace: "nef"
         category: "nef_molecular_system"
         identity: "protein_A"
         counter: "1"
-
-    When identity is None, this represents a singleton frame with no instance name.
     """
 
     namespace: Optional[str]
@@ -602,11 +616,19 @@ class FrameLoopAndTagSelectors:
 
 
 @dataclass
-class FramesLoopAndTags:
+class FrameLoopsAndTags:
+    """One item per matched frame; multiple loops live in `loops`.
+
+    Projection semantics (three-state convention):
+        []        — addressed, not projected (command decides what to render)
+        ['*']     — explicit wildcard (note: only present when no namespace filtering)
+        [n1, n2]  — specific named projection
+    """
+
     frame: Saveframe
-    loop: Optional[Loop]
+    loops: List[Loop] = field(default_factory=list)
     frame_tags: List[str] = field(default_factory=list)
-    loop_tags: List[str] = field(default_factory=list)
+    loop_tags: Dict[str, List[str]] = field(default_factory=dict)
 
 
 @dataclass

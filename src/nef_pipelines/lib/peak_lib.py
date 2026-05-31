@@ -1,3 +1,8 @@
+"""
+    Utilities to build, populate, and read NEF nmr_spectrum saveframes AKA PeaksLists/Peaks
+    (dimensions, transfers, peak loops).
+"""
+
 import copy
 from textwrap import dedent
 from typing import Any, Dict, List, Tuple, Union

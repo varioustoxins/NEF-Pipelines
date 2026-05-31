@@ -1,3 +1,7 @@
+"""
+    Project-wide constants used by NEF-Pipelines (name, NEF version, meta data tag, sentinels).
+"""
+
 NEF_PIPELINES = "NEFPipelines"
 
 NEF_VERSION = "1.1"

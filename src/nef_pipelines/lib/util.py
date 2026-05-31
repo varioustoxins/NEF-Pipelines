@@ -1,3 +1,7 @@
+"""
+    General-purpose helpers: error/warn output, stdio handling, fnmatch utilities,
+    metadata fix-up, exit_error, and more."""
+
 import contextlib
 import functools
 import inspect
@@ -1341,9 +1345,6 @@ def close_stream_if_closeable(stream: TextIO):
 
     Args:
         stream: file stream to close or stdout/stdderr
-
-    Returns:
-
     """
     if not stream_is_std(stream):
         stream.close()

@@ -1,3 +1,8 @@
+"""
+    Lightweight atom-name translation helpers between naming schemes
+    (placeholder XPLOR↔IUPAC table).
+"""
+
 from dataclasses import replace
 from enum import auto
 from typing import Tuple

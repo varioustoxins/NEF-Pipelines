@@ -1,3 +1,7 @@
+"""
+    Typer/Rich theming patches and FilteredHelpGroup used to render NEF-Pipelines CLI help.
+"""
+
 import os
 
 from typer.core import TyperGroup

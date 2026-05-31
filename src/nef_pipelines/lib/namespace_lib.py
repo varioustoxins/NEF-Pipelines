@@ -1,3 +1,7 @@
+"""
+    NEF namespace registry and helpers for splitting/joining namespace prefixes on saveframe and loop names.
+"""
+
 from fnmatch import fnmatchcase
 from typing import Dict, List, Optional, Tuple, Union
 

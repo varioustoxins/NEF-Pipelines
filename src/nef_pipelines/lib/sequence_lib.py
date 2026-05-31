@@ -1,3 +1,8 @@
+"""
+    Untilities for building and manipulating Chain, residue and sequences
+    anfd their frames: chain-code generation, residue linking.
+"""
+
 import os
 import string
 from collections import Counter

@@ -1,3 +1,7 @@
+"""
+    ChemComp data model: pydantic objects representing chemical-component definitions used by the atom-name translator.
+"""
+
 # # todo sort out app data lists
 # # todo derived methods
 # # todo remove parent links on json dump

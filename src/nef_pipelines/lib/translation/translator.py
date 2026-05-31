@@ -1,3 +1,7 @@
+"""
+    Utilities to translate atom labels between naming systems using loaded ChemComp tables."
+"""
+
 import sys
 from dataclasses import replace
 

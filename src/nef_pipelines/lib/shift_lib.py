@@ -1,3 +1,7 @@
+"""
+    Utilities for Chemical shift list construction and conversion.
+"""
+
 import dataclasses
 from enum import auto
 from typing import Dict, Iterable, List, Tuple

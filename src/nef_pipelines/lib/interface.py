@@ -1,3 +1,9 @@
+"""
+    Shared interface types: logging levels, fit-type enums, noise-info dataclass used across CLI commands.
+"""
+
+# TODO these snhould most probably move to structures
+
 from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import Optional
