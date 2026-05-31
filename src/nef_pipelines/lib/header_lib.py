@@ -1,3 +1,7 @@
+"""
+    Utilities to build the nef_nmr_meta_data header saveframe (program info, creation date, UUID, run history loop).
+"""
+
 import datetime
 from random import randint
 
