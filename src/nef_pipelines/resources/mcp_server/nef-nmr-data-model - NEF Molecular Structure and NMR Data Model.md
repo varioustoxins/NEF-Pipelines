@@ -303,6 +303,6 @@ calculation.
 
 ## Cross-References
 
-For NEF STAR syntax (namespaces, saveframes, loops, tags), see the main `nef` resource (`nef://nef`).
+For NEF STAR syntax (namespaces, saveframes, loops, tags), see the main `nef` resource (`nef://nef-file-format`).
 
-For foundational STAR format rules, see the `star` resource (`nef://star`).
+For foundational STAR format rules, see the `star` resource (`nef://star-file-format`).

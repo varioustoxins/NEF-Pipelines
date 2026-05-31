@@ -5,19 +5,19 @@ converting NMR data between NEF and many third-party formats. You have it availa
 tools in this session - you do not need to install anything.
 
 **For deeper detail see:**
-- `nef://cli-idioms` - option / selector / escape syntax across commands
-- `nef://nef`        - NEF STAR dialect (namespaces, saveframe categories, loop tags)
-- `nef://nmr-data`   - molecular structure and atom-name model (4-string identifier, pseudoatoms)
-- `nef://star`       - foundational STAR syntax
-- `nef://skills`     - expert assistance for NEF (NMR Exchange Format) pipelines operations, conversions, and analysis.
-- `nef://readme`     - this document (overview, data model, command/transcoder catalogue)
+- `nef://cli-idioms`         - option / selector / escape syntax across commands
+- `nef://nef-file-format`    - NEF STAR dialect (namespaces, saveframe categories, loop tags)
+- `nef://nef-nmr-data-model` - molecular structure and atom-name model (4-string identifier, pseudoatoms)
+- `nef://star-file-format`   - foundational STAR syntax
+- `nef://skill`              - index of expert workflow skills; read before any non-trivial task
+- `nef://readme`             - this document (overview, data model, command/transcoder catalogue)
 
 ---
 
 ## The NEF Data Model
 
 A NEF file is a **STAR-format** text file (similar to NMR-STAR / mmCIF). For full syntax see
-`nef://star`; for the NEF dialect on top of it see `nef://nef`.
+`nef://star-file-format`; for the NEF dialect on top of it see `nef://nef-file-format`.
 
 ```
 data_<entry_name>                      ← top-level entry (one per file)
@@ -83,7 +83,7 @@ Always address columns by name, never by position.
 **Tag**: scalar key/value pair within a frame, written as `_<category>.<tag>   value` outside any
 loop.
 
-**Sentinels:** `.` means unknown / not applicable / unused; `?` means missing / not yet assigned.
+**Sentinels:** `.` means unknown / not applicable / unused; `?` sometime means missing / not yet assigned.
 
 **Common frame categories:**
 
@@ -98,7 +98,7 @@ loop.
 | `nef_nmr_meta_data` | Entry metadata, history, UUID |
 
 For the 4-string identifier (`chain_code`, `sequence_code`, `residue_name`, `atom_name`) that
-links experimental data to the molecular system, see `nef://nmr-data`.
+links experimental data to the molecular system, see `nef://nef-nmr-data-model`.
 
 ---
 
@@ -134,9 +134,10 @@ nef_get_command_help("*shift*")      - wildcard pattern
 
 | Group | Subcommands | What it does |
 |---|---|---|
-| `frames` | `list`, `delete`, `tabulate`, `display`, `filter`, `insert`, `rename`, `unassign` | Inspect and edit save frames. **Use `tabulate` to read loop data - never grep/awk** |
+| `frames` | `create`, `list`, `delete`, `tabulate`, `display`, `filter`, `insert`, `rename`, `unassign` | Inspect and edit save frames. **Use `tabulate` to read loop data - never grep/awk**. `create` builds a new empty frame (see `nef://skill/adhoc-data` for ad-hoc construction) |
 | `chains` | `list`, `clone`, `rename`, `renumber`, `align`, `validate` | Manage molecular chains |
-| `loops` | `trim` | Loop-level operations |
+| `loops` | `create`, `trim` | Loop-level operations. `create` adds a loop with columns and optional data to an existing frame |
+| `columns` | `insert`, `delete`, `list`, `rename`, `reorder`, `replace`, `extract` | Manipulate loop columns: add, remove, reorder, rename, or bulk-replace values |
 | `entry` | `rename`, `tree` | Rename the entry; show its hierarchical structure |
 | `header` | (no subcommand) | Add a NEF header (UUID + history) to the stream |
 | `save` | (no subcommand) | Write the stream to file(s); `save -` writes to stdout (pass-through) |
@@ -221,6 +222,10 @@ nef fasta import sequence --chains A protein.fasta \
 | nef save output.nef
 ```
 
+## Anti-Patterns
+When using the pipeline architecture you should **ALWAYS** strive to keep the complete process as one pipeline wihtout
+intermediate files. This avoids creating extraneous files and makes a shell script version of the MCP command
+pipeline more portable.
 ---
 
 ## Inspecting NEF Data

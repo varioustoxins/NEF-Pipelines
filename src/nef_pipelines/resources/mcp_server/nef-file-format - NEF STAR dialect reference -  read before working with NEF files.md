@@ -89,26 +89,32 @@ data_Sec5Part4
 save_
 ```
 
-| Element | What it is                                                                     |
-|---|--------------------------------------------------------------------------------|
-| Saveframe namespace | `nef` (first token of the category, before its first `_`)                      |
-| Saveframe category | `nef_nmr_spectrum` (the `.sf_category` value — authoritative)                  |
-| Saveframe name | `hsqc` (the part of the framecode after the category)                          |
-| Saveframe index | `` `1` `` (CCPN backtick extension — see §7)                                   |
-| Tag `num_dimensions` | tag ns = `nef` (inherited from frame; bare attribute has no registered prefix) |
-| Tag `ccpn_positive_contour_count` | column ns = `ccpn` (attribute starts with the registered prefix `ccpn`)        |
-| Implication for a non-CCPN task | every `ccpn_*` tag is pass-through — leave it alone                            |
+| Element                           | What it is                                                                                   |
+|-----------------------------------|----------------------------------------------------------------------------------------------|
+| Saveframe name / frame code       | the complete name of the frame including `namespace`,`category` and `id` [which maybe empty] |
+| Saveframe namespace               | `nef` (first token of the category, before its first `_`)                                    |
+| Saveframe category                | `nef_nmr_spectrum` (the `.sf_category` value — authoritative)                                |
+| Saveframe id                      | `hsqc` (the part of the framecode after the category)                                        |
+| Saveframe index                   | `` `1` `` (CCPN backtick extension — see §7). This is a part of the index                    |
+| Tag `num_dimensions`              | tag namespace = `nef` (inherited from frame; bare tag with no registered prefix)             |
+
 
 A second frame in the same file, `save_ccpn_substance_Sec5.None`, illustrates the `.identity` suffix:
-namespace = `ccpn`, category = `ccpn_substance`, name = `Sec5`, identity = `None`. All its tags inherit the
+namespace = `ccpn`, category = `ccpn_substance`, id = `Sec5.None`, identity = `None`. All its tags inherit the
 `ccpn` namespace because none carry a different registered prefix.
 
 The Entry name is `Sec5Part4` (from the `data_` block).
-The loop defined is the `peak` loop in the `nef` namespace
+The loop defined is the `peak` loop is in the `nef` namespace
 
-Note. the nef_peak ccpn loop has columns whicg are part of the nef namespace (e.g. `position_1`) and columns which are
+> Note 1. the nef_peak ccpn loop has columns which are part of the nef namespace (e.g. `position_1`) and columns which are
 part of the ccpn namespace (e.g. `ccpn_annotation`) — this is a common pattern for loops with software-specific
 extensions.
+>
+> Note 2. names for frames in NEF files must be unique, two frames **cannot** have the same category and id [equivalent
+>         to the same name or framecode] within an entry
+>
+> Note 3. generally frames, tags, loop and columns in a specific namespace other than `nef` are data specific
+          to a specific program and are passed through by other programs.
 
 ---
 
@@ -513,8 +519,8 @@ NEF uses standard value conventions across many tags:
 
 > Note: **Molecular addressing and NMR data:**
 > For the **4-string identifier** (chain_code, sequence_code, residue_name, atom_name), molecular structure,
-> NMR data types (shifts, peaks, restraints), and assignment linking, see the **`nmr-data` resource**
-> (`nef://nmr-data`).
+> NMR data types (shifts, peaks, restraints), and assignment linking, see the **`nef-nmr-data-model` resource**
+> (`nef://nef-nmr-data-model`).
 
 ---
 
