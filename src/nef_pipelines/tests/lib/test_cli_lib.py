@@ -1,4 +1,5 @@
 from re import escape
+from textwrap import dedent
 
 import pytest
 from pynmrstar import Entry, Loop, Saveframe
@@ -2159,12 +2160,12 @@ def test_validate_split_separators_empty():
             {},
             FrameLoopAndTagSelectors("dipolar", "*", [], ["tag1"]),
         ),
-        # Frame.loop format (entire loop, all columns)
+        # Frame.loop format (entire loop)
         (
             "nef_rdc_restraint_list.nef_rdc_restraint",
             {},
             FrameLoopAndTagSelectors(
-                "nef_rdc_restraint_list", "nef_rdc_restraint", [], ["*"]
+                "nef_rdc_restraint_list", "nef_rdc_restraint", [], []
             ),
         ),
         # Whitespace handling in tags (frame tags)

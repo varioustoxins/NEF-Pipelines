@@ -63,17 +63,30 @@ import pyparsing as pp
 from pynmrstar import Entry, Saveframe
 from pyparsing import ParserElement, ParseResults, StringEnd
 
+from nef_pipelines.lib.nef_lib import (
+    SelectionType,
+    select_frames,
+    select_loops_by_category,
+)
 from nef_pipelines.lib.sequence_lib import sequence_from_entry
 from nef_pipelines.lib.structures import (
     BadFrameLoopTagSyntaxException,
     ChainOffsetSyntaxParsingError,
+    EntryPart,
     FrameLoopAndTagSelectors,
+    FrameLoopsAndTags,
+    NEFBadLoopSelectionException,
     RangeOffset,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
 )
-from nef_pipelines.lib.util import NEWLINE, is_int, parse_comma_separated_options
+from nef_pipelines.lib.util import (
+    NEWLINE,
+    is_int,
+    parse_comma_separated_options,
+    to_ordinal,
+)
 
 SELECT_ALL_FRAME_CATEGORIES_AND_TAGS = "*.*:*"
 
@@ -1471,25 +1484,45 @@ def parse_frame_loop_and_tags(
 
     The selector uses dot and colon to specify selection level:
 
-        NO DOT (frame level):
-            name        → entire saveframe (all tags + all loops)
-            name:tag    → saveframe tag (metadata like sf_category)
+    Note [1] - the commands are designed that indivdual components of frames and frames themselves
+               can be selected. However, it is also possible to seelect wildcards [projections]. The
+               result from the selection is a FrameLoopsAndTags dataclass. In this class no selection
+               is reported as None or [], explicit wildcards are reported as strings containg *s and as
+               lists containing single or mutiple stars. So for example
+
+                    - `frame_name` - selects a single frame:
+                      FrameLoopsAndTagSelectors(frame='frame_name', loops = [], frame_tags = [], loop_tags = [])
+                    - `frame_name*` - select one or multiple frames with a wildcard:
+                      FrameLoopsAndTagSelectors(frame='frame_name*', loops = [], frame_tags = [], loop_tags = [])
+                    - frame_name:* select a frames and all oll its frame tags
+                      FrameLoopsAndTagSelectors(frame='frame_name*', loops = [], frame_tags = ['*'], loop_tags = [])
+         [2] - The complete syntax for the frame.loop:tags syntax is discussed in
+               cli-idioms - NEF-Pipelines CLI common idioms and patterns.md#Frame.Loop:Tag Selectors
+         [3] - The structure that results from the selection is called FrameLoopsAndTags which may then be convetred
+               a specific set of selected structures in the form of a list of FrameLoopsAndTags structures using
+               expand_frame_loop_and_tag_wildcards
+
+        Frame level:
+            name                → saveframe alone
+            name:tag_1,tag_2    → saveframe tag
+            name:*              → all frame tags (explicit wildcard)
             :tag        → saveframe tag in all frames
 
-        HAS DOT (loop level):
-            name.loop       → entire loop (all columns)
+        Loop level:
+            name.loop       → entire loop
             name.loop:tag   → loop column
+            name.loop:*     → all columns in a loop (explicit wildcard)
             .loop:tag       → loop column in all frames
             .:tag           → loop column in all loops/frames
 
     Projection semantics -
         [] (empty list)     = not projected, command decides what to show
-        ['*']               = explicit wildcard, show all members
+        ['*']               = explicit wildcard, selects all members
         [name, ...]         = specific named projection
 
     Empty parts default to wildcard (*) -
         .loop == *.loop    (empty before dot)
-        name. == name.*    (empty after dot)
+        name. == name.*    (empty after dot - all loops in frame)
         :tag == *:tag      (empty before colon)
         name: == name:*    (empty after colon - explicit wildcard)
 
@@ -1517,8 +1550,8 @@ def parse_frame_loop_and_tags(
         FrameLoopAndTags with:
             - frame_name: Frame selector pattern (never None, default "*")
             - loop_name: None (frame tags only), "*" (all loops), or "name" (specific loop)
-            - frame_tags: Saveframe-level tags (empty if loop-level selector)
-            - loop_tags: Loop column tags (empty if frame-level selector)
+            - frame_tags: [] (not projected), ['*'] (explicit all), or list of tag names
+            - loop_tags: [] (not projected), ['*'] (explicit all), or list of column names
 
     Examples:
         parse_frame_loop_and_tags("shift:sf_category")
@@ -1585,7 +1618,7 @@ def _build_frame_loop_selectors(
     LOOP_TAGS_IDX = 2
 
     def extract_tags_from_result(result: ParseResults, start_index: int) -> List[str]:
-        """Extract and strip tags from parse results, defaulting to ["*"] if no tags present."""
+        """Extract tags from parse results. If colon present but nothing after it, returns ['*']."""
         return (
             [tag.strip() for tag in result[start_index:]]
             if len(result) > start_index
@@ -1607,17 +1640,17 @@ def _build_frame_loop_selectors(
         loop_name = result[LOOP_IDX]
         loop_tags = extract_tags_from_result(result, LOOP_TAGS_IDX)
     elif has_loop_separator:
-        # frame.loop → entire loop
+        # frame.loop → entire loop (command decides what to show)
         loop_name = result[LOOP_IDX]
-        loop_tags = ["*"]
+        loop_tags = []
     elif has_tag_separator:
         # frame:tags → frame tags ONLY (not loop columns)
         frame_tags = extract_tags_from_result(result, FRAME_TAGS_IDX)
     else:
-        # frame → entire frame (all tags + all loops)
-        loop_name = "*"
-        frame_tags = ["*"]
-        loop_tags = ["*"]
+        # frame → just frame metadata (no loops)
+        loop_name = None
+        frame_tags = []
+        loop_tags = []
 
     return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
 
@@ -1689,12 +1722,8 @@ def _parse_spec_with_grammar(
                 if escape_msg:
                     reason += f". Did you forget --use-escapes? ({escape_msg})"
         elif FRAME_TAG_SEPARATOR in frame_spec:
-            # Check if tags are empty (after the separator)
-            tags_part = frame_spec.split(FRAME_TAG_SEPARATOR, 1)[1]
-            if not tags_part.strip():
-                reason = f"tags cannot be empty after '{FRAME_TAG_SEPARATOR}'"
-            else:
-                reason = f"invalid syntax: {str(e)}"
+            # Tags can be empty after colon (frame: → frame:* shorthand)
+            reason = f"invalid syntax: {str(e)}"
         else:
             reason = f"invalid syntax: {str(e)}"
 
@@ -1702,7 +1731,7 @@ def _parse_spec_with_grammar(
         if not use_escapes:
             escape_msg = _detect_escape_sequences(original_spec)
             if escape_msg and "Did you forget --use-escapes?" not in reason:
-                reason += f". Did you forget --use-escapes? ({escape_msg})"
+                reason += f". \nDid you forget --use-escapes? \n({escape_msg})"
 
         raise BadFrameLoopTagSyntaxException(original_spec, reason)
     return result
@@ -1739,8 +1768,13 @@ def _build_frame_loop_tag_grammar(use_escapes: bool) -> Union[ParserElement, Str
 
     frame_loop_part = frame_loop_explicit | frame_only
 
-    # Complete grammar: frame[.loop][:tag1,tag2,...] (tags optional)
-    grammar = frame_loop_part + pp.Optional(frame_tag_sep + tag_list) + pp.StringEnd()
+    # Complete grammar: frame[.loop][:[tag1,tag2,...]]
+    # Shorthand: frame: → frame:* (empty tag list after colon defaults to wildcard)
+    grammar = (
+        frame_loop_part
+        + pp.Optional(frame_tag_sep + pp.Optional(tag_list, default="*"))
+        + pp.StringEnd()
+    )
     return grammar
 
 

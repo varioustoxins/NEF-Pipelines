@@ -109,26 +109,272 @@ name matches. Override with `--selector-type` (alias `-t` or `-s`):
 
 ### Frame.Loop:Tag Selectors
 
-Composite selectors locate a specific loop or tag inside a frame. Used by `frames tabulate`,
-`frames display`, and `entry tree`:
+Composite selectors locate frames, loops, frame tags or loop columns in one expression. Used by
+`frames tabulate`, `frames display`, `entry tree` and similar inspection commands.
 
-| Pattern | Selects |
-|---|---|
-| `frame` | entire saveframe (all tags + all loops) |
-| `frame.loop` | one loop in one frame |
-| `frame.1` | first loop in a frame by index |
-| `frame:tag` | frame-level tag only (no loops) |
-| `frame.loop:tag1,tag2` | specific columns in a loop |
-| `.loop` | that loop in all frames |
-| `:tag` | that frame-level tag in all frames |
-| `*.*:*` | everything |
+The general shape is:
 
-The `frame` part follows the same wildcard / `--exact` rules as simple selectors.
+```
+frame . loop : tags
+```
 
-**Embedding separators in names.** When `--use-escapes` is active, doubled separators become
-literals: `::` → `:`, `..` → `.`, `,,` → `,`. Some commands additionally accept a backslash escape
-(`\:`, `\.`, `\,`); others only support the doubled form. Check each command's `--help` before
-relying on `\`-style escapes.
+Each of the four parts is optional, but the delimiters (`.` and `:`) carry meaning even when the
+names around them are missing — an omitted name next to a delimiter is treated as `*`.
+
+A selector either addresses **frame scope** (no `.`) or **loop scope** (has `.`). A single selector
+cannot mix a frame tag with a loop column — those are different scopes; use two selectors.
+
+#### Quick Lookup
+
+| Selector              | Selects                                              |
+|-----------------------|------------------------------------------------------|
+| **Frame scope (no dot)** |                                                  |
+| `frame`               | one complete saveframe                               |
+| `frame:tag`           | one frame tag in one frame                           |
+| `frame:tag1,tag2`     | several frame tags in one frame                      |
+| `frame:*`             | every frame tag in one frame                         |
+| `:tag`                | one frame tag in every frame                         |
+| `*`                   | every saveframe                                      |
+| `*:*`                 | every frame tag in every frame                       |
+| **Loop scope (has dot)** |                                                  |
+| `frame.loop`          | one loop in one frame                                |
+| `frame.loop:col`      | one column in one loop                               |
+| `frame.loop:col1,col2`| several columns in one loop                          |
+| `frame.loop:*`        | every column in one loop                             |
+| `frame.`              | every loop in one frame (shorthand for `frame.*`)    |
+| `frame.*`             | every loop in one frame                              |
+| `frame.*:col`         | one column across every loop in one frame            |
+| `.loop`               | one loop in every frame                              |
+| `.loop:col`           | one column of one loop across every frame            |
+| `.:col`               | one column wherever it appears                       |
+| `*.*`                 | every loop in every frame                            |
+| `*.*:*`               | every column in every loop                           |
+| `.`                   | every loop in every frame (shorthand for `*.*`)      |
+
+The `frame` part follows the same wildcard / `--exact` rules as simple frame selectors. Loop and
+tag names accept `fnmatch`-style wildcards (see *Column Wildcard Patterns* below).
+
+#### How Shorthand definition sof wildcards work
+
+A delimiter (`.` or `:`) with no name on either side defaults that position to `*`. So:
+
+| You write     | Parser sees     |
+|---------------|-----------------|
+| `.`           | `*.*`           |
+| `:`           | `*:*`           |
+| `.:col`       | `*.*:col`       |
+| `frame.`      | `frame.*`       |
+| `frame:`      | `frame:*`       |
+| `frame.loop:` | `frame.loop:*`  |
+| `:tag`        | `*:tag`         |
+| `.loop`       | `*.loop`        |
+
+> Use whichever form reads most clearly for the situation — the explicit `*` forms are easier to
+scan in scripts; the shorthand forms are faster to type at the shell and don't requite quoting.
+
+#### Constraints
+
+- **One dot maximum** — `frame.sub.loop` is not a selector.
+- **One colon maximum per scope** — `frame:tag1:tag2` is not valid; use `frame:tag1,tag2`.
+- **Frame tag and loop column cannot mix** — `frame:tag.loop:col` is rejected. A frame tag belongs
+  to the frame; a loop column belongs to a loop. If you need both, use two selectors:
+  `frame:tag` and `frame.loop:col`.
+
+#### Watch Out: `:tag` vs `.:col`
+
+A single dot flips frame scope to loop scope. `:value` selects a *frame tag* called `value`
+across every frame; `.:value` selects a *loop column* called `value` wherever it appears. Both
+parse, both run, and they return different data. If you find yourself unsure which you meant,
+the explicit forms make the intent obvious:
+
+```
+*:value      # frame tag 'value' in every frame
+*.*:value    # loop column 'value' in every loop
+```
+
+#### Embedding separators in names
+
+A backslash makes the following separator literal:
+`\:` → `:`, `\.` → `.`, `\,` → `,` `*:` → `*`, `?:` → `?`, `\[` → `[`,  and `\]` → `]`. The backslash form is the canonical method of escapoing used in NEF-Pipelines and
+is the target for all commands going forward. This set of escapes allows
+
+Currently, when `--use-escapes` is active some commands still accept doubled separators (`::`, `..`, `,,`) as escape
+but this form is being phased out — prefer `\` in new selectors. Check a command's `--help` if you need to know what it currently accepts.
+
+Commands using the double character escapes currently scan inputs for problematic framenames, loop categories and
+frame and tag names and exit error telling the user to use the --escapes flag. This behaviour is being removed and
+a warning to use \ escapes will be issued instead... It is possible this maybe muted if \ based escapes are already
+present in the CLI or the selections present don't address parts of the document that require escapes.
+
+>Note: embedding separators in NEF values is discouraged but not forbidden. NEF values accept all ANSI characters in the
+>      set ``[][()_,.;:&<>/\{}`~!@$%?+=*A-Za-z0-9|^-]*``. Specifically 'Printable ascii characters (except for space,
+>      single or double quotes, or pound sign). Values may also not start with reserved strings 'data_', 'save_',
+>     'loop_', or 'stop_'
+
+
+
+#### BNF Grammar
+
+For those of a technical disposition the BNF grammar for the selectors is as follows, however, this maybe skipped by
+the general reader!
+
+```
+selector      ::= frame-form | loop-form
+
+frame-form    ::= frame-part [ ":" tag-list ]
+loop-form     ::= frame-part "." loop-part [ ":" tag-list ]
+
+frame-part    ::= name | "*"          ; empty in source promoted to "*"
+loop-part     ::= name | "*"          ; empty in source promoted to "*"
+
+tag-list      ::= name { "," name } | "*"
+
+name          ::= /* literal name, may contain fnmatch wildcards * ? [ ] */
+                  /* backslash-escaped separators (\:, \., \,) allowed when
+                     --use-escapes is active; doubled forms (::, .., ,,) are
+                     a transitional alternative — see §8 */
+```
+
+**Promotion rule.** An empty `frame-part` or `loop-part` in the source text is
+promoted to `*` at parse time. This is how the shorthand forms (§5) reduce to the
+canonical forms. The promotion happens once, in the parser, so command implementations
+only ever see canonical selectors.
+
+#### Column Wildcard Patterns
+
+Column selectors (the part after `:` in `frame.loop:columns`) support fnmatch-style wildcards
+with escape sequences:
+
+> Note: this will soon be available everywhere — specifically frames and loops as well.
+
+**Pattern Types:**
+
+1. **Plain names** (backward compatible): `value` → matches as `*value*` (substring)
+2. **Integer indices**: `0`, `1`, `2` → column positions (0-based)
+3. **Explicit wildcards**: full pattern control using fnmatch syntax
+
+**Wildcard Characters:**
+
+| Pattern  | Matches              | Example     | Matches Columns                       |
+|----------|----------------------|-------------|---------------------------------------|
+| `*`      | Any characters       | `atom_*`    | `atom_name`, `atom_id`, `atom_type`   |
+| `?`      | Single character     | `valu?`     | `value` (not `values`)                |
+| `[seq]`  | Any char in sequence | `atom_[NH]` | `atom_N`, `atom_H`                    |
+| `[!seq]` | Char NOT in sequence | `[!_]*`     | Columns not starting with `_`         |
+
+**Common Patterns:**
+
+```bash
+# Prefix matching
+nef column delete frame.loop:atom_*           # atom_name, atom_id, atom_type
+
+# Suffix matching
+nef column delete frame.loop:*_value          # shift_value, error_value
+
+# Substring (explicit)
+nef column delete frame.loop:*name*           # atom_name, chain_name, residue_name
+
+# Substring (implicit - backward compatible)
+nef column delete frame.loop:name             # same as *name*
+
+# Character class
+nef column delete frame.loop:atom_[NH]*       # atom_N, atom_H columns
+
+# Exclude pattern (with selector list)
+nef column delete frame.loop:+*,-*_error      # all columns except *_error
+```
+
+**Escape Sequences:**
+
+Use backslash to include literal wildcard characters in column names:
+
+| Escape | Result                | Example                                       |
+|--------|-----------------------|-----------------------------------------------|
+| `\*`   | Literal asterisk      | `file\*.txt` matches column named `file*.txt` |
+| `\?`   | Literal question mark | `what\?` matches column named `what?`         |
+| `\\`   | Literal backslash     | `path\\name` matches column named `path\name` |
+
+**Examples with Escapes:**
+
+```bash
+# Match column literally named "value*"
+nef column delete frame.loop:value\*
+
+# Match column literally named "test?"
+nef column delete frame.loop:test\?
+
+# Mix: delete wildcards and literal
+nef column delete frame.loop:atom_*,special\*column
+```
+
+
+### Column Wildcard Patterns
+
+Column selectors (the part after `:` in `frame.loop:columns`) support fnmatch-style wildcards
+with escape sequences:
+>Note: this will soon be available everywhere, specifically frames and loops as well
+
+**Pattern Types:**
+
+1. **Plain names** (backward compatible): `value` → matches as `*value*` (substring)
+2. **Integer indices**: `0`, `1`, `2` → column positions (0-based)
+3. **Explicit wildcards**: Full pattern control using fnmatch syntax
+
+**Wildcard Characters:**
+
+| Pattern | Matches | Example | Matches Columns |
+|---------|---------|---------|-----------------|
+| `*` | Any characters | `atom_*` | `atom_name`, `atom_id`, `atom_type` |
+| `?` | Single character | `valu?` | `value` (not `values`) |
+| `[seq]` | Any char in sequence | `atom_[NH]` | `atom_N`, `atom_H` |
+| `[!seq]` | Char NOT in sequence | `[!_]*` | Columns not starting with `_` |
+
+**Common Patterns:**
+
+```bash
+# Prefix matching
+nef column delete frame.loop:atom_*           # atom_name, atom_id, atom_type
+
+# Suffix matching
+nef column delete frame.loop:*_value          # shift_value, error_value
+
+# Substring (explicit)
+nef column delete frame.loop:*name*           # atom_name, chain_name, residue_name
+
+# Substring (implicit - backward compatible)
+nef column delete frame.loop:name             # same as *name*
+
+# Character class
+nef column delete frame.loop:atom_[NH]*       # atom_N, atom_H columns
+
+# Exclude pattern (with selector list)
+nef column delete frame.loop:+*,-*_error      # all columns except *_error
+```
+
+**Escape Sequences:**
+
+Use backslash to include literal wildcard characters in column names:
+
+| Escape | Result | Example |
+|--------|--------|---------|
+| `\*` | Literal asterisk | `file\*.txt` matches column named `file*.txt` |
+| `\?` | Literal question mark | `what\?` matches column named `what?` |
+| `\\` | Literal backslash | `path\\name` matches column named `path\name` |
+
+**Examples with Escapes:**
+
+```bash
+# Match column literally named "value*"
+nef column delete frame.loop:value\*
+
+# Match column literally named "test?"
+nef column delete frame.loop:test\?
+
+# Mix: delete wildcards and literal
+nef column delete frame.loop:atom_*,special\*column
+```
+
+
 
 ---
 
