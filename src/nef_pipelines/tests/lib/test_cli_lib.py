@@ -2623,6 +2623,73 @@ def test_parse_frame_loop_selectors_tag_comma_not_split(selector, expected_error
     assert errors == expected_errors
 
 
+
+# Tests for expand_frame_loop_and_tag_wildcards
+@pytest.mark.parametrize(
+    "selector,expand_to,expected",
+    [
+        # Default (all parts) — bare frame becomes full wildcard
+        (
+            FrameLoopAndTagSelectors("frame", None, [], []),
+            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+        ),
+        # Loop river only — frame tags left alone
+        (
+            FrameLoopAndTagSelectors("frame", None, [], []),
+            EntryPart.Loop | EntryPart.LoopTag,
+            FrameLoopAndTagSelectors("frame", "*", [], ["*"]),
+        ),
+        # Loop level only — columns not expanded
+        (
+            FrameLoopAndTagSelectors("frame", None, [], []),
+            EntryPart.Loop,
+            FrameLoopAndTagSelectors("frame", "*", [], []),
+        ),
+        # Frame tags river only — loop untouched
+        (
+            FrameLoopAndTagSelectors("frame", None, [], []),
+            EntryPart.FrameTag,
+            FrameLoopAndTagSelectors("frame", None, ["*"], []),
+        ),
+        # No expansion
+        (
+            FrameLoopAndTagSelectors("frame", None, [], []),
+            EntryPart(0),
+            FrameLoopAndTagSelectors("frame", None, [], []),
+        ),
+        # Already-set values are never overwritten
+        (
+            FrameLoopAndTagSelectors(
+                "frame", "my_loop", ["sf_category"], ["atom_name"]
+            ),
+            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+            FrameLoopAndTagSelectors(
+                "frame", "my_loop", ["sf_category"], ["atom_name"]
+            ),
+        ),
+        # Explicit wildcard ['*'] is not overwritten
+        (
+            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+        ),
+        # frame.loop selector: loop already set, only loop_tags expanded
+        (
+            FrameLoopAndTagSelectors("frame", "myloop", [], []),
+            EntryPart.Loop | EntryPart.LoopTag,
+            FrameLoopAndTagSelectors("frame", "myloop", [], ["*"]),
+        ),
+    ],
+)
+
+
+def test_expand_frame_loop_and_tag_wildcards(selector, expand_to, expected):
+    """Test expand_frame_loop_and_tag_wildcards with EntryPart flag expansion control."""
+    result = expand_frame_loop_and_tag_wildcards(selector, expand_to)
+    assert result == expected
+
+
 # Tests for validate_loop_selection_only_or_raise
 TEST_FRAME = Saveframe.from_scratch("test_frame", "test_category")
 TEST_LOOP_A = Loop.from_scratch("_test_loop_a")

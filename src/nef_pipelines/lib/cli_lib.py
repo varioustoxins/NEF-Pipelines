@@ -2123,6 +2123,48 @@ def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
     return merged
 
 
+
+
+def expand_frame_loop_and_tag_wildcards(
+    selector: FrameLoopAndTagSelectors,
+    expand_to: EntryPart = None,
+) -> FrameLoopAndTagSelectors:
+    """Expand unset selector fields to wildcard for the specified entry parts.
+
+    Two independent rivers can be expanded:
+      FrameTag            → frame_tags: [] → ['*']
+      Loop                → loop_name: None → '*'
+      Loop | LoopTag      → loop_name: None → '*' AND loop_tags: [] → ['*']
+
+    Parts already set (non-empty / non-None) are never overwritten.
+
+    Examples:
+        expand_frame_loop_and_tag_wildcards(sel)
+            expands everything (default)
+        expand_frame_loop_and_tag_wildcards(sel, EntryPart.FrameTag)
+            expand frame tags only, leave loops untouched
+        expand_frame_loop_and_tag_wildcards(sel, EntryPart.Loop | EntryPart.LoopTag)
+            expand into loops and columns, leave frame tags alone
+        expand_frame_loop_and_tag_wildcards(sel, EntryPart(0))
+            no expansion
+    """
+    frame_name = selector.frame_name
+    loop_name  = selector.loop_name
+    frame_tags = selector.frame_tags
+    loop_tags  = selector.loop_tags
+
+    if expand_to & EntryPart.FrameTag and not frame_tags:
+        frame_tags = ["*"]
+
+    if expand_to & EntryPart.Loop and loop_name is None:
+        loop_name = "*"
+
+    if expand_to & EntryPart.LoopTag and not loop_tags:
+        loop_tags = ["*"]
+
+    return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
+
+
 def parse_loop_selectors_and_get_errors(
         entry: Entry, selectors: list[str]
 ) -> Tuple[List[FrameLoopsAndTags], List[str]]:

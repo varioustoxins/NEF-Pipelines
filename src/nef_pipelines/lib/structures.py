@@ -5,15 +5,18 @@
 
 import math
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Flag, auto
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
 
 
-class EntryPart(Enum):
-    """Identifies which structural level of a NEF entry an item belongs to."""
+class EntryPart(Flag):
+    """Identifies which structural level of a NEF entry an item belongs to.
+
+    Flag enum — values can be combined with | for use in expand_frame_loop_and_tag_wildcards.
+    """
 
     Entry = auto()
     Saveframe = auto()
