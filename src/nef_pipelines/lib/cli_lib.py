@@ -2060,3 +2060,26 @@ def parse_selector_lists(
             result.append((SelectorAction.INCLUDE, item))
 
     return result
+
+
+def validate_loop_selection_only_or_raise(item: FrameLoopsAndTags):
+    """
+        Validate: FrameLoopsAndTags selecting one or more Loops (no specific tags/columns).
+    Args:
+        item: the selection to validate
+
+    """
+
+    if item.frame_tags:
+        msg = f"frame_tags not allowed in loop selection frame tags = {', '.join(item.frame_tags)})"
+        raise NEFBadLoopSelectionException(msg)
+
+    for category, tags in item.loop_tags.items():
+        if tags:
+            msg = f"loop_tags (columns) not allowed in loop selection for {category}: {', '.join(tags)}"
+            raise NEFBadLoopSelectionException(msg)
+
+    if not item.loops or item.frame is None:
+        msg = f"a loop and a frame must be specified in loop selection, I got frame={item.frame} loops={item.loops}"
+        raise NEFBadLoopSelectionException(msg)
+

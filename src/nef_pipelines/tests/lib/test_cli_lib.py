@@ -2478,3 +2478,49 @@ def test_parse_selector_lists(selectors, use_escapes, no_initial_selection, expe
         selectors, use_escapes=use_escapes, no_initial_selection=no_initial_selection
     )
     assert result == expected
+
+
+# Tests for validate_loop_selection_only_or_raise
+TEST_FRAME = Saveframe.from_scratch("test_frame", "test_category")
+TEST_LOOP_A = Loop.from_scratch("_test_loop_a")
+TEST_LOOP_B = Loop.from_scratch("_test_loop_b")
+
+
+@pytest.mark.parametrize(
+    "item,expected_error_fragment",
+    [
+        # Valid: single loop, no projections (frame.loop)
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A]), None),
+        # Valid: multiple loops, no projections (frame.* expansion)
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B]), None),
+        # Valid: empty projection lists explicit
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=[], loop_tags={"_test_loop_a": []}), None),
+        # Valid: multiple loops, all tag lists empty
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B],
+                           loop_tags={"_test_loop_a": [], "_test_loop_b": []}), None),
+        # Invalid: wildcard frame_tags
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["*"]), "frame_tags not allowed"),
+        # Invalid: wildcard loop column tags
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["*"]}),
+                           r"loop_tags \(columns\) not allowed"),
+        # Invalid: wildcard columns on one of multiple loops (frame.* with :*)
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B],
+                           loop_tags={"_test_loop_a": [], "_test_loop_b": ["*"]}), r"loop_tags \(columns\) not allowed"),
+        # Invalid: specific frame_tags
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["sf_category"]), "frame_tags not allowed"),
+        # Invalid: specific loop column tags
+        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["chain_code"]}),
+                           r"loop_tags \(columns\) not allowed"),
+        # Invalid: bare frame (no loops)
+        (FrameLoopsAndTags(frame=TEST_FRAME), "a loop and a frame must be specified"),
+        # Invalid: frame is None
+        (FrameLoopsAndTags(frame=None, loops=[TEST_LOOP_A]), "a loop and a frame must be specified"),
+    ],
+)
+def test_validate_loop_selection_only_or_raise(item, expected_error_fragment):
+    """Test that validate_loop_selection_only_or_raise accepts valid and rejects invalid selections."""
+    if expected_error_fragment is None:
+        validate_loop_selection_only_or_raise(item)
+    else:
+        with pytest.raises(NEFBadLoopSelectionException, match=expected_error_fragment):
+            validate_loop_selection_only_or_raise(item)
