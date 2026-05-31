@@ -2479,6 +2479,52 @@ def test_parse_selector_lists(selectors, use_escapes, no_initial_selection, expe
     )
     assert result == expected
 
+def test_parse_frame_loop_selectors_slash_joins_selectors():
+    """Two bare loop selectors joined by / resolve to two separate FrameLoopsAndTags."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+    shifts_frame = entry.get_saveframe_by_name("nef_chemical_shift_list_shifts")
+    chemical_shift_loop = shifts_frame.get_loop("_nef_chemical_shift")
+    dist_frame = entry.get_saveframe_by_name("nef_distance_restraint_list_dist")
+    distance_restraint_loop = dist_frame.get_loop("_nef_distance_restraint")
+
+    loops, errors = parse_frame_loop_selectors_and_get_errors(
+        entry, ["shifts.chemical_shift/dist.distance_restraint"]
+    )
+    assert errors == []
+    assert loops == [
+        FrameLoopsAndTags(frame=shifts_frame, loops=[chemical_shift_loop],
+                          frame_tags=[], loop_tags={"_nef_chemical_shift": []}),
+        FrameLoopsAndTags(frame=dist_frame, loops=[distance_restraint_loop],
+                          frame_tags=[], loop_tags={"_nef_distance_restraint": []}),
+    ]
+
+
+@pytest.mark.parametrize("selector,expected_errors", [
+    (
+        "shifts.chemical_shift:chain_code,value",
+        [dedent("""\
+            the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
+            selecting the columns: chain_code, value. Use the frame.loop syntax without columns.""").strip()],
+    ),
+    (
+        "shifts.chemical_shift:chain_code,value/dist.distance_restraint:index",
+        [
+            dedent("""\
+                the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
+                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.""").strip(),
+            dedent("""\
+                the 2nd selector dist.distance_restraint:index is bad because it is selecting
+                selecting the columns: index. Use the frame.loop syntax without columns.""").strip(),
+        ],
+    ),
+])
+def test_parse_frame_loop_selectors_tag_comma_not_split(selector, expected_errors):
+    """Tag-list commas are never treated as selector separators."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+    loops, errors = parse_frame_loop_selectors_and_get_errors(entry, [selector])
+    assert loops == []
+    assert errors == expected_errors
+
 
 # Tests for validate_loop_selection_only_or_raise
 TEST_FRAME = Saveframe.from_scratch("test_frame", "test_category")

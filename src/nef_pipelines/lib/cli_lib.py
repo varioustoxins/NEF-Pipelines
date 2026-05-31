@@ -164,12 +164,14 @@ RANGE_FORMAT = "<CHAIN> | :<START-RESIDUE>[..<END-RESIDUE>] | <CHAIN>:<START-RES
 FRAME_TAG_SEPARATOR = ":"
 FRAME_LOOP_SEPARATOR = "."
 TAG_LIST_SEPARATOR = ","
+SELECTOR_LIST_SEPARATOR = "/"
 
 # Placeholders for escape sequence processing in parse_frame_loop_and_tags
 _FRAME_LOOP_AND_TAG_PLACEHOLDERS = {
     "::": "\x00COLON\x00",
     "..": "\x00DOT\x00",
     ",,": "\x00COMMA\x00",
+    "//": "\x00SLASH\x00",
     "\\\\": "\x00BACKSLASH\x00",
     "++": "\x00PLUS\x00",
     "--": "\x00MINUS\x00",
@@ -1745,7 +1747,7 @@ def _build_frame_loop_tag_grammar(use_escapes: bool) -> Union[ParserElement, Str
 
     # Frame and loop identifiers (anything except the special separators)
     # When using escapes, allow placeholder characters (null bytes from escape processing)
-    forbidden_chars = FRAME_TAG_SEPARATOR + FRAME_LOOP_SEPARATOR + TAG_LIST_SEPARATOR
+    forbidden_chars = FRAME_TAG_SEPARATOR + FRAME_LOOP_SEPARATOR + TAG_LIST_SEPARATOR + SELECTOR_LIST_SEPARATOR
     if use_escapes:
         # Allow any character including placeholders (null bytes from escape processing)
         identifier = pp.CharsNotIn(forbidden_chars)
@@ -2082,4 +2084,41 @@ def validate_loop_selection_only_or_raise(item: FrameLoopsAndTags):
     if not item.loops or item.frame is None:
         msg = f"a loop and a frame must be specified in loop selection, I got frame={item.frame} loops={item.loops}"
         raise NEFBadLoopSelectionException(msg)
+
+
+def _split_selectors_on_slash(selector: str) -> List[str]:
+    """Split a selector string on '/', treating '//' as an escaped literal slash.
+
+    Examples:
+        "frame1.loop1/frame2.loop2"              → ["frame1.loop1", "frame2.loop2"]
+        "frame.loop:col1,col2"                   → ["frame.loop:col1,col2"]
+        "frame.loop:col1,col2/frame2.loop2:col3" → ["frame.loop:col1,col2", "frame2.loop2:col3"]
+
+    Note: '//' is the escape for a literal '/' in a name; it will be replaced by backslash
+    escaping once that lands, at which point this function reduces to a plain split.
+    """
+    if not selector:
+        return []
+    _ESCAPED_SLASH = "\x00SLASH\x00"
+    protected = selector.replace("//", _ESCAPED_SLASH)
+    return [
+        part.strip().replace(_ESCAPED_SLASH, "//")
+        for part in protected.split(SELECTOR_LIST_SEPARATOR)
+        if part.strip()
+    ]
+
+
+def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
+    """Merge two projection lists. Wildcard ['*'] wins; [] is neutral."""
+    if a == ['*'] or b == ['*']:
+        return ['*']
+    if not a:
+        return list(b)
+    if not b:
+        return list(a)
+    merged = list(a)
+    for tag in b:
+        if tag not in merged:
+            merged.append(tag)
+    return merged
 

@@ -172,6 +172,19 @@ A delimiter (`.` or `:`) with no name on either side defaults that position to `
 > Use whichever form reads most clearly for the situation — the explicit `*` forms are easier to
 scan in scripts; the shorthand forms are faster to type at the shell and don't requite quoting.
 
+#### Multiple selectors in one argument
+
+Use `/` to join several selectors into a single argument (commas are reserved for column
+lists within a selector):
+
+```
+frame1.loop1/frame2.loop2               # two loops
+frame.loop:col1,col2/frame2.loop2:col3  # two selectors, each with their own column list
+```
+
+Passing multiple arguments is equivalent: `cmd sel1 sel2` and `cmd sel1/sel2` behave
+identically. Use `//` to include a literal `/` in a name.
+
 #### Constraints
 
 - **One dot maximum** — `frame.sub.loop` is not a selector.
