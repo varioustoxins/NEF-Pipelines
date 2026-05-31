@@ -889,10 +889,12 @@ def analyze_nef_entry_for_separator_conflicts(
     Analyze a NEF Entry to determine if current separators conflict with data values.
 
     Scans all chain_codes and sequence_codes in the Entry to identify potential conflicts:
+
     - Chain codes containing the chain separator (like "A:B" when chain_separator is ":")
     - Chain codes containing the range separator (like "A-B" when range_separator is "-")
     - Sequence codes containing the chain separator (like "5:6" when chain_separator is ":")
     - Sequence codes containing the range separator (like "5-6" when range_separator is "-")
+
 
     Args:
         entry: NEF Entry to analyze
@@ -1480,10 +1482,32 @@ def parse_frame_loop_and_tags(
             .loop:tag       → loop column in all frames
             .:tag           → loop column in all loops/frames
 
-    Empty parts default to wildcard (*):
+    Projection semantics -
+        [] (empty list)     = not projected, command decides what to show
+        ['*']               = explicit wildcard, show all members
+        [name, ...]         = specific named projection
+
+    Empty parts default to wildcard (*) -
         .loop == *.loop    (empty before dot)
         name. == name.*    (empty after dot)
         :tag == *:tag      (empty before colon)
+        name: == name:*    (empty after colon - explicit wildcard)
+
+    Escape sequences (use_escapes=True) -
+        When use_escapes=True, doubled separators become literal characters in identifiers:
+        - :: → literal :
+        - .. → literal .
+        - ,, → literal ,
+
+        For example:
+            parse_frame_loop_and_tags("frame::name:tag", use_escapes=True)
+            → FrameLoopAndTags(frame_name="frame:name", frame_tags=["tag"], ...)
+
+            parse_frame_loop_and_tags("frame.loop..2:tag", use_escapes=True)
+            → FrameLoopAndTags(frame_name="frame", loop_name="loop.2", ...)
+
+            parse_frame_loop_and_tags("frame:tag1,,2,tag3", use_escapes=True)
+            → FrameLoopAndTags(..., frame_tags=["tag1,2", "tag3"])
 
     Args:
         frame_spec: Selector string
@@ -1508,22 +1532,6 @@ def parse_frame_loop_and_tags(
         parse_frame_loop_and_tags(":sf_category")
         → FrameLoopAndTags(frame_name="*", loop_name=None,
                            frame_tags=["sf_category"], loop_tags=[])
-
-    Escape Sequences (use_escapes=True):
-        When use_escapes=True, doubled separators become literal characters in identifiers:
-        - :: → literal :
-        - .. → literal .
-        - ,, → literal ,
-
-        Examples:
-            parse_frame_loop_and_tags("frame::name:tag", use_escapes=True)
-            → FrameLoopAndTags(frame_name="frame:name", frame_tags=["tag"], ...)
-
-            parse_frame_loop_and_tags("frame.loop..2:tag", use_escapes=True)
-            → FrameLoopAndTags(frame_name="frame", loop_name="loop.2", ...)
-
-            parse_frame_loop_and_tags("frame:tag1,,2,tag3", use_escapes=True)
-            → FrameLoopAndTags(..., frame_tags=["tag1,2", "tag3"])
     """
 
     # Save original spec before processing
