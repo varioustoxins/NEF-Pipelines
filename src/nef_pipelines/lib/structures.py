@@ -622,10 +622,10 @@ class FrameLoopAndTagSelectors:
 class FrameLoopsAndTags:
     """One item per matched frame; multiple loops live in `loops`.
 
-    Projection semantics (three-state convention):
-        []        — addressed, not projected (command decides what to render)
+    Tag selection (three-state convention):
+        []        — no selection (command decides what to render)
         ['*']     — explicit wildcard (note: only present when no namespace filtering)
-        [n1, n2]  — specific named projection
+        [n1, n2]  — specific named tags (may include fnmatch wildcards)
     """
 
     frame: Saveframe

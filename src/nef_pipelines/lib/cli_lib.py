@@ -55,6 +55,7 @@ This module provides parsing and validation for several CLI constructs used thro
 from __future__ import annotations
 
 import re
+from collections import OrderedDict
 from enum import Enum, Flag, auto
 from textwrap import dedent
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -1487,7 +1488,7 @@ def parse_frame_loop_and_tags(
     The selector uses dot and colon to specify selection level:
 
     Note [1] - the commands are designed that indivdual components of frames and frames themselves
-               can be selected. However, it is also possible to seelect wildcards [projections]. The
+               can be selected. However, it is also possible to select wildcards. The
                result from the selection is a FrameLoopsAndTags dataclass. In this class no selection
                is reported as None or [], explicit wildcards are reported as strings containg *s and as
                lists containing single or mutiple stars. So for example
@@ -1517,10 +1518,10 @@ def parse_frame_loop_and_tags(
             .loop:tag       → loop column in all frames
             .:tag           → loop column in all loops/frames
 
-    Projection semantics -
-        [] (empty list)     = not projected, command decides what to show
+    Tag selection (three-state) -
+        [] (empty list)     = no selection, command decides what to show
         ['*']               = explicit wildcard, selects all members
-        [name, ...]         = specific named projection
+        [name, ...]         = specific named tags (may include fnmatch wildcards)
 
     Empty parts default to wildcard (*) -
         .loop == *.loop    (empty before dot)
@@ -2164,8 +2165,143 @@ def expand_frame_loop_and_tag_wildcards(
 
     return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
 
+def selection_to_frame_loops_and_tags(
+    entry: Entry,
+    selectors: List[FrameLoopAndTagSelectors],
+    exact: bool = False,
+) -> List[FrameLoopsAndTags]:
+    """Expand selectors to one FrameLoopsAndTags per matched frame.
 
-def parse_loop_selectors_and_get_errors(
+    Multiple selectors targeting the same frame are merged:
+    - loops: union in frame order, deduplicated by identity
+    - frame_tags / loop_tags: merged via _merge_tag_lists (wildcard wins)
+
+    Frames are dropped unless they are frame-only selections (no children),
+    have frame_tags, or have loops — anything else is a selection failure.
+    """
+    pairs             = _build_selector_frame_pairs(entry, selectors)
+    frame_only_names  = _find_frame_only_selection_frame_names(pairs)
+    frame_matches     = _init_frame_matches(pairs)
+    _merge_frame_tags(frame_matches, pairs)
+    _add_selected_loops(frame_matches, pairs, exact)
+    _merge_loop_tags(frame_matches, pairs, exact)
+    _drop_empty_matches(frame_matches, frame_only_names)
+    _resolve_frame_tag_wildcards(frame_matches, exact)
+    _resolve_loop_tag_wildcards(frame_matches, exact)
+    return list(frame_matches.values())
+
+def _build_selector_frame_pairs(
+    entry: Entry,
+    selectors: List[FrameLoopAndTagSelectors],
+) -> List[tuple]:
+    # Evaluate select_frames once per selector, flatten to (selector, frame) pairs in document order
+    return [
+        (selector, frame)
+        for selector in selectors
+        for frame in entry.frame_list
+        if frame in select_frames(entry, [selector.frame_name], SelectionType.ANY)
+    ]
+
+
+def _find_frame_only_selection_frame_names(pairs: List[tuple]) -> set:
+    # Selectors with no loop, frame_tag, or loop_tag children — these frames are always kept
+    return {
+        frame.name
+        for selector, frame in pairs
+        if selector.loop_name is None and not selector.frame_tags and not selector.loop_tags
+    }
+
+
+def _init_frame_matches(pairs: List[tuple]) -> OrderedDict:
+    # One FrameLoopsAndTags per unique matched frame, in document order
+    frame_matches: OrderedDict[str, FrameLoopsAndTags] = OrderedDict()
+    for selector, frame in pairs:
+        if frame.name not in frame_matches:
+            frame_matches[frame.name] = FrameLoopsAndTags(frame=frame)
+    return frame_matches
+
+
+def _merge_frame_tags(frame_matches: OrderedDict, pairs: List[tuple]) -> None:
+    for selector, frame in pairs:
+        match = frame_matches[frame.name]
+        match.frame_tags = _merge_tag_lists(match.frame_tags, selector.frame_tags)
+
+
+def _add_selected_loops(frame_matches: OrderedDict, pairs: List[tuple], exact: bool) -> None:
+    # Accumulate matching loops in document order, deduplicated by identity
+    for selector, frame in pairs:
+        if selector.loop_name is None:
+            continue
+        match = frame_matches[frame.name]
+        matched_loops = select_loops_by_category(frame.loops, [selector.loop_name], exact=exact)
+        for target_loop in frame.loops:
+            if target_loop not in matched_loops:
+                continue
+            if not any(loop is target_loop for loop in match.loops):
+                match.loops.append(target_loop)
+
+
+def _merge_loop_tags(frame_matches: OrderedDict, pairs: List[tuple], exact: bool) -> None:
+    for selector, frame in pairs:
+        if selector.loop_name is None:
+            continue
+        match = frame_matches[frame.name]
+        for loop in select_loops_by_category(match.loops, [selector.loop_name], exact=exact):
+            category = loop.category
+            match.loop_tags[category] = _merge_tag_lists(
+                match.loop_tags.get(category, []), selector.loop_tags
+            )
+
+
+def _drop_empty_matches(frame_matches: OrderedDict, frame_only_names: set) -> None:
+    # Keep frame-only selections always; drop anything else where the selector found nothing
+    to_drop = [
+        name for name, match in frame_matches.items()
+        if not match.loops and not match.frame_tags and name not in frame_only_names
+    ]
+    for name in to_drop:
+        del frame_matches[name]
+
+
+def _resolve_frame_tag_wildcards(frame_matches: OrderedDict, exact: bool) -> None:
+    for match in frame_matches.values():
+        all_frame_tags = [t for t, _ in match.frame.tag_iterator()]
+        match.frame_tags = _expand_tag_wildcards(match.frame_tags, all_frame_tags, exact=exact)
+
+
+def _resolve_loop_tag_wildcards(frame_matches: OrderedDict, exact: bool) -> None:
+    for match in frame_matches.values():
+        for loop in match.loops:
+            category = loop.category
+            match.loop_tags[category] = _expand_tag_wildcards(
+                match.loop_tags.get(category, []), list(loop.tags), exact=exact
+            )
+
+def _expand_tag_wildcards(
+    merged_tags: List[str],
+    all_tag_names: List[str],
+    exact: bool = False,
+) -> List[str]:
+    """Expand tag name patterns against actual tag names.
+
+    Returns:
+        []    — no selection or explicit wildcard ['*'] — show all, command decides
+        [...]  — concrete list of matching tag names for specific patterns
+    """
+    if not merged_tags or merged_tags == ['*']:
+        return []
+
+    from fnmatch import fnmatchcase
+    resolved = []
+    for pattern in merged_tags:
+        match_pattern = pattern if exact else f"*{pattern}*"
+        for tag in all_tag_names:
+            if fnmatchcase(tag, match_pattern) and tag not in resolved:
+                resolved.append(tag)
+    return resolved
+
+
+def parse_frame_loop_selectors_and_get_errors(
         entry: Entry, selectors: list[str]
 ) -> Tuple[List[FrameLoopsAndTags], List[str]]:
     """Parse selectors and resolve to loop objects.

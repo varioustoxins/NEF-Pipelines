@@ -2734,3 +2734,238 @@ def test_validate_loop_selection_only_or_raise(item, expected_error_fragment):
     else:
         with pytest.raises(NEFBadLoopSelectionException, match=expected_error_fragment):
             validate_loop_selection_only_or_raise(item)
+
+
+# Tests for selection_to_frame_loops_and_tags
+
+EXPECTED_BARE_FRAME = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+    ],
+    frame_tags=[],
+    loop_tags={
+    },
+)"""
+
+EXPECTED_FRAME_WITH_LOOP = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [],
+    },
+)"""
+
+EXPECTED_FRAME_WITH_LOOP_COLUMN = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [chain_code],
+    },
+)"""
+
+EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [],
+    },
+)"""
+
+EXPECTED_FRAME_WITH_FRAME_TAG = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+    ],
+    frame_tags=['sf_category'],
+    loop_tags={
+    },
+)"""
+
+EXPECTED_WILDCARD_FRAME_SHIFTS = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+    ],
+    frame_tags=[],
+    loop_tags={
+    },
+)"""
+
+EXPECTED_WILDCARD_FRAME_DIST = """\
+FrameLoopsAndTags(
+    frame=nef_distance_restraint_list_dist,
+    loops=[
+    ],
+    frame_tags=[],
+    loop_tags={
+    },
+)"""
+
+EXPECTED_MERGED_SELECTORS = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=['sf_category'],
+    loop_tags={
+        _nef_chemical_shift: [],
+    },
+)"""
+
+
+@pytest.mark.parametrize(
+    "selector,expected",
+    [
+        # bare frame — no loop, no tags → frame kept with empty lists
+        (FrameLoopAndTagSelectors("shifts", None), EXPECTED_BARE_FRAME),
+        # frame.loop — loop matched, no column selection → loop_tags empty (not projected)
+        (FrameLoopAndTagSelectors("shifts", "chemical_shift"), EXPECTED_FRAME_WITH_LOOP),
+        # frame.loop:col — specific column selected
+        (FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]), EXPECTED_FRAME_WITH_LOOP_COLUMN),
+        # frame.loop:* — explicit wildcard expands to all columns (returns [] after expansion)
+        (FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]), EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS),
+        # frame:tag — specific frame tag selected
+        (FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]), EXPECTED_FRAME_WITH_FRAME_TAG),
+    ],
+)
+def test_selection_to_frame_loops_and_tags_single_frame(selector, expected):
+    """Single-frame selectors return one FrameLoopsAndTags with the correct content."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    result = selection_to_frame_loops_and_tags(entry, [selector])
+
+    assert len(result) == 1
+    assert isinstance(result[0].frame, Saveframe)
+    assert all(isinstance(loop, Loop) for loop in result[0].loops)
+    assert str(result[0]) == expected
+
+
+def test_selection_to_frame_loops_and_tags_wildcard_frame():
+    """Wildcard frame selector returns all frames in document order."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    result = selection_to_frame_loops_and_tags(entry, [FrameLoopAndTagSelectors("*", None)])
+
+    assert all(isinstance(r.frame, Saveframe) for r in result)
+    assert [str(r) for r in result] == [EXPECTED_WILDCARD_FRAME_SHIFTS, EXPECTED_WILDCARD_FRAME_DIST]
+
+
+def test_selection_to_frame_loops_and_tags_no_match_drops_frame():
+    """A frame.loop selector where the loop doesn't exist returns no results."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    result = selection_to_frame_loops_and_tags(
+        entry, [FrameLoopAndTagSelectors("shifts", "nonexistent_loop")]
+    )
+
+    assert result == []
+
+
+def test_selection_to_frame_loops_and_tags_merges_selectors_for_same_frame():
+    """Two selectors targeting the same frame are merged into one result."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    result = selection_to_frame_loops_and_tags(
+        entry,
+        [
+            FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]),
+            FrameLoopAndTagSelectors("shifts", "chemical_shift"),
+        ],
+    )
+
+    assert len(result) == 1
+    assert isinstance(result[0].frame, Saveframe)
+    assert all(isinstance(loop, Loop) for loop in result[0].loops)
+    assert str(result[0]) == EXPECTED_MERGED_SELECTORS
+
+
+EXPECTED_MERGED_LOOP_TAGS_UNION = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [chain_code, value],
+    },
+)"""
+
+EXPECTED_MERGED_LOOP_TAGS_WILDCARD_WINS = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [],
+    },
+)"""
+
+EXPECTED_MERGED_LOOP_TAGS_NEUTRAL = """\
+FrameLoopsAndTags(
+    frame=nef_chemical_shift_list_shifts,
+    loops=[
+        _nef_chemical_shift,
+    ],
+    frame_tags=[],
+    loop_tags={
+        _nef_chemical_shift: [chain_code],
+    },
+)"""
+
+
+@pytest.mark.parametrize(
+    "selectors,expected",
+    [
+        # two specific column lists → union
+        (
+            [
+                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["value"]),
+            ],
+            EXPECTED_MERGED_LOOP_TAGS_UNION,
+        ),
+        # wildcard + specific columns → wildcard wins (expands to all → [])
+        (
+            [
+                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
+                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+            ],
+            EXPECTED_MERGED_LOOP_TAGS_WILDCARD_WINS,
+        ),
+        # not-projected ([]) + specific columns → specific columns win
+        (
+            [
+                FrameLoopAndTagSelectors("shifts", "chemical_shift"),
+                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+            ],
+            EXPECTED_MERGED_LOOP_TAGS_NEUTRAL,
+        ),
+    ],
+)
+def test_selection_to_frame_loops_and_tags_loop_tag_merge(selectors, expected):
+    """Multiple selectors targeting the same loop merge their column lists correctly."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    result = selection_to_frame_loops_and_tags(entry, selectors)
+
+    assert len(result) == 1
+    assert isinstance(result[0].frame, Saveframe)
+    assert all(isinstance(loop, Loop) for loop in result[0].loops)
+    assert str(result[0]) == expected
