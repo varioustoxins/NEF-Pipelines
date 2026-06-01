@@ -2130,96 +2130,67 @@ def test_validate_split_separators_empty():
     assert result is None
 
 
+# fmt: off
 # Tests for parse_frame_loop_and_tags
-@pytest.mark.parametrize(
-    "input_str,kwargs,expected",
-    [
-        # Explicit frame.loop:tags format (loop columns)
-        (
-            "nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
-            {},
-            FrameLoopAndTagSelectors(
-                "nef_rdc_restraint_list", "nef_rdc_restraint", [], ["chain_code_1"]
-            ),
-        ),
-        # Frame:tags format (frame tags, not loop columns)
-        (
-            "my_frame:tag1,tag2,tag3",
-            {},
-            FrameLoopAndTagSelectors("my_frame", None, ["tag1", "tag2", "tag3"], []),
-        ),
-        # .loop:tags format (any frame, loop columns)
-        (
-            ".rdc:atom_name_1,atom_name_2",
-            {},
-            FrameLoopAndTagSelectors("*", "rdc", [], ["atom_name_1", "atom_name_2"]),
-        ),
-        # Frame.:tags format (any loop in frame, loop columns)
-        (
-            "dipolar.:tag1",
-            {},
-            FrameLoopAndTagSelectors("dipolar", "*", [], ["tag1"]),
-        ),
-        # Frame.loop format (entire loop)
-        (
-            "nef_rdc_restraint_list.nef_rdc_restraint",
-            {},
-            FrameLoopAndTagSelectors(
-                "nef_rdc_restraint_list", "nef_rdc_restraint", [], []
-            ),
-        ),
-        # Whitespace handling in tags (frame tags)
-        (
-            "frame:tag1 , tag2 ,tag3",
-            {},
-            FrameLoopAndTagSelectors("frame", None, ["tag1", "tag2", "tag3"], []),
-        ),
-    ],
-)
-def test_parse_frame_loop_and_tags(input_str, kwargs, expected):
-    """\
-    Test parse_frame_loop_and_tags with various input patterns.
-    """
-    result = parse_frame_loop_and_tags(input_str, **kwargs)
-
-    assert result == expected
-
-
 @pytest.mark.parametrize(
     "input_str,expected",
     [
-        # Escaped colon in frame name
-        ("frame::name:tag", FrameLoopAndTagSelectors("frame:name", None, ["tag"], [])),
+        # --- bare frame ---                                 frame                       loop                  frame_tags                loop_tags
+        ("myframe",                 FrameLoopAndTagSelectors("myframe",                  None,                 [],                       [])),
+        # --- frame:tags ---
+        ("myframe:*",               FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),
+        ("myframe:",                FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),
+        ("my_frame:tag1,tag2,tag3", FrameLoopAndTagSelectors("my_frame",                 None,                 ["tag1", "tag2", "tag3"], [])),
+        ("frame:tag1 , tag2 ,tag3", FrameLoopAndTagSelectors("frame",                    None,                 ["tag1", "tag2", "tag3"], [])),
+        # --- frame.loop ---
+        ("myframe.myloop",          FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       [])),
+        ("myframe.*",               FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       [])),
+        # --- frame.loop:* / frame.*:* ---
+        ("myframe.myloop:*",        FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),
+        ("myframe.*:*",             FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       ["*"])),
+        ("myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),
+        # --- frame.loop:col ---
+        ("nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
+                                  FrameLoopAndTagSelectors("nef_rdc_restraint_list",      "nef_rdc_restraint", [],                       ["chain_code_1"])),
+        # --- wildcard frame/loop shorthands ---
+        (".rdc:atom_name_1,atom_name_2",
+                                  FrameLoopAndTagSelectors("*",                           "rdc",               [],                       ["atom_name_1", "atom_name_2"])),
+        ("dipolar.:tag1",         FrameLoopAndTagSelectors("dipolar",                     "*",                 [],                       ["tag1"])),
+        ("myframe.",              FrameLoopAndTagSelectors("myframe",                     "*",                 [],                       [])),
+        ("*.myloop",              FrameLoopAndTagSelectors("*",                           "myloop",            [],                       [])),
+    ],
+)
+def test_parse_frame_loop_and_tags(input_str, expected):
+    """Test parse_frame_loop_and_tags with various input patterns."""
+    assert parse_frame_loop_and_tags(input_str) == expected
+#fmt: on
+
+#fmt: on=ff
+#TODO: these use the old form of escaping .. values and shoud disappear... to be replaced by \s
+@pytest.mark.parametrize(
+    "input_str,expected",
+    [
+        # Escaped colon in frame name                          frame         loop          frame_tag           loop_tag
+        ("frame::name:tag",           FrameLoopAndTagSelectors("frame:name",  None,        ["tag"],            [])),
         # Escaped dot in frame name
-        (
-            "frame..name.loop:tag",
-            FrameLoopAndTagSelectors("frame.name", "loop", [], ["tag"]),
-        ),
+        ("frame..name.loop:tag",      FrameLoopAndTagSelectors("frame.name", "loop",       [],                 ["tag"])),
         # Escaped comma in tag list
-        (
-            "frame:tag1,,2,tag3",
-            FrameLoopAndTagSelectors("frame", None, ["tag1,2", "tag3"], []),
-        ),
+        ("frame:tag1,,2,tag3",        FrameLoopAndTagSelectors("frame",       None,        ["tag1,2", "tag3"], []),),
         # Escaped dot in loop name
-        (
-            "frame.loop..name:tag",
-            FrameLoopAndTagSelectors("frame", "loop.name", [], ["tag"]),
-        ),
+        ("frame.loop..name:tag",      FrameLoopAndTagSelectors("frame",       "loop.name", [],                 ["tag"])),
         # Triple colon (:: → : plus separator :)
-        ("frame:::tag", FrameLoopAndTagSelectors("frame:", None, ["tag"], [])),
+        ("frame:::tag",               FrameLoopAndTagSelectors("frame:",      None,        ["tag"],            [])),
         # Multiple escapes together
-        (
-            "fr::ame.lo..op:ta,,g1,tag2",
-            FrameLoopAndTagSelectors("fr:ame", "lo.op", [], ["ta,g1", "tag2"]),
-        ),
+        ("fr::ame.lo..op:ta,,g1,tag2",FrameLoopAndTagSelectors("fr:ame",      "lo.op",     [],                 ["ta,g1", "tag2"])),
         # Escaped in wildcard selectors
-        (".loop::name:tag", FrameLoopAndTagSelectors("*", "loop:name", [], ["tag"])),
+        (".loop::name:tag",           FrameLoopAndTagSelectors("*",           "loop:name", [],                 ["tag"])),
     ],
 )
 def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
     """Test parse_frame_loop_and_tags with escape sequences."""
     result = parse_frame_loop_and_tags(input_str, use_escapes=True)
     assert result == expected
+# fmt: on
 
 
 @pytest.mark.parametrize(
