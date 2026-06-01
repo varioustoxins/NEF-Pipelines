@@ -1748,7 +1748,12 @@ def _build_frame_loop_tag_grammar(use_escapes: bool) -> Union[ParserElement, Str
 
     # Frame and loop identifiers (anything except the special separators)
     # When using escapes, allow placeholder characters (null bytes from escape processing)
-    forbidden_chars = FRAME_TAG_SEPARATOR + FRAME_LOOP_SEPARATOR + TAG_LIST_SEPARATOR + SELECTOR_LIST_SEPARATOR
+    forbidden_chars = (
+        FRAME_TAG_SEPARATOR
+        + FRAME_LOOP_SEPARATOR
+        + TAG_LIST_SEPARATOR
+        + SELECTOR_LIST_SEPARATOR
+    )
     if use_escapes:
         # Allow any character including placeholders (null bytes from escape processing)
         identifier = pp.CharsNotIn(forbidden_chars)
@@ -2110,9 +2115,9 @@ def _split_selectors_on_slash(selector: str) -> List[str]:
 
 
 def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
-    """Merge two projection lists. Wildcard ['*'] wins; [] is neutral."""
-    if a == ['*'] or b == ['*']:
-        return ['*']
+    """Merge two tag selection lists. Wildcard ['*'] wins; [] is neutral."""
+    if a == ["*"] or b == ["*"]:
+        return ["*"]
     if not a:
         return list(b)
     if not b:
@@ -2122,8 +2127,6 @@ def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
         if tag not in merged:
             merged.append(tag)
     return merged
-
-
 
 
 def expand_frame_loop_and_tag_wildcards(
@@ -2150,9 +2153,9 @@ def expand_frame_loop_and_tag_wildcards(
             no expansion
     """
     frame_name = selector.frame_name
-    loop_name  = selector.loop_name
+    loop_name = selector.loop_name
     frame_tags = selector.frame_tags
-    loop_tags  = selector.loop_tags
+    loop_tags = selector.loop_tags
 
     if expand_to & EntryPart.FrameTag and not frame_tags:
         frame_tags = ["*"]
@@ -2164,6 +2167,7 @@ def expand_frame_loop_and_tag_wildcards(
         loop_tags = ["*"]
 
     return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
+
 
 def selection_to_frame_loops_and_tags(
     entry: Entry,
@@ -2179,9 +2183,9 @@ def selection_to_frame_loops_and_tags(
     Frames are dropped unless they are frame-only selections (no children),
     have frame_tags, or have loops — anything else is a selection failure.
     """
-    pairs             = _build_selector_frame_pairs(entry, selectors)
-    frame_only_names  = _find_frame_only_selection_frame_names(pairs)
-    frame_matches     = _init_frame_matches(pairs)
+    pairs = _build_selector_frame_pairs(entry, selectors)
+    frame_only_names = _find_frame_only_selection_frame_names(pairs)
+    frame_matches = _init_frame_matches(pairs)
     _merge_frame_tags(frame_matches, pairs)
     _add_selected_loops(frame_matches, pairs, exact)
     _merge_loop_tags(frame_matches, pairs, exact)
@@ -2189,6 +2193,7 @@ def selection_to_frame_loops_and_tags(
     _resolve_frame_tag_wildcards(frame_matches, exact)
     _resolve_loop_tag_wildcards(frame_matches, exact)
     return list(frame_matches.values())
+
 
 def _build_selector_frame_pairs(
     entry: Entry,
@@ -2208,7 +2213,9 @@ def _find_frame_only_selection_frame_names(pairs: List[tuple]) -> set:
     return {
         frame.name
         for selector, frame in pairs
-        if selector.loop_name is None and not selector.frame_tags and not selector.loop_tags
+        if selector.loop_name is None
+        and not selector.frame_tags
+        and not selector.loop_tags
     }
 
 
@@ -2227,13 +2234,17 @@ def _merge_frame_tags(frame_matches: OrderedDict, pairs: List[tuple]) -> None:
         match.frame_tags = _merge_tag_lists(match.frame_tags, selector.frame_tags)
 
 
-def _add_selected_loops(frame_matches: OrderedDict, pairs: List[tuple], exact: bool) -> None:
+def _add_selected_loops(
+    frame_matches: OrderedDict, pairs: List[tuple], exact: bool
+) -> None:
     # Accumulate matching loops in document order, deduplicated by identity
     for selector, frame in pairs:
         if selector.loop_name is None:
             continue
         match = frame_matches[frame.name]
-        matched_loops = select_loops_by_category(frame.loops, [selector.loop_name], exact=exact)
+        matched_loops = select_loops_by_category(
+            frame.loops, [selector.loop_name], exact=exact
+        )
         for target_loop in frame.loops:
             if target_loop not in matched_loops:
                 continue
@@ -2241,12 +2252,16 @@ def _add_selected_loops(frame_matches: OrderedDict, pairs: List[tuple], exact: b
                 match.loops.append(target_loop)
 
 
-def _merge_loop_tags(frame_matches: OrderedDict, pairs: List[tuple], exact: bool) -> None:
+def _merge_loop_tags(
+    frame_matches: OrderedDict, pairs: List[tuple], exact: bool
+) -> None:
     for selector, frame in pairs:
         if selector.loop_name is None:
             continue
         match = frame_matches[frame.name]
-        for loop in select_loops_by_category(match.loops, [selector.loop_name], exact=exact):
+        for loop in select_loops_by_category(
+            match.loops, [selector.loop_name], exact=exact
+        ):
             category = loop.category
             match.loop_tags[category] = _merge_tag_lists(
                 match.loop_tags.get(category, []), selector.loop_tags
@@ -2256,7 +2271,8 @@ def _merge_loop_tags(frame_matches: OrderedDict, pairs: List[tuple], exact: bool
 def _drop_empty_matches(frame_matches: OrderedDict, frame_only_names: set) -> None:
     # Keep frame-only selections always; drop anything else where the selector found nothing
     to_drop = [
-        name for name, match in frame_matches.items()
+        name
+        for name, match in frame_matches.items()
         if not match.loops and not match.frame_tags and name not in frame_only_names
     ]
     for name in to_drop:
@@ -2266,7 +2282,9 @@ def _drop_empty_matches(frame_matches: OrderedDict, frame_only_names: set) -> No
 def _resolve_frame_tag_wildcards(frame_matches: OrderedDict, exact: bool) -> None:
     for match in frame_matches.values():
         all_frame_tags = [t for t, _ in match.frame.tag_iterator()]
-        match.frame_tags = _expand_tag_wildcards(match.frame_tags, all_frame_tags, exact=exact)
+        match.frame_tags = _expand_tag_wildcards(
+            match.frame_tags, all_frame_tags, exact=exact
+        )
 
 
 def _resolve_loop_tag_wildcards(frame_matches: OrderedDict, exact: bool) -> None:
@@ -2276,6 +2294,7 @@ def _resolve_loop_tag_wildcards(frame_matches: OrderedDict, exact: bool) -> None
             match.loop_tags[category] = _expand_tag_wildcards(
                 match.loop_tags.get(category, []), list(loop.tags), exact=exact
             )
+
 
 def _expand_tag_wildcards(
     merged_tags: List[str],
@@ -2288,10 +2307,11 @@ def _expand_tag_wildcards(
         []    — no selection or explicit wildcard ['*'] — show all, command decides
         [...]  — concrete list of matching tag names for specific patterns
     """
-    if not merged_tags or merged_tags == ['*']:
+    if not merged_tags or merged_tags == ["*"]:
         return []
 
     from fnmatch import fnmatchcase
+
     resolved = []
     for pattern in merged_tags:
         match_pattern = pattern if exact else f"*{pattern}*"
@@ -2302,7 +2322,7 @@ def _expand_tag_wildcards(
 
 
 def parse_frame_loop_selectors_and_get_errors(
-        entry: Entry, selectors: list[str]
+    entry: Entry, selectors: list[str]
 ) -> Tuple[List[FrameLoopsAndTags], List[str]]:
     """Parse selectors and resolve to loop objects.
 
@@ -2334,11 +2354,10 @@ def parse_frame_loop_selectors_and_get_errors(
             selection = parse_frame_loop_and_tags(spec)
 
             # Validate: reject selectors with frame tags (frame:tag syntax)
-            if selection.frame_tags and selection.frame_tags not in [[], ['*'], None]:
-                tags = ', '.join(selection.frame_tags)
+            if selection.frame_tags and selection.frame_tags not in [[], ["*"], None]:
+                tags = ", ".join(selection.frame_tags)
                 ordinal = to_ordinal(i)
-                msg = \
-                    f"""
+                msg = f"""
                     the {ordinal} selector {spec} is bad because its is selecting the frame
                     tags: {tags}. Use the frame.loop syntax without frame tags.
                 """
@@ -2347,10 +2366,9 @@ def parse_frame_loop_selectors_and_get_errors(
                 continue
 
             # Validate: reject selectors with loop tags/columns (frame.loop:col syntax)
-            if selection.loop_tags and selection.loop_tags != ['*']:
-                tags = ', '.join(selection.loop_tags)
-                msg = \
-                f"""
+            if selection.loop_tags and selection.loop_tags != ["*"]:
+                tags = ", ".join(selection.loop_tags)
+                msg = f"""
                     the {to_ordinal(i)} selector {spec} is bad because it is selecting
                     selecting the columns: {tags}. Use the frame.loop syntax without columns.
                 """
