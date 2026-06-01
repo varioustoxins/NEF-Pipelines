@@ -18,18 +18,25 @@ from nef_pipelines.lib.cli_lib import (
     analyze_nef_entry_for_separator_conflicts,
     combine_residue_ranges,
     detect_overlapping_range_offsets,
+    expand_frame_loop_and_tag_wildcards,
     expand_residue_range,
     format_residue_range,
     parse_chain_offset_syntax,
     parse_frame_loop_and_tags,
+    parse_frame_loop_selectors_and_get_errors,
     parse_range_number_pairs,
     parse_residue_ranges,
     parse_selector_lists,
+    selection_to_frame_loops_and_tags,
+    validate_loop_selection_only_or_raise,
     validate_residue_ranges_in_system,
 )
 from nef_pipelines.lib.structures import (
     BadFrameLoopTagSyntaxException,
+    EntryPart,
     FrameLoopAndTagSelectors,
+    FrameLoopsAndTags,
+    NEFBadLoopSelectionException,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
@@ -2135,61 +2142,63 @@ def test_validate_split_separators_empty():
 @pytest.mark.parametrize(
     "input_str,expected",
     [
-        # --- bare frame ---                                 frame                       loop                  frame_tags                loop_tags
-        ("myframe",                 FrameLoopAndTagSelectors("myframe",                  None,                 [],                       [])),
+        # --- bare frame ---                                 frame                       loop                  frame_tags                loop_tags                                           # noqa: E501
+        ("myframe",                 FrameLoopAndTagSelectors("myframe",                  None,                 [],                       [])),                              # noqa: E501
         # --- frame:tags ---
-        ("myframe:*",               FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),
-        ("myframe:",                FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),
-        ("my_frame:tag1,tag2,tag3", FrameLoopAndTagSelectors("my_frame",                 None,                 ["tag1", "tag2", "tag3"], [])),
-        ("frame:tag1 , tag2 ,tag3", FrameLoopAndTagSelectors("frame",                    None,                 ["tag1", "tag2", "tag3"], [])),
+        ("myframe:*",               FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
+        ("myframe:",                FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
+        ("my_frame:tag1,tag2,tag3", FrameLoopAndTagSelectors("my_frame",                 None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
+        ("frame:tag1 , tag2 ,tag3", FrameLoopAndTagSelectors("frame",                    None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
         # --- frame.loop ---
-        ("myframe.myloop",          FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       [])),
-        ("myframe.*",               FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       [])),
+        ("myframe.myloop",          FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       [])),                              # noqa: E501
+        ("myframe.*",               FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       [])),                              # noqa: E501
         # --- frame.loop:* / frame.*:* ---
-        ("myframe.myloop:*",        FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),
-        ("myframe.*:*",             FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       ["*"])),
-        ("myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),
+        ("myframe.myloop:*",        FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
+        ("myframe.*:*",             FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       ["*"])),                           # noqa: E501
+        ("myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
         # --- frame.loop:col ---
         ("nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
-                                  FrameLoopAndTagSelectors("nef_rdc_restraint_list",      "nef_rdc_restraint", [],                       ["chain_code_1"])),
+                                    FrameLoopAndTagSelectors("nef_rdc_restraint_list",   "nef_rdc_restraint", [],                       ["chain_code_1"])),                # noqa: E501
         # --- wildcard frame/loop shorthands ---
         (".rdc:atom_name_1,atom_name_2",
-                                  FrameLoopAndTagSelectors("*",                           "rdc",               [],                       ["atom_name_1", "atom_name_2"])),
-        ("dipolar.:tag1",         FrameLoopAndTagSelectors("dipolar",                     "*",                 [],                       ["tag1"])),
-        ("myframe.",              FrameLoopAndTagSelectors("myframe",                     "*",                 [],                       [])),
-        ("*.myloop",              FrameLoopAndTagSelectors("*",                           "myloop",            [],                       [])),
+                                    FrameLoopAndTagSelectors("*",                         "rdc",               [],                       ["atom_name_1", "atom_name_2"])),  # noqa: E501
+        ("dipolar.:tag1",           FrameLoopAndTagSelectors("dipolar",                   "*",                 [],                       ["tag1"])),                        # noqa: E501
+        ("myframe.",                FrameLoopAndTagSelectors("myframe",                   "*",                 [],                       [])),                              # noqa: E501
+        ("*.myloop",                FrameLoopAndTagSelectors("*",                         "myloop",            [],                       [])),                              # noqa: E501
     ],
 )
 def test_parse_frame_loop_and_tags(input_str, expected):
     """Test parse_frame_loop_and_tags with various input patterns."""
     assert parse_frame_loop_and_tags(input_str) == expected
-#fmt: on
+# fmt: on
 
-#fmt: on=ff
-#TODO: these use the old form of escaping .. values and shoud disappear... to be replaced by \s
+
+# fmt: off
+# TODO: these use the old form of escaping .. values and shoud disappear... to be replaced by \s
 @pytest.mark.parametrize(
     "input_str,expected",
     [
         # Escaped colon in frame name                          frame         loop          frame_tag           loop_tag
-        ("frame::name:tag",           FrameLoopAndTagSelectors("frame:name",  None,        ["tag"],            [])),
+        ("frame::name:tag",           FrameLoopAndTagSelectors("frame:name",  None,        ["tag"],            [])),                    # noqa: E501
         # Escaped dot in frame name
-        ("frame..name.loop:tag",      FrameLoopAndTagSelectors("frame.name", "loop",       [],                 ["tag"])),
+        ("frame..name.loop:tag",      FrameLoopAndTagSelectors("frame.name", "loop",       [],                 ["tag"])),               # noqa: E501
         # Escaped comma in tag list
-        ("frame:tag1,,2,tag3",        FrameLoopAndTagSelectors("frame",       None,        ["tag1,2", "tag3"], []),),
+        ("frame:tag1,,2,tag3",        FrameLoopAndTagSelectors("frame",       None,        ["tag1,2", "tag3"], []),),                   # noqa: E501
         # Escaped dot in loop name
-        ("frame.loop..name:tag",      FrameLoopAndTagSelectors("frame",       "loop.name", [],                 ["tag"])),
+        ("frame.loop..name:tag",      FrameLoopAndTagSelectors("frame",       "loop.name", [],                 ["tag"])),               # noqa: E501
         # Triple colon (:: → : plus separator :)
-        ("frame:::tag",               FrameLoopAndTagSelectors("frame:",      None,        ["tag"],            [])),
+        ("frame:::tag",               FrameLoopAndTagSelectors("frame:",      None,        ["tag"],            [])),                    # noqa: E501
         # Multiple escapes together
-        ("fr::ame.lo..op:ta,,g1,tag2",FrameLoopAndTagSelectors("fr:ame",      "lo.op",     [],                 ["ta,g1", "tag2"])),
+        ("fr::ame.lo..op:ta,,g1,tag2", FrameLoopAndTagSelectors("fr:ame",     "lo.op",     [],                 ["ta,g1", "tag2"])),     # noqa: E501
         # Escaped in wildcard selectors
-        (".loop::name:tag",           FrameLoopAndTagSelectors("*",           "loop:name", [],                 ["tag"])),
+        (".loop::name:tag",           FrameLoopAndTagSelectors("*",           "loop:name", [],                 ["tag"])),               # noqa: E501
     ],
 )
 def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
     """Test parse_frame_loop_and_tags with escape sequences."""
     result = parse_frame_loop_and_tags(input_str, use_escapes=True)
     assert result == expected
+
 # fmt: on
 
 
@@ -2198,8 +2207,6 @@ def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
     [
         # Too many frame tag separators
         ("frame:loop:tag1", "you have too many : separators [2], you should have 1"),
-        # Empty tags after colon
-        ("frame.loop:", "tags cannot be empty after ':'"),
     ],
 )
 def test_parse_frame_loop_and_tags_errors(input_str, expected_error_msg):
@@ -2560,39 +2567,90 @@ def test_parse_frame_loop_selectors_slash_joins_selectors():
     )
     assert errors == []
     assert loops == [
-        FrameLoopsAndTags(frame=shifts_frame, loops=[chemical_shift_loop],
-                          frame_tags=[], loop_tags={"_nef_chemical_shift": []}),
-        FrameLoopsAndTags(frame=dist_frame, loops=[distance_restraint_loop],
-                          frame_tags=[], loop_tags={"_nef_distance_restraint": []}),
+        FrameLoopsAndTags(
+            frame=shifts_frame,
+            loops=[chemical_shift_loop],
+            frame_tags=[],
+            loop_tags={"_nef_chemical_shift": []},
+        ),
+        FrameLoopsAndTags(
+            frame=dist_frame,
+            loops=[distance_restraint_loop],
+            frame_tags=[],
+            loop_tags={"_nef_distance_restraint": []},
+        ),
     ]
 
 
-@pytest.mark.parametrize("selector,expected_errors", [
-    (
-        "shifts.chemical_shift:chain_code,value",
-        [dedent("""\
-            the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
-            selecting the columns: chain_code, value. Use the frame.loop syntax without columns.""").strip()],
-    ),
-    (
-        "shifts.chemical_shift:chain_code,value/dist.distance_restraint:index",
-        [
-            dedent("""\
+@pytest.mark.parametrize(
+    "selector,expected_errors",
+    [
+        (
+            "shifts.chemical_shift:chain_code,value",
+            [
+                """
                 the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
-                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.""").strip(),
-            dedent("""\
+                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+            """
+            ],
+        ),
+        (
+            "shifts.chemical_shift:chain_code,value/dist.distance_restraint:index",
+            [
+                """
+                the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
+                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+            """,
+                """
                 the 2nd selector dist.distance_restraint:index is bad because it is selecting
-                selecting the columns: index. Use the frame.loop syntax without columns.""").strip(),
-        ],
-    ),
-])
+                selecting the columns: index. Use the frame.loop syntax without columns.
+                """,
+            ],
+        ),
+    ],
+)
 def test_parse_frame_loop_selectors_tag_comma_not_split(selector, expected_errors):
     """Tag-list commas are never treated as selector separators."""
+    expected_errors = [dedent(error).strip() for error in expected_errors]
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
     loops, errors = parse_frame_loop_selectors_and_get_errors(entry, [selector])
     assert loops == []
     assert errors == expected_errors
 
+
+def test_parse_frame_loop_selectors_and_get_errors_mixed_valid_invalid():
+    """Test that function collects errors but still returns valid results."""
+    entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
+
+    shifts_frame = entry.get_saveframe_by_name("nef_chemical_shift_list_shifts")
+    chemical_shift_loop = shifts_frame.get_loop("_nef_chemical_shift")
+
+    expected_loops = [
+        FrameLoopsAndTags(
+            frame=shifts_frame,
+            loops=[chemical_shift_loop],
+            frame_tags=[],
+            loop_tags={"_nef_chemical_shift": []},
+        )
+    ]
+    expected_errors = [
+        """
+            the 2nd selector shifts:bad_tag is bad because its is selecting the frame
+            tags: bad_tag. Use the frame.loop syntax without frame tags.
+        """,
+        """
+            the 3rd selector dist.distance_restraint:bad_col is bad because it is selecting
+            selecting the columns: bad_col. Use the frame.loop syntax without columns.
+        """,
+    ]
+    expected_errors = [dedent(error).strip() for error in expected_errors]
+
+    loops, errors = parse_frame_loop_selectors_and_get_errors(
+        entry,
+        ["shifts.chemical_shift", "shifts:bad_tag", "dist.distance_restraint:bad_col"],
+    )
+    assert loops == expected_loops
+    assert errors == expected_errors
 
 
 # Tests for expand_frame_loop_and_tag_wildcards
@@ -2653,8 +2711,6 @@ def test_parse_frame_loop_selectors_tag_comma_not_split(selector, expected_error
         ),
     ],
 )
-
-
 def test_expand_frame_loop_and_tag_wildcards(selector, expand_to, expected):
     """Test expand_frame_loop_and_tag_wildcards with EntryPart flag expansion control."""
     result = expand_frame_loop_and_tag_wildcards(selector, expand_to)
@@ -2675,27 +2731,68 @@ TEST_LOOP_B = Loop.from_scratch("_test_loop_b")
         # Valid: multiple loops, no projections (frame.* expansion)
         (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B]), None),
         # Valid: empty projection lists explicit
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=[], loop_tags={"_test_loop_a": []}), None),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME,
+                loops=[TEST_LOOP_A],
+                frame_tags=[],
+                loop_tags={"_test_loop_a": []},
+            ),
+            None,
+        ),
         # Valid: multiple loops, all tag lists empty
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B],
-                           loop_tags={"_test_loop_a": [], "_test_loop_b": []}), None),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME,
+                loops=[TEST_LOOP_A, TEST_LOOP_B],
+                loop_tags={"_test_loop_a": [], "_test_loop_b": []},
+            ),
+            None,
+        ),
         # Invalid: wildcard frame_tags
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["*"]), "frame_tags not allowed"),
+        (
+            FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["*"]),
+            "frame_tags not allowed",
+        ),
         # Invalid: wildcard loop column tags
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["*"]}),
-                           r"loop_tags \(columns\) not allowed"),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["*"]}
+            ),
+            r"loop_tags \(columns\) not allowed",
+        ),
         # Invalid: wildcard columns on one of multiple loops (frame.* with :*)
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B],
-                           loop_tags={"_test_loop_a": [], "_test_loop_b": ["*"]}), r"loop_tags \(columns\) not allowed"),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME,
+                loops=[TEST_LOOP_A, TEST_LOOP_B],
+                loop_tags={"_test_loop_a": [], "_test_loop_b": ["*"]},
+            ),
+            r"loop_tags \(columns\) not allowed",
+        ),
         # Invalid: specific frame_tags
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["sf_category"]), "frame_tags not allowed"),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["sf_category"]
+            ),
+            "frame_tags not allowed",
+        ),
         # Invalid: specific loop column tags
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["chain_code"]}),
-                           r"loop_tags \(columns\) not allowed"),
+        (
+            FrameLoopsAndTags(
+                frame=TEST_FRAME,
+                loops=[TEST_LOOP_A],
+                loop_tags={"_test_loop_a": ["chain_code"]},
+            ),
+            r"loop_tags \(columns\) not allowed",
+        ),
         # Invalid: bare frame (no loops)
         (FrameLoopsAndTags(frame=TEST_FRAME), "a loop and a frame must be specified"),
         # Invalid: frame is None
-        (FrameLoopsAndTags(frame=None, loops=[TEST_LOOP_A]), "a loop and a frame must be specified"),
+        (
+            FrameLoopsAndTags(frame=None, loops=[TEST_LOOP_A]),
+            "a loop and a frame must be specified",
+        ),
     ],
 )
 def test_validate_loop_selection_only_or_raise(item, expected_error_fragment):
@@ -2804,13 +2901,27 @@ FrameLoopsAndTags(
         # bare frame — no loop, no tags → frame kept with empty lists
         (FrameLoopAndTagSelectors("shifts", None), EXPECTED_BARE_FRAME),
         # frame.loop — loop matched, no column selection → loop_tags empty (not projected)
-        (FrameLoopAndTagSelectors("shifts", "chemical_shift"), EXPECTED_FRAME_WITH_LOOP),
+        (
+            FrameLoopAndTagSelectors("shifts", "chemical_shift"),
+            EXPECTED_FRAME_WITH_LOOP,
+        ),
         # frame.loop:col — specific column selected
-        (FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]), EXPECTED_FRAME_WITH_LOOP_COLUMN),
+        (
+            FrameLoopAndTagSelectors(
+                "shifts", "chemical_shift", loop_tags=["chain_code"]
+            ),
+            EXPECTED_FRAME_WITH_LOOP_COLUMN,
+        ),
         # frame.loop:* — explicit wildcard expands to all columns (returns [] after expansion)
-        (FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]), EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS),
+        (
+            FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
+            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
+        ),
         # frame:tag — specific frame tag selected
-        (FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]), EXPECTED_FRAME_WITH_FRAME_TAG),
+        (
+            FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]),
+            EXPECTED_FRAME_WITH_FRAME_TAG,
+        ),
     ],
 )
 def test_selection_to_frame_loops_and_tags_single_frame(selector, expected):
@@ -2829,10 +2940,15 @@ def test_selection_to_frame_loops_and_tags_wildcard_frame():
     """Wildcard frame selector returns all frames in document order."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
 
-    result = selection_to_frame_loops_and_tags(entry, [FrameLoopAndTagSelectors("*", None)])
+    result = selection_to_frame_loops_and_tags(
+        entry, [FrameLoopAndTagSelectors("*", None)]
+    )
 
     assert all(isinstance(r.frame, Saveframe) for r in result)
-    assert [str(r) for r in result] == [EXPECTED_WILDCARD_FRAME_SHIFTS, EXPECTED_WILDCARD_FRAME_DIST]
+    assert [str(r) for r in result] == [
+        EXPECTED_WILDCARD_FRAME_SHIFTS,
+        EXPECTED_WILDCARD_FRAME_DIST,
+    ]
 
 
 def test_selection_to_frame_loops_and_tags_no_match_drops_frame():
@@ -2907,8 +3023,12 @@ FrameLoopsAndTags(
         # two specific column lists → union
         (
             [
-                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
-                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["value"]),
+                FrameLoopAndTagSelectors(
+                    "shifts", "chemical_shift", loop_tags=["chain_code"]
+                ),
+                FrameLoopAndTagSelectors(
+                    "shifts", "chemical_shift", loop_tags=["value"]
+                ),
             ],
             EXPECTED_MERGED_LOOP_TAGS_UNION,
         ),
@@ -2916,7 +3036,9 @@ FrameLoopsAndTags(
         (
             [
                 FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
-                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+                FrameLoopAndTagSelectors(
+                    "shifts", "chemical_shift", loop_tags=["chain_code"]
+                ),
             ],
             EXPECTED_MERGED_LOOP_TAGS_WILDCARD_WINS,
         ),
@@ -2924,7 +3046,9 @@ FrameLoopsAndTags(
         (
             [
                 FrameLoopAndTagSelectors("shifts", "chemical_shift"),
-                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+                FrameLoopAndTagSelectors(
+                    "shifts", "chemical_shift", loop_tags=["chain_code"]
+                ),
             ],
             EXPECTED_MERGED_LOOP_TAGS_NEUTRAL,
         ),
