@@ -524,6 +524,7 @@ def _execute_command_in_process(
                 # click >= 8.3: mix_stderr removed; use plain CliRunner
                 runner = CliRunner()
 
+            result = None
             try:
                 result = runner.invoke(
                     nef_pipelines.nef_app.app, list(args), **invoke_kwargs
@@ -538,15 +539,10 @@ def _execute_command_in_process(
             except SandboxViolation as e:
                 # Audit hook caught a sandbox violation (or backstop re-raised it)
                 violation_error = str(e)
-            except TypeError:
-                runner = CliRunner()
-                result = runner.invoke(
-                    nef_pipelines.nef_app.app, list(args), **invoke_kwargs
-                )
-                stdout = result.output or ""
-                stderr = ""
-                if hasattr(result, "stderr") and result.stderr:
-                    stderr = result.stderr
+                if result:
+                    stderr = getattr(result, "stderr", "") or ""
+                else:
+                    stderr = ""
 
             # CliRunner swallowed the SandboxViolation; record it and clear it so
             # the backstop in audit_sandbox_writes.__exit__ does not re-raise
