@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from typer.testing import CliRunner
 
 import nef_pipelines
+from nef_pipelines.lib.cli_runner_lib import _MarkerCliRunner, _split_marked_output
 from nef_pipelines.lib.util import warn
 from nef_pipelines.nef_app_runner import create_nef_app
 from nef_pipelines.tools.ai.sandbox_audit import SandboxViolation, audit_sandbox_writes
@@ -516,12 +517,24 @@ def _execute_command_in_process(
         # Wrap execution in audit context to monitor file writes
         violation_error = None
         with audit_sandbox_writes(sandbox_path) as audit_state:
+            # Try click < 8.3 path first (with mix_stderr support)
             try:
-                runner = CliRunner(mix_stderr=False)
+                runner = _MarkerCliRunner(mix_stderr=True)
+            except TypeError:
+                # click >= 8.3: mix_stderr removed; use plain CliRunner
+                runner = CliRunner()
+
+            try:
                 result = runner.invoke(
                     nef_pipelines.nef_app.app, list(args), **invoke_kwargs
                 )
-                stdout, stderr = result.output or "", result.stderr or ""
+                # Split output based on runner type
+                if isinstance(runner, _MarkerCliRunner):
+                    stdout, stderr = _split_marked_output(result.output)
+                else:
+                    # click >= 8.3: streams separated natively
+                    stdout = result.stdout or ""
+                    stderr = result.stderr or ""
             except SandboxViolation as e:
                 # Audit hook caught a sandbox violation (or backstop re-raised it)
                 violation_error = str(e)
