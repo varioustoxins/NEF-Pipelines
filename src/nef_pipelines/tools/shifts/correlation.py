@@ -378,6 +378,11 @@ def _create_correlation_plot(
 
     warnings.simplefilter("ignore", np.RankWarning)
     warnings.simplefilter("ignore", np.ComplexWarning)
+    try:
+        ComplexWarning = np.ComplexWarning
+    except AttributeError:
+        ComplexWarning = np.exceptions.ComplexWarning
+    warnings.simplefilter("ignore", ComplexWarning)
 
     # Extract data for plotting
     atoms = [atom for atom, _, _ in common_shifts]
