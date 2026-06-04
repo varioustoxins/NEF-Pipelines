@@ -376,12 +376,12 @@ def _create_correlation_plot(
     except AttributeError:
         RankWarning = np.exceptions.RankWarning
 
-    warnings.simplefilter("ignore", np.RankWarning)
-    warnings.simplefilter("ignore", np.ComplexWarning)
     try:
         ComplexWarning = np.ComplexWarning
     except AttributeError:
         ComplexWarning = np.exceptions.ComplexWarning
+
+    warnings.simplefilter("ignore", RankWarning)
     warnings.simplefilter("ignore", ComplexWarning)
 
     # Extract data for plotting
