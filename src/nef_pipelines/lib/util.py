@@ -1,6 +1,9 @@
 """
     General-purpose helpers: error/warn output, stdio handling, fnmatch utilities,
-    metadata fix-up, exit_error, and more."""
+    metadata fix-up, exit_error, and more.
+"""
+
+# Note: there are circular imports lower down in this file in function calls
 
 import contextlib
 import functools
@@ -381,7 +384,7 @@ def exit_error(msg, exception=None) -> NoReturn:
     """
 
     # this has to be imported after complete initialisation has occured and after this module has been initialised...
-    from nef_pipelines.nef_app_runner import debug_mode
+    from nef_pipelines.nef_app_runner import debug_mode  # circular
 
     # This should only happen in verbose mode
     if exception is not None:
@@ -836,9 +839,7 @@ def unused_to_none(value: str) -> str:
     :param value: value which might be UNUSED
     :return: value or None if the value was UNUSED
     """
-    from nef_pipelines.lib.nef_lib import (
-        UNUSED,  # to avoid circular import, move to constants?
-    )
+    from nef_pipelines.lib.nef_lib import UNUSED  # circular; move to constants?
 
     if value == UNUSED:
         value = None
@@ -851,9 +852,7 @@ def unused_to_empty_string(value):
     :param value: value which might be UNUSED
     :return: value or "" if the value was UNUSED
     """
-    from nef_pipelines.lib.nef_lib import (
-        UNUSED,  # to avoid circular import , move to constants?
-    )
+    from nef_pipelines.lib.nef_lib import UNUSED  # circular; move to constants?
 
     if value == UNUSED:
         value = ""
