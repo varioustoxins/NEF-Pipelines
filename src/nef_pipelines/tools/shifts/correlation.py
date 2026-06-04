@@ -102,8 +102,8 @@ def correlation(
 
     # Check for plotting dependencies
     try:
-        import matplotlib.pyplot as plt  # noqa: F401
-        import numpy as np  # noqa: F401
+        import matplotlib.pyplot as mpl  # noqa: F401  # deferred
+        import numpy as np  # noqa: F401  # deferred
     except ImportError as e:
         exit_error(
             f"Plotting functionality not available. Please install matplotlib and numpy.\nError: {e}"
