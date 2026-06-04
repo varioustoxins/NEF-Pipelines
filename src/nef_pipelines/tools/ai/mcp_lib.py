@@ -32,6 +32,7 @@ def create_nef_pipelines_app():
 
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
 _RESOURCES_ROOT = files("nef_pipelines") / "resources"
+_SKILLS = _RESOURCES / "skill"
 
 _RESOURCE_NAME_SEPARATOR = " - "
 
@@ -587,9 +588,13 @@ def _get_resource_name_from_filename(filename: str) -> str:
 
     The separator is space-hyphen-space so resource names that contain hyphens (e.g.
     'cli-idioms', 'nmr-data') are preserved intact.
+
+    Numeric priority prefixes (e.g., "01-", "02-") are stripped from the name.
     """
     stem = Path(filename).stem
-    return stem.split(_RESOURCE_NAME_SEPARATOR, 1)[0].strip().lower()
+    name_part = stem.split(_RESOURCE_NAME_SEPARATOR, 1)[0].strip()
+    name_without_prefix = _get_stem_without_priority(name_part)
+    return name_without_prefix.lower()
 
 
 def _get_resource_description_from_filename(filename: str) -> str:
@@ -597,6 +602,41 @@ def _get_resource_description_from_filename(filename: str) -> str:
     stem = Path(filename).stem
     parts = stem.split(_RESOURCE_NAME_SEPARATOR, 1)
     return parts[1].strip() if len(parts) > 1 else f"{parts[0].strip()} reference"
+
+
+def _get_priority_from_filename(filename: str) -> int:
+    """Extract numeric priority prefix from filename, or return 999 if none.
+
+    Examples:
+        "01-skill.md" -> 1
+        "02-skill.md" -> 2
+        "skill.md" -> 99
+    """
+    stem = Path(filename).stem
+    first_field = stem.split("-", 1)[0]
+    return int(first_field) if first_field.isdigit() else 99
+
+
+def _get_stem_without_priority(stem: str) -> str:
+    """Remove leading numeric priority prefix from a filename stem.
+
+    Examples:
+        "01-skill" -> "skill"
+        "02-skill" -> "skill"
+        "skill" -> "skill"
+    """
+    parts = stem.split("-", 1)
+    return parts[1] if len(parts) > 1 and parts[0].isdigit() else stem
+
+
+def _resource_sort_key(path_or_str):
+    """Sort key function for resource files: sorts by numeric priority, then name.
+
+    Accepts either a Path object or a string filename.
+    """
+    name = path_or_str.name if hasattr(path_or_str, "name") else str(path_or_str)
+    priority = _get_priority_from_filename(name)
+    return (priority, name)
 
 
 def _get_native_directory(
