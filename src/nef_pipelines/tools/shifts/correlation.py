@@ -379,6 +379,9 @@ def _create_correlation_plot(
     except AttributeError:
         ComplexWarning = np.exceptions.ComplexWarning
 
+    # Suppress expected warnings from polynomial fitting in correlation plots:
+    # - RankWarning: raised when polyfit matrix is rank-deficient (common with sparse/clustered data)
+    # - ComplexWarning: raised when casting complex to real discards imaginary part
     warnings.simplefilter("ignore", RankWarning)
     warnings.simplefilter("ignore", ComplexWarning)
 
