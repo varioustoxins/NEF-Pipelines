@@ -15,6 +15,8 @@ except ImportError:
 
 import tomli_w
 
+from nef_pipelines.lib.util import exit_error
+
 # Handle Python 3.9/3.10 vs 3.11+ compatibility
 if sys.version_info >= (3, 11):
     import tomllib
@@ -25,7 +27,6 @@ else:
 def _get_config_path() -> Path:
     """Get platform-specific configuration directory."""
     if platformdirs is None:
-        from nef_pipelines.lib.util import exit_error
 
         exit_error(
             "platformdirs is required for configuration storage but is not installed."

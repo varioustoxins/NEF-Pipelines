@@ -455,7 +455,6 @@ def frequencies_to_field_strength(frequencies):
 
 
 def _get_spectra_by_series_variable(entry, series_experiment_loop):
-    from nef_pipelines.lib.nef_lib import loop_row_namespace_iter
 
     spectra_by_times = {}
     for i, row in enumerate(

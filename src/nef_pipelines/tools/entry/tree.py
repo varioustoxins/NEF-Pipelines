@@ -33,6 +33,7 @@ from nef_pipelines.lib.tree_lib import (
     TAG_COLOUR,
     ColourOutputPolicy,
     build_filtered_tree_from_retained_nodes,
+    get_all_ancestors_of_node,
     get_all_descendants_of_node,
     prune_tree_to_matches,
     render_tree,
@@ -693,9 +694,6 @@ def _filter_tree_with_strings_or_selectors(
         nodes_to_keep = _match_nodes_by_selector(tree, selector)
 
         if nodes_to_keep:
-            from nef_pipelines.lib.tree_lib import (
-                build_filtered_tree_from_retained_nodes,
-            )
 
             return build_filtered_tree_from_retained_nodes(tree, nodes_to_keep)
     except Exception:
@@ -717,10 +715,6 @@ def _match_nodes_by_selector(tree: Tree, selector) -> Set[str]:
     Returns:
         Set of matching node IDs (with ancestors and descendants)
     """
-    from nef_pipelines.lib.tree_lib import (
-        _get_all_ancestors_of_node,
-        get_all_descendants_of_node,
-    )
 
     nodes_to_keep = set()
 

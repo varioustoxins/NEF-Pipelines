@@ -241,9 +241,9 @@ def _get_click_context() -> Context:
     try:
         context = click.get_current_context()
     except RuntimeError:
-        import typer
+        import typer  # deferred import when click initializes
 
-        from nef_pipelines import nef_app
+        from nef_pipelines import nef_app  # deferred import when click initializes
 
         command = typer.main.get_command(nef_app.app)
         context = click.Context(command)

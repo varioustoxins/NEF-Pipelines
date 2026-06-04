@@ -2,6 +2,8 @@
     Core NEF/STAR helpers: reading and writing entries, selecting frames and loops, iterating loop rows.
 """
 
+# Note: there are circular imports lower down in this file in function calls
+
 import sys
 from collections.abc import MutableMapping
 from enum import auto
@@ -20,7 +22,11 @@ from strenum import LowercaseStrEnum
 from nef_pipelines.lib import util
 from nef_pipelines.lib.constants import NEF_PIPELINES
 from nef_pipelines.lib.globals_lib import set_global
-from nef_pipelines.lib.structures import NEFPipelinesException, SaveframeNameParts
+from nef_pipelines.lib.structures import (
+    EntryPart,
+    NEFPipelinesException,
+    SaveframeNameParts,
+)
 from nef_pipelines.lib.util import (
     exit_error,
     fixup_metadata,
@@ -219,8 +225,7 @@ def parse_frame_name(frame: Union[Saveframe, Tuple[str, str]]) -> SaveframeNameP
 
     # Extract namespace from category and remove it from category
     # has to be local to avoid circular imports
-    from nef_pipelines.lib.namespace_lib import get_namespace
-    from nef_pipelines.lib.structures import EntryPart
+    from nef_pipelines.lib.namespace_lib import get_namespace  # circular
 
     namespace = get_namespace(category, EntryPart.Saveframe)
 

@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def create_nef_pipelines_app():
-    from nef_pipelines.nef_app_runner import load_nef_modules_and_build_failure
 
     create_nef_app()  # idempotent; populates nef_pipelines.nef_app singleton
     failure_message = load_nef_modules_and_build_failure()
@@ -164,7 +163,6 @@ def _build_full_orientation(skip_header: str = "") -> str:
 
     skip_header: Optional header to add (for nef_read_me_first only)
     """
-    from importlib.resources import files
 
     preamble_file = files("nef_pipelines") / "resources" / "preamble.md"
     preamble = preamble_file.read_text() if preamble_file.is_file() else ""

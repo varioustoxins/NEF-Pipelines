@@ -253,7 +253,7 @@ def _get_geminal_pairs(residue_names):
             continue
 
         # TODO:  this would be a lot neater if data was only loaded on first access
-        import nef_pipelines.lib.translation.io as converter_io
+        import nef_pipelines.lib.translation.io as converter_io  # lazy
 
         converter_io.load_chem_comps()
 
@@ -365,7 +365,7 @@ def _get_atom_sets_by_residue(residue_names):
             continue
 
         # TODO:  this would be a lot neater if data was only loaded on first access
-        import nef_pipelines.lib.translation.io as converter_io
+        import nef_pipelines.lib.translation.io as converter_io  # lazy
 
         converter_io.load_chem_comps()
 
@@ -640,7 +640,7 @@ def _chemical_shifts_from_star_frame(nmrstar_entry, use_author, file_name):
 
 
 def _exit_if_unknown_chem_comp(residue_name):
-    import nef_pipelines.lib.translation.io as converter_io
+    import nef_pipelines.lib.translation.io as converter_io  # lazy
 
     if not (residue_name) in converter_io.CHEM_COMPS:
         exit_error(
