@@ -153,7 +153,7 @@ def _collect_matching_nodes_from_tree(
     for node in tree.all_nodes_itr():
         if _node_matches_patterns(node.tag, patterns, exact):
             nodes.add(node.identifier)
-            nodes.update(_get_all_ancestors_of_node(tree, node.identifier))
+            nodes.update(get_all_ancestors_of_node(tree, node.identifier))
 
             if include_descendants:
                 nodes.update(get_all_descendants_of_node(tree, node.identifier))
@@ -184,7 +184,7 @@ def _node_matches_patterns(node_name: str, patterns: List[str], exact: bool) -> 
     return False
 
 
-def _get_all_ancestors_of_node(tree: Tree, node_id: str) -> List[str]:
+def get_all_ancestors_of_node(tree: Tree, node_id: str) -> List[str]:
     """\
     Get all ancestor node identifiers from node to root.
 

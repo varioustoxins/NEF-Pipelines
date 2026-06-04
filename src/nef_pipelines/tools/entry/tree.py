@@ -746,7 +746,7 @@ def _match_nodes_by_selector(tree: Tree, selector) -> Set[str]:
 
                 if frame_match and loop_match and tag_match:
                     nodes_to_keep.add(node_id)
-                    nodes_to_keep.update(_get_all_ancestors_of_node(tree, node_id))
+                    nodes_to_keep.update(get_all_ancestors_of_node(tree, node_id))
                     nodes_to_keep.update(get_all_descendants_of_node(tree, node_id))
 
     return nodes_to_keep
