@@ -1,7 +1,5 @@
 # Note: there are deferred imports lower down in this file in function calls
 
-import sys
-import traceback
 from dataclasses import replace
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
