@@ -1,3 +1,5 @@
+# Note: there are deferred imports lower down in this file in function calls
+
 from pathlib import Path
 from typing import List
 
@@ -112,7 +114,7 @@ def pipe(
 ) -> Entry:
 
     try:
-        from streamfitter import fitter
+        from streamfitter import fitter  # deferred
 
         if fitter:
             function = fitter.get_function(fitter.FUNCTION_EXPONENTIAL_DECAY_2_PAMETER)

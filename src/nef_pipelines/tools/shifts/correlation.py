@@ -1,3 +1,7 @@
+# Note: there are deferred imports lower down in this file in function calls
+
+import sys
+import traceback
 from dataclasses import replace
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -362,8 +366,15 @@ def _create_correlation_plot(
     # Import plotting libraries inside function
     import warnings
 
-    import matplotlib.pyplot as plt
-    import numpy as np
+    import matplotlib.pyplot as plt  # lazy
+    import numpy as np  # lazy
+
+    # NumPy 2.0 moved warnings to np.exceptions
+    # Support both NumPy 1.x (np.RankWarning, np.ComplexWarning) and 2.x (np.exceptions.*)
+    try:
+        RankWarning = np.RankWarning
+    except AttributeError:
+        RankWarning = np.exceptions.RankWarning
 
     warnings.simplefilter("ignore", np.RankWarning)
     warnings.simplefilter("ignore", np.ComplexWarning)
@@ -554,7 +565,7 @@ def _create_correlation_plot(
             warn(f"equal axis min and max for {entry_id} {atom_type}")
 
         # Set identical tick locations for both axes
-        import matplotlib.ticker as ticker
+        import matplotlib.ticker as ticker  # deferred
 
         tick_locator = ticker.MaxNLocator(nbins=6, prune="both")
         ax.xaxis.set_major_locator(tick_locator)

@@ -273,7 +273,7 @@ def _try_environment_sandbox() -> Optional[SandboxPathResult]:
 
 def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "FastMCP"]:
     try:
-        from nef_pipelines.tools.ai.server_lib import _build_server as _build
+        from nef_pipelines.tools.ai.server_lib import _build_server as _build  # deferred
     except ImportError:
         msg = """
                 ERROR: fastmcp is not installed

@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import contextlib
-import sys
 import traceback
 from fnmatch import fnmatchcase
 from io import StringIO
@@ -19,6 +18,8 @@ from typer import Typer
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.cli_runner_lib import _MarkerCliRunner, _split_marked_output
+
+from pytest import main
 
 NOQA_E501 = "# noqa: E501"
 
@@ -64,7 +65,6 @@ def run_and_read_pytest(args: List[str]) -> Tuple[int, str, str]:
         Tuple[int, str, str]: the return code, standard output,
         and standard error output from pytest.
     """
-    from pytest import main
 
     stdout_buf = StringIO()
     stderr_buf = StringIO()
@@ -473,7 +473,7 @@ def assert_loop_unchanged(
     Raises:
         AssertionError: If the loop has changed between input and output
     """
-    from pynmrstar import Entry
+    from pynmrstar import Entry  # lazy
 
     # Get the original loop from input
     input_entry = Entry.from_string(input_data)
@@ -500,7 +500,7 @@ def assert_frame_unchanged(input_data: str, output_data: str, frame_name: str):
     Raises:
         AssertionError: If the frame has changed between input and output
     """
-    from pynmrstar import Entry
+    from pynmrstar import Entry  # lazy
 
     # Get the original frame from input
     input_entry = Entry.from_string(input_data)

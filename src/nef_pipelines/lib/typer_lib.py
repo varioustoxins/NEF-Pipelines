@@ -1,6 +1,7 @@
 """
     Typer/Rich theming patches and FilteredHelpGroup used to render NEF-Pipelines CLI help.
 """
+# Note: there are deferred imports lower down in this file in function calls
 
 import os
 
@@ -19,9 +20,9 @@ def patch_rich_code_theme():
     Makes code readable on both light and dark terminals.
     """
     try:
-        from rich.markdown import Markdown as OriginalMarkdown
-        from rich.theme import Theme
-        from typer import rich_utils
+        from rich.markdown import Markdown as OriginalMarkdown  # deferred
+        from rich.theme import Theme  # deferred
+        from typer import rich_utils  # deferred
 
         # Create a wrapper that forces the friendly theme for both blocks and inline code
         class LightThemedMarkdown(OriginalMarkdown):
@@ -115,7 +116,7 @@ def is_rich_in_use():
     result = False
     if not rich_disabled:
         try:
-            from typer import rich_utils  # noqa: F401
+            from typer import rich_utils  # noqa: F401  # deferred
 
             result = True
         except (ImportError, AttributeError):

@@ -1,3 +1,5 @@
+# Note: there are deferred imports lower down in this file in function calls
+#
 from math import sqrt
 from pathlib import Path
 from statistics import mean
@@ -132,7 +134,7 @@ def pipe(
 ) -> Entry:
 
     try:
-        from streamfitter import fitter
+        from streamfitter import fitter  # deferred
 
         function = fitter.get_function(
             fitter.FUNCTION_TWO_EXPONENTIAL_DECAYS_2_PAMETER_SHARED_RATE
