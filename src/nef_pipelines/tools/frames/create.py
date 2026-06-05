@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import typer
 from pynmrstar import Entry
@@ -14,7 +14,9 @@ from nef_pipelines.lib.util import (
     STDIN,
     chunks,
     exit_error,
+    find_index_of_first_unescaped,
     parse_comma_separated_options,
+    unescape_backslashes,
 )
 from nef_pipelines.tools.frames import frames_app
 
@@ -134,12 +136,12 @@ def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:
     # Phase 1: Split into flat component list
     components = []
     for spec in specs:
-        unescaped_dot_pos = _find_first_unescaped_dot(spec)
+        unescaped_dot_pos = find_index_of_first_unescaped(spec, ".")
 
         if unescaped_dot_pos is not None:
             # Has unescaped dot: split into two components
-            category = _unescape_back_slashes(spec[:unescaped_dot_pos])
-            id_part = _unescape_back_slashes(spec[unescaped_dot_pos + 1 :])
+            category = unescape_backslashes(spec[:unescaped_dot_pos])
+            id_part = unescape_backslashes(spec[unescaped_dot_pos + 1 :])
 
             if not category:
                 exit_error(
@@ -149,7 +151,7 @@ def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:
             components.extend([category, id_part])
         else:
             # No unescaped dot: single component
-            components.append(_unescape_back_slashes(spec))
+            components.append(unescape_backslashes(spec))
 
     # Phase 2: Pair up components
     if not components:
@@ -161,51 +163,3 @@ def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:
 
     pairs = list(chunks(components, 2))
     return pairs
-
-
-def _find_first_unescaped_dot(s: str) -> Optional[int]:
-    """Find position of first dot not escaped by backslash.
-
-    A dot is escaped if preceded by an odd number of backslashes.
-
-    Returns:
-        Position of first unescaped dot, or None if no unescaped dot found
-    """
-    consecutive_backslashes = 0
-
-    for i, char in enumerate(s):
-        if char == "\\":
-            consecutive_backslashes += 1
-        elif char == ".":
-            # Check if this dot is escaped (odd number of backslashes)
-            if consecutive_backslashes % 2 == 0:
-                return i
-            consecutive_backslashes = 0
-        else:
-            consecutive_backslashes = 0
-
-    return None
-
-
-def _unescape_back_slashes(s: str) -> str:
-    """Remove escape sequences from string.
-
-    Processes:
-    - \\\\ → \\
-    - \\. → .
-    - \\<any> → <any>
-    """
-    result = []
-    it = iter(s)
-    for char in it:
-        if char == "\\":
-            # Next character is escaped
-            next_char = next(it, None)
-            if next_char is not None:
-                result.append(next_char)
-            else:
-                # Trailing backslash - keep it
-                result.append(char)
-        else:
-            result.append(char)
-    return "".join(result)
