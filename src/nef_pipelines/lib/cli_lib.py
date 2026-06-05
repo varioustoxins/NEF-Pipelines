@@ -1723,7 +1723,7 @@ def _parse_spec_with_grammar(
                 # Check if escape sequences are present
                 escape_msg = _detect_escape_sequences(original_spec)
                 if escape_msg:
-                    reason += f". Did you forget --use-escapes? ({escape_msg})"
+                    reason += f".\n\nDid you forget --use-escapes?\n({escape_msg})"
         elif FRAME_TAG_SEPARATOR in frame_spec:
             # Tags can be empty after colon (frame: → frame:* shorthand)
             reason = f"invalid syntax: {str(e)}"
@@ -1734,7 +1734,7 @@ def _parse_spec_with_grammar(
         if not use_escapes:
             escape_msg = _detect_escape_sequences(original_spec)
             if escape_msg and "Did you forget --use-escapes?" not in reason:
-                reason += f". \nDid you forget --use-escapes? \n({escape_msg})"
+                reason += f".\n\nDid you forget --use-escapes?\n({escape_msg})"
 
         raise BadFrameLoopTagSyntaxException(original_spec, reason)
     return result
