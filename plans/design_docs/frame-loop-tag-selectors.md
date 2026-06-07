@@ -65,10 +65,63 @@ ambiguous — emptiness means "no tags selected", not "no data".
 
 ---
 
-## 3. Complete Truth Table (Canonical Forms)
+## 3. Three-Stage Processing Pipeline
+
+A selector string passes through three stages before a command acts on it, using
+functions in `lib.cli_lib`.
+
+**Stage 1 — Parse** (`parse_frame_loop_and_tags`)
+
+The selector string is converted to the 4-tuple `(Frame, Loop, FrameTags, LoopTags)` as
+defined in §1 and §4. Values are taken literally from the input; nothing is expanded.
+`[]` and `['*']` are distinct at this point.
+
+**Stage 2 — Fill** (`expand_frame_loop_and_tag_wildcards`)
+
+Unset positions are filled with explicit wildcards before resolution. The caller passes an
+`EntryPart` bitmask to control which of the three independent slots are filled:
+
+- `FrameTag` — fills `FrameTags: []` → `['*']`
+- `Loop` — fills `Loop: None` → `'*'`
+- `LoopTag` — fills `LoopTags: []` → `['*']`
+
+Positions already set (non-empty / non-`None`) are never overwritten. The
+`[]`/`['*']` distinction from §1 is preserved after this stage: only the
+positions named in the mask are affected.
+
+This step is invoked by commands to complete underspecified selectors before
+resolution. Commands that want non-default expansion call this function directly
+with an explicit `EntryPart` mask; most commands use
+`expand_default_frame_loop_and_tag_wildcards` (see Typical pipeline below).
+
+**Stage 3 — Resolve** (`selection_to_frame_loops_and_tags`)
+
+Wildcards are matched against the live entry. Frame name patterns match saveframe
+names; loop patterns match loop categories; `['*']` in any tag list expands to the
+concrete column list from the actual frame or loop. The result is a list of
+`FrameLoopsAndTags` with fully concrete values — no wildcards remain.
+
+**Typical pipeline**
+
+Most commands that accept selectors follow this pattern:
+
+```python
+parsed = parse_frame_loop_and_tags(selector_string)
+parsed = expand_default_frame_loop_and_tag_wildcards(parsed)
+results = selection_to_frame_loops_and_tags(entry, [parsed])
+```
+
+`expand_default_frame_loop_and_tag_wildcards` applies the standard stage-2 including expanding
+'bare frame' selectors that cover frames. Selectors that already
+carry explicit intent are returned unchanged. Commands that need non-default expansion
+can call `expand_frame_loop_and_tag_wildcards` directly with an explicit `EntryPart` mask.
+
+---
+
+## 4. Complete Truth Table (Canonical Forms)
 
 These are the canonical forms — what the parser produces after normalisation. Shorthand
-forms (§5) reduce to these.
+forms (§6) reduce to these.
 
 | Selector              | Frame  | Loop  | FrameTags  | LoopTags  |
 |-----------------------|--------|-------|------------|-----------|
@@ -103,9 +156,22 @@ The two governing rules underneath the table:
 Which side of the dot the colon falls on determines whether it populates `FrameTags`
 (before the dot, or no dot at all) or `LoopTags` (after the dot).
 
+### Canonical selector constants
+
+Four string constants cover the common all-scope combinations:
+
+| Constant                                | Selector  | Stage-1 tuple                                          | Selects after expansion            |
+|-----------------------------------------|-----------|--------------------------------------------------------|------------------------------------|
+| `SELECT_ALL_FRAME_CATEGORIES_AND_TAGS`  | `"*"`     | `Frame=*, Loop=None, FrameTags=[], LoopTags=[]`        | All frame tags + all loops + all columns |
+| `SELECT_ALL_FRAMES_LOOPS_AND_LOOP_TAGS` | `"*.*:*"` | `Frame=*, Loop=*, FrameTags=[], LoopTags=['*']`        | All loops + all columns, no frame tags |
+| `SELECT_ALL_FRAMES_AND_LOOPS`           | `"*.*"`   | `Frame=*, Loop=*, FrameTags=[], LoopTags=[]`           | All loops, no tag selection yet    |
+| `SELECT_ALL_FRAMES_AND_FRAME_TAGS`      | `"*:*"`   | `Frame=*, Loop=None, FrameTags=['*'], LoopTags=[]`     | All frame tags only, no loops      |
+
+`"*"` is the default selector. It triggers stage-2 expansion (§3) to fill `FrameTags=[]` -> `['*']` and `Loop=None` -> `*` before resolution.
+
 ---
 
-## 4. BNF Grammar
+## 5. BNF Grammar
 
 ```
 selector      ::= frame-form | loop-form
@@ -121,17 +187,17 @@ tag-list      ::= name { "," name } | "*"
 name          ::= /* literal name, may contain fnmatch wildcards * ? [ ] */
                   /* backslash-escaped separators (\:, \., \,) allowed when
                      --use-escapes is active; doubled forms (::, .., ,,) are
-                     a transitional alternative — see §8 */
+                     a transitional alternative — see §9 */
 ```
 
 **Promotion rule.** An empty `frame-part` or `loop-part` in the source text is
-promoted to `*` at parse time. This is how the shorthand forms (§5) reduce to the
+promoted to `*` at parse time. This is how the shorthand forms (§6) reduce to the
 canonical forms. The promotion happens once, in the parser, so command implementations
 only ever see canonical selectors.
 
 ---
 
-## 5. Shorthand Expansion
+## 6. Shorthand Expansion
 
 | Source text     | Canonical form  |
 |-----------------|-----------------|
@@ -150,9 +216,9 @@ parts to `*` and re-runs the canonical-form logic.
 
 ---
 
-## 6. Disallowed Combinations
+## 7. Disallowed Combinations
 
-### 6.1 Frame tag + loop column in one selector
+### 7.1 Frame tag + loop column in one selector
 
 `frame:tag.loop:col` is rejected at parse time.
 
@@ -170,7 +236,7 @@ they are different scopes). Use two selectors:
   frame.loop:col
 ```
 
-### 6.2 Multiple dots or multiple colons in one scope
+### 7.2 Multiple dots or multiple colons in one scope
 
 `frame.sub.loop` — rejected. Selectors have at most one `.`.
 
@@ -178,11 +244,11 @@ they are different scopes). Use two selectors:
 
 (`\:` and `\.` are not multiple separators — they are backslash escapes for literal
 `:` and `.` in names, active under `--use-escapes`. Doubled forms `::` / `..` are an
-older transitional alternative still accepted by some commands; see §8.)
+older transitional alternative still accepted by some commands; see §9.)
 
 ---
 
-## 7. `:tag` vs `.:col` — Known Visual Collision
+## 8. `:tag` vs `.:col` — Known Visual Collision
 
 `:tag` selects a frame tag across every frame; `.:tag` selects a loop column across
 every loop. One dot flips the meaning entirely, and both parse cleanly — so a user
@@ -201,7 +267,7 @@ is doing the work. We may revisit if we see real confusion in practice.
 
 ---
 
-## 8. Parser Implementation
+## 9. Parser Implementation
 
 ### Approach
 
@@ -216,7 +282,7 @@ after trying alternatives:
   escape rule or shorthand form required threading state through the parsing functions,
   and error messages were hard to keep useful. The code got brittle as the grammar grew.
 
-PyParsing gave us declarative production rules that map straightforwardly onto §4, with
+PyParsing gave us declarative production rules that map straightforwardly onto §5, with
 escape handling that composes cleanly. Any extension to the grammar should follow the
 same approach.
 
@@ -236,8 +302,8 @@ parse_selector(text: str) -> Selector:
     #    - more colons → error
     # 4. Promote empty parts to '*'.
     # 5. Detect the disallowed combination: frame-half has a colon AND loop-half
-    #    has a colon → error (§6.1).
-    # 6. Build the 4-tuple per the rules in §3.
+    #    has a colon → error (§7.1).
+    # 6. Build the 4-tuple per the rules in §4.
     # 7. Return.
 ```
 
@@ -265,7 +331,7 @@ adding `\;` to that machinery in one place, not patching the selector parser dir
 
 ---
 
-## 9. Open Questions / Future Work
+## 10. Open Questions / Future Work
 
 - **Column-wildcard parity across scopes.** The `fnmatch`-style wildcards in the column
   position are slated to extend to frame and loop names. When that lands, the grammar
@@ -323,7 +389,7 @@ selectors as separate argv items, separated by shell whitespace:
 nef frames tabulate  frame:experiment_type  frame.peak:height,volume
 ```
 
-This is how to work around the §6.1 ban on mixing a frame tag and a loop column in
+This is how to work around the §7.1 ban on mixing a frame tag and a loop column in
 one selector. No grammar change required; this is a command-input convention, not a
 selector-grammar feature. Commands that need it should already accept a list.
 
@@ -345,7 +411,7 @@ nef frames tabulate frame:experiment_type/frame.peak:height,volume
 Adopting an intra-string separator would mean:
 
 - Adding it to the escape machinery (`\/` or `\;` depending on choice) in the same
-  place as the existing `\:` / `\.` / `\,` handling — see §8. No doubled-form
+  place as the existing `\:` / `\.` / `\,` handling — see §9. No doubled-form
   alternative would be introduced, consistent with the direction of travel away from
   doubled escapes.
 - A parser pass that splits on the separator *before* per-selector parsing, returning

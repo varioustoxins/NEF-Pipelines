@@ -18,8 +18,8 @@ from nef_pipelines.lib.cli_lib import (
     analyze_nef_entry_for_separator_conflicts,
     combine_residue_ranges,
     detect_overlapping_range_offsets,
-    expand_frame_loop_and_tag_wildcards,
     expand_residue_range,
+    expand_specified_frame_loop_and_tag_wildcards,
     format_residue_range,
     parse_chain_offset_syntax,
     parse_frame_loop_and_tags,
@@ -2713,7 +2713,7 @@ def test_parse_frame_loop_selectors_and_get_errors_mixed_valid_invalid():
 )
 def test_expand_frame_loop_and_tag_wildcards(selector, expand_to, expected):
     """Test expand_frame_loop_and_tag_wildcards with EntryPart flag expansion control."""
-    result = expand_frame_loop_and_tag_wildcards(selector, expand_to)
+    result = expand_specified_frame_loop_and_tag_wildcards(selector, expand_to)
     assert result == expected
 
 
@@ -2848,7 +2848,7 @@ FrameLoopsAndTags(
     ],
     frame_tags=[],
     loop_tags={
-        _nef_chemical_shift: [],
+        _nef_chemical_shift: [chain_code, value],
     },
 )"""
 
@@ -2912,7 +2912,7 @@ FrameLoopsAndTags(
             ),
             EXPECTED_FRAME_WITH_LOOP_COLUMN,
         ),
-        # frame.loop:* — explicit wildcard expands to all columns (returns [] after expansion)
+        # frame.loop:* — explicit wildcard expands to concrete list of all column names
         (
             FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
             EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
@@ -2980,30 +2980,6 @@ def test_selection_to_frame_loops_and_tags_merges_selectors_for_same_frame():
     assert str(result[0]) == EXPECTED_MERGED_SELECTORS
 
 
-EXPECTED_MERGED_LOOP_TAGS_UNION = """\
-FrameLoopsAndTags(
-    frame=nef_chemical_shift_list_shifts,
-    loops=[
-        _nef_chemical_shift,
-    ],
-    frame_tags=[],
-    loop_tags={
-        _nef_chemical_shift: [chain_code, value],
-    },
-)"""
-
-EXPECTED_MERGED_LOOP_TAGS_WILDCARD_WINS = """\
-FrameLoopsAndTags(
-    frame=nef_chemical_shift_list_shifts,
-    loops=[
-        _nef_chemical_shift,
-    ],
-    frame_tags=[],
-    loop_tags={
-        _nef_chemical_shift: [],
-    },
-)"""
-
 EXPECTED_MERGED_LOOP_TAGS_NEUTRAL = """\
 FrameLoopsAndTags(
     frame=nef_chemical_shift_list_shifts,
@@ -3030,9 +3006,9 @@ FrameLoopsAndTags(
                     "shifts", "chemical_shift", loop_tags=["value"]
                 ),
             ],
-            EXPECTED_MERGED_LOOP_TAGS_UNION,
+            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
         ),
-        # wildcard + specific columns → wildcard wins (expands to all → [])
+        # wildcard + specific columns → wildcard wins (expands to concrete full column list)
         (
             [
                 FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
@@ -3040,7 +3016,7 @@ FrameLoopsAndTags(
                     "shifts", "chemical_shift", loop_tags=["chain_code"]
                 ),
             ],
-            EXPECTED_MERGED_LOOP_TAGS_WILDCARD_WINS,
+            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
         ),
         # not-projected ([]) + specific columns → specific columns win
         (

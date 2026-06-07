@@ -89,7 +89,15 @@ from nef_pipelines.lib.util import (
     to_ordinal,
 )
 
-SELECT_ALL_FRAME_CATEGORIES_AND_TAGS = "*.*:*"
+# Four canonical selectors covering all scope combinations (design doc §2, §6.1):
+#   "*"     whole frame: all frame tags + all loops + all loop columns
+#   "*.*:*" loop-scope only: all loops + all loop columns, no frame tags
+#   "*.*"   all loops (loop-scope, no tags selected yet)
+#   "*:*"   all frame tags only, no loops
+SELECT_ALL_FRAME_CATEGORIES_AND_TAGS = "*"
+SELECT_ALL_FRAMES_LOOPS_AND_LOOP_TAGS = "*.*:*"
+SELECT_ALL_FRAMES_AND_LOOPS = "*.*"
+SELECT_ALL_FRAMES_AND_FRAME_TAGS = "*:*"
 
 
 class SelectorAction(Enum):
@@ -2129,7 +2137,7 @@ def _merge_tag_lists(a: List[str], b: List[str]) -> List[str]:
     return merged
 
 
-def expand_frame_loop_and_tag_wildcards(
+def expand_specified_frame_loop_and_tag_wildcards(
     selector: FrameLoopAndTagSelectors,
     expand_to: EntryPart = None,
 ) -> FrameLoopAndTagSelectors:
@@ -2167,6 +2175,22 @@ def expand_frame_loop_and_tag_wildcards(
         loop_tags = ["*"]
 
     return FrameLoopAndTagSelectors(frame_name, loop_name, frame_tags, loop_tags)
+
+
+def expand_default_frame_loop_and_tag_wildcards(
+    selector: FrameLoopAndTagSelectors,
+) -> FrameLoopAndTagSelectors:
+    """Apply the default stage-2 expansion: bare-frame selectors become whole-frame.
+
+    A bare-frame selector (loop_name=None, frame_tags=[]) is the canonical "whole frame".
+    All three slots are expanded so stage 3 returns a fully concrete selection with no
+    ambiguous [] values. All other selectors are returned unchanged.
+    """
+    if selector.loop_name is None and not selector.frame_tags:
+        return expand_specified_frame_loop_and_tag_wildcards(
+            selector, EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag
+        )
+    return selector
 
 
 def selection_to_frame_loops_and_tags(
@@ -2303,11 +2327,17 @@ def _expand_tag_wildcards(
 ) -> List[str]:
     """Expand tag name patterns against actual tag names.
 
+    Implements the three-state convention (design doc §2): wildcard expansion
+    expands, it does not collapse. ``['*']`` is the explicit wildcard — "every
+    member expanded and returned" — so it resolves to the full concrete list of
+    tag names (via the fnmatch loop below), NOT to ``[]``. Only a genuine empty
+    selection stays ``[]`` ("nothing expanded — the command decides").
+
     Returns:
-        []    — no selection or explicit wildcard ['*'] — show all, command decides
-        [...]  — concrete list of matching tag names for specific patterns
+        []     — no selection — the command decides what to render
+        [...]  — concrete list of matching tag names (all names for ['*'])
     """
-    if not merged_tags or merged_tags == ["*"]:
+    if not merged_tags:
         return []
 
     from fnmatch import fnmatchcase
