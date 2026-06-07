@@ -633,6 +633,29 @@ class FrameLoopsAndTags:
     frame_tags: List[str] = field(default_factory=list)
     loop_tags: Dict[str, List[str]] = field(default_factory=dict)
 
+    def __str__(self):
+        loops_str = (
+            "[\n"
+            + "".join(f"        {loop.category},\n" for loop in self.loops)
+            + "    ]"
+        )
+        loop_tags_str = (
+            "{\n"
+            + "".join(
+                f"        {cat}: [{', '.join(tags)}],\n"
+                for cat, tags in self.loop_tags.items()
+            )
+            + "    }"
+        )
+        return (
+            f"FrameLoopsAndTags(\n"
+            f"    frame={self.frame.name},\n"
+            f"    loops={loops_str},\n"
+            f"    frame_tags={self.frame_tags},\n"
+            f"    loop_tags={loop_tags_str},\n"
+            f")"
+        )
+
 
 @dataclass
 class DisplayOptions:
