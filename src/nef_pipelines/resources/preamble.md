@@ -21,8 +21,10 @@ If `nef://` URIs are not supported, use:
 
 **MCP Tools:**
 1. `nef_list_commands()`         - enumerate available commands
-2. `nef_get_command_help(...)`   - full `--help` for one command
+2. `nef_get_command_help(...)`   - full help for one command
 3. `nef_execute_pipeline(...)`   - run one or more steps as a pipeline
 4. `nef_upload_file(...)`        - write a text file into the working directory
 5. `nef_download_file(...)`      - read a text file from the working directory
 6. `nef_list_files()`            - list files in the working directory
+7. `nef_import_files()`          - open file picker for the user to choose files to copy into the working directory
+8. `nef_change_sandbox()`        - open directory picker for the user to change the sndabox / working directory
