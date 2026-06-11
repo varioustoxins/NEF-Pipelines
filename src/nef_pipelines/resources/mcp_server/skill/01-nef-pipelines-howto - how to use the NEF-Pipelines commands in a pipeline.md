@@ -337,6 +337,8 @@ nef_execute_pipeline(steps=[["frames", "list"]], nef_input=nef_text)   # if unsu
   `nef://skill/adhoc-data`** (the `nef-frame-creation` skill) before attempting to construct frames and
   loops manually. It covers singleton vs named frames, value-spec syntax, common mistakes, and a
   complete end-to-end example.
+- *User wants a bash script version of a pipeline* → read `nef://skill/writing-readable-pipeline-scripts`
+  for formatting conventions before writing the script.
 
 **Always check help when:**
 

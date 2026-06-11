@@ -29,6 +29,14 @@ Use this skill when building NEF saveframes, loops, or columns from scratch usin
 
 ---
 
+### `nef://skill/writing-readable-pipeline-scripts`
+
+**SKILL: Writing Readable NEF-Pipelines Shell Scripts**
+
+
+
+---
+
 
 ## Using Skills
 
