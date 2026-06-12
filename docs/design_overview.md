@@ -359,7 +359,49 @@ their own filename and include the entry_name template parameter {entry_name} in
 > file creates warnings during testing. It should also be noted that if the output file is `STDOUT` the
 > pipe returns `None` and the CLI doesn't print anything as STDOUT is no longer a NEF stream.
 
-### Handling Output to Multiple Files when Output is directed to Stdout by an Output Pipe
+### Handling Display Output: `print_output_or_exit_error`
+
+Display commands (e.g. `nef frames display`) produce human-readable text that is not a NEF
+stream. This creates a routing problem: the text needs to go somewhere useful depending on
+whether stdout is a terminal or a pipe, and the caller may also want the underlying NEF entry
+to continue flowing down the pipeline.
+
+The utility function `print_output_or_exit_error` in `nef_pipelines.lib.cli_lib` encapsulates
+this routing logic so it never needs to be written inline:
+
+```python
+from nef_pipelines.lib.cli_lib import print_output_or_exit_error
+
+print_output_or_exit_error(entry, out, output_dict, force)
+```
+
+**Parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `entry` | `Entry \| None` | NEF entry to print to stdout when display output is routed elsewhere; pass `None` if not applicable |
+| `out` | `str \| None` | Value of the `--out` CLI option |
+| `output_dict` | `Dict[str, str]` | Mapping of output key → display text; `"-"` is the default key |
+| `force` | `bool` | If `True`, overwrite existing files without error |
+
+**Routing behaviour**
+
+| `--out` value | Display text | NEF entry |
+|---|---|---|
+| `None` or `"@auto"` | → stdout if stdout is a TTY | — |
+| `None` or `"@auto"` (piped) | → stderr | → stdout |
+| `"-"` or `"@out"` | → stdout | — |
+| `"@err"` | → stderr | → stdout |
+| file path | → file | → stdout |
+
+When routing to a file, the function exits with an error if the file already exists and
+`force` is `False`.
+
+**TTY detection**
+
+The function uses `nef_pipelines.lib.util.is_stdout_tty()` rather than
+`sys.stdout.isatty()` directly. Tests should therefore patch
+`nef_pipelines.lib.cli_lib.is_stdout_tty`, not `sys.stdout.isatty`.
 
 ### How the Subcommands in NEF-Pipelines are Created, Organised and Discovered
 

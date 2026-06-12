@@ -267,14 +267,18 @@ The `explode` tool was recently refactored to follow this pattern:
 - Added `_sort_back_ticks()`: Helper function for handling CCPN backtick notation
 - All functions follow minimal commenting strategy with docstrings only
 
-## Warning &Output
--
+## Warning & Output
+
 - **ALWAYS use `nef_pipelines.lib.util.warn`** for user-facing warnings - never `from warnings import warn` (Python's
   standard library warn).
   - The custom `warn` prints `WARNING: <msg>` to stderr and is consistent with how all other nef tools report problems.
   - Using `warnings.warn` instead leaks `UserWarning` exceptions into pytest's warning summary, making test noise that
     is hard to distinguish from real issues.
   - In tests, mock a custom warn via `monkeypatch.setattr("module.path.warn", ...)` and assert on the captured message.
+
+- **ALWAYS use `print_output_or_exit_error` for display-command output** - never write the routing logic inline.
+  Import from `nef_pipelines.lib.cli_lib`. Full details in `docs/design_overview.md`
+  under *"Handling Display Output"*.
 
 ## Temp files are banned in production code
 
