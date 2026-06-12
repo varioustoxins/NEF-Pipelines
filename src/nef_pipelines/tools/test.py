@@ -66,6 +66,12 @@ try:
         quiet: bool = typer.Option(
             False, "-q", "--quiet", help="decrease verbosity (quiet mode)"
         ),
+        report: str = typer.Option(
+            None,
+            "-r",
+            "--report",
+            help="show extra test summary info (passed to pytest -r: e.g. a=all, f=failed, s=skipped)",
+        ),
         targets: List[str] = typer.Argument(None, help=TARGET_HELP),
     ):
         """- run the test suite"""
@@ -115,6 +121,9 @@ try:
 
             if markers:
                 command.extend(["-m", markers])
+
+            if report:
+                command.extend(["-r", report])
 
             exit_code = main(command)
             sys.stderr.flush()
