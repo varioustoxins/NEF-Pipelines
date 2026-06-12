@@ -4,13 +4,14 @@ from pynmrstar import Entry, Loop
 from nef_pipelines.lib.namespace_lib import (
     NO_NAMESPACE,
     collect_namespaces_from_frames,
+    filter_frame_loops_and_tags_by_namespace,
     filter_namespaces,
     get_namespace,
     get_registered_namespaces,
     if_separator_conflicts_get_message,
 )
 from nef_pipelines.lib.nef_lib import create_nef_save_frame
-from nef_pipelines.lib.structures import EntryPart, EntryPartValues
+from nef_pipelines.lib.structures import EntryPart, EntryPartValues, FrameLoopsAndTags
 
 # A nef frame that contains a cross-namespace ccpn loop alongside its own nef loop.
 # pynmrstar requires all tags within one loop to share the same category prefix,
@@ -29,6 +30,47 @@ data_test
          1   A
 
        stop_
+
+       loop_
+          _ccpn_chain_data.index
+          _ccpn_chain_data.chain_code
+
+         1   A
+
+       stop_
+
+    save_
+
+"""
+
+# A nef frame with a two-column sequence loop — for testing that a prior tag restriction survives
+# a second namespace-filtering pass
+NEF_TWO_COLUMN_SEQUENCE = """\
+data_test
+
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+       loop_
+          _nef_sequence.index
+          _nef_sequence.chain_code
+
+         1   A
+
+       stop_
+
+    save_
+
+"""
+
+# A saveframe whose category, frame tags, and loop are all ccpn — no nef tags to rescue it
+CCPN_ONLY_NEF = """\
+data_test
+
+    save_ccpn_assignment
+       _ccpn_assignment.sf_category   ccpn_assignment
+       _ccpn_assignment.sf_framecode  ccpn_assignment
 
        loop_
           _ccpn_chain_data.index
@@ -236,6 +278,84 @@ def test_check_separator_conflicts_with_escapes_enabled():
         ["my,namespace"], [","], use_escapes=True
     )
     assert result is None
+
+
+# Tests for filter_frame_loops_and_tags_by_namespace
+
+
+def test_filter_by_namespace_empty_set_returns_nothing():
+    """An empty namespace set removes all content."""
+    entry = Entry.from_string(CROSS_NAMESPACE_NEF)
+    frame = entry.get_saveframe_by_name("nef_molecular_system")
+    nef_loop = frame.get_loop("_nef_sequence")
+    item = FrameLoopsAndTags(frame=frame, loops=[nef_loop], frame_tags=[], loop_tags={})
+
+    result = filter_frame_loops_and_tags_by_namespace([item], set())
+    assert result == []
+
+
+def test_filter_by_namespace_removes_non_matching_loop():
+    """Selecting only 'nef' removes the ccpn loop and keeps the nef loop."""
+    entry = Entry.from_string(CROSS_NAMESPACE_NEF)
+    frame = entry.get_saveframe_by_name("nef_molecular_system")
+    nef_loop = frame.get_loop("_nef_sequence")
+    ccpn_loop = frame.get_loop("_ccpn_chain_data")
+    item = FrameLoopsAndTags(
+        frame=frame,
+        loops=[nef_loop, ccpn_loop],
+        frame_tags=[],
+        loop_tags={"_nef_sequence": [], "_ccpn_chain_data": []},
+    )
+
+    EXPECTED_RESULT = FrameLoopsAndTags(
+        frame=frame,
+        loops=[nef_loop],
+        frame_tags=["sf_category", "sf_framecode"],
+        loop_tags={"_nef_sequence": ["index", "chain_code"]},
+    )
+    result = filter_frame_loops_and_tags_by_namespace([item], {"nef"})
+    assert result == [EXPECTED_RESULT]
+
+
+def test_filter_by_namespace_frame_with_no_surviving_content_is_dropped():
+    """A frame where no tags or loops survive namespace filtering is dropped entirely."""
+    entry = Entry.from_string(CCPN_ONLY_NEF)
+    frame = entry.get_saveframe_by_name("ccpn_assignment")
+    ccpn_loop = frame.get_loop("_ccpn_chain_data")
+    item = FrameLoopsAndTags(
+        frame=frame, loops=[ccpn_loop], frame_tags=[], loop_tags={}
+    )
+
+    result = filter_frame_loops_and_tags_by_namespace([item], {"nef"})
+    assert result == []
+
+
+def test_filter_by_namespace_prior_tag_restriction_is_preserved():
+    """A prior filtering pass may have already narrowed loop_tags to a subset of the loop's
+    actual tags. A subsequent namespace filter must honour that restriction and not re-expand
+    to all tags.
+
+    Here nef_sequence has both 'index' and 'chain_code', but a previous pass left loop_tags
+    with only 'chain_code'. After namespace filtering for 'nef', 'index' must remain absent.
+    """
+    entry = Entry.from_string(NEF_TWO_COLUMN_SEQUENCE)
+    frame = entry.get_saveframe_by_name("nef_molecular_system")
+    nef_loop = frame.get_loop("_nef_sequence")
+    item = FrameLoopsAndTags(
+        frame=frame,
+        loops=[nef_loop],
+        frame_tags=[],
+        loop_tags={"_nef_sequence": ["chain_code"]},
+    )
+
+    EXPECTED_RESULT = FrameLoopsAndTags(
+        frame=frame,
+        loops=[nef_loop],
+        frame_tags=["sf_category", "sf_framecode"],
+        loop_tags={"_nef_sequence": ["chain_code"]},
+    )
+    result = filter_frame_loops_and_tags_by_namespace([item], {"nef"})
+    assert result == [EXPECTED_RESULT]
 
 
 def test_check_separator_conflicts_truncation():

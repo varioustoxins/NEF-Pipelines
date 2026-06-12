@@ -12,7 +12,7 @@ from nef_pipelines.lib.cli_lib import (
     SelectorAction,
     parse_selector_lists,
 )
-from nef_pipelines.lib.structures import EntryPart, EntryPartValues
+from nef_pipelines.lib.structures import EntryPart, EntryPartValues, FrameLoopsAndTags
 
 # TODO: [for future] Move separator escaping functionality to cli_lib and consolidate
 #       namespace separator handling there. This will provide a unified
@@ -325,6 +325,65 @@ def filter_namespaces(
         result = filtered_namespaces
 
     return result
+
+
+def filter_frame_loops_and_tags_by_namespace(
+    frames_loops_and_tags: List[FrameLoopsAndTags],
+    selected_namespaces: set,
+) -> List[FrameLoopsAndTags]:
+    """Filter FrameLoopsAndTags to only include tags/loops matching selected_namespaces.
+
+    The function should be called after wild card expansion (selection_to_frame_loops_and_tags), so tag
+    lists contain only concrete names or [] — wildcards should have already been resolved.
+
+    Filtering uses the three-state convention (design doc §1): an empty tag list means
+    "no selection — use all tags"; a non-empty list means "only these tags". In both
+    cases only tags whose namespace is in selected_namespaces survive.
+
+    Loops with no surviving tags are dropped; frames with neither surviving frame tags
+    nor surviving loops are dropped.
+    """
+    filtered_results = []
+
+    for item in frames_loops_and_tags:
+        frame = item.frame
+
+        frame_tag_candidates = (
+            item.frame_tags if item.frame_tags else [t for t, _ in frame.tag_iterator()]
+        )
+        new_frame_tags = [
+            t
+            for t in frame_tag_candidates
+            if get_namespace(t, EntryPart.FrameTag, parent_namespace=frame)
+            in selected_namespaces
+        ]
+
+        new_loops = []
+        new_loop_tags = {}
+        for loop in item.loops:
+            # [] means no column selection — use all loop tags as candidates
+            loop_candidates = item.loop_tags.get(loop.category, []) or list(loop.tags)
+            filtered_tags = [
+                t
+                for t in loop_candidates
+                if get_namespace(t, EntryPart.LoopTag, parent_namespace=loop)
+                in selected_namespaces
+            ]
+            if filtered_tags:
+                new_loops.append(loop)
+                new_loop_tags[loop.category] = filtered_tags
+
+        if new_frame_tags or new_loops:
+            filtered_results.append(
+                FrameLoopsAndTags(
+                    frame=frame,
+                    loops=new_loops,
+                    frame_tags=new_frame_tags,
+                    loop_tags=new_loop_tags,
+                )
+            )
+
+    return filtered_results
 
 
 def if_separator_conflicts_get_message(
