@@ -292,6 +292,11 @@ in memory (Python objects, `io.StringIO`, `io.BytesIO`).
 `/var/tmp` is outside the MCP sandbox root.  In-memory data flow also avoids I/O overhead
 and file-cleanup boilerplate.
 
+## Module-level ordering
+In every Python module, keep top-level definitions in this order: imports, then constants/type
+definitions/dataclasses, then functions. Do not interleave constants or type definitions with
+function bodies or after functions.
+
 ## Legacy support
 - DO NOT add legacy support unless asked to
 
@@ -318,6 +323,9 @@ DO NOT push the strings to column 1
 
 ## Code cleanup
 when you have completed a coding task check if there is unused code and ask if you should remove it
+
+## Plans
+When writing a plan or design document, save it to the `plans/` folder at the root of the repository.
 
 ## Repo management
 when you have added new files you should git add them
