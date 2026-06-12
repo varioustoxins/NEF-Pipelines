@@ -1,5 +1,6 @@
 from re import escape
 from textwrap import dedent
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pynmrstar import Entry, Loop, Saveframe
@@ -27,6 +28,7 @@ from nef_pipelines.lib.cli_lib import (
     parse_range_number_pairs,
     parse_residue_ranges,
     parse_selector_lists,
+    print_output_or_exit_error,
     selection_to_frame_loops_and_tags,
     validate_loop_selection_only_or_raise,
     validate_residue_ranges_in_system,
@@ -2158,10 +2160,10 @@ def test_validate_split_separators_empty():
         ("myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
         # --- frame.loop:col ---
         ("nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
-                                    FrameLoopAndTagSelectors("nef_rdc_restraint_list",   "nef_rdc_restraint", [],                       ["chain_code_1"])),                # noqa: E501
+                                            FrameLoopAndTagSelectors("nef_rdc_restraint_list",   "nef_rdc_restraint",  [],                       ["chain_code_1"])),                # noqa: E501 E127
         # --- wildcard frame/loop shorthands ---
         (".rdc:atom_name_1,atom_name_2",
-                                    FrameLoopAndTagSelectors("*",                         "rdc",               [],                       ["atom_name_1", "atom_name_2"])),  # noqa: E501
+                                            FrameLoopAndTagSelectors("*",                         "rdc",               [],                       ["atom_name_1", "atom_name_2"])),  # noqa: E501 E127
         ("dipolar.:tag1",           FrameLoopAndTagSelectors("dipolar",                   "*",                 [],                       ["tag1"])),                        # noqa: E501
         ("myframe.",                FrameLoopAndTagSelectors("myframe",                   "*",                 [],                       [])),                              # noqa: E501
         ("*.myloop",                FrameLoopAndTagSelectors("*",                         "myloop",            [],                       [])),                              # noqa: E501
@@ -3040,3 +3042,83 @@ def test_selection_to_frame_loops_and_tags_loop_tag_merge(selectors, expected):
     assert isinstance(result[0].frame, Saveframe)
     assert all(isinstance(loop, Loop) for loop in result[0].loops)
     assert str(result[0]) == expected
+
+
+EXPECTED_DISPLAY_TEXT = "hello display"
+OUTPUT_DICT = {"-": EXPECTED_DISPLAY_TEXT}
+
+
+def test_print_output_auto_tty_prints_to_stdout(capsys):
+    with patch("nef_pipelines.lib.cli_lib.is_stdout_tty", return_value=True):
+        print_output_or_exit_error(None, "@auto", OUTPUT_DICT, False)
+
+    captured = capsys.readouterr()
+    assert EXPECTED_DISPLAY_TEXT in captured.out
+    assert captured.err == ""
+
+
+def test_print_output_auto_pipe_prints_to_stderr_and_entry(capsys):
+    entry = MagicMock()
+    entry.__str__ = lambda self: "NEF_ENTRY"
+
+    with patch("nef_pipelines.lib.cli_lib.is_stdout_tty", return_value=False):
+        print_output_or_exit_error(entry, "@auto", OUTPUT_DICT, False)
+
+    captured = capsys.readouterr()
+    assert EXPECTED_DISPLAY_TEXT in captured.err
+    assert "NEF_ENTRY" in captured.out
+
+
+def test_print_output_out_flag_prints_to_stdout_no_entry(capsys):
+    entry = MagicMock()
+    entry.__str__ = lambda self: "NEF_ENTRY"
+
+    print_output_or_exit_error(entry, "@out", OUTPUT_DICT, False)
+
+    captured = capsys.readouterr()
+    assert EXPECTED_DISPLAY_TEXT in captured.out
+    assert "NEF_ENTRY" not in captured.out
+
+
+def test_print_output_err_flag_prints_to_stderr_and_entry(capsys):
+    entry = MagicMock()
+    entry.__str__ = lambda self: "NEF_ENTRY"
+
+    print_output_or_exit_error(entry, "@err", OUTPUT_DICT, False)
+
+    captured = capsys.readouterr()
+    assert EXPECTED_DISPLAY_TEXT in captured.err
+    assert "NEF_ENTRY" in captured.out
+
+
+def test_print_output_to_file(tmp_path):
+    out_file = str(tmp_path / "out.txt")
+
+    print_output_or_exit_error(None, out_file, OUTPUT_DICT, False)
+
+    assert open(out_file).read() == EXPECTED_DISPLAY_TEXT
+
+
+def test_print_output_to_file_no_overwrite_raises(tmp_path, capsys):
+    out_file = tmp_path / "out.txt"
+    out_file.write_text("existing")
+
+    with pytest.raises(SystemExit):
+        print_output_or_exit_error(None, str(out_file), OUTPUT_DICT, False)
+
+    EXPECTED_NO_OVERWRITE_ERROR = f"""
+        ERROR [in: unknown unknown]: file {out_file} already exists, run with --force to overwrite
+        exiting...
+    """
+
+    stderr = capsys.readouterr().err
+    assert_lines_match(EXPECTED_NO_OVERWRITE_ERROR, stderr)
+
+
+def test_print_output_to_file_force_overwrites(tmp_path):
+    out_file = tmp_path / "out.txt"
+    out_file.write_text("existing")
+
+    print_output_or_exit_error(None, str(out_file), OUTPUT_DICT, True)
+
+    assert out_file.read_text() == EXPECTED_DISPLAY_TEXT

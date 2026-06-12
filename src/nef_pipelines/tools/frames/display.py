@@ -1,4 +1,3 @@
-import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -13,6 +12,7 @@ from nef_pipelines.lib.cli_lib import (
     SELECT_ALL_FRAME_CATEGORIES_AND_TAGS,
     expand_default_frame_loop_and_tag_wildcards,
     parse_frame_loop_and_tags,
+    print_output_or_exit_error,
     selection_to_frame_loops_and_tags,
 )
 from nef_pipelines.lib.namespace_lib import (
@@ -208,12 +208,7 @@ def display(
         display_options,
     )
 
-    # TODO [future]: we could do with a general tested library routine to do this
-    # move this to utils and tests in display tests to test_utils?
-    # Handle output based on --out option and --force
-    print_entry = _print_output_or_exit_error(out, output_dict, force)
-    if print_entry:
-        print(entry)
+    print_output_or_exit_error(entry, out, output_dict, force)
 
 
 def pipe(
@@ -855,47 +850,6 @@ def _parse_and_select_namespaces(
             f"Available namespaces are: {available}"
         )
     return selected_namespaces
-
-
-# TODO this should be a utilty function
-def _print_output_or_exit_error(
-    out: Optional[str], output_dict: Dict[str, str], force: bool
-) -> bool:
-    print_entry = False
-    if out is None or out == "@auto":
-        # Auto-detect behavior: TTY → display to stdout (no entry), Pipe → display to stderr + entry to stdout
-        if sys.stdout.isatty():
-            # Terminal: display to stdout only, don't print entry
-            if "-" in output_dict:
-                print(output_dict["-"], end="")
-        else:
-            # Pipe: display to stderr, entry to stdout
-            if "-" in output_dict:
-                print(output_dict["-"], end="", file=sys.stderr)
-                print_entry = True
-    elif out in ("-", "@out"):
-        # Force display-only: display to stdout, no entry output (even in pipe mode)
-        if "-" in output_dict:
-            print(output_dict["-"], end="")
-    elif out == "@err":
-        # Force pipe mode: display to stderr, entry to stdout (even in terminal)
-        if "-" in output_dict:
-            print(output_dict["-"], end="", file=sys.stderr)
-        print_entry = True
-    else:
-        # Write display to file, stream entry to stdout
-        if Path(out).exists() and not force:
-            msg = f"file {out} already exists, run with --force to overwrite"
-            exit_error(msg)
-        with open(out, "w") as f:
-            if out in output_dict:
-                f.write(output_dict[out])
-            elif "-" in output_dict:
-                f.write(output_dict["-"])
-
-        # Stream entry to stdout
-        print_entry = True
-    return print_entry
 
 
 # TODO this should be a utility function

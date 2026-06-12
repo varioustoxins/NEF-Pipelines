@@ -55,8 +55,10 @@ This module provides parsing and validation for several CLI constructs used thro
 from __future__ import annotations
 
 import re
+import sys
 from collections import OrderedDict
 from enum import Enum, Flag, auto
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -84,7 +86,9 @@ from nef_pipelines.lib.structures import (
 )
 from nef_pipelines.lib.util import (
     NEWLINE,
+    exit_error,
     is_int,
+    is_stdout_tty,
     parse_comma_separated_options,
     to_ordinal,
 )
@@ -883,8 +887,10 @@ def parse_range_number_pairs(
         List of RangeNumberPair objects, optionally combined and sorted
 
     Examples:
-        parse_range_number_pairs(["1..5", "3..8"]) -> [RangeNumberPair(1, 8)]
-        parse_range_number_pairs(["1..5", "3..8"], no_combine=True) -> [RangeNumberPair(1, 5), RangeNumberPair(3, 8)]
+        >>> parse_range_number_pairs(["1..5", "3..8"])
+        [RangeNumberPair(1, 8)]
+        >>> parse_range_number_pairs(["1..5", "3..8"], no_combine=True)
+        [RangeNumberPair(1, 5), RangeNumberPair(3, 8)]
     """
     if not range_specs:
         return []
@@ -1558,24 +1564,17 @@ def parse_frame_loop_and_tags(
         use_escapes: Enable escape sequences (default False). When True, doubled separators become literals.
 
     Returns:
-        FrameLoopAndTags with:
-            - frame_name: Frame selector pattern (never None, default "*")
-            - loop_name: None (frame tags only), "*" (all loops), or "name" (specific loop)
-            - frame_tags: [] (not projected), ['*'] (explicit all), or list of tag names
-            - loop_tags: [] (not projected), ['*'] (explicit all), or list of column names
+        FrameLoopAndTags where frame_name defaults to "*", loop_name is None (frame tags only),
+        "*" (all loops), or a specific name; frame_tags and loop_tags are [] (not projected),
+        ['*'] (all), or an explicit list of names.
 
     Examples:
-        parse_frame_loop_and_tags("shift:sf_category")
-        → FrameLoopAndTags(frame_name="shift", loop_name=None,
-                           frame_tags=["sf_category"], loop_tags=[])
-
-        parse_frame_loop_and_tags("shift.chemical_shift:atom_name")
-        → FrameLoopAndTags(frame_name="shift", loop_name="chemical_shift",
-                           frame_tags=[], loop_tags=["atom_name"])
-
-        parse_frame_loop_and_tags(":sf_category")
-        → FrameLoopAndTags(frame_name="*", loop_name=None,
-                           frame_tags=["sf_category"], loop_tags=[])
+        >>> parse_frame_loop_and_tags("shift:sf_category")
+        FrameLoopAndTags(frame_name="shift", loop_name=None, frame_tags=["sf_category"], loop_tags=[])
+        >>> parse_frame_loop_and_tags("shift.chemical_shift:atom_name")
+        FrameLoopAndTags(frame_name="shift", loop_name="chemical_shift", frame_tags=[], loop_tags=["atom_name"])
+        >>> parse_frame_loop_and_tags(":sf_category")
+        FrameLoopAndTags(frame_name="*", loop_name=None, frame_tags=["sf_category"], loop_tags=[])
     """
 
     # Save original spec before processing
@@ -2003,17 +2002,19 @@ def parse_selector_lists(
         use_escapes: If True, process escape sequences (\, → ,)
 
     Returns:
-        List of tuples (action, pattern) where:
-        - action is SelectorAction.INCLUDE or SelectorAction.EXCLUDE
-        - pattern is ALL_NAMESPACES sentinel or namespace_name string
-        - When no_initial_selection=True, prepends (EXCLUDE, ALL_NAMESPACES) to start with all
+        List of (SelectorAction, pattern) tuples — INCLUDE/EXCLUDE paired with either
+        ALL_NAMESPACES sentinel or a namespace name string. When no_initial_selection=True,
+        the list is prepended with (EXCLUDE, ALL_NAMESPACES).
 
     Examples:
-        ['nef'] → [(INCLUDE, 'nef')]  # start empty, add nef
-        no_initial_selection=True, ['nef'] → [(EXCLUDE, ALL_NAMESPACES), (INCLUDE, 'nef')]  # start none, add nef
-        ['+nef', '-custom'] → [(INCLUDE, 'nef'), (EXCLUDE, 'custom')]
-        ['-'] → [(EXCLUDE, ALL_NAMESPACES)]  # clear all
-        no_initial_selection=True, ['+nef'] → [(EXCLUDE, ALL_NAMESPACES), (INCLUDE, 'nef')]
+        >>> parse_selector_lists(['nef'])
+        [(INCLUDE, 'nef')]
+        >>> parse_selector_lists(['+nef', '-custom'])
+        [(INCLUDE, 'nef'), (EXCLUDE, 'custom')]
+        >>> parse_selector_lists(['-'])
+        [(EXCLUDE, ALL_NAMESPACES)]
+        >>> parse_selector_lists(['nef'], no_initial_selection=True)
+        [(EXCLUDE, ALL_NAMESPACES), (INCLUDE, 'nef')]
     """
 
     result = []
@@ -2103,13 +2104,14 @@ def validate_loop_selection_only_or_raise(item: FrameLoopsAndTags):
 def _split_selectors_on_slash(selector: str) -> List[str]:
     """Split a selector string on '/', treating '//' as an escaped literal slash.
 
-    Examples:
-        "frame1.loop1/frame2.loop2"              → ["frame1.loop1", "frame2.loop2"]
-        "frame.loop:col1,col2"                   → ["frame.loop:col1,col2"]
-        "frame.loop:col1,col2/frame2.loop2:col3" → ["frame.loop:col1,col2", "frame2.loop2:col3"]
+    '//' is the escape for a literal '/' in a name and reduces to a plain split once
+    backslash escaping lands.
 
-    Note: '//' is the escape for a literal '/' in a name; it will be replaced by backslash
-    escaping once that lands, at which point this function reduces to a plain split.
+    Examples:
+        >>> _split_selectors_on_slash("frame1.loop1/frame2.loop2")
+        ['frame1.loop1', 'frame2.loop2']
+        >>> _split_selectors_on_slash("frame.loop:col1,col2")
+        ['frame.loop:col1,col2']
     """
     if not selector:
         return []
@@ -2143,22 +2145,14 @@ def expand_specified_frame_loop_and_tag_wildcards(
 ) -> FrameLoopAndTagSelectors:
     """Expand unset selector fields to wildcard for the specified entry parts.
 
-    Two independent rivers can be expanded:
-      FrameTag            → frame_tags: [] → ['*']
-      Loop                → loop_name: None → '*'
-      Loop | LoopTag      → loop_name: None → '*' AND loop_tags: [] → ['*']
-
-    Parts already set (non-empty / non-None) are never overwritten.
+    Parts already set (non-empty / non-None) are never overwritten. Three fields can
+    be expanded independently: FrameTag (frame_tags: [] → ['*']), Loop
+    (loop_name: None → '*'), and LoopTag (loop_tags: [] → ['*']).
 
     Examples:
-        expand_frame_loop_and_tag_wildcards(sel)
-            expands everything (default)
-        expand_frame_loop_and_tag_wildcards(sel, EntryPart.FrameTag)
-            expand frame tags only, leave loops untouched
-        expand_frame_loop_and_tag_wildcards(sel, EntryPart.Loop | EntryPart.LoopTag)
-            expand into loops and columns, leave frame tags alone
-        expand_frame_loop_and_tag_wildcards(sel, EntryPart(0))
-            no expansion
+        >>> expand_specified_frame_loop_and_tag_wildcards(sel)          # expand everything
+        >>> expand_specified_frame_loop_and_tag_wildcards(sel, EntryPart.FrameTag)  # frame tags only
+        >>> expand_specified_frame_loop_and_tag_wildcards(sel, EntryPart(0))        # no expansion
     """
     frame_name = selector.frame_name
     loop_name = selector.loop_name
@@ -2427,3 +2421,44 @@ def parse_frame_loop_selectors_and_get_errors(
 
     result = selection_to_frame_loops_and_tags(entry, valid_selectors)
     return result, errors
+
+
+def print_output_or_exit_error(
+    entry: Optional[Entry], out: Optional[str], output_dict: Dict[str, str], force: bool
+) -> None:
+    """Route display output to stdout, stderr, or a file based on the --out option and if stdout is a tty.
+
+    Args:
+        out: destination specifier (@auto, -, @out, @err, or a file path)
+        output_dict: mapping of output key to display text; "-" is the default key
+        force: if True, overwrite existing files without error
+        entry: if provided, print to stdout when output is routed elsewhere
+    """
+    print_entry = False
+    if out is None or out == "@auto":
+        if is_stdout_tty():
+            if "-" in output_dict:
+                print(output_dict["-"], end="")
+        else:
+            if "-" in output_dict:
+                print(output_dict["-"], end="", file=sys.stderr)
+                print_entry = True
+    elif out in ("-", "@out"):
+        if "-" in output_dict:
+            print(output_dict["-"], end="")
+    elif out == "@err":
+        if "-" in output_dict:
+            print(output_dict["-"], end="", file=sys.stderr)
+        print_entry = True
+    else:
+        if Path(out).exists() and not force:
+            exit_error(f"file {out} already exists, run with --force to overwrite")
+        with open(out, "w") as f:
+            if out in output_dict:
+                f.write(output_dict[out])
+            elif "-" in output_dict:
+                f.write(output_dict["-"])
+        print_entry = True
+
+    if print_entry and entry is not None:
+        print(entry)
