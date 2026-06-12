@@ -21,6 +21,7 @@ from nef_pipelines.lib.cli_lib import (
     detect_overlapping_range_offsets,
     expand_residue_range,
     expand_specified_frame_loop_and_tag_wildcards,
+    extract_initial_file_from_arguments,
     format_residue_range,
     parse_chain_offset_syntax,
     parse_frame_loop_and_tags,
@@ -44,6 +45,7 @@ from nef_pipelines.lib.structures import (
     ResidueRangeParsingException,
 )
 from nef_pipelines.lib.test_lib import assert_lines_match
+from nef_pipelines.lib.util import STDIN
 
 
 def test_parse_residue_ranges_basic():
@@ -3122,3 +3124,61 @@ def test_print_output_to_file_force_overwrites(tmp_path):
     print_output_or_exit_error(None, str(out_file), OUTPUT_DICT, True)
 
     assert out_file.read_text() == EXPECTED_DISPLAY_TEXT
+
+
+def test_extract_initial_file_no_selectors():
+    result_input, result_selectors = extract_initial_file_from_arguments(STDIN, [])
+
+    assert result_input == STDIN
+    assert result_selectors == []
+
+
+def test_extract_initial_file_selectors_no_file():
+    result_input, result_selectors = extract_initial_file_from_arguments(
+        STDIN, ["molecular_system:", "shifts:"]
+    )
+
+    assert result_input == STDIN
+    assert result_selectors == ["molecular_system:", "shifts:"]
+
+
+def test_extract_initial_file_first_selector_is_file(tmp_path):
+    nef_file = tmp_path / "test.nef"
+    nef_file.write_text("")
+
+    result_input, result_selectors = extract_initial_file_from_arguments(
+        STDIN, [str(nef_file), "molecular_system:"]
+    )
+
+    assert result_input == str(nef_file)
+    assert result_selectors == ["molecular_system:"]
+
+
+def test_extract_initial_file_first_selector_is_file_no_remaining_selectors(tmp_path):
+    nef_file = tmp_path / "test.nef"
+    nef_file.write_text("")
+
+    result_input, result_selectors = extract_initial_file_from_arguments(
+        STDIN, [str(nef_file)]
+    )
+
+    assert result_input == str(nef_file)
+    assert result_selectors == []
+
+
+def test_extract_initial_file_explicit_input_and_file_selector_raises(tmp_path, capsys):
+    nef_file = tmp_path / "test.nef"
+    nef_file.write_text("")
+    explicit_input = tmp_path / "explicit.nef"
+    explicit_input.write_text("")
+
+    with pytest.raises(SystemExit):
+        extract_initial_file_from_arguments(explicit_input, [str(nef_file)])
+
+    EXPECTED_TWO_INPUTS_ERROR = f"""
+        ERROR [in: unknown unknown]: you specified two inputs --input {explicit_input} and {nef_file} please choose only one!
+        exiting...
+    """  # noqa: E501
+
+    stderr = capsys.readouterr().err
+    assert_lines_match(EXPECTED_TWO_INPUTS_ERROR, stderr)

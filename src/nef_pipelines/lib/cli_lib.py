@@ -86,6 +86,7 @@ from nef_pipelines.lib.structures import (
 )
 from nef_pipelines.lib.util import (
     NEWLINE,
+    STDIN,
     exit_error,
     is_int,
     is_stdout_tty,
@@ -2462,3 +2463,38 @@ def print_output_or_exit_error(
 
     if print_entry and entry is not None:
         print(entry)
+
+
+def extract_initial_file_from_arguments(
+    input: Path, selectors: Optional[List[str]]
+) -> Tuple[Path, Optional[List[str]]]:
+    """Resolve the input file path when it has been passed as the first selector argument
+    rather than via --input.
+
+    Some commands allow the user to write:
+
+        nef frames display file.nef selector1 selector2
+
+    instead of:
+
+        nef frames display --input file.nef selector1 selector2
+
+    If the first selector is an existing file path and --input is stdin (the default),
+    the file is promoted to be the input and removed from the selector list.
+    If both --input and a file-like first selector are present, exit with an error.
+
+    Args:
+        input:     the value of the --input option (STDIN sentinel if not given)
+        selectors: the remaining positional arguments, which may start with a file path
+
+    Returns:
+        (input, selectors) with the file promoted if applicable
+    """
+    if selectors and len(selectors) > 0 and Path(selectors[0]).is_file():
+        if input != STDIN:
+            msg = f"you specified two inputs --input {input} and {selectors[0]} please choose only one!"
+            exit_error(msg)
+        else:
+            input = selectors[0]
+            selectors = selectors[1:]
+    return input, selectors

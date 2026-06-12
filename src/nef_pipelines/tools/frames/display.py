@@ -11,6 +11,7 @@ from pynmrstar import Entry, Loop, Saveframe
 from nef_pipelines.lib.cli_lib import (
     SELECT_ALL_FRAME_CATEGORIES_AND_TAGS,
     expand_default_frame_loop_and_tag_wildcards,
+    extract_initial_file_from_arguments,
     parse_frame_loop_and_tags,
     print_output_or_exit_error,
     selection_to_frame_loops_and_tags,
@@ -22,7 +23,7 @@ from nef_pipelines.lib.namespace_lib import (
 )
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.structures import FrameLoopsAndTags
-from nef_pipelines.lib.util import STDIN, exit_error, warn
+from nef_pipelines.lib.util import STDIN, warn
 from nef_pipelines.tools.frames import frames_app
 
 DEFAULT_ROW_COUNT = 10
@@ -168,7 +169,7 @@ def display(
     """
 
     # Handle polymorphic first arg (file vs selector)
-    input, selectors = _parse_polymorphic_entry_inputs(input, selectors)
+    input, selectors = extract_initial_file_from_arguments(input, selectors)
 
     # TODO [future] we really want a version that also displays help first...
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
@@ -850,20 +851,6 @@ def _parse_and_select_namespaces(
             f"Available namespaces are: {available}"
         )
     return selected_namespaces
-
-
-# TODO this should be a utility function
-def _parse_polymorphic_entry_inputs(
-    input: Path, selectors: Optional[List[str]]
-) -> Tuple[Path, Optional[List[str]]]:
-    if selectors and len(selectors) > 0 and Path(selectors[0]).is_file():
-        if input != STDIN:
-            msg = "you specified two inputs --input {input} and {putative_file} please choose only one!"
-            exit_error(msg)
-        else:
-            input = selectors[0]
-            selectors = selectors[1:]
-    return input, selectors
 
 
 def _extract_display_modes(head: bool, middle: bool, tail: bool) -> List[Any]:
