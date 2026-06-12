@@ -1,10 +1,9 @@
 import sys
-from collections import OrderedDict
+from dataclasses import dataclass, field
 from enum import Enum
-from fnmatch import fnmatchcase
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import typer
 from click import Context
@@ -12,29 +11,30 @@ from pynmrstar import Entry, Loop, Saveframe
 
 from nef_pipelines.lib.cli_lib import (
     SELECT_ALL_FRAME_CATEGORIES_AND_TAGS,
+    expand_default_frame_loop_and_tag_wildcards,
     parse_frame_loop_and_tags,
+    selection_to_frame_loops_and_tags,
 )
 from nef_pipelines.lib.namespace_lib import (
     collect_namespaces_from_frames,
+    filter_frame_loops_and_tags_by_namespace,
     filter_namespaces,
-    get_namespace,
 )
-from nef_pipelines.lib.nef_lib import (
-    SelectionType,
-    read_entry_from_file_or_stdin_or_exit_error,
-    select_frames,
-    select_loops_by_category,
-)
-from nef_pipelines.lib.structures import (
-    DisplayOptions,
-    EntryPart,
-    FrameLoopAndTagSelectors,
-    FramesLoopAndTags,
-)
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.structures import FrameLoopsAndTags
 from nef_pipelines.lib.util import STDIN, exit_error, warn
 from nef_pipelines.tools.frames import frames_app
 
 DEFAULT_ROW_COUNT = 10
+
+
+@dataclass
+class _FrameDisplayFlags:
+    showing_frame_tags: bool
+    showing_loop_data: bool
+    showing_loop_placeholder: bool
+    is_complete_frame: bool
+    add_frame_markers: bool
 
 
 class DisplayMode(Enum):
@@ -44,6 +44,16 @@ class DisplayMode(Enum):
     HEAD = "head"
     MIDDLE = "middle"
     TAIL = "tail"
+
+
+@dataclass
+class DisplayOptions:
+    """Formatting options for display output."""
+
+    display_modes: List[Any] = field(default_factory=list)
+    count: int = 10
+    exact: bool = False
+    no_comments: bool = False
 
 
 @frames_app.command()
@@ -79,6 +89,9 @@ def display(
             Use backslash to escape @ (e.g., \\@file).
             """,
     ),
+    # TODO: Support explicit index ranges for AI-friendly row selection
+    #       e.g., --rows 1-5,10-15 or --rows 0,5,10,15
+    #       This would complement --head/--middle/--tail with precise control
     head: bool = typer.Option(
         False,
         "--head",
@@ -108,16 +121,6 @@ def display(
         "--count",
         help="number of rows to display with --head, --middle, or --tail",
     ),
-    tags_only: bool = typer.Option(
-        False,
-        "--tags-only",
-        help="show only tag-value pairs, not loop data",
-    ),
-    loops_only: bool = typer.Option(
-        False,
-        "--loops-only",
-        help="show only loop data, not saveframe tags",
-    ),
     no_comments: bool = typer.Option(
         False,
         "--no-comments",
@@ -128,16 +131,15 @@ def display(
         "--namespace",
         help="filter frames by namespace (+nef to include, -ccpn to exclude etc)",
     ),
-    no_initial_selection: bool = typer.Option(
+    no_initial_namespace_selection: bool = typer.Option(
         False,
-        "--no-initial-selection",
+        "--no-initial-namespace-selection",
         help="start with empty namespace selection instead of all",
     ),
     selectors: Optional[List[str]] = typer.Argument(
         None,
         help="selectors for what to display in the format frame.loop:tag1,tag2 (wildcards supported)",
     ),
-    # TODO [Future] exact!
     force: bool = typer.Option(False, "--force", help="overwrite existing files"),
 ):
     """\
@@ -146,7 +148,7 @@ def display(
     Namespace filtering allows including/excluding frames by namespace prefix:
     - +nef includes only nef frames
     - -ccpn excludes ccpn frames
-    - --no-initial-selection starts with empty set instead of all
+    - --no-initial-namespace-selection starts with empty set instead of all
 
     ```bash
     Examples:
@@ -161,14 +163,14 @@ def display(
         nef frames display file.nef "*:*" --namespace -ccpn
 
         # display all frame tags for frames tags and loops in the nef namespace only
-        nef frames display file.nef "shift:*" --namespace +nef --no-initial-selection
+        nef frames display file.nef "shift:*" --namespace +nef --no-initial-namespace-selection
     ```
     """
 
     # Handle polymorphic first arg (file vs selector)
     input, selectors = _parse_polymorphic_entry_inputs(input, selectors)
 
-    # TODO we really want a version that also displays help first...
+    # TODO [future] we really want a version that also displays help first...
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
     # Parse selectors OUTSIDE pipe (follows CLAUDE.md pattern)
@@ -181,26 +183,23 @@ def display(
         display_modes=display_modes,
         count=count,
         exact=exact,
-        tags_only=tags_only,
-        loops_only=loops_only,
         no_comments=no_comments,
     )
 
-    # TODO [Future] move to namespace_lib
+    # TODO [future] move to namespace_lib and add tests
     namespaces = _parse_and_select_namespaces(
-        entry, namespace_selectors, no_initial_selection
+        entry, namespace_selectors, no_initial_namespace_selection
     )
 
-    # Match selectors to actual frames/loops BEFORE calling pipe (refactoring item 3)
-    matched_items = _match_selectors_to_frames_and_loops(
+    matched_items = selection_to_frame_loops_and_tags(
         entry,
         parsed_selectors,
-        exact,
-        namespaces,
+        exact=exact,
     )
-
-    # Merge matched items for the same frame+loop (combining tags from multiple selectors)
-    matched_items = _merge_matched_items(matched_items)
+    if namespaces is not None:
+        matched_items = filter_frame_loops_and_tags_by_namespace(
+            matched_items, namespaces
+        )
 
     # Call pipe function (business logic)
     entry, output_dict = pipe(
@@ -209,344 +208,182 @@ def display(
         display_options,
     )
 
+    # TODO [future]: we could do with a general tested library routine to do this
+    # move this to utils and tests in display tests to test_utils?
     # Handle output based on --out option and --force
     print_entry = _print_output_or_exit_error(out, output_dict, force)
     if print_entry:
         print(entry)
 
 
-# TODO too long needs to be split into hogh level functions
 def pipe(
     entry: Entry,
-    frames_loops_and_tags: List[FramesLoopAndTags],
+    frames_loops_and_tags: List[FrameLoopsAndTags],
     display_options: DisplayOptions,
 ) -> Tuple[Optional[Entry], Dict[str, str]]:
     """\
     Worker function that formats already-matched frames/loops for display.
 
-    This function focuses solely on formatting - all matching is done before calling pipe().
-
     Args:
         entry: Input NEF entry
-        frames_loops_and_tags: List of already-matched frames/loops with their tags
-        display_options: DisplayOptions containing display_modes, count, exact, tags_only, loops_only, no_comments
+        frames_loops_and_tags: One FrameLoopsAndTags per matched frame
+        display_options: DisplayOptions containing display_modes, count, exact, no_comments
 
     Returns:
         (entry_to_stream, output_dict)
-        - entry_to_stream: Entry to stream to stdout (or None)
-        - output_dict: Dict mapping filename -> display output text
     """
-    # Format each matched item
     display_lines = []
 
-    for item in frames_loops_and_tags:
-        lines = []
+    target_frames = {item.frame.name: item for item in frames_loops_and_tags}
 
-        # Determine what content will be shown
-        showing_frame_tags = item.frame_tags and not display_options.loops_only
-        showing_loop_data = item.loop is not None and not display_options.tags_only
-
-        # Only add frame comments if showing actual content (not just placeholder)
-        add_frame_comments = not display_options.no_comments and (
-            showing_frame_tags or showing_loop_data
-        )
-
-        # 1. Frame start comment
-        if add_frame_comments:
-            lines.extend(_format_frame_start_comment(item.frame.name))
-
-        # 2. Frame tags (if present and not suppressed)
-        if showing_frame_tags:
-            lines.extend(_format_frame_tags(item.frame, item.frame_tags))
-
-        # 3. Loop data or placeholder (if present)
-        _prcoess_loopdata_or_placeholder(lines, item, display_options)
-
-        # 4. Frame end comment
-        if add_frame_comments:
-            lines.append("")
-            lines.extend(_format_frame_end_comment())
-
-        display_lines.extend(lines)
-
-    output_text = "\n".join(display_lines)
-    output_dict = {"-": output_text}
-
-    return entry, output_dict
-
-
-def _prcoess_loopdata_or_placeholder(
-    lines: list[Any], item: FramesLoopAndTags, display_options: DisplayOptions
-):
-
-    showing_loop_data = item.loop is not None and not display_options.tags_only
-    showing_loop_placeholder = item.loop is not None and display_options.tags_only
-
-    if showing_loop_placeholder:
-        # Placeholder for tags_only mode (no frame comments)
-        lines.append(f"# loop not shown: {item.loop.category}")
-    elif showing_loop_data:
-        # Get display modes
-        display_modes = (
-            display_options.display_modes
-            if display_options.display_modes
-            else [DisplayMode.ALL]
-        )
-
-        # Calculate which rows to show
-        indices = _calculate_display_indices(
-            len(item.loop.data), display_modes, display_options.count
-        )
-
-        # Format loop structure
-        loop_lines = _format_loop_data(item.loop, item.loop_tags, indices)
-
-        # Insert ellipsis for gaps
-        if not display_options.no_comments and len(indices) < len(item.loop.data):
-            loop_lines = _insert_ellipsis_comments(
-                loop_lines, indices, len(item.loop.data)
-            )
-
-        # Add to output
-        loop_text = "\n".join(loop_lines)
-        dedented = dedent(loop_text)
-        lines.extend(dedented.split("\n"))
-
-
-def _match_frame_tags(
-    frame: Saveframe,
-    selector: FrameLoopAndTagSelectors,
-    exact: bool,
-    selected_namespaces: set[str],
-) -> Optional[FramesLoopAndTags]:
-    """Match frame tags for a frame-only selector."""
-    if selector.frame_tags:
-        # Match specific frame tags
-        frame_tag_names = [tag[0] for tag in frame.tag_iterator()]
-        matched_frame_tags = _select_tags(
-            frame_tag_names, selector.frame_tags, exact, selected_namespaces
-        )
-        if matched_frame_tags:
-            # Filter matched tags by namespace
-            matched_frame_tags = _filter_tags_by_namespace(
-                matched_frame_tags, frame, selected_namespaces, EntryPart.FrameTag
-            )
-            if matched_frame_tags:
-                return FramesLoopAndTags(
-                    frame=frame, loop=None, frame_tags=matched_frame_tags, loop_tags=[]
-                )
-    else:
-        # Match entire frame (all tags) - filter by namespace
-        frame_tag_names = [tag[0] for tag in frame.tag_iterator()]
-        if selector.frame_tags == ["*"]:
-            # Filter all tags by namespace
-            filtered_tags = _filter_tags_by_namespace(
-                frame_tag_names, frame, selected_namespaces, EntryPart.FrameTag
-            )
-            if filtered_tags:
-                return FramesLoopAndTags(
-                    frame=frame, loop=None, frame_tags=filtered_tags, loop_tags=[]
-                )
-        else:
-            # No tags specified
-            return FramesLoopAndTags(
-                frame=frame, loop=None, frame_tags=[], loop_tags=[]
-            )
-    return None
-
-
-def _match_loop_tags(
-    frame: Saveframe,
-    selector: FrameLoopAndTagSelectors,
-    exact: bool,
-    selected_namespaces: set[str],
-) -> List[FramesLoopAndTags]:
-    """Match loop tags for a loop selector."""
-    results = []
-    loop_patterns = [selector.loop_name]
-    matching_loops = select_loops_by_category(frame.loops, loop_patterns, exact=exact)
-
-    for loop in matching_loops:
-        # Match loop tags
-        if selector.loop_tags:
-            matched_loop_tags = _select_tags(
-                loop.tags, selector.loop_tags, exact, selected_namespaces, loop.category
-            )
-            if matched_loop_tags:
-                # Filter matched loop tags by namespace
-                matched_loop_tags = _filter_tags_by_namespace(
-                    matched_loop_tags, loop, selected_namespaces, EntryPart.LoopTag
-                )
-                if matched_loop_tags:
-                    results.append(
-                        FramesLoopAndTags(
-                            frame=frame,
-                            loop=loop,
-                            frame_tags=[],
-                            loop_tags=matched_loop_tags,
-                        )
-                    )
-
-    return results
-
-
-def _match_selectors_to_frames_and_loops(
-    entry: Entry,
-    selectors: List[FrameLoopAndTagSelectors],
-    exact: bool,
-    selected_namespaces: set[str],
-) -> List[FramesLoopAndTags]:
-    """
-    Match selectors to actual frames and loops in the entry.
-
-    This function separates parsing/matching from formatting logic by doing all
-    selector matching upfront and returning structured match results.
-
-    Args:
-        entry: Input NEF entry
-        selectors: List of parsed FrameLoopAndTags selectors
-        exact: Whether to use exact matching (no wildcards)
-        selected_namespaces: Set of namespaces to include
-
-    Returns:
-        List of MatchedFrameLoopAndTags objects, each containing:
-        - frame: The matched Saveframe
-        - loop: The matched Loop (or None for frame-only matches)
-        - frame_tags: List of matched frame tag names
-        - loop_tags: List of matched loop tag names
-    """
-    matched_items = []
-
-    for selector in selectors:
-        # Match frames based on frame_name pattern
-        frame_patterns = [selector.frame_name]
-        matching_frames = select_frames(
-            entry, frame_patterns, selector_type=SelectionType.ANY
-        )
-
-        # Process each matching frame
+    if target_frames:
+        prev_frame_was_collapsed = False
         for frame in entry.frame_list:
-            if frame not in matching_frames:
-                continue
+            if frame.name in target_frames:
+                if prev_frame_was_collapsed and display_lines:
+                    display_lines.append("")
+                prev_frame_was_collapsed = False
 
-            # Note: We don't filter frames by namespace here because we want to allow
-            # selecting tags from frames even if the frame's namespace doesn't match.
-            # For example, selecting ccpn tags from nef frames.
-            # Tag-level namespace filtering happens in _filter_tags_by_namespace.
+                selected_frame = target_frames[frame.name]
 
-            # Always try to match frame tags
-            result = _match_frame_tags(frame, selector, exact, selected_namespaces)
-            if result:
-                matched_items.append(result)
+                flags = _compute_frame_display_flags(selected_frame, display_options)
 
-            # Also match loops if a loop name is specified
-            if selector.loop_name is not None:
-                matched_items.extend(
-                    _match_loop_tags(frame, selector, exact, selected_namespaces)
+                frame_open_lines = _format_frame_open(selected_frame.frame.name, flags)
+                frame_tag_lines = _process_frame_tags(
+                    selected_frame, display_options, flags
                 )
+                loop_lines = _process_loops(selected_frame, display_options, flags)
+                frame_close_lines = _format_frame_close(flags)
 
-    return matched_items
+                lines = [
+                    *frame_open_lines,
+                    *frame_tag_lines,
+                    *loop_lines,
+                    *frame_close_lines,
+                ]
+
+                display_lines.extend(_indent_frame_content(lines))
+            else:
+                hints = _format_collapsed_frame_hint(
+                    frame.name, display_options.no_comments
+                )
+                display_lines.extend(hints)
+                if hints:
+                    prev_frame_was_collapsed = True
+
+    return entry, {"-": "\n".join(display_lines)}
 
 
-def _filter_tags_by_namespace(
-    tag_names: List[str],
-    parent: Union[Saveframe, Loop],
-    selected_namespaces: set[str],
-    tag_type: EntryPart,
+def _process_loops(
+    selected_frame: FrameLoopsAndTags,
+    display_options: DisplayOptions,
+    flags: _FrameDisplayFlags,
 ) -> List[str]:
-    """
-    Filter tags by namespace using get_namespace.
-
-    Args:
-        tag_names: List of tag names to filter
-        parent: Parent frame or loop for namespace inheritance
-        selected_namespaces: Set of selected namespaces
-        tag_type: EntryPart.FrameTag or EntryPart.LoopTag
-
-    Returns:
-        List of tags that match the selected namespaces
-    """
-    if not selected_namespaces:
-        return tag_names
-
-    filtered = []
-    for tag_name in tag_names:
-        tag_namespace = get_namespace(tag_name, tag_type, parent_namespace=parent)
-        if tag_namespace in selected_namespaces:
-            filtered.append(tag_name)
-
-    return filtered
-
-
-def _merge_matched_items(
-    matched_items: List[FramesLoopAndTags],
-) -> List[FramesLoopAndTags]:
-    """
-    Merge matched items that refer to the same frame+loop.
-
-    When multiple selectors target the same frame+loop with different tags,
-    combine them into a single matched item with all tags.
-
-    Args:
-        matched_items: List of matched items (may have duplicates for same frame+loop)
-
-    Returns:
-        List of merged matched items (one per unique frame+loop combination)
-    """
-    grouped = OrderedDict()
-
-    for item in matched_items:
-        # Use (frame.name, loop.category if loop else None) as key
-        key = (item.frame.name, item.loop.category if item.loop else None)
-
-        if key not in grouped:
-            grouped[key] = {
-                "frame": item.frame,
-                "loop": item.loop,
-                "frame_tags": [],
-                "loop_tags": [],
-            }
-
-        # Accumulate tags (preserving order, avoiding duplicates)
-        for tag in item.frame_tags:
-            if tag not in grouped[key]["frame_tags"]:
-                grouped[key]["frame_tags"].append(tag)
-
-        for tag in item.loop_tags:
-            if tag not in grouped[key]["loop_tags"]:
-                grouped[key]["loop_tags"].append(tag)
-
-    # TODO: redesign — store frame_tags in a separate dict keyed by frame_name and
-    # loop items in a dict keyed by (frame_name, loop_category); attach frame tags
-    # at render time. Eliminates this post-hoc merge entirely and handles duplicate
-    # selectors naturally.
-
-    # Matching produces a (frame, None) item for frame tags AND a (frame, loop) item
-    # for each loop. Both would render their own # save_ block. Move frame tags from
-    # the (frame, None) item onto the first loop item so the frame renders as one block.
-    frame_only_keys = [k for k in grouped if k[1] is None]
-    for fname, _ in frame_only_keys:
-        loop_keys = [k for k in grouped if k[0] == fname and k[1] is not None]
-        if loop_keys:
-            target = grouped[loop_keys[0]]
-            for tag in grouped[(fname, None)]["frame_tags"]:
-                if tag not in target["frame_tags"]:
-                    target["frame_tags"].insert(0, tag)
-            del grouped[(fname, None)]
-
-    # Convert back to MatchedFrameLoopAndTags objects
-    merged = []
-    for key, data in grouped.items():
-        merged.append(
-            FramesLoopAndTags(
-                frame=data["frame"],
-                loop=data["loop"],
-                frame_tags=data["frame_tags"],
-                loop_tags=data["loop_tags"],
-            )
+    lines: List[str] = []
+    for loop in selected_frame.loops:
+        _process_loop_or_placeholder(
+            lines,
+            loop,
+            selected_frame.loop_tags.get(loop.category, []),
+            display_options,
         )
+    if not display_options.no_comments and not flags.is_complete_frame:
+        _append_collapsed_loop_hints(lines, selected_frame)
+    return lines
 
-    return merged
+
+def _process_frame_tags(
+    selected_frame: FrameLoopsAndTags,
+    display_options: DisplayOptions,
+    flags: _FrameDisplayFlags,
+) -> List[str]:
+    lines: List[str] = []
+    if flags.showing_frame_tags:
+        lines.extend(
+            _format_frame_tags(selected_frame.frame, selected_frame.frame_tags)
+        )
+        if not display_options.no_comments and _is_partial_frame_tags(selected_frame):
+            lines.append("   # more frame tags...")
+    elif flags.showing_loop_data and not display_options.no_comments:
+        lines.append("# frame tags ...")
+        lines.append("")
+    return lines
+
+
+def _compute_frame_display_flags(
+    item: FrameLoopsAndTags, display_options: DisplayOptions
+) -> _FrameDisplayFlags:
+    no_loops = not item.loops
+    has_loops = bool(item.loops)
+
+    # A loop is "fully expanded" when either all columns are selected (loop_tags equals
+    # the full tag list) or no column filter was applied at all (loop_tags is empty —
+    # bare loop, command shows everything).
+    all_loops_fully_expanded = has_loops and all(
+        not item.loop_tags.get(lp.category, [])
+        or set(item.loop_tags.get(lp.category, [])) == set(lp.tags)
+        for lp in item.loops
+    )
+
+    # After wildcard expansion, bare-frame selectors produce a non-empty frame_tags list
+    # (design doc §3), so this cleanly separates frame-tag selections from loop-only ones.
+    has_frame_tag_selection = bool(item.frame_tags)
+
+    # Show frame tags when: no loops present (frame-tag only selection), OR every loop is
+    # fully expanded and frame tags were selected (whole-frame or explicit tag selection).
+    should_show_frame_tags = no_loops or (
+        all_loops_fully_expanded and has_frame_tag_selection
+    )
+
+    showing_frame_tags = should_show_frame_tags
+    showing_loop_data = has_loops
+    showing_loop_placeholder = (
+        False  # No longer used (was for removed --tags-only flag)
+    )
+
+    # Complete frame: all tags shown, all loops present, all columns shown — use raw
+    # save_/save_ markers instead of commented # save_ markers.
+    is_complete_frame = _is_complete_frame_selection(
+        item, showing_frame_tags, showing_loop_data
+    )
+    add_frame_markers = not display_options.no_comments and (
+        showing_frame_tags or showing_loop_data
+    )
+
+    return _FrameDisplayFlags(
+        showing_frame_tags=showing_frame_tags,
+        showing_loop_data=showing_loop_data,
+        showing_loop_placeholder=showing_loop_placeholder,
+        is_complete_frame=is_complete_frame,
+        add_frame_markers=add_frame_markers,
+    )
+
+
+def _process_loop_or_placeholder(
+    lines: list[Any],
+    loop: Loop,
+    loop_tags: List[str],
+    display_options: DisplayOptions,
+) -> None:
+    display_modes = (
+        display_options.display_modes
+        if display_options.display_modes
+        else [DisplayMode.ALL]
+    )
+    indices = _calculate_display_indices(
+        len(loop.data), display_modes, display_options.count
+    )
+    loop_lines = _format_loop_data(loop, loop_tags, indices)
+
+    # Add "# more columns..." if showing partial columns
+    if not display_options.no_comments and _is_partial_loop_columns(loop, loop_tags):
+        loop_lines = _insert_more_columns_comment(loop_lines)
+
+    if not display_options.no_comments and len(indices) < len(loop.data):
+        loop_lines = _insert_ellipsis_comments(loop_lines, indices, len(loop.data))
+
+    loop_text = "\n".join(loop_lines)
+    lines.extend(dedent(loop_text).split("\n"))
 
 
 # ============================
@@ -554,8 +391,105 @@ def _merge_matched_items(
 # ============================
 
 
+def _get_collapsed_loops(item: FrameLoopsAndTags) -> List[str]:
+    """Get list of loop categories in frame but not selected.
+
+    Args:
+        item: FrameLoopsAndTags for one frame
+
+    Returns:
+        List of collapsed loop categories
+    """
+    frame_loop_categories = {loop.category for loop in item.frame.loops}
+    selected_loop_categories = {loop.category for loop in item.loops}
+    collapsed = frame_loop_categories - selected_loop_categories
+    return sorted(collapsed)
+
+
+def _is_partial_frame_tags(item: FrameLoopsAndTags) -> bool:
+    """Check if showing some but not all frame tags.
+
+    Args:
+        item: FrameLoopsAndTags for one frame
+
+    Returns:
+        True if partial tag selection
+    """
+    if not item.frame_tags:
+        return False  # No frame-tag selection — not a partial display
+
+    # Count total tags in frame ([all names] == total → complete, not partial)
+    total_tags = sum(1 for _ in item.frame.tag_iterator())
+    selected_count = len(item.frame_tags)
+
+    return selected_count < total_tags
+
+
+def _is_partial_loop_columns(loop: Loop, loop_tags: List[str]) -> bool:
+    """Check if showing some but not all columns in a loop.
+
+    Args:
+        loop: The loop
+        loop_tags: Selected columns ([] means all; full column list also means all;
+            a strict subset means partial)
+
+    Returns:
+        True if partial column selection
+    """
+    if not loop_tags:
+        return False  # Bare loop — showing all columns
+
+    return len(loop_tags) < len(loop.tags)
+
+
+def _is_complete_frame_selection(
+    item: FrameLoopsAndTags, showing_frame_tags: bool, showing_loop_data: bool
+) -> bool:
+    """Determine if we're showing a complete frame (all tags, all loops, all columns).
+
+    Complete frame means:
+    - All frame tags are being SHOWN (the full frame-tag set is selected)
+    - All loops from frame are present
+    - All columns in each loop are shown ([] = bare loop, or the full column set)
+
+    Args:
+        item: FrameLoopsAndTags for one frame
+        showing_frame_tags: True if frame tags are being displayed
+        showing_loop_data: True if loop data is being displayed
+
+    Returns:
+        True if showing complete frame, False if partial selection
+    """
+    # If not showing frame tags, it's not a complete frame
+    if not showing_frame_tags:
+        return False
+
+    # If not showing loops, it's not a complete frame
+    if not showing_loop_data:
+        return False
+
+    # Check if all loops from the frame are present
+    frame_loop_categories = {loop.category for loop in item.frame.loops}
+    selected_loop_categories = {loop.category for loop in item.loops}
+    all_loops_present = frame_loop_categories == selected_loop_categories
+
+    # Each loop shows all columns when bare ([]) or its full column set is selected
+    all_columns_selected = all(
+        not item.loop_tags.get(loop.category, [])
+        or set(item.loop_tags.get(loop.category, [])) == set(loop.tags)
+        for loop in item.loops
+    )
+
+    # Frame tags complete when the full frame-tag set is selected. Reached only while
+    # showing_frame_tags, so item.frame_tags is non-empty here ([] would mean collapsed).
+    all_frame_tag_names = {tag for tag, _ in item.frame.tag_iterator()}
+    frame_tags_complete = set(item.frame_tags) == all_frame_tag_names
+
+    return frame_tags_complete and all_loops_present and all_columns_selected
+
+
 def _format_frame_start_comment(frame_name: str) -> List[str]:
-    """Generate frame start comment.
+    """Generate frame start comment (commented save marker for partial selections).
 
     Returns:
         ["# save_{frame_name}", ""]
@@ -564,12 +498,104 @@ def _format_frame_start_comment(frame_name: str) -> List[str]:
 
 
 def _format_frame_end_comment() -> List[str]:
-    """Generate frame end comment.
+    """Generate frame end comment (commented save marker for partial selections).
 
     Returns:
         ["", "# save_", ""]
     """
     return ["", "# save_", ""]
+
+
+def _format_frame_start_marker(frame_name: str) -> List[str]:
+    """Generate frame start marker (uncommented for complete frames).
+
+    Returns:
+        ["save_{frame_name}", ""]
+    """
+    return [f"save_{frame_name}", ""]
+
+
+def _format_frame_end_marker() -> List[str]:
+    """Generate frame end marker (uncommented for complete frames).
+
+    Returns:
+        ["", "save_", ""]
+    """
+    return ["", "save_", ""]
+
+
+def _format_collapsed_frame_hint(frame_name: str, no_comments: bool) -> List[str]:
+    if no_comments:
+        return []
+    return [f"# frame {frame_name} ..."]
+
+
+def _format_frame_open(frame_name: str, flags: _FrameDisplayFlags) -> List[str]:
+    if not flags.add_frame_markers:
+        return []
+    if flags.is_complete_frame:
+        return _format_frame_start_marker(frame_name)
+    return _format_frame_start_comment(frame_name)
+
+
+def _format_frame_close(flags: _FrameDisplayFlags) -> List[str]:
+    if not flags.add_frame_markers:
+        return []
+    if flags.is_complete_frame:
+        return ["", *_format_frame_end_marker()]
+    return ["", *_format_frame_end_comment()]
+
+
+def _append_collapsed_loop_hints(lines: List[str], item: FrameLoopsAndTags) -> None:
+    """Append placeholder comments for loops that exist but weren't selected."""
+    collapsed_loops = _get_collapsed_loops(item)
+    for loop_category in collapsed_loops:
+        lines.append(f"# loop {loop_category.lstrip('_')} ...")
+    if collapsed_loops:
+        lines.append("")
+
+
+def _indent_frame_content(lines: List[str]) -> List[str]:
+    """
+    Add 4-space base indentation to frame content, normalizing loop content to 8 spaces.
+
+    Frame markers (save_..., # save_) remain unindented.
+    Loop keywords (loop_, stop_) get 4 spaces.
+    Loop content (columns starting with _, data rows) get 8 spaces total.
+    Other content gets 4 spaces.
+
+    Args:
+        lines: List of formatted frame lines
+
+    Returns:
+        List with proper indentation
+    """
+    result = []
+    in_loop = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Don't indent empty lines or frame markers
+        if not line or line.startswith("save_") or line.startswith("# save"):
+            result.append(line)
+            continue
+
+        # Track loop boundaries
+        if stripped == "loop_":
+            in_loop = True
+            result.append("    " + stripped)
+        elif stripped == "stop_":
+            in_loop = False
+            result.append("    " + stripped)
+        elif in_loop:
+            # Loop content: columns (start with _) and data rows get 8 spaces
+            result.append("        " + stripped)
+        else:
+            # Other content (frame tags, comments) gets 4 spaces - use stripped to normalize
+            result.append("    " + stripped)
+
+    return result
 
 
 def _format_frame_tags(frame: Saveframe, selected_tags: List[str]) -> List[str]:
@@ -637,19 +663,21 @@ def _format_loop_data(
 
     Args:
         loop: The loop to format
-        selected_tags: List of tag names to include
+        selected_tags: List of tag names to include (empty list = all tags)
         indices_to_include: Row indices to include
 
     Returns:
         List of lines containing loop structure: ["loop_", "   _tag1", ..., "   value1", ..., "stop_"]
     """
-    tag_indices = [loop.tags.index(tag) for tag in selected_tags]
+    # If no tags specified, use all tags
+    tags_to_show = selected_tags if selected_tags else loop.tags
+    tag_indices = [loop.tags.index(tag) for tag in tags_to_show]
 
     # Build new loop with selected tags using pynmrstar
     new_loop = Loop.from_scratch(loop.category)
 
     # Add selected tags
-    for tag in selected_tags:
+    for tag in tags_to_show:
         new_loop.add_tag(tag)
 
     # Add data rows (only selected columns)
@@ -680,6 +708,46 @@ def _format_loop_data(
     return loop_lines
 
 
+def _insert_more_columns_comment(loop_lines: List[str]) -> List[str]:
+    """Insert '# more columns...' comment in loop header after tag list.
+
+    TODO: [future] Show column count: "# ... 5 more columns ..." instead of "# more columns..."
+          Optionally show first and last omitted column names: "# ... 5 more columns (atom_id through merit) ..."
+
+    Args:
+        loop_lines: Loop lines from pynmrstar formatting
+
+    Returns:
+        Modified loop lines with comment inserted
+    """
+    result = []
+    in_tags = False
+    tags_done = False
+
+    for line in loop_lines:
+        stripped = line.strip()
+
+        # Detect loop start
+        if stripped.startswith("loop_"):
+            in_tags = True
+            result.append(line)
+            continue
+
+        # If in tags section and line starts with underscore, it's a tag
+        if in_tags and stripped.startswith("_"):
+            result.append(line)
+            continue
+
+        # First non-tag line after tags - insert comment before it
+        if in_tags and not stripped.startswith("_") and not tags_done:
+            result.append("   # more columns...")
+            tags_done = True
+
+        result.append(line)
+
+    return result
+
+
 def _insert_ellipsis_comments(
     loop_lines: List[str], indices_to_include: List[int], total_rows: int
 ) -> List[str]:
@@ -702,18 +770,21 @@ def _insert_ellipsis_comments(
         insertions.append((position, f" # ... {gap_size} rows omitted ..."))
         insertions.append((position, ""))
 
-    # Find data row section
+    # Find data row section and stop_
+    # tag_end_idx = first non-empty, non-tag, non-loop_, non-comment line (actual data starts here)
     tag_end_idx = None
     stop_idx = None
     for i, line in enumerate(loop_lines):
+        stripped = line.strip()
         if (
-            line.strip()
-            and not line.strip().startswith("_")
-            and not line.strip().startswith("loop_")
+            stripped
+            and not stripped.startswith("_")
+            and not stripped.startswith("loop_")
+            and not stripped.startswith("#")
             and tag_end_idx is None
         ):
             tag_end_idx = i
-        if line.strip().startswith("stop_"):
+        if stripped.startswith("stop_"):
             stop_idx = i
             break
 
@@ -760,7 +831,10 @@ def _insert_ellipsis_comments(
 
 def _parse_and_select_namespaces(
     entry: Entry, namespaces: Optional[List[str]], no_initial_selection: bool
-) -> set[str]:
+) -> Optional[set[str]]:
+    if not namespaces and not no_initial_selection:
+        return None  # No filtering requested
+
     # Parse namespace selectors OUTSIDE pipe (refactoring item 2)
     # Collect actual namespaces from entry
     namespace_dict = collect_namespaces_from_frames(entry.frame_list)
@@ -781,32 +855,6 @@ def _parse_and_select_namespaces(
             f"Available namespaces are: {available}"
         )
     return selected_namespaces
-
-
-def _apply_namespace_filtering(
-    entry: Entry,
-    selected_namespaces: set[str],
-    loops_only: bool,
-) -> Entry:
-    """Apply frame-level namespace filtering if needed."""
-    if not loops_only:
-        # Collect all namespaces to check if filtering is needed
-        namespace_dict = collect_namespaces_from_frames(entry.frame_list)
-        all_namespaces = set(namespace_dict.keys())
-
-        # Validate that selected namespaces exist (defensive check)
-        invalid_namespaces = selected_namespaces - all_namespaces
-        if invalid_namespaces:
-            raise ValueError(
-                f"Invalid namespaces: {', '.join(sorted(invalid_namespaces))}. "
-                f"Available: {', '.join(sorted(all_namespaces))}"
-            )
-
-        # Only filter if selected_namespaces is a subset (meaning some were excluded)
-        if selected_namespaces != all_namespaces:
-            return _filter_entry_by_selected_namespaces(entry, selected_namespaces)
-
-    return entry
 
 
 # TODO this should be a utilty function
@@ -883,10 +931,10 @@ def _parse_selectors(selectors: Optional[List[str]]) -> List[Any]:
     if not selectors:
         selectors = [SELECT_ALL_FRAME_CATEGORIES_AND_TAGS]  # Default
 
-    parsed_selectors = []
-    for selector in selectors:
-        parsed_selectors.append(parse_frame_loop_and_tags(selector))
-    return parsed_selectors
+    return [
+        expand_default_frame_loop_and_tag_wildcards(parse_frame_loop_and_tags(selector))
+        for selector in selectors
+    ]
 
 
 def _parse_namespace_selectors(
@@ -921,129 +969,3 @@ def _parse_namespace_selectors(
     )
 
     return selected
-
-
-def _should_include_tag_by_selected_namespaces(
-    tag_name: str,
-    parent_frame_or_loop: Union[Saveframe, Loop, str],
-    selected_namespaces: set[str],
-    is_loop_tag: bool = False,
-) -> bool:
-    """\
-    Check if a tag should be included based on selected namespaces.
-
-    Uses proper namespace determination from namespace_lib which handles tag inheritance.
-
-    Args:
-        tag_name: Tag name to check
-        parent_frame_or_loop: Parent saveframe, loop object, or namespace string
-        selected_namespaces: Set of selected namespaces (pre-parsed)
-        is_loop_tag: True if checking a loop tag, False for frame tag
-
-    Returns:
-        True if tag should be included, False otherwise
-    """
-    # Determine tag's namespace using proper namespace_lib function
-    entry_part = EntryPart.LoopTag if is_loop_tag else EntryPart.FrameTag
-    tag_namespace = get_namespace(tag_name, entry_part, parent_frame_or_loop)
-
-    return tag_namespace in selected_namespaces
-
-
-def _filter_entry_by_selected_namespaces(
-    entry: Entry, selected_namespaces: set[str]
-) -> Entry:
-    """\
-    Filter entry frames by selected namespaces with hierarchical logic.
-
-    Logic: Don't filter out a frame if it contains children in the target namespace.
-    - Frame is included if its namespace is in selected_namespaces OR
-    - Frame has children whose namespace is in selected_namespaces
-
-    Args:
-        entry: Input NEF entry
-        selected_namespaces: Set of namespaces to include (pre-parsed)
-
-    Returns:
-        New entry with only frames matching namespace criteria
-    """
-    # Create new entry with filtered frames
-    filtered_entry = Entry.from_scratch(entry.entry_id)
-
-    for frame in entry.frame_list:
-        frame_ns = get_namespace(frame, EntryPart.Saveframe)
-
-        # Collect all child namespaces
-        child_namespaces = set()
-        for tag_name, _ in frame.tag_iterator():
-            tag_ns = get_namespace(tag_name, EntryPart.FrameTag, frame_ns)
-            child_namespaces.add(tag_ns)
-
-        for loop in frame.loops:
-            loop_ns = get_namespace(loop, EntryPart.Loop)
-            child_namespaces.add(loop_ns)
-
-            for tag in loop.tags:
-                tag_ns = get_namespace(tag, EntryPart.LoopTag, loop_ns)
-                child_namespaces.add(tag_ns)
-
-        # Include frame if:
-        # - Frame namespace is in selected set, OR
-        # - Any child namespace is in selected set (hierarchical logic)
-        frame_matches = frame_ns in selected_namespaces
-        children_match = bool(child_namespaces & selected_namespaces)
-
-        if frame_matches or children_match:
-            filtered_entry.add_saveframe(frame)
-
-    return filtered_entry
-
-
-def _select_tags(
-    available_tags,
-    tag_patterns,
-    exact,
-    selected_namespaces: set[str] = None,
-    loop_category=None,
-):
-    """\
-    Select tags matching patterns, preserving order.
-
-    Note: Uses fnmatch directly as no cli_lib utility exists for tag selection.
-
-    Args:
-        available_tags: List of available tag names (short names without category)
-        tag_patterns: List of patterns to match
-        exact: Whether to use exact matching
-        selected_namespaces: Set of selected namespaces for filtering (optional)
-        loop_category: Loop category for constructing full tag names for namespace checking
-
-    Returns:
-        list: Ordered list of matching tags
-    """
-
-    selected = set()
-
-    for pattern in tag_patterns:
-        # Auto-wildcard unless exact
-        match_pattern = pattern if exact else f"*{pattern}*"
-        for tag in available_tags:
-            if fnmatchcase(tag, match_pattern):
-                selected.add(tag)
-
-    # Filter by namespace if specified
-    if selected_namespaces is not None and loop_category:
-        # Get loop namespace for tag inheritance
-        loop_ns = get_namespace(loop_category, EntryPart.Loop)
-
-        filtered = set()
-        for tag in selected:
-            # Use proper namespace determination for loop tags
-            if _should_include_tag_by_selected_namespaces(
-                tag, loop_ns, selected_namespaces, is_loop_tag=True
-            ):
-                filtered.add(tag)
-        selected = filtered
-
-    # Preserve file order
-    return [tag for tag in available_tags if tag in selected]
