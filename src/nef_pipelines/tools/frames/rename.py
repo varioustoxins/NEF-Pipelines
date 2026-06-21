@@ -1,30 +1,54 @@
-import sys
 from difflib import SequenceMatcher
+from enum import Enum
 from fnmatch import fnmatchcase
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import List
+from typing import List, Optional, Tuple
 
 import typer
+from pynmrstar import Entry, Saveframe
 from tabulate import tabulate
 
 from nef_pipelines.lib.nef_lib import (
+    parse_frame_name,
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames_by_name,
+)
+from nef_pipelines.lib.structures import (
+    NEFFrameAlreadyExistsException,
+    NEFPipelinesInternalError,
+    SaveframeNameParts,
 )
 from nef_pipelines.lib.util import (
     FOUR_SPACES,
     STDIN,
-    chunks,
     exit_error,
+    oxford_join,
     parse_comma_separated_options,
     strings_to_table_terminal_sensitive,
 )
 from nef_pipelines.tools.frames import frames_app
 
 # TODO: add mmv like semantics as an option [https://manpages.ubuntu.com/manpages/bionic/man1/mmv.1.html]
+# TODO: --singleton should also be added to frames create
+# TODO: --index N|+N|-N flag for counter arithmetic (see plans/frames-rename-none-inherit-refactor.md)
 
-REPLACE_HELP = """replace part of the frame name selected with the replacement string, rather than the whole name"""
+
+class RenameTarget(str, Enum):
+    identity = "identity"
+    category = "category"
+    namespace = "namespace"
+    type = "type"
+
+
+TARGET_NAMES = oxford_join([e.value for e in RenameTarget])
+
+
+class Mode(str, Enum):
+    find_and_replace = "find_and_replace"
+    singleton = "singleton"
+    replace = "replace"
+    delete = "delete"
 
 
 @frames_app.command()
@@ -32,175 +56,217 @@ def rename(
     input: Path = typer.Option(
         STDIN, "-i", "--in", help="file to read input from [- is stdin]"
     ),
-    exact: bool = typer.Option(False),
-    replace: bool = typer.Option(False, help=REPLACE_HELP),
+    exact: bool = typer.Option(
+        False, "--exact", help="when matching frames and categories do it exactly"
+    ),
+    replace: bool = typer.Option(
+        False,
+        "--replace",
+        help="""
+            replace the whole target component of the framename with `NEW`,
+            arguments are `NEW` [`FRAME-SELECTOR`...]""",
+    ),
     delete: bool = typer.Option(
-        False, help="delete the text rather than replacing it if replace is specified"
+        False,
+        "--delete",
+        help="delete `STRING` from the target component, arguments are `STRING` [`FRAME-SELECTOR`...]",
     ),
-    category: str = typer.Option(
-        "*", help="category to match as well as the frame name"
+    category: Optional[str] = typer.Option(None, help="select saveframes by category"),
+    target: RenameTarget = typer.Option(
+        RenameTarget.identity,
+        "--target",
+        help=f"""
+            the component of the saveframe name to target: the default is the identity
+            [available options: {TARGET_NAMES}]
+            """,
     ),
-    rename_category: bool = typer.Option(False, help="change the category"),
+    singleton: bool = typer.Option(
+        False, "--singleton", help="rename to a category-only singleton saveframe name"
+    ),
     force: bool = typer.Option(
         False,
-        help="force a replacement so a rename can delete a frame with a name clash",
+        "--force",
+        help="overwrite a pre-existing fram of the same name",
     ),
-    old_new_names: List[str] = typer.Argument(
-        ...,
-        help="a list of pairs of old and new names for frames, arguments can be repeated or comma separated",
+    old_new_names: Optional[List[str]] = typer.Argument(
+        None,
+        help="""
+            the arguments required depend on the mode:
+            default: `OLD` `NEW` [`FRAME-SELECTOR`...] `NEW` text replaces `OLD`
+            `--replace`: `NEW` [`FRAME-SELECTOR`...] the complete text of the part of the frame name with `NEW`
+            `--delete`: `STRING` [`FRAME-SELECTOR`...] delete the `STRING` from the part of the frame name targeted
+            `--singleton`: [`FRAME-SELECTOR`...] make the selected frames singletons remove their identities
+        """,
     ),
 ):
-    """- rename frames in the current input"""
+    """
+         rename saveframes with substring replacements [default], complete replacements or deletions
+         targeting namespaces, categories, types, and identities [see below for defintions]; singletons may also be
+         created.
 
-    if delete and not replace:
-        exit_error("you can't use --delete without --replace")
+    the default operation is substring replacement in the identity of matched frames using the strings OLD and NEW:
 
-    old_new_names = parse_comma_separated_options(old_new_names)
+    `frames rename OLD NEW [FRAME-SELECTOR...]`
 
-    if delete:
-        new_new_old_names = []
-        for name in old_new_names:
-            new_new_old_names.append(name)
-            new_new_old_names.append("")
-        old_new_names = new_new_old_names
+    The options `--replace`, `--delete` and `--singleton` require different arguments:
 
-    _exit_renames_not_pairs(old_new_names)
+    `--replace` directly replaces a whole target component with a NEW value and
+    `--delete` deletes a substring TARGET from a component; both use a single argument and no OLD string value
+
+    `frames rename --replace NEW [FRAME-SELECTOR...]`
+    `frames rename --delete TARGET [FRAME-SELECTOR...]`
+
+    >notes: `--replace`, `--delete`, and `--singleton` are mutually exclusive operation modes;
+    >       `--target` selects the component to operate on and composes freely with all three
+    >       except `--singleton`, which always operates on the identity.
+
+    ```
+         parts of a frame name:
+
+         nef_nmr_spectrum_k_ubi_hncoca`1`
+         ||| |||||||||||| |||||||||||| |
+         nnn tttttttttttt iiiiiiiiiiii I
+         cccccccccccccccc
+
+         n - namespace
+         t - type
+         i - identity
+         c - category
+         I - index
+    ```
+
+    examples using:
+
+
+    ```bash
+
+        # nef_nmr_spectrum_k_ubi_hncoca`1`
+        # nef_nmr_spectrum_k_ubi_hncaco`1`
+        # nef_nmr_spectrum_k_ubi_hnco`1`
+
+
+        # default: substring replace in identity, all frames (selector defaults to *)
+        frames rename k_ubi k_ubiquitin
+        #    nef_nmr_spectrum_k_ubiquitin_hncoca`1`
+        #    nef_nmr_spectrum_k_ubiquitin_hncaco`1`
+        #    nef_nmr_spectrum_k_ubiquitin_hnco`1`
+
+        # default: substring replace with explicit selector
+        frames rename k_ubi k_ubiquitin nef_nmr_spectrum_k_ubi_hnco`1`
+        #    nef_nmr_spectrum_k_ubi_hncoca`1`          (unchanged)
+        #    nef_nmr_spectrum_k_ubi_hncaco`1`          (unchanged)
+        #    nef_nmr_spectrum_k_ubiquitin_hnco`1`
+
+        # default: substring replace in namespace (--target is orthogonal to operation)
+        frames rename --target namespace nef ccpn
+        #    ccpn_nmr_spectrum_k_ubi_hncoca`1`
+        #    ccpn_nmr_spectrum_k_ubi_hncaco`1`
+        #    ccpn_nmr_spectrum_k_ubi_hnco`1`
+
+        # --replace: set whole identity, explicit selector
+        frames rename --replace new_hnco nef_nmr_spectrum_k_ubi_hnco`1`
+        #    nef_nmr_spectrum_k_ubi_hncoca`1`          (unchanged)
+        #    nef_nmr_spectrum_k_ubi_hncaco`1`          (unchanged)
+        #    nef_nmr_spectrum_new_hnco
+
+        # --replace: set whole namespace, all frames
+        frames rename --target namespace --replace ccpn
+        #    ccpn_nmr_spectrum_k_ubi_hncoca`1`
+        #    ccpn_nmr_spectrum_k_ubi_hncaco`1`
+        #    ccpn_nmr_spectrum_k_ubi_hnco`1`
+
+        # --replace: set whole type
+        frames rename --target type --replace relaxation
+        #    nef_relaxation_k_ubi_hncoca`1`
+        #    nef_relaxation_k_ubi_hncaco`1`
+        #    nef_relaxation_k_ubi_hnco`1`
+
+        # --replace: set whole category (namespace + type together)
+        frames rename --target category --replace ccpn_nmr_spectrum
+        #    ccpn_nmr_spectrum_k_ubi_hncoca`1`
+        #    ccpn_nmr_spectrum_k_ubi_hncaco`1`
+        #    ccpn_nmr_spectrum_k_ubi_hnco`1`
+
+        # --delete: remove substring from identity, explicit selector
+        frames rename --delete k_ubi nef_nmr_spectrum_k_ubi_hnco`1`
+        #    nef_nmr_spectrum_k_ubi_hncoca`1`          (unchanged)
+        #    nef_nmr_spectrum_k_ubi_hncaco`1`          (unchanged)
+        #    nef_nmr_spectrum__hnco`1`   (note: leading underscore in identity)
+
+        # --singleton: strip identity and index, leaving only the category framecode
+        frames rename --singleton nef_nmr_spectrum_k_ubi_hnco`1`
+        #    nef_nmr_spectrum_k_ubi_hncoca`1`          (unchanged)
+        #    nef_nmr_spectrum_k_ubi_hncaco`1`          (unchanged)
+        #    nef_nmr_spectrum
+
+    ```
+    """
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    for old_name, new_name in chunks(old_new_names, 2):
+    args = parse_comma_separated_options(old_new_names or [])
 
-        target_frames = select_frames_by_name(
-            entry,
-            [
-                old_name,
-            ],
-            exact,
+    category_filter = category or ""
+
+    mode = _mode_from_flags_or_exit_error(replace, delete, singleton, target)
+
+    operation_args, selectors = _extract_args_and_selectors_or_exit_error(args, mode)
+
+    frames = _select_frames_or_exit_error(entry, selectors, category_filter, exact)
+
+    renames = _build_rename_pairs_or_exit_error(frames, operation_args, target, mode)
+
+    try:
+        entry = pipe(entry, renames, force=force)
+    except NEFFrameAlreadyExistsException as e:
+        exit_error(
+            dedent(
+                f"""
+                renaming '{e.source_name}' would overwrite the existing frame '{e.existing_name}'
+                in entry '{e.entry_id}',  use --force to allow overwriting
+                """
+            ).strip()
         )
-
-        if category != "*":
-            if exact:
-                target_frames = [
-                    frame for frame in target_frames if frame.category == category
-                ]
-            else:
-                target_frames = [
-                    frame
-                    for frame in target_frames
-                    if fnmatchcase(frame.category, f"*{category}*")
-                ]
-
-        if len(target_frames) == 0:
-            _exit_no_frames_selected(old_name, category, entry, exact)
-
-        if len(target_frames) > 1 and not replace:
-            _exit_error_mutiple_frames_selected(
-                old_name, category, exact, entry, target_frames
-            )
-
-        target_frame = target_frames[0]
-
-        # TODO: check for accceptable characters [33-126] though maybe we allow unicode
-        # TODO: tests
-        for target_frame in target_frames:
-            if len(new_name.split()) > 1:
-                _exit_spaces_in_new_name(new_name)
-
-            if not rename_category:
-                category = target_frame.category
-                new_name_part = new_name
-                if replace:
-                    frame_name = target_frame.name[len(category) :].lstrip("_")
-                    new_name_part = frame_name.replace(old_name, new_name)
-                    if new_name_part.startswith("_"):
-                        new_name_part = new_name_part[1:]
-
-                new_full_name = f"{category}_{new_name_part}"
-
-                if new_full_name in entry.frame_dict.keys() and not force:
-                    # Check if we're trying to rename to the same name (null operation)
-                    existing_frame = entry.get_saveframe_by_name(new_full_name)
-                    if existing_frame is target_frame:
-                        # Renaming to itself - silently skip this as a no-op
-                        continue
-                    _exit_clashing_frame_name(new_full_name, entry)
-
-                if new_full_name in entry.frame_dict.keys() and force:
-                    frame_to_remove = entry.get_saveframe_by_name(new_full_name)
-                    entry.remove_saveframe(frame_to_remove)
-
-                target_frame.name = new_full_name
-
-            else:
-
-                name_part = target_frame.name[len(target_frame.category) :].lstrip("_")
-                new_full_name = f"{new_name}_{name_part}"
-
-                target_frame.category = new_name
-                target_frame.name = new_full_name
-
     print(entry)
 
 
-def _exit_error_mutiple_frames_selected(
-    target_name, target_category, exact, entry, target_frames
-):
-    if not exact:
-        target_name = f"*{target_name}*"
-        target_category = f"*{target_category}*"
+def pipe(
+    entry: Entry,
+    renames: List[Tuple[Saveframe, SaveframeNameParts]],
+    force: bool = False,
+) -> Entry:
+    for frame, target_parts in renames:
+        resolved = _resolve_frame_name_parts(target_parts, parse_frame_name(frame))
 
-    category_msg = (  # noqa: F841
-        "" if target_category == "*" else f" and the category {target_category}"
-    )
-
-    target_frame_names = [frame.name for frame in target_frames]
-    frames_table = strings_to_table_terminal_sensitive(target_frame_names)
-    frames_table = tabulate(frames_table, tablefmt="plain")
-    frames = indent(dedent(frames_table), FOUR_SPACES)  # noqa: F841
-
-    msg = """
-        multiple save frames were selected using the name {target_name}{category_msg} in entry {entry_id}
-        and I can only rename one save frame at the same time...
-
-        the save frames were
-
-        {frames}
-    """
-
-    msg = dedent(msg)
-    exit_error(
-        msg.format(
-            target_name=target_name,
-            category_msg=category_msg,
-            entry_id=entry.entry_id,
-            frames=frames,
+        new_category = (
+            f"{resolved.namespace}_{resolved.type}"
+            if resolved.namespace
+            else resolved.type
         )
-    )
 
+        if resolved.full_name in entry.frame_dict:
+            existing = entry.get_saveframe_by_name(resolved.full_name)
 
-def _exit_renames_not_pairs(old_new_names):
-    if len(old_new_names) % 2 != 0:
-        pairs = ", ".join(old_new_names[:-1])
-        pairs = indent(pairs, "   ")
-        msg = f"""\
-            old and new names must be pairs, i got an extra term {old_new_names[-1]}'
+            is_rename_to_same_name = existing is frame
+            if is_rename_to_same_name:
+                continue
 
-            pairs were:
+            if not force:
+                raise NEFFrameAlreadyExistsException(
+                    existing_name=resolved.full_name,
+                    entry_id=entry.entry_id,
+                    source_name=frame.name,
+                )
+            entry.remove_saveframe(existing)
 
-            {pairs}
-        """
+        frame.name = resolved.full_name
+        if frame.category != new_category:
+            frame.category = new_category
 
-        exit(msg)
-
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
+    return entry
 
 
 def _exit_no_frames_selected(target_name, target_category, entry, exact):
-    if not exact:
-        target_name = f"*{target_name}*"
-        target_category = f"*{target_category}*"
-
     all_names_and_categories = [(frame.name, frame.category) for frame in entry]
 
     if len(all_names_and_categories) == 0:
@@ -208,23 +274,24 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
             there were no frames in the entry to rename
         """
     else:
-        # TODO whahats happening here????
         category_msg = (
-            "" if target_category == "*" else f" with category {target_category}"
+            "" if not target_category else f" with category {target_category}"
         )
-        category_msg = category_msg
         matcher = SequenceMatcher()
         distances = []
-        for name, category in all_names_and_categories:
+        for name, cat in all_names_and_categories:
             matcher.set_seq1(name)
             matcher.set_seq2(target_name)
             distance_name = 1.0 - matcher.ratio()
 
-            matcher.set_seq1(target_category)
-            matcher.set_seq2(category)
-            distance_category = 1.0 - matcher.ratio()
+            if target_category:
+                matcher.set_seq1(target_category)
+                matcher.set_seq2(cat)
+                distance_category = 1.0 - matcher.ratio()
+            else:
+                distance_category = 0.0
             distance = (distance_name + distance_category) / 2.0
-        distances.append((distance, (name, category)))
+            distances.append((distance, (name, cat)))
 
         distances.sort()
 
@@ -255,18 +322,183 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
     exit_error(msg)
 
 
+def _mode_from_flags_or_exit_error(
+    replace: bool, delete: bool, singleton: bool, target: RenameTarget
+) -> Mode:
+    if replace and delete:
+        exit_error("--replace and --delete are mutually exclusive")
+    if singleton and (replace or delete):
+        exit_error("--singleton cannot be used with --replace or --delete")
+    if singleton and target != RenameTarget.identity:
+        exit_error(
+            "--singleton cannot be used with --target set to category, namespace, or type"
+        )
+    if replace:
+        mode = Mode.replace
+    elif delete:
+        mode = Mode.delete
+    elif singleton:
+        mode = Mode.singleton
+    else:
+        mode = Mode.find_and_replace
+    return mode
+
+
+def _extract_args_and_selectors_or_exit_error(
+    args: List[str], mode: Mode
+) -> Tuple[List[str], List[str]]:
+    if mode == Mode.replace:
+        if not args:
+            exit_error("--replace requires a NEW value argument")
+        operation_args, selectors = args[:1], args[1:] or ["*"]
+    elif mode == Mode.delete:
+        if not args:
+            exit_error("--delete requires a STRING argument")
+        operation_args, selectors = args[:1], args[1:] or ["*"]
+    elif mode == Mode.singleton:
+        operation_args, selectors = [], args or ["*"]
+    elif mode == Mode.find_and_replace:  # find_and_replace
+        if len(args) < 2:
+            exit_error("rename requires OLD and NEW arguments")
+        operation_args, selectors = args[:2], args[2:] or ["*"]
+    else:
+        exit_error(f"internal error unknown mode: {mode}; please report this as a bug")
+
+    return operation_args, selectors
+
+
 def _exit_spaces_in_new_name(new_name):
     msg = f"""
         frame names can't contain spaces your new name was  {new_name} and contains spaces
     """
-
     exit_error(msg)
 
 
-def _exit_clashing_frame_name(new_full_name, entry):
+def _exit_empty_after_edit(frame, old_val, new_val, component):
     msg = f"""
-        a frame with the name {new_full_name} already exists in entry {entry.entry_id}  you will need to use the --force
-        option to force the rename to replace it (if that's what you want to do!)
+        replacing '{old_val}' with '{new_val}' in the {component} of '{frame.name}' would produce an empty value
     """
-
     exit_error(msg)
+
+
+def _exit_empty_after_delete(frame, substr, component):
+    msg = f"""
+        deleting '{substr}' from the {component} of '{frame.name}' would produce an empty value
+    """
+    exit_error(msg)
+
+
+def _resolve_frame_name_parts(
+    target: SaveframeNameParts, source: SaveframeNameParts
+) -> SaveframeNameParts:
+    return SaveframeNameParts(
+        namespace=(
+            target.namespace if target.namespace is not None else source.namespace
+        ),
+        type=target.type if target.type is not None else source.type,
+        identity=target.identity if target.identity is not None else source.identity,
+        index=target.index if target.index is not None else source.index,
+    )
+
+
+def _select_frames_or_exit_error(
+    entry, selectors: List[str], category: str, exact: bool
+) -> List[Saveframe]:
+    frames = []
+    for selector in selectors:
+        selected = select_frames_by_name(entry, [selector], exact)
+        if category:
+            if exact:
+                selected = [f for f in selected if f.category == category]
+            else:
+                selected = [
+                    f for f in selected if fnmatchcase(f.category, f"*{category}*")
+                ]
+        if not selected:
+            _exit_no_frames_selected(selector, category, entry, exact)
+        frames.extend(selected)
+    return frames
+
+
+def _get_component(source: SaveframeNameParts, target: RenameTarget) -> str:
+    if target == RenameTarget.identity:
+        return source.identity or ""
+    elif target == RenameTarget.namespace:
+        return source.namespace or ""
+    elif target == RenameTarget.type:
+        return source.type or ""
+    else:  # category
+        ns = source.namespace or ""
+        t = source.type or ""
+        return f"{ns}_{t}" if ns else t
+
+
+def _parts_from_component(
+    target: RenameTarget, new_value: str, clear_index: bool = False
+) -> SaveframeNameParts:
+
+    if target == RenameTarget.identity:
+        result = SaveframeNameParts(
+            identity=new_value or "", index="" if clear_index else None
+        )
+    elif target == RenameTarget.namespace:
+        result = SaveframeNameParts(namespace=new_value or "")
+    elif target == RenameTarget.type:
+        result = SaveframeNameParts(type=new_value or "")
+    elif target == RenameTarget.category:
+        cat_parts = parse_frame_name((new_value, new_value))
+        ns = cat_parts.namespace if cat_parts.namespace is not None else ""
+        result = SaveframeNameParts(namespace=ns, type=cat_parts.type)
+    else:
+        raise NEFPipelinesInternalError(f"unknown target {target}")
+    return result
+
+
+def _build_rename_pairs_or_exit_error(
+    frames: List[Saveframe],
+    operation_args: List[str],
+    target: RenameTarget,
+    mode: Mode,
+) -> List[Tuple[Saveframe, SaveframeNameParts]]:
+    renames = []
+
+    if mode in (Mode.replace, Mode.singleton):
+        new_value = "" if mode == Mode.singleton else operation_args[0]
+        if new_value and len(new_value.split()) > 1:
+            _exit_spaces_in_new_name(new_value)
+        for frame in frames:
+            renames.append(
+                (frame, _parts_from_component(target, new_value, clear_index=True))
+            )
+
+    elif mode == Mode.delete:
+        substr = operation_args[0]
+        for frame in frames:
+            source = parse_frame_name(frame)
+            field_val = _get_component(source, target)
+            new_val = field_val.replace(substr, "")
+            if new_val == field_val:
+                continue
+            if not new_val:
+                _exit_empty_after_delete(frame, substr, target.value)
+            renames.append(
+                (frame, _parts_from_component(target, new_val, clear_index=False))
+            )
+
+    else:  # Mode.find_and_replace
+        old_str, new_str = operation_args[0], operation_args[1]
+        if len(new_str.split()) > 1:
+            _exit_spaces_in_new_name(new_str)
+        for frame in frames:
+            source = parse_frame_name(frame)
+            field_val = _get_component(source, target)
+            new_val = field_val.replace(old_str, new_str)
+            if new_val == field_val:
+                continue
+            if not new_val:
+                _exit_empty_after_edit(frame, old_str, new_str, target.value)
+            renames.append(
+                (frame, _parts_from_component(target, new_val, clear_index=False))
+            )
+
+    return renames
