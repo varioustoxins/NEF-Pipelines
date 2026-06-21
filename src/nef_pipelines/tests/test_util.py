@@ -10,6 +10,7 @@ from nef_pipelines.lib.util import (
     find_index_of_first_unescaped,
     find_substring_with_wildcard,
     fnmatch_one_of,
+    oxford_join,
     strip_characters_left,
     strip_characters_right,
     to_ordinal,
@@ -385,3 +386,21 @@ def test_unescape_backslashes(escaped, expected):
 def test_ordinal(n, expected):
     """Test ordinal number formatting."""
     assert to_ordinal(n) == expected
+
+
+@pytest.mark.parametrize(
+    "values, expected",
+    [
+        ([], ""),
+        (["a"], "a"),
+        (["a", "b"], "a & b"),
+        (["a", "b", "c"], "a, b & c"),
+        (["a", "b", "c", "d"], "a, b, c & d"),
+    ],
+)
+def test_oxford_join(values, expected):
+    assert oxford_join(values) == expected
+
+
+def test_oxford_join_custom_conjunction():
+    assert oxford_join(["a", "b", "c"], conjunction="and") == "a, b and c"

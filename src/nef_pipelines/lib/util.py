@@ -1515,3 +1515,23 @@ def to_ordinal(n: int) -> str:
     else:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
+
+
+def oxford_join(values: List[str], conjunction: str = "&") -> str:
+    """Join a list of strings with commas and a conjunction before the last item.
+
+    Examples:
+        >>> oxford_join([])
+        ''
+        >>> oxford_join(["a"])
+        'a'
+        >>> oxford_join(["a", "b"])
+        'a & b'
+        >>> oxford_join(["a", "b", "c"])
+        'a, b & c'
+    """
+    if not values:
+        return ""
+    if len(values) == 1:
+        return values[0]
+    return ", ".join(values[:-1]) + f" {conjunction} " + values[-1]
