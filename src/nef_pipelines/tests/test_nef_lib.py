@@ -892,3 +892,75 @@ def test_parse_frame_name_with_saveframe():
     expected = SaveframeNameParts("nef", "molecular_system", "protein_A", None)
 
     assert parsed == expected
+
+
+# --- loop_reorder_columns tests ---
+
+NEF_LOOP_TEXT = """\
+   loop_
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+
+      A   1   ALA   CA   55.1
+      A   2   ALA   CB   18.3
+
+   stop_
+"""
+
+EXPECTED_REORDERED_LOOP = """\
+   loop_
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.value
+
+      CA   A   1   ALA   55.1
+      CB   A   2   ALA   18.3
+
+   stop_
+"""
+
+
+def test_loop_reorder_columns_reorders_tags_and_data():
+    from nef_pipelines.lib.nef_lib import loop_reorder_columns
+
+    loop = Loop.from_string(NEF_LOOP_TEXT)
+    loop_reorder_columns(
+        loop, ["atom_name", "chain_code", "sequence_code", "residue_name", "value"]
+    )
+
+    assert_lines_match(str(loop), EXPECTED_REORDERED_LOOP)
+
+
+def test_loop_reorder_columns_raises_on_missing_tag():
+    from nef_pipelines.lib.nef_lib import loop_reorder_columns
+
+    loop = Loop.from_string(NEF_LOOP_TEXT)
+
+    with pytest.raises(ValueError, match="missing"):
+        loop_reorder_columns(
+            loop, ["chain_code", "sequence_code", "residue_name", "atom_name"]
+        )
+
+
+def test_loop_reorder_columns_raises_on_extra_tag():
+    from nef_pipelines.lib.nef_lib import loop_reorder_columns
+
+    loop = Loop.from_string(NEF_LOOP_TEXT)
+
+    with pytest.raises(ValueError, match="extra"):
+        loop_reorder_columns(
+            loop,
+            [
+                "chain_code",
+                "sequence_code",
+                "residue_name",
+                "atom_name",
+                "value",
+                "extra",
+            ],
+        )

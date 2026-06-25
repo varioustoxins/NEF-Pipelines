@@ -14,7 +14,7 @@ from textwrap import dedent
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 # from pandas import DataFrame
-from pynmrstar import Entry, Loop, Saveframe
+from pynmrstar import Entry, Loop, Saveframe, Schema
 from pynmrstar.definitions import STR_CONVERSION_DICT
 from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
@@ -1111,3 +1111,27 @@ def create_nef_save_frame(
     frame.add_tag("sf_category", frame_category)
     frame.add_tag("sf_framecode", frame_name)
     return frame
+
+
+def loop_reorder_columns(loop: Loop, new_order: List[str]) -> None:
+    """Reorder loop columns to match new_order.
+
+    new_order must contain exactly the same tag names as the loop.
+    Raises ValueError if tags are missing or extra tags are present.
+    """
+    current = list(loop.tags)
+    missing = set(current) - set(new_order)
+    extra = set(new_order) - set(current)
+    if missing or extra:
+        raise ValueError(
+            f"new_order must contain exactly the loop's tags; "
+            f"missing: {missing}, extra: {extra}"
+        )
+    if new_order == current:
+        return
+    schema = Schema()
+    for tag in new_order:
+        fq_tag = f"{loop.category}.{tag}"
+        if fq_tag not in schema.schema_order:
+            schema.schema_order.append(fq_tag)
+    loop.sort_tags(schema=schema)
