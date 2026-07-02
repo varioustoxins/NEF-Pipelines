@@ -77,7 +77,7 @@ def _find_saveframes(
                 selector = f"*{selector}*"
 
             if use_categories:
-                if fnmatchcase(parsed.category, selector):
+                if fnmatchcase(parsed.type, selector):
                     to_delete.append(frame)
                     break
             else:
