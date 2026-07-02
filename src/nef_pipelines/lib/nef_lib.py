@@ -201,7 +201,7 @@ def parse_frame_name(frame: Union[Saveframe, Tuple[str, str]]) -> SaveframeNameP
     - Namespace extraction (nef, ccpn, custom, etc.)
     - Category identification
     - Identity extraction (after category)
-    - CCPN counter notation (`<n>`)
+    - CCPN index notation (`<n>`)
     - Singleton frames (full_name == category, identity is None)
 
     Args:
@@ -213,72 +213,66 @@ def parse_frame_name(frame: Union[Saveframe, Tuple[str, str]]) -> SaveframeNameP
     Examples:
         frame: nef_molecular_system → identity is None (singleton)
         frame: nef_molecular_system_protein_A → identity is "protein_A"
-        frame: ccpn_data_frame`1` → identity is "data_frame", counter is "1"
+        frame: ccpn_data_frame`1` → identity is "data_frame", index is "1"
     """
-
-    # Extract full_name and category
-    if isinstance(frame, Saveframe):
-        full_name = frame.name
-        category = frame.category
-    else:
-        full_name, category = frame
-
-    # Extract namespace from category and remove it from category
-    # has to be local to avoid circular imports
-    from nef_pipelines.lib.namespace_lib import get_namespace  # circular
-
-    namespace = get_namespace(category, EntryPart.Saveframe)
-
-    # Strip namespace prefix from category
-    if namespace and category.startswith(f"{namespace}_"):
-        category_without_namespace = category[len(namespace) + 1 :]
-    else:
-        category_without_namespace = category
-
-    # Extract identity: everything after category, stripped of leading underscores
-    if full_name == category:
-        # Singleton frame - no instance name
-        identity = None
-        counter = None
-    else:
-        # Remove category prefix
-        remainder = full_name[len(category) :]
-
-        # Strip leading underscores
-        remainder = remainder.lstrip(UNDERSCORE)
-
-        # Handle CCPN counter notation: `<n>` at the END only
-        # Counter is ONLY valid if string ends with `X` where X is non-empty
-        # Look for the LAST pair of backticks - if they contain something, that's the counter
-        # All other backticks (even earlier in the string) are part of the identity
-        counter = None
-        if remainder.endswith("`") and "`" in remainder[:-1]:
-            # Find the position of the second-to-last backtick
-            second_last_backtick = remainder.rfind("`", 0, -1)
-            # Extract what's between the last two backticks
-            potential_counter = remainder[second_last_backtick + 1 : -1]
-            # Only valid if non-empty
-            if potential_counter:
-                counter = potential_counter
-                # Identity is everything before the opening backtick of the counter
-                # This may include other backticks from earlier in the string
-                identity = remainder[:second_last_backtick]
-            else:
-                # Empty counter like ``, all is identity
-                identity = remainder
-        else:
-            # Doesn't end with valid counter pattern, all is identity
-            identity = remainder
-
-        # If identity is empty after processing, this is actually a singleton
-        identity = identity if identity else None
+    full_name, category = _extract_frame_names(frame)
+    namespace, frame_type = _extract_namespace_and_type(category)
+    identity, index = _extract_identity_and_index(full_name, category)
 
     return SaveframeNameParts(
         namespace=namespace,
-        category=category_without_namespace,
+        type=frame_type,
         identity=identity,
-        counter=counter,
+        index=index,
     )
+
+
+def _extract_frame_names(frame: Union[Saveframe, Tuple[str, str]]) -> Tuple[str, str]:
+    """Extract full_name and category from Saveframe or tuple."""
+    if isinstance(frame, Saveframe):
+        return frame.name, frame.category
+    return frame
+
+
+def _extract_namespace_and_type(category: str) -> Tuple[Optional[str], str]:
+    """Extract namespace from category and compute type (category without namespace prefix)."""
+    from nef_pipelines.lib.namespace_lib import get_namespace
+
+    namespace = get_namespace(category, EntryPart.Saveframe)
+
+    if namespace and category.startswith(f"{namespace}_"):
+        type_without_namespace = category[len(namespace) + 1 :]
+    else:
+        type_without_namespace = category
+
+    return namespace, type_without_namespace
+
+
+def _extract_identity_and_index(
+    full_name: str, category: str
+) -> Tuple[Optional[str], Optional[str]]:
+    """Extract identity and CCPN index notation from frame name remainder."""
+    if full_name == category:
+        return None, None
+
+    remainder = full_name[len(category) :].lstrip(UNDERSCORE)
+
+    if remainder.endswith("`") and "`" in remainder[:-1]:
+        second_last_backtick = remainder.rfind("`", 0, -1)
+        potential_index = remainder[second_last_backtick + 1 : -1]
+
+        if potential_index:
+            identity = remainder[:second_last_backtick]
+            index = potential_index
+        else:
+            identity = remainder
+            index = None
+    else:
+        identity = remainder
+        index = None
+
+    identity = identity if identity else None
+    return identity, index
 
 
 def select_frames_by_name(
