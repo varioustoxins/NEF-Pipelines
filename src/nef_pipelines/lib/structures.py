@@ -6,7 +6,7 @@
 import math
 from dataclasses import dataclass, field
 from enum import Flag, auto
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
