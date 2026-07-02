@@ -369,6 +369,12 @@ def read_utf8_sig_file(path: Path) -> str:
     This is relevant for Excel CSV files as it writes a BOM to them."""
     return path.read_text(encoding="utf-8-sig")
 
+
+def escape_spaces_with_underscore(name: str) -> str:
+    """Normalise a column name: replace spaces with underscores."""
+    return name.replace(" ", "_")
+
+
 def _script_to_command(script: str) -> str:
     """
     turns a script path into the equivalent nef pipelines command
