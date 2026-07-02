@@ -144,6 +144,25 @@ The application uses a hierarchical command structure built on Typer. Commands s
     assert EXPECTED_ERROR_CANCELLED in result.error.lower()
     ```
 11. **ALWAYS use nef_pipelines.lib.test_lib.run_and_report** don't use typer.testing.CliRunner
+12. **ALWAYS include test IDs in parametrized test data** - Do NOT use separate `ids=` lists. Instead, structure test data
+    as tuples with the ID as the first element. This keeps IDs co-located with test data and prevents sync issues:
+    ```python
+    # CORRECT: ID is part of the test data
+    TEST_CASES = [
+        ("test-id-1", input_1, expected_1),
+        ("test-id-2", input_2, expected_2),
+    ]
+
+    @pytest.mark.parametrize("test_id, input, expected", TEST_CASES, ids=lambda x: x[0])
+    def test_foo(test_id, input, expected):
+        ...
+
+    # WRONG: Separate ids list that can get out of sync
+    @pytest.mark.parametrize("input, expected", [
+        (input_1, expected_1),
+        (input_2, expected_2),
+    ], ids=["test-id-1", "test-id-2"])  # DON'T DO THIS
+    ```
 
 These are non-negotiable requirements, not suggestions. Apply them automatically without asking unless told otherwise.
 
