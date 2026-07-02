@@ -669,6 +669,7 @@ def select_frames(
     entry: Entry,
     predicate: Union[str, List[str]],
     selector_type: SelectionType = SelectionType.ANY,
+    exact: bool = False,
 ) -> List[Saveframe]:
     """
     select a list of frames by name of either category or name, if no predicates are provided all frames are selected
@@ -677,6 +678,7 @@ def select_frames(
     :param predicate: a string or list of strings to use as filters as defined by fnmatch
     :param selector_type: the matching type frame.name or frame.category or both [default, search order
            frame.name frame.category]
+    :param exact: if True match the predicate exactly; if False (default) also match substrings
     :return: a list of selected saveframes
     """
 
@@ -687,9 +689,10 @@ def select_frames(
     if not predicate:
         predicate = ["*"]
 
-    star_filters = [f"*{filter}*" for filter in predicate]
     predicate = list(predicate)
-    predicate.extend(star_filters)
+    if not exact:
+        star_filters = [f"*{filter}*" for filter in predicate]
+        predicate.extend(star_filters)
 
     result = {}
     for frame in entry.frame_dict.values():
