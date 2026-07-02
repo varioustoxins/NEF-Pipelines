@@ -658,18 +658,6 @@ class FrameLoopsAndTags:
 
 
 @dataclass
-class DisplayOptions:
-    """Formatting options for display output."""
-
-    display_modes: List[Any] = field(default_factory=list)
-    count: int = 10
-    exact: bool = False
-    tags_only: bool = False
-    loops_only: bool = False
-    no_comments: bool = False
-
-
-@dataclass
 class PaperType:
     """Paper formatting configuration for plotting."""
 
