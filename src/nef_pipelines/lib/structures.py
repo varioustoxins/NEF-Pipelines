@@ -77,7 +77,7 @@ class NEFPipelinesInternalError(NEFPipelinesException):
 
 
 class NEFBadLoopSelectionException(NEFPipelinesException):
-    """Exception raised when a loop selection is incorrecly defined in
+    """Exception raised when a loop selection is incorrectly defined
     in FrameLoopAndTags.
     """
 
