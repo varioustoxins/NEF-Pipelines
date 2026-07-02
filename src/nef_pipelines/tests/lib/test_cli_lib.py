@@ -9,6 +9,7 @@ from pynmrstar import Entry, Loop, Saveframe
 from nef_pipelines.lib.cli_lib import (
     ALL_NAMESPACES,
     RANGE_FORMAT,
+    BadFrameLoopTagSyntaxException,
     ChainOffsetSyntaxParsingError,
     DetectedSeparatorConflicts,
     RangeOffset,
@@ -35,7 +36,6 @@ from nef_pipelines.lib.cli_lib import (
     validate_residue_ranges_in_system,
 )
 from nef_pipelines.lib.structures import (
-    BadFrameLoopTagSyntaxException,
     EntryPart,
     FrameLoopAndTagSelectors,
     FrameLoopsAndTags,

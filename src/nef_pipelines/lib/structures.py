@@ -596,10 +596,6 @@ class ResidueRangeParsingException(NEFPipelinesException):
     pass
 
 
-class BadFrameLoopTagSyntaxException(NEFPipelinesException):
-    pass
-
-
 @dataclass
 class ChainStartAndEnds:
     chain_code: Union[int, str]

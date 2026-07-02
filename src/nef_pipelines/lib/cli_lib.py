@@ -57,6 +57,7 @@ from __future__ import annotations
 import re
 import sys
 from collections import OrderedDict
+from dataclasses import dataclass
 from enum import Enum, Flag, auto
 from pathlib import Path
 from textwrap import dedent
@@ -73,12 +74,12 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_entry
 from nef_pipelines.lib.structures import (
-    BadFrameLoopTagSyntaxException,
     ChainOffsetSyntaxParsingError,
     EntryPart,
     FrameLoopAndTagSelectors,
     FrameLoopsAndTags,
     NEFBadLoopSelectionException,
+    NEFPipelinesException,
     RangeOffset,
     ResiduePair,
     ResidueRange,
@@ -2498,3 +2499,9 @@ def extract_initial_file_from_arguments(
             input = selectors[0]
             selectors = selectors[1:]
     return input, selectors
+
+
+@dataclass
+class BadFrameLoopTagSyntaxException(NEFPipelinesException):
+    original_spec: str
+    reason: str

@@ -6,14 +6,12 @@ import typer
 from pynmrstar import Entry
 
 from nef_pipelines.lib.cli_lib import (
+    BadFrameLoopTagSyntaxException,
     parse_frame_loop_selectors_and_get_errors,
     validate_loop_selection_only_or_raise,
 )
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
-from nef_pipelines.lib.structures import (
-    BadFrameLoopTagSyntaxException,
-    FrameLoopsAndTags,
-)
+from nef_pipelines.lib.structures import FrameLoopsAndTags
 from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.tools.loops import loops_app
 
