@@ -139,61 +139,76 @@ class SequenceResidue(Residue):
     variants: List[str] = ()
 
 
-# parse_frame_name() replaces manual string manipulation in:
-#   - src/nef_pipelines/tools/frames/delete.py (done)
-#   - src/nef_pipelines/tools/frames/list.py (todo)
-#   - src/nef_pipelines/tools/frames/rename.py (todo)
-#   - src/nef_pipelines/tools/frames/tabulate.py (todo)
-#   Parser is in: src/nef_pipelines/lib/nef_lib.py::parse_frame_name()
 @dataclass(frozen=True)
 class SaveframeNameParts:
     """\
-    Parsed components of a NEF frame name.
+    Parsed components of a NEF framecode.
 
-    Frame names follow the pattern: <namespace>_<category>[_<identity>][`<counter>`]
-    When identity is None, this represents a singleton frame with no instance name.
+    Framecodes follow the grammar:
+        framecode ::= category ["_" identity] [suffix]
+        category  ::= namespace "_" type
+        qualifier ::= index | suffix   (* mutually exclusive *)
+        index                ::= "`" integer "`"
+        suffix               ::= "." token       (* folds into identity in parser *)
 
-    Example: nef_molecular_system_protein_A`1`
+    Example: nef_nmr_spectrum_k_ubi_hnco`1`
         namespace: "nef"
-        category: "nef_molecular_system"
-        identity: "protein_A"
-        counter: "1"
+        type:      "nmr_spectrum"
+        identity:  "k_ubi_hnco"
+        index:     "1"
+
+    Singleton: framecode with no identity and no suffix (framecode == category).
+
+    When used as a target specification for rename operations, all fields follow the
+    same two-sentinel rule:
+      None → inherit this field from the source frame
+      ""   → explicitly absent (no namespace prefix, no identity, no index)
+      "v"  → use this exact value
     """
 
-    namespace: Optional[str]
-    category: str
-    identity: Optional[str]
-    counter: Optional[str]
+    namespace: Optional[str] = None
+    type: Optional[str] = None
+    identity: Optional[str] = None
+    index: Optional[str] = None
 
     @property
     def is_singleton(self) -> bool:
-        """\
-        Check if this is a singleton frame (no identity part).
-        """
-        return self.identity is None and self.counter is None
+        return not self.identity and not self.index
 
     @property
     def full_name(self) -> str:
         """\
-        Reconstruct full frame name from parts.
+        Reconstruct full framecode from parts.
 
-        Includes namespace prefix if present.
+        Includes namespace prefix if present. Empty string namespace means no prefix.
+        Raises ValueError if type is None.
         """
-        # Add namespace prefix to category
+        if self.type is None:
+            msg = f"""
+                cannot compute full_name: type is None!
+                values are:
+                    namespace: {self.namespace}
+                    type: None
+                    identity: {self.identity}
+                    index: {self.index}
+            """
+            raise ValueError(msg)
+
+        # category (in grammar sense) = namespace + type
         if self.namespace:
-            category_with_namespace = f"{self.namespace}_{self.category}"
+            category_with_namespace = f"{self.namespace}_{self.type}"
         else:
-            category_with_namespace = self.category
+            category_with_namespace = self.type
 
         # Build base name
-        if self.identity is None:
+        if not self.identity:
             base = category_with_namespace
         else:
             base = f"{category_with_namespace}_{self.identity}"
 
-        # Add counter if present
-        if self.counter:
-            return f"{base}`{self.counter}`"
+        # Add index if present
+        if self.index:
+            return f"{base}`{self.index}`"
         return base
 
 

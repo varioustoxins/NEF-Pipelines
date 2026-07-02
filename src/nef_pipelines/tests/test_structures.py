@@ -6,7 +6,7 @@ from nef_pipelines.lib.structures import EntryPart, EntryPartValues, SaveframeNa
 
 
 @pytest.mark.parametrize(
-    "namespace,category,identity,counter,expected_is_singleton",
+    "namespace,type_,identity,index,expected_is_singleton",
     [
         # Singleton cases
         ("nef", "molecular_system", None, None, True),
@@ -14,27 +14,27 @@ from nef_pipelines.lib.structures import EntryPart, EntryPartValues, SaveframeNa
         # Non-singleton: has identity
         ("nef", "molecular_system", "protein_A", None, False),
         ("nef", "chemical_shift_list", "default", None, False),
-        # Non-singleton: has counter (but no identity)
+        # Non-singleton: has index (but no identity)
         ("ccpn", "data", None, "1", False),
         ("nef", "molecular_system", None, "2", False),
         # Non-singleton: has both
         ("nef", "molecular_system", "protein_A", "1", False),
     ],
 )
-def test_is_singleton(namespace, category, identity, counter, expected_is_singleton):
+def test_is_singleton(namespace, type_, identity, index, expected_is_singleton):
     """\
     Test is_singleton property returns correct values.
 
-    A frame is singleton if it has neither identity nor counter.
+    A frame is singleton if it has neither identity nor index.
     """
     parts = SaveframeNameParts(
-        namespace=namespace, category=category, identity=identity, counter=counter
+        namespace=namespace, type=type_, identity=identity, index=index
     )
     assert parts.is_singleton == expected_is_singleton
 
 
 @pytest.mark.parametrize(
-    "namespace,category,identity,counter,expected_full_name",
+    "namespace,type_,identity,index,expected_full_name",
     [
         # Singleton frames
         ("nef", "molecular_system", None, None, "nef_molecular_system"),
@@ -54,9 +54,9 @@ def test_is_singleton(namespace, category, identity, counter, expected_is_single
             None,
             "nef_chemical_shift_list_default",
         ),
-        # Frames with counter only
+        # Frames with index only
         ("ccpn", "data", None, "1", "ccpn_data`1`"),
-        # Frames with both identity and counter
+        # Frames with both identity and index
         (
             "nef",
             "molecular_system",
@@ -70,7 +70,7 @@ def test_is_singleton(namespace, category, identity, counter, expected_is_single
     ],
 )
 def test_full_name_reconstruction(
-    namespace, category, identity, counter, expected_full_name
+    namespace, type_, identity, index, expected_full_name
 ):
     """\
     Test that full_name property correctly reconstructs the original frame name.
@@ -78,7 +78,7 @@ def test_full_name_reconstruction(
     Includes namespace prefix in reconstruction.
     """
     parts = SaveframeNameParts(
-        namespace=namespace, category=category, identity=identity, counter=counter
+        namespace=namespace, type=type_, identity=identity, index=index
     )
     assert parts.full_name == expected_full_name
 
