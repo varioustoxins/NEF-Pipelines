@@ -364,6 +364,11 @@ def read_from_file_or_exit(file_path: Path, target: str = UNKNOWN_INPUT_SOURCE) 
     return text
 
 
+def read_utf8_sig_file(path: Path) -> str:
+    """Read a UTF-8 file from disk, stripping the BOM
+    This is relevant for Excel CSV files as it writes a BOM to them."""
+    return path.read_text(encoding="utf-8-sig")
+
 def _script_to_command(script: str) -> str:
     """
     turns a script path into the equivalent nef pipelines command
