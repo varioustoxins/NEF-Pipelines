@@ -375,6 +375,11 @@ def escape_spaces_with_underscore(name: str) -> str:
     return name.replace(" ", "_")
 
 
+def escape_for_fnmatch(text: str) -> str:
+    """Escape fnmatch metacharacters so text matches itself literally."""
+    return re.sub(r"([*?\[\]])", r"[\1]", text)
+
+
 def _script_to_command(script: str) -> str:
     """
     turns a script path into the equivalent nef pipelines command

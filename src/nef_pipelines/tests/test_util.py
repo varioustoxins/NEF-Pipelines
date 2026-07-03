@@ -1,4 +1,5 @@
 import string
+from fnmatch import fnmatchcase
 from fnmatch import translate as fnmatch_translate
 from pathlib import Path
 
@@ -6,6 +7,7 @@ import pytest
 
 from nef_pipelines.lib.util import (
     STDOUT,
+    escape_for_fnmatch,
     exit_if_file_has_bytes_and_no_force,
     find_index_of_first_unescaped,
     find_substring_with_wildcard,
@@ -404,3 +406,25 @@ def test_oxford_join(values, expected):
 
 def test_oxford_join_custom_conjunction():
     assert oxford_join(["a", "b", "c"], conjunction="and") == "a, b and c"
+
+
+ESCAPE_FOR_FNMATCH_CASES = [
+    "",
+    "*",
+    "?",
+    "[",
+    "]",
+    "*?[][*?][",
+    "\\",
+    "\\\\*",
+    "C:\\Windows\\Path\\*.*",
+    "hello\0world",
+    "ñöñ_âscîî_chãrs*",
+    "emoji_🤔_test?",
+    "long_string_" + ("*" * 1000),
+]
+
+
+@pytest.mark.parametrize("text", ESCAPE_FOR_FNMATCH_CASES)
+def test_escape_for_fnmatch_matches_self(text):
+    assert fnmatchcase(text, escape_for_fnmatch(text))

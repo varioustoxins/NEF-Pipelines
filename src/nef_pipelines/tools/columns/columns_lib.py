@@ -11,6 +11,7 @@ from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_reorder_columns, loop_row_dict_iter
 from nef_pipelines.lib.util import (
+    escape_for_fnmatch,
     escape_spaces_with_underscore,
     find_index_of_first_unescaped,
     read_utf8_sig_file,
@@ -432,8 +433,10 @@ def _filter_tags(
         # Unescape the pattern
         unescaped = unescape_backslashes(p)
 
-        # If no wildcards in original, wrap for substring matching (backward compatibility)
-        pattern = unescaped if has_wildcard else f"*{unescaped}*"
+        if has_wildcard:
+            pattern = unescaped
+        else:
+            pattern = f"*{escape_for_fnmatch(unescaped)}*"
 
         result.extend(t for t in tags if fnmatchcase(t, pattern))
 
