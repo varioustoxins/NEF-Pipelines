@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import typer
 
@@ -868,7 +870,8 @@ def test_empty_csv_error():
 
 def test_missing_csv_file_error():
     """Missing CSV file produces clear error message."""
-    csv_path = path_in_test_data(__file__, "does_not_exist.csv")
+    csv_path = Path(__file__).parent / "test_data" / "does_not_exist.csv"
+    assert not csv_path.exists(), f"Test integrity: {csv_path} must not exist"
     result = run_and_report(
         app,
         ["--in", "-", "--selector", "myshifts.chemical_shift", f"col=@{csv_path}"],
