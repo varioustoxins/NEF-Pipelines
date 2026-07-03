@@ -7,13 +7,17 @@ from typing import Dict, List, Optional, Tuple, Union
 import click
 from pynmrstar import Entry, Loop
 
-from nef_pipelines.lib.cli_lib import parse_frame_loop_and_tags
+from nef_pipelines.lib.cli_lib import (
+    BadFrameLoopTagSyntaxException,
+    parse_frame_loop_and_tags,
+)
 from nef_pipelines.lib.nef_lib import (
     SelectionType,
     select_frames,
     select_loops_by_category,
 )
-from nef_pipelines.lib.util import escape_spaces_with_underscore
+from nef_pipelines.lib.structures import FrameLoopsAndTags
+from nef_pipelines.lib.util import escape_spaces_with_underscore, to_ordinal
 from nef_pipelines.tools.columns.columns_lib import (
     _csv_column_names,
     _resolve_file_col_name,
@@ -34,6 +38,53 @@ from nef_pipelines.tools.columns.columns_structures import (
     RepeatValueSpec,
     ValueSpec,
 )
+
+# Selector Parsing Functions
+
+
+def _build_frame_loop_and_tag_selector_error_message(
+    selector_str: str, index: int, exception: BadFrameLoopTagSyntaxException
+) -> str:
+    """Build a formatted error message for invalid selector syntax."""
+
+    msg = (
+        f"invalid selector syntax for the {to_ordinal(index + 1)} selector: "
+        f"{selector_str}"
+    )
+    return msg
+
+
+def _parse_selected_loops_or_raise(
+    entry: Entry, selectors: List[str]
+) -> List[FrameLoopsAndTags]:
+    """Parse selectors and return one FrameLoopsAndTags per matched (frame, loop) pair.
+
+    Raises BadFrameLoopTagSyntaxException if selector syntax is invalid.
+    Each item has exactly one loop; loop_tags holds the raw patterns keyed by category.
+    Callers filter via _filter_tags. frame_tags is always empty.
+    """
+    result = []
+    for selector_str in selectors:
+        sel = parse_frame_loop_and_tags(selector_str)
+
+        if sel.loop_name is None:
+            continue
+
+        frames = select_frames(entry, [sel.frame_name], SelectionType.ANY)
+        for frame in frames:
+            loops = select_loops_by_category(
+                frame.loops, [sel.loop_name] if sel.loop_name else []
+            )
+            for loop in loops:
+                result.append(
+                    FrameLoopsAndTags(
+                        frame=frame,
+                        loops=[loop],
+                        loop_tags={loop.category: sel.loop_tags},
+                    )
+                )
+    return result
+
 
 # CLI Argument Parsing Functions
 
