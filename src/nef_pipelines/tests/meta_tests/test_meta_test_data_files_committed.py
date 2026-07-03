@@ -151,7 +151,10 @@ def test_all_test_data_files_in_git():
             for test_file in test_files_list:
                 missing_by_test.setdefault(test_file, []).append(filename)
 
-        # Show missing files organized by test
+        # Show missing files organized by test; collect paths that exist for git add
+        project_root = _find_project_root()
+        git_add_paths = []
+
         error_msg.append("Missing files by test:")
         for test_file in sorted(missing_by_test.keys()):
             error_msg.append(f"  {test_file}")
@@ -169,9 +172,16 @@ def test_all_test_data_files_in_git():
                         error_msg.append(
                             f"      [EXISTS on filesystem: {local_test_data}]"
                         )
+                        git_add_paths.append(local_test_data.relative_to(project_root))
                     if global_exists:
                         error_msg.append(
                             f"      [EXISTS on filesystem: {global_test_data}]"
                         )
+                        git_add_paths.append(global_test_data.relative_to(project_root))
+
+        if git_add_paths:
+            error_msg.append("\nTo add the existing files to git run:")
+            paths_str = " ".join(str(p) for p in git_add_paths)
+            error_msg.append(f"  git add {paths_str}")
 
         pytest.fail("\n".join(error_msg))
