@@ -10,7 +10,6 @@ from clevercsv.dialect import SimpleDialect
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_reorder_columns, loop_row_dict_iter
-from nef_pipelines.lib.structures import NEFColumnsException
 from nef_pipelines.lib.util import (
     escape_spaces_with_underscore,
     find_index_of_first_unescaped,
@@ -25,10 +24,12 @@ from nef_pipelines.tools.columns.columns_structures import (
     InsertInstruction,
     InsertPlacement,
     LiteralsValueSpecification,
+    NEFColumnsException,
     NEFColumnsFileColumnNotFoundException,
     NEFColumnsFileIOException,
     NEFColumnsFileNotFoundException,
     NEFColumnsLoopColumnNotFoundException,
+    NEFColumnsTagCategoryMismatchException,
     RangeFromValueSpec,
     RangeValueSpec,
     RepeatValueSpec,
@@ -482,9 +483,6 @@ def _insert_column_into_loop(
     except ValueError as e:
         # PyNMRStar raises ValueError if tag has a category that doesn't match the loop
         if "different categories" in str(e):
-            from nef_pipelines.tools.columns.columns_exceptions import (
-                NEFColumnsTagCategoryMismatchException,
-            )
 
             # Extract category from tag if present (format: category.tag_name)
             if "." in col_name:
