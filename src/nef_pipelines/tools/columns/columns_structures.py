@@ -187,3 +187,6 @@ class NEFInsertCLILoopNotDefinedException(NEFPipelinesException):
     col_spec: str
     selector: Optional[str]  # None = absent; str with no '.' = frame-only (ambiguous)
     is_file_ref: bool
+
+
+class NEFColumnsException(NEFPipelinesException): ...  # noqa: E701
