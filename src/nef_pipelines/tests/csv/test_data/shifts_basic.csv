@@ -1,0 +1,5 @@
+sequence_code,residue_name,atom_name,value
+2,GLN,N,123.22
+2,GLN,H,8.90
+3,ILE,N,115.34
+3,ILE,H,8.32

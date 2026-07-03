@@ -1,0 +1,24 @@
+data_test
+
+save_nef_chemical_shift_list_1
+   _nef_chemical_shift_list.sf_category      nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode     nef_chemical_shift_list_1
+
+   loop_
+      _nef_chemical_shift.index
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+      _nef_chemical_shift.value_uncertainty
+
+      1   A   1   ALA   CA   50.0   0.5
+      2   A   2   GLY   CA   45.0   0.3
+      3   A   3   VAL   CA   60.0   0.4
+      4   A   4   LEU   CA   55.0   0.2
+      5   A   5   ILE   CA   58.0   0.3
+
+   stop_
+
+save_
