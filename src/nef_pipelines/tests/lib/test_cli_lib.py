@@ -2143,35 +2143,33 @@ def test_validate_split_separators_empty():
 
 # fmt: off
 # Tests for parse_frame_loop_and_tags
+PARSE_FRAME_LOOP_AND_TAGS_CASES = [
+    ("bare_frame",                  "myframe",                 FrameLoopAndTagSelectors("myframe",                  None,                 [],                       [])),                              # noqa: E501
+    ("frame_wildcard_tags",         "myframe:*",               FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
+    ("frame_empty_tags",            "myframe:",                FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
+    ("frame_tag_list",              "my_frame:tag1,tag2,tag3", FrameLoopAndTagSelectors("my_frame",                 None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
+    ("frame_tags_with_spaces",      "frame:tag1 , tag2 ,tag3", FrameLoopAndTagSelectors("frame",                    None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
+    ("frame_loop",                  "myframe.myloop",          FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       [])),                              # noqa: E501
+    ("frame_wildcard_loop",         "myframe.*",               FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       [])),                              # noqa: E501
+    ("frame_loop_wildcard_tags",    "myframe.myloop:*",        FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
+    ("frame_wildcard_loop_tags",    "myframe.*:*",             FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       ["*"])),                           # noqa: E501
+    ("frame_loop_empty_tags",       "myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
+    ("frame_loop_col",              "nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
+                                                               FrameLoopAndTagSelectors("nef_rdc_restraint_list",   "nef_rdc_restraint",  [],                       ["chain_code_1"])),                # noqa: E501
+    ("wildcard_frame_loop_cols",    ".rdc:atom_name_1,atom_name_2",
+                                                               FrameLoopAndTagSelectors("*",                         "rdc",               [],                       ["atom_name_1", "atom_name_2"])),  # noqa: E501
+    ("frame_wildcard_loop_tag",     "dipolar.:tag1",           FrameLoopAndTagSelectors("dipolar",                   "*",                 [],                       ["tag1"])),                        # noqa: E501
+    ("frame_wildcard_loop_bare",    "myframe.",                FrameLoopAndTagSelectors("myframe",                   "*",                 [],                       [])),                              # noqa: E501
+    ("wildcard_frame_loop",         "*.myloop",                FrameLoopAndTagSelectors("*",                         "myloop",            [],                       [])),                              # noqa: E501
+]
+
+
 @pytest.mark.parametrize(
-    "input_str,expected",
-    [
-        # --- bare frame ---                                 frame                       loop                  frame_tags                loop_tags                                           # noqa: E501
-        ("myframe",                 FrameLoopAndTagSelectors("myframe",                  None,                 [],                       [])),                              # noqa: E501
-        # --- frame:tags ---
-        ("myframe:*",               FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
-        ("myframe:",                FrameLoopAndTagSelectors("myframe",                  None,                 ["*"],                    [])),                              # noqa: E501
-        ("my_frame:tag1,tag2,tag3", FrameLoopAndTagSelectors("my_frame",                 None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
-        ("frame:tag1 , tag2 ,tag3", FrameLoopAndTagSelectors("frame",                    None,                 ["tag1", "tag2", "tag3"], [])),                              # noqa: E501
-        # --- frame.loop ---
-        ("myframe.myloop",          FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       [])),                              # noqa: E501
-        ("myframe.*",               FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       [])),                              # noqa: E501
-        # --- frame.loop:* / frame.*:* ---
-        ("myframe.myloop:*",        FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
-        ("myframe.*:*",             FrameLoopAndTagSelectors("myframe",                  "*",                  [],                       ["*"])),                           # noqa: E501
-        ("myframe.myloop:",         FrameLoopAndTagSelectors("myframe",                  "myloop",             [],                       ["*"])),                           # noqa: E501
-        # --- frame.loop:col ---
-        ("nef_rdc_restraint_list.nef_rdc_restraint:chain_code_1",
-                                            FrameLoopAndTagSelectors("nef_rdc_restraint_list",   "nef_rdc_restraint",  [],                       ["chain_code_1"])),                # noqa: E501 E127
-        # --- wildcard frame/loop shorthands ---
-        (".rdc:atom_name_1,atom_name_2",
-                                            FrameLoopAndTagSelectors("*",                         "rdc",               [],                       ["atom_name_1", "atom_name_2"])),  # noqa: E501 E127
-        ("dipolar.:tag1",           FrameLoopAndTagSelectors("dipolar",                   "*",                 [],                       ["tag1"])),                        # noqa: E501
-        ("myframe.",                FrameLoopAndTagSelectors("myframe",                   "*",                 [],                       [])),                              # noqa: E501
-        ("*.myloop",                FrameLoopAndTagSelectors("*",                         "myloop",            [],                       [])),                              # noqa: E501
-    ],
+    "test_id,input_str,expected",
+    PARSE_FRAME_LOOP_AND_TAGS_CASES,
+    ids=[x[0] for x in PARSE_FRAME_LOOP_AND_TAGS_CASES],
 )
-def test_parse_frame_loop_and_tags(input_str, expected):
+def test_parse_frame_loop_and_tags(test_id, input_str, expected):
     """Test parse_frame_loop_and_tags with various input patterns."""
     assert parse_frame_loop_and_tags(input_str) == expected
 # fmt: on
@@ -2179,26 +2177,23 @@ def test_parse_frame_loop_and_tags(input_str, expected):
 
 # fmt: off
 # TODO: these use the old form of escaping .. values and shoud disappear... to be replaced by \s
+PARSE_FRAME_LOOP_AND_TAGS_WITH_ESCAPES_CASES = [
+    ("escaped_colon_in_frame",      "frame::name:tag",           FrameLoopAndTagSelectors("frame:name",  None,        ["tag"],            [])),                    # noqa: E501
+    ("escaped_dot_in_frame",        "frame..name.loop:tag",      FrameLoopAndTagSelectors("frame.name", "loop",       [],                 ["tag"])),               # noqa: E501
+    ("escaped_comma_in_tag_list",   "frame:tag1,,2,tag3",        FrameLoopAndTagSelectors("frame",       None,        ["tag1,2", "tag3"], []),),                   # noqa: E501
+    ("escaped_dot_in_loop",         "frame.loop..name:tag",      FrameLoopAndTagSelectors("frame",       "loop.name", [],                 ["tag"])),               # noqa: E501
+    ("triple_colon",                "frame:::tag",               FrameLoopAndTagSelectors("frame:",      None,        ["tag"],            [])),                    # noqa: E501
+    ("multiple_escapes",            "fr::ame.lo..op:ta,,g1,tag2", FrameLoopAndTagSelectors("fr:ame",     "lo.op",     [],                 ["ta,g1", "tag2"])),     # noqa: E501
+    ("escaped_in_wildcard",         ".loop::name:tag",           FrameLoopAndTagSelectors("*",           "loop:name", [],                 ["tag"])),               # noqa: E501
+]
+
+
 @pytest.mark.parametrize(
-    "input_str,expected",
-    [
-        # Escaped colon in frame name                          frame         loop          frame_tag           loop_tag
-        ("frame::name:tag",           FrameLoopAndTagSelectors("frame:name",  None,        ["tag"],            [])),                    # noqa: E501
-        # Escaped dot in frame name
-        ("frame..name.loop:tag",      FrameLoopAndTagSelectors("frame.name", "loop",       [],                 ["tag"])),               # noqa: E501
-        # Escaped comma in tag list
-        ("frame:tag1,,2,tag3",        FrameLoopAndTagSelectors("frame",       None,        ["tag1,2", "tag3"], []),),                   # noqa: E501
-        # Escaped dot in loop name
-        ("frame.loop..name:tag",      FrameLoopAndTagSelectors("frame",       "loop.name", [],                 ["tag"])),               # noqa: E501
-        # Triple colon (:: → : plus separator :)
-        ("frame:::tag",               FrameLoopAndTagSelectors("frame:",      None,        ["tag"],            [])),                    # noqa: E501
-        # Multiple escapes together
-        ("fr::ame.lo..op:ta,,g1,tag2", FrameLoopAndTagSelectors("fr:ame",     "lo.op",     [],                 ["ta,g1", "tag2"])),     # noqa: E501
-        # Escaped in wildcard selectors
-        (".loop::name:tag",           FrameLoopAndTagSelectors("*",           "loop:name", [],                 ["tag"])),               # noqa: E501
-    ],
+    "test_id,input_str,expected",
+    PARSE_FRAME_LOOP_AND_TAGS_WITH_ESCAPES_CASES,
+    ids=[x[0] for x in PARSE_FRAME_LOOP_AND_TAGS_WITH_ESCAPES_CASES],
 )
-def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
+def test_parse_frame_loop_and_tags_with_escapes(test_id, input_str, expected):
     """Test parse_frame_loop_and_tags with escape sequences."""
     result = parse_frame_loop_and_tags(input_str, use_escapes=True)
     assert result == expected
@@ -2206,41 +2201,81 @@ def test_parse_frame_loop_and_tags_with_escapes(input_str, expected):
 # fmt: on
 
 
+PARSE_FRAME_LOOP_AND_TAGS_ERROR_CASES = [
+    (
+        "too_many_separators",
+        "frame:loop:tag1",
+        "you have too many : separators [2], you should have 1",
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "input_str,expected_error_msg",
-    [
-        # Too many frame tag separators
-        ("frame:loop:tag1", "you have too many : separators [2], you should have 1"),
-    ],
+    "test_id,input_str,expected_error_msg",
+    PARSE_FRAME_LOOP_AND_TAGS_ERROR_CASES,
+    ids=[x[0] for x in PARSE_FRAME_LOOP_AND_TAGS_ERROR_CASES],
 )
-def test_parse_frame_loop_and_tags_errors(input_str, expected_error_msg):
+def test_parse_frame_loop_and_tags_errors(test_id, input_str, expected_error_msg):
     """\
     Test parse_frame_loop_and_tags error cases.
     """
     with pytest.raises(Exception) as exc_info:
         parse_frame_loop_and_tags(input_str)
 
-    assert expected_error_msg in str(exc_info.value)
+    assert exc_info.value.args == (input_str, expected_error_msg)
+
+
+EXPECTED_DOUBLE_COLON = (
+    "frame::name:tag",
+    "you have too many : separators [3], you should have 1.\n\n"
+    "Did you forget --use-escapes?\n"
+    "(I found :: which looks like an escape sequence for : when --use-escapes is active)",
+)
+
+EXPECTED_DOUBLE_DOT = (
+    "frame..name.loop",
+    "invalid syntax: Expected end of text, found '.'  (at char 6), (line:1, col:7).\n\n"
+    "Did you forget --use-escapes?\n"
+    "(I found .. which looks like an escape sequence for . when --use-escapes is active)",
+)
+
+EXPECTED_DOUBLE_COMMA = (
+    "frame:tag1,,2",
+    "invalid syntax: Expected end of text, found ','  (at char 10), (line:1, col:11).\n\n"
+    "Did you forget --use-escapes?\n"
+    "(I found ,, which looks like an escape sequence for , when --use-escapes is active)",
+)
+
+EXPECTED_MULTIPLE_ESCAPES = (
+    "fr::ame.lo..op:ta,,g1",
+    "you have too many : separators [3], you should have 1.\n\n"
+    "Did you forget --use-escapes?\n"
+    "(I found ::, .. and ,, which look like escape sequences for :, . and , when --use-escapes is active)",
+)
+
+ESCAPE_SEQUENCES_WITHOUT_FLAG_CASES = [
+    ("double_colon", "frame::name:tag", EXPECTED_DOUBLE_COLON),
+    ("double_dot", "frame..name.loop", EXPECTED_DOUBLE_DOT),
+    ("double_comma", "frame:tag1,,2", EXPECTED_DOUBLE_COMMA),
+    ("multiple_escapes", "fr::ame.lo..op:ta,,g1", EXPECTED_MULTIPLE_ESCAPES),
+]
 
 
 @pytest.mark.parametrize(
-    "input_str,escape_seq",
-    [
-        ("frame::name:tag", "::"),
-        ("frame..name.loop", ".."),
-        ("frame:tag1,,2", ",,"),
-        ("fr::ame.lo..op:ta,,g1", "multiple"),
-    ],
+    "test_id,input_str,expected_error",
+    ESCAPE_SEQUENCES_WITHOUT_FLAG_CASES,
+    ids=[x[0] for x in ESCAPE_SEQUENCES_WITHOUT_FLAG_CASES],
 )
-def test_parse_frame_loop_and_tags_escape_sequences_without_flag(input_str, escape_seq):
+def test_parse_frame_loop_and_tags_escape_sequences_without_flag(
+    test_id, input_str, expected_error
+):
     """\
     Test that escape sequences without use_escapes=True raise helpful errors.
     """
     with pytest.raises(BadFrameLoopTagSyntaxException) as exc_info:
         parse_frame_loop_and_tags(input_str)  # use_escapes=False by default
 
-    error_message = str(exc_info.value)
-    assert "Did you forget --use-escapes?" in error_message
+    assert exc_info.value.args == expected_error
 
 
 def test_parse_residue_ranges_multiple_in_chain():
@@ -2314,147 +2349,209 @@ def test_validate_residue_ranges_in_system():
     assert missing[1] == ResidueRange("B", 10, 11)
 
 
+PARSE_SELECTOR_LISTS_CASES = [
+    (
+        "basic_include",
+        ["nef", "custom"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
+    ),
+    (
+        "explicit_include",
+        ["+nef", "+custom"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
+    ),
+    ("exclude_single", ["-nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
+    (
+        "include_and_exclude",
+        ["+nef", "-custom"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+    ),
+    ("exclamation_exclude", ["!nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
+    (
+        "include_exclamation_exclude",
+        ["+nef", "!custom"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+    ),
+    (
+        "exclamation_all",
+        ["!"],
+        False,
+        False,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES)],
+    ),
+    (
+        "comma_mixed",
+        ["nef,!custom"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
+    ),
+    (
+        "escaped_plus",
+        [r"\+namespace"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "+namespace")],
+    ),
+    (
+        "escaped_minus",
+        [r"\-namespace"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "-namespace")],
+    ),
+    ("escaped_comma", [r"my\,ns"], True, False, [(SelectorAction.INCLUDE, "my,ns")]),
+    (
+        "escaped_backslash",
+        [r"my\\ns"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "my\\ns")],
+    ),
+    (
+        "escaped_comma_trailing",
+        [r"name\,,name2"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "name,"), (SelectorAction.INCLUDE, "name2")],
+    ),
+    (
+        "escaped_comma_leading",
+        [r"name,\,name2"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "name"), (SelectorAction.INCLUDE, ",name2")],
+    ),
+    (
+        "escaped_comma_double",
+        [r"name\,\,name2"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "name,,name2")],
+    ),
+    (
+        "escaped_comma_suffix",
+        [r"name1,name2\,suffix"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "name1"), (SelectorAction.INCLUDE, "name2,suffix")],
+    ),
+    (
+        "exclude_escaped_plus",
+        [r"-\+plus"],
+        True,
+        False,
+        [(SelectorAction.EXCLUDE, "+plus")],
+    ),
+    (
+        "include_escaped_minus",
+        [r"+\-minus"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "-minus")],
+    ),
+    (
+        "include_escaped_comma",
+        [r"+\,comma"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, ",comma")],
+    ),
+    ("literal_plus", [r"\+"], True, False, [(SelectorAction.INCLUDE, "+")]),
+    ("literal_minus", [r"\-"], True, False, [(SelectorAction.INCLUDE, "-")]),
+    ("literal_exclamation", [r"\!"], True, False, [(SelectorAction.INCLUDE, "!")]),
+    (
+        "literal_exclamation_ns",
+        [r"\!namespace"],
+        True,
+        False,
+        [(SelectorAction.INCLUDE, "!namespace")],
+    ),
+    (
+        "no_initial_include",
+        ["nef"],
+        False,
+        True,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+    ),
+    (
+        "no_initial_exclude",
+        ["-nef"],
+        False,
+        True,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
+    ),
+    (
+        "no_initial_exclamation",
+        ["!nef"],
+        False,
+        True,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
+    ),
+    (
+        "no_initial_explicit",
+        ["+nef"],
+        False,
+        True,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+    ),
+    (
+        "comma_three",
+        ["nef,custom,test"],
+        False,
+        False,
+        [
+            (SelectorAction.INCLUDE, "nef"),
+            (SelectorAction.INCLUDE, "custom"),
+            (SelectorAction.INCLUDE, "test"),
+        ],
+    ),
+    (
+        "comma_mixed_args",
+        ["nef,custom", "test"],
+        False,
+        False,
+        [
+            (SelectorAction.INCLUDE, "nef"),
+            (SelectorAction.INCLUDE, "custom"),
+            (SelectorAction.INCLUDE, "test"),
+        ],
+    ),
+    ("exclude_all", ["-"], False, False, [(SelectorAction.EXCLUDE, ALL_NAMESPACES)]),
+    ("include_all", ["+"], False, False, [(SelectorAction.INCLUDE, ALL_NAMESPACES)]),
+    (
+        "order_exclude_include",
+        ["-", "+nef"],
+        False,
+        False,
+        [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
+    ),
+    (
+        "order_include_exclude",
+        ["+nef", "-"],
+        False,
+        False,
+        [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, ALL_NAMESPACES)],
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "selectors, use_escapes, no_initial_selection, expected",
-    [
-        # Basic parsing
-        (
-            ["nef", "custom"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
-        ),
-        # Explicit include/exclude
-        (
-            ["+nef", "+custom"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.INCLUDE, "custom")],
-        ),
-        (["-nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
-        (
-            ["+nef", "-custom"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
-        ),
-        # ! as alias for - (exclude)
-        (["!nef"], False, False, [(SelectorAction.EXCLUDE, "nef")]),
-        (
-            ["+nef", "!custom"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
-        ),
-        (["!"], False, False, [(SelectorAction.EXCLUDE, ALL_NAMESPACES)]),
-        (
-            ["nef,!custom"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, "custom")],
-        ),
-        # Escapes enabled
-        ([r"\+namespace"], True, False, [(SelectorAction.INCLUDE, "+namespace")]),
-        ([r"\-namespace"], True, False, [(SelectorAction.INCLUDE, "-namespace")]),
-        ([r"my\,ns"], True, False, [(SelectorAction.INCLUDE, "my,ns")]),
-        ([r"my\\ns"], True, False, [(SelectorAction.INCLUDE, "my\\ns")]),
-        # Escaped commas in different positions
-        (
-            [r"name\,,name2"],
-            True,
-            False,
-            [(SelectorAction.INCLUDE, "name,"), (SelectorAction.INCLUDE, "name2")],
-        ),
-        (
-            [r"name,\,name2"],
-            True,
-            False,
-            [(SelectorAction.INCLUDE, "name"), (SelectorAction.INCLUDE, ",name2")],
-        ),
-        ([r"name\,\,name2"], True, False, [(SelectorAction.INCLUDE, "name,,name2")]),
-        (
-            [r"name1,name2\,suffix"],
-            True,
-            False,
-            [
-                (SelectorAction.INCLUDE, "name1"),
-                (SelectorAction.INCLUDE, "name2,suffix"),
-            ],
-        ),
-        # Escaped characters with prefixes
-        ([r"-\+plus"], True, False, [(SelectorAction.EXCLUDE, "+plus")]),
-        ([r"+\-minus"], True, False, [(SelectorAction.INCLUDE, "-minus")]),
-        ([r"+\,comma"], True, False, [(SelectorAction.INCLUDE, ",comma")]),
-        # Literal prefixes (escaped)
-        ([r"\+"], True, False, [(SelectorAction.INCLUDE, "+")]),
-        ([r"\-"], True, False, [(SelectorAction.INCLUDE, "-")]),
-        ([r"\!"], True, False, [(SelectorAction.INCLUDE, "!")]),
-        ([r"\!namespace"], True, False, [(SelectorAction.INCLUDE, "!namespace")]),
-        # no_initial_selection=True (start with empty set)
-        (
-            ["nef"],
-            False,
-            True,
-            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
-        ),
-        (
-            ["-nef"],
-            False,
-            True,
-            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
-        ),
-        (
-            ["!nef"],
-            False,
-            True,
-            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.EXCLUDE, "nef")],
-        ),
-        (
-            ["+nef"],
-            False,
-            True,
-            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
-        ),
-        # Comma separation
-        (
-            ["nef,custom,test"],
-            False,
-            False,
-            [
-                (SelectorAction.INCLUDE, "nef"),
-                (SelectorAction.INCLUDE, "custom"),
-                (SelectorAction.INCLUDE, "test"),
-            ],
-        ),
-        (
-            ["nef,custom", "test"],
-            False,
-            False,
-            [
-                (SelectorAction.INCLUDE, "nef"),
-                (SelectorAction.INCLUDE, "custom"),
-                (SelectorAction.INCLUDE, "test"),
-            ],
-        ),
-        # All Namespaces
-        (["-"], False, False, [(SelectorAction.EXCLUDE, ALL_NAMESPACES)]),
-        (["+"], False, False, [(SelectorAction.INCLUDE, ALL_NAMESPACES)]),
-        # Order preservation
-        (
-            ["-", "+nef"],
-            False,
-            False,
-            [(SelectorAction.EXCLUDE, ALL_NAMESPACES), (SelectorAction.INCLUDE, "nef")],
-        ),
-        (
-            ["+nef", "-"],
-            False,
-            False,
-            [(SelectorAction.INCLUDE, "nef"), (SelectorAction.EXCLUDE, ALL_NAMESPACES)],
-        ),
-    ],
+    "test_id,selectors,use_escapes,no_initial_selection,expected",
+    PARSE_SELECTOR_LISTS_CASES,
+    ids=[x[0] for x in PARSE_SELECTOR_LISTS_CASES],
 )
-def test_parse_selector_lists(selectors, use_escapes, no_initial_selection, expected):
+def test_parse_selector_lists(
+    test_id, selectors, use_escapes, no_initial_selection, expected
+):
     """Test parse_selector_lists with various options and escape sequences."""
     result = parse_selector_lists(
         selectors, use_escapes=use_escapes, no_initial_selection=no_initial_selection
@@ -2491,16 +2588,20 @@ NEF_FOR_SELECTOR_TESTS = """\
 """
 
 
+PARSE_FRAME_LOOP_SELECTORS_VALID_CASES = [
+    ("explicit_frame_loop", "shifts.chemical_shift"),
+    ("wildcard_frame", "*.chemical_shift"),
+    ("wildcard_loop", "shifts.*"),
+    ("trailing_dot", "shifts."),
+]
+
+
 @pytest.mark.parametrize(
-    "selector",
-    [
-        "shifts.chemical_shift",  # explicit frame.loop
-        "*.chemical_shift",  # wildcard frame
-        "shifts.*",  # wildcard loop
-        "shifts.",  # bare trailing dot (same as shifts.*)
-    ],
+    "test_id,selector",
+    PARSE_FRAME_LOOP_SELECTORS_VALID_CASES,
+    ids=[x[0] for x in PARSE_FRAME_LOOP_SELECTORS_VALID_CASES],
 )
-def test_parse_frame_loop_selectors_and_get_errors_valid(selector):
+def test_parse_frame_loop_selectors_and_get_errors_valid(test_id, selector):
     """Test that valid frame.loop selectors (explicit and wildcard) all resolve correctly."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
 
@@ -2521,36 +2622,45 @@ def test_parse_frame_loop_selectors_and_get_errors_valid(selector):
     assert errors == []
 
 
+PARSE_FRAME_LOOP_SELECTORS_INVALID_CASES = [
+    (
+        "frame_tags",
+        "shifts:some_tag",
+        dedent(
+            """\
+        the 1st selector shifts:some_tag is bad because its is selecting the frame
+        tags: some_tag. Use the frame.loop syntax without frame tags."""
+        ).strip(),
+    ),
+    (
+        "column_selector",
+        "shifts.chemical_shift:chain_code",
+        dedent(
+            """\
+        the 1st selector shifts.chemical_shift:chain_code is bad because it is selecting
+        selecting the columns: chain_code. Use the frame.loop syntax without columns."""
+        ).strip(),
+    ),
+    (
+        "bare_frame",
+        "shifts",
+        dedent(
+            """\
+        the 1st selector shifts is bad because does not have
+        a loop name, use the frame.loop syntax with a loop to select loops."""
+        ).strip(),
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "selector,expected_error",
-    [
-        (
-            "shifts:some_tag",
-            dedent(
-                """\
-            the 1st selector shifts:some_tag is bad because its is selecting the frame
-            tags: some_tag. Use the frame.loop syntax without frame tags."""
-            ).strip(),
-        ),
-        (
-            "shifts.chemical_shift:chain_code",
-            dedent(
-                """\
-            the 1st selector shifts.chemical_shift:chain_code is bad because it is selecting
-            selecting the columns: chain_code. Use the frame.loop syntax without columns."""
-            ).strip(),
-        ),
-        (
-            "shifts",
-            dedent(
-                """\
-            the 1st selector shifts is bad because does not have
-            a loop name, use the frame.loop syntax with a loop to select loops."""
-            ).strip(),
-        ),
-    ],
+    "test_id,selector,expected_error",
+    PARSE_FRAME_LOOP_SELECTORS_INVALID_CASES,
+    ids=[x[0] for x in PARSE_FRAME_LOOP_SELECTORS_INVALID_CASES],
 )
-def test_parse_frame_loop_selectors_and_get_errors_invalid(selector, expected_error):
+def test_parse_frame_loop_selectors_and_get_errors_invalid(
+    test_id, selector, expected_error
+):
     """Test that invalid selectors (frame tags, column selectors, bare frame) are rejected."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
     loops, errors = parse_frame_loop_selectors_and_get_errors(entry, [selector])
@@ -2586,34 +2696,42 @@ def test_parse_frame_loop_selectors_slash_joins_selectors():
     ]
 
 
-@pytest.mark.parametrize(
-    "selector,expected_errors",
-    [
-        (
-            "shifts.chemical_shift:chain_code,value",
-            [
-                """
-                the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
-                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+TAG_COMMA_NOT_SPLIT_CASES = [
+    (
+        "single_selector_columns",
+        "shifts.chemical_shift:chain_code,value",
+        [
             """
-            ],
-        ),
-        (
-            "shifts.chemical_shift:chain_code,value/dist.distance_restraint:index",
-            [
-                """
-                the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
-                selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+            the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
+            selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+        """
+        ],
+    ),
+    (
+        "multiple_selectors_columns",
+        "shifts.chemical_shift:chain_code,value/dist.distance_restraint:index",
+        [
+            """
+            the 1st selector shifts.chemical_shift:chain_code,value is bad because it is selecting
+            selecting the columns: chain_code, value. Use the frame.loop syntax without columns.
+        """,
+            """
+            the 2nd selector dist.distance_restraint:index is bad because it is selecting
+            selecting the columns: index. Use the frame.loop syntax without columns.
             """,
-                """
-                the 2nd selector dist.distance_restraint:index is bad because it is selecting
-                selecting the columns: index. Use the frame.loop syntax without columns.
-                """,
-            ],
-        ),
-    ],
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "test_id,selector,expected_errors",
+    TAG_COMMA_NOT_SPLIT_CASES,
+    ids=[x[0] for x in TAG_COMMA_NOT_SPLIT_CASES],
 )
-def test_parse_frame_loop_selectors_tag_comma_not_split(selector, expected_errors):
+def test_parse_frame_loop_selectors_tag_comma_not_split(
+    test_id, selector, expected_errors
+):
     """Tag-list commas are never treated as selector separators."""
     expected_errors = [dedent(error).strip() for error in expected_errors]
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
@@ -2658,64 +2776,64 @@ def test_parse_frame_loop_selectors_and_get_errors_mixed_valid_invalid():
 
 
 # Tests for expand_frame_loop_and_tag_wildcards
+EXPAND_FRAME_LOOP_AND_TAG_WILDCARDS_CASES = [
+    (
+        "all_parts",
+        FrameLoopAndTagSelectors("frame", None, [], []),
+        EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+        FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+    ),
+    (
+        "loop_level_only",
+        FrameLoopAndTagSelectors("frame", None, [], []),
+        EntryPart.Loop | EntryPart.LoopTag,
+        FrameLoopAndTagSelectors("frame", "*", [], ["*"]),
+    ),
+    (
+        "loop_no_columns",
+        FrameLoopAndTagSelectors("frame", None, [], []),
+        EntryPart.Loop,
+        FrameLoopAndTagSelectors("frame", "*", [], []),
+    ),
+    (
+        "frame_tags_only",
+        FrameLoopAndTagSelectors("frame", None, [], []),
+        EntryPart.FrameTag,
+        FrameLoopAndTagSelectors("frame", None, ["*"], []),
+    ),
+    (
+        "no_expansion",
+        FrameLoopAndTagSelectors("frame", None, [], []),
+        EntryPart(0),
+        FrameLoopAndTagSelectors("frame", None, [], []),
+    ),
+    (
+        "no_overwrite_set_values",
+        FrameLoopAndTagSelectors("frame", "my_loop", ["sf_category"], ["atom_name"]),
+        EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+        FrameLoopAndTagSelectors("frame", "my_loop", ["sf_category"], ["atom_name"]),
+    ),
+    (
+        "no_overwrite_wildcard",
+        FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+        EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
+        FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
+    ),
+    (
+        "frame_loop_expand_tags",
+        FrameLoopAndTagSelectors("frame", "myloop", [], []),
+        EntryPart.Loop | EntryPart.LoopTag,
+        FrameLoopAndTagSelectors("frame", "myloop", [], ["*"]),
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "selector,expand_to,expected",
-    [
-        # Default (all parts) — bare frame becomes full wildcard
-        (
-            FrameLoopAndTagSelectors("frame", None, [], []),
-            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
-            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
-        ),
-        # Loop river only — frame tags left alone
-        (
-            FrameLoopAndTagSelectors("frame", None, [], []),
-            EntryPart.Loop | EntryPart.LoopTag,
-            FrameLoopAndTagSelectors("frame", "*", [], ["*"]),
-        ),
-        # Loop level only — columns not expanded
-        (
-            FrameLoopAndTagSelectors("frame", None, [], []),
-            EntryPart.Loop,
-            FrameLoopAndTagSelectors("frame", "*", [], []),
-        ),
-        # Frame tags river only — loop untouched
-        (
-            FrameLoopAndTagSelectors("frame", None, [], []),
-            EntryPart.FrameTag,
-            FrameLoopAndTagSelectors("frame", None, ["*"], []),
-        ),
-        # No expansion
-        (
-            FrameLoopAndTagSelectors("frame", None, [], []),
-            EntryPart(0),
-            FrameLoopAndTagSelectors("frame", None, [], []),
-        ),
-        # Already-set values are never overwritten
-        (
-            FrameLoopAndTagSelectors(
-                "frame", "my_loop", ["sf_category"], ["atom_name"]
-            ),
-            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
-            FrameLoopAndTagSelectors(
-                "frame", "my_loop", ["sf_category"], ["atom_name"]
-            ),
-        ),
-        # Explicit wildcard ['*'] is not overwritten
-        (
-            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
-            EntryPart.FrameTag | EntryPart.Loop | EntryPart.LoopTag,
-            FrameLoopAndTagSelectors("frame", "*", ["*"], ["*"]),
-        ),
-        # frame.loop selector: loop already set, only loop_tags expanded
-        (
-            FrameLoopAndTagSelectors("frame", "myloop", [], []),
-            EntryPart.Loop | EntryPart.LoopTag,
-            FrameLoopAndTagSelectors("frame", "myloop", [], ["*"]),
-        ),
-    ],
+    "test_id,selector,expand_to,expected",
+    EXPAND_FRAME_LOOP_AND_TAG_WILDCARDS_CASES,
+    ids=[x[0] for x in EXPAND_FRAME_LOOP_AND_TAG_WILDCARDS_CASES],
 )
-def test_expand_frame_loop_and_tag_wildcards(selector, expand_to, expected):
+def test_expand_frame_loop_and_tag_wildcards(test_id, selector, expand_to, expected):
     """Test expand_frame_loop_and_tag_wildcards with EntryPart flag expansion control."""
     result = expand_specified_frame_loop_and_tag_wildcards(selector, expand_to)
     assert result == expected
@@ -2727,79 +2845,92 @@ TEST_LOOP_A = Loop.from_scratch("_test_loop_a")
 TEST_LOOP_B = Loop.from_scratch("_test_loop_b")
 
 
+VALIDATE_LOOP_SELECTION_ONLY_CASES = [
+    (
+        "valid_single_loop",
+        FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A]),
+        None,
+    ),
+    (
+        "valid_multiple_loops",
+        FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B]),
+        None,
+    ),
+    (
+        "valid_empty_projection",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME,
+            loops=[TEST_LOOP_A],
+            frame_tags=[],
+            loop_tags={"_test_loop_a": []},
+        ),
+        None,
+    ),
+    (
+        "valid_multiple_empty_tags",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME,
+            loops=[TEST_LOOP_A, TEST_LOOP_B],
+            loop_tags={"_test_loop_a": [], "_test_loop_b": []},
+        ),
+        None,
+    ),
+    (
+        "invalid_wildcard_frame_tags",
+        FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["*"]),
+        "frame_tags not allowed",
+    ),
+    (
+        "invalid_wildcard_loop_tags",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["*"]}
+        ),
+        r"loop_tags \(columns\) not allowed",
+    ),
+    (
+        "invalid_wildcard_one_loop",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME,
+            loops=[TEST_LOOP_A, TEST_LOOP_B],
+            loop_tags={"_test_loop_a": [], "_test_loop_b": ["*"]},
+        ),
+        r"loop_tags \(columns\) not allowed",
+    ),
+    (
+        "invalid_specific_frame_tags",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["sf_category"]
+        ),
+        "frame_tags not allowed",
+    ),
+    (
+        "invalid_specific_loop_tags",
+        FrameLoopsAndTags(
+            frame=TEST_FRAME,
+            loops=[TEST_LOOP_A],
+            loop_tags={"_test_loop_a": ["chain_code"]},
+        ),
+        r"loop_tags \(columns\) not allowed",
+    ),
+    (
+        "invalid_no_loops",
+        FrameLoopsAndTags(frame=TEST_FRAME),
+        "a loop and a frame must be specified",
+    ),
+    (
+        "invalid_no_frame",
+        FrameLoopsAndTags(frame=None, loops=[TEST_LOOP_A]),
+        "a loop and a frame must be specified",
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "item,expected_error_fragment",
-    [
-        # Valid: single loop, no projections (frame.loop)
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A]), None),
-        # Valid: multiple loops, no projections (frame.* expansion)
-        (FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A, TEST_LOOP_B]), None),
-        # Valid: empty projection lists explicit
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME,
-                loops=[TEST_LOOP_A],
-                frame_tags=[],
-                loop_tags={"_test_loop_a": []},
-            ),
-            None,
-        ),
-        # Valid: multiple loops, all tag lists empty
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME,
-                loops=[TEST_LOOP_A, TEST_LOOP_B],
-                loop_tags={"_test_loop_a": [], "_test_loop_b": []},
-            ),
-            None,
-        ),
-        # Invalid: wildcard frame_tags
-        (
-            FrameLoopsAndTags(frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["*"]),
-            "frame_tags not allowed",
-        ),
-        # Invalid: wildcard loop column tags
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME, loops=[TEST_LOOP_A], loop_tags={"_test_loop_a": ["*"]}
-            ),
-            r"loop_tags \(columns\) not allowed",
-        ),
-        # Invalid: wildcard columns on one of multiple loops (frame.* with :*)
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME,
-                loops=[TEST_LOOP_A, TEST_LOOP_B],
-                loop_tags={"_test_loop_a": [], "_test_loop_b": ["*"]},
-            ),
-            r"loop_tags \(columns\) not allowed",
-        ),
-        # Invalid: specific frame_tags
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME, loops=[TEST_LOOP_A], frame_tags=["sf_category"]
-            ),
-            "frame_tags not allowed",
-        ),
-        # Invalid: specific loop column tags
-        (
-            FrameLoopsAndTags(
-                frame=TEST_FRAME,
-                loops=[TEST_LOOP_A],
-                loop_tags={"_test_loop_a": ["chain_code"]},
-            ),
-            r"loop_tags \(columns\) not allowed",
-        ),
-        # Invalid: bare frame (no loops)
-        (FrameLoopsAndTags(frame=TEST_FRAME), "a loop and a frame must be specified"),
-        # Invalid: frame is None
-        (
-            FrameLoopsAndTags(frame=None, loops=[TEST_LOOP_A]),
-            "a loop and a frame must be specified",
-        ),
-    ],
+    "test_id,item,expected_error_fragment",
+    VALIDATE_LOOP_SELECTION_ONLY_CASES,
+    ids=[x[0] for x in VALIDATE_LOOP_SELECTION_ONLY_CASES],
 )
-def test_validate_loop_selection_only_or_raise(item, expected_error_fragment):
+def test_validate_loop_selection_only_or_raise(test_id, item, expected_error_fragment):
     """Test that validate_loop_selection_only_or_raise accepts valid and rejects invalid selections."""
     if expected_error_fragment is None:
         validate_loop_selection_only_or_raise(item)
@@ -2899,36 +3030,37 @@ FrameLoopsAndTags(
 )"""
 
 
+SELECTION_TO_FRAME_LOOPS_SINGLE_FRAME_CASES = [
+    ("bare_frame", FrameLoopAndTagSelectors("shifts", None), EXPECTED_BARE_FRAME),
+    (
+        "frame_loop",
+        FrameLoopAndTagSelectors("shifts", "chemical_shift"),
+        EXPECTED_FRAME_WITH_LOOP,
+    ),
+    (
+        "frame_loop_column",
+        FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["chain_code"]),
+        EXPECTED_FRAME_WITH_LOOP_COLUMN,
+    ),
+    (
+        "frame_loop_wildcard",
+        FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
+        EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
+    ),
+    (
+        "frame_tag",
+        FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]),
+        EXPECTED_FRAME_WITH_FRAME_TAG,
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "selector,expected",
-    [
-        # bare frame — no loop, no tags → frame kept with empty lists
-        (FrameLoopAndTagSelectors("shifts", None), EXPECTED_BARE_FRAME),
-        # frame.loop — loop matched, no column selection → loop_tags empty (not projected)
-        (
-            FrameLoopAndTagSelectors("shifts", "chemical_shift"),
-            EXPECTED_FRAME_WITH_LOOP,
-        ),
-        # frame.loop:col — specific column selected
-        (
-            FrameLoopAndTagSelectors(
-                "shifts", "chemical_shift", loop_tags=["chain_code"]
-            ),
-            EXPECTED_FRAME_WITH_LOOP_COLUMN,
-        ),
-        # frame.loop:* — explicit wildcard expands to concrete list of all column names
-        (
-            FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
-            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
-        ),
-        # frame:tag — specific frame tag selected
-        (
-            FrameLoopAndTagSelectors("shifts", None, frame_tags=["sf_category"]),
-            EXPECTED_FRAME_WITH_FRAME_TAG,
-        ),
-    ],
+    "test_id,selector,expected",
+    SELECTION_TO_FRAME_LOOPS_SINGLE_FRAME_CASES,
+    ids=[x[0] for x in SELECTION_TO_FRAME_LOOPS_SINGLE_FRAME_CASES],
 )
-def test_selection_to_frame_loops_and_tags_single_frame(selector, expected):
+def test_selection_to_frame_loops_and_tags_single_frame(test_id, selector, expected):
     """Single-frame selectors return one FrameLoopsAndTags with the correct content."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
 
@@ -2997,44 +3129,46 @@ FrameLoopsAndTags(
 )"""
 
 
+SELECTION_TO_FRAME_LOOPS_LOOP_TAG_MERGE_CASES = [
+    (
+        "two_specific_union",
+        [
+            FrameLoopAndTagSelectors(
+                "shifts", "chemical_shift", loop_tags=["chain_code"]
+            ),
+            FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["value"]),
+        ],
+        EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
+    ),
+    (
+        "wildcard_wins",
+        [
+            FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
+            FrameLoopAndTagSelectors(
+                "shifts", "chemical_shift", loop_tags=["chain_code"]
+            ),
+        ],
+        EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
+    ),
+    (
+        "specific_wins_over_empty",
+        [
+            FrameLoopAndTagSelectors("shifts", "chemical_shift"),
+            FrameLoopAndTagSelectors(
+                "shifts", "chemical_shift", loop_tags=["chain_code"]
+            ),
+        ],
+        EXPECTED_MERGED_LOOP_TAGS_NEUTRAL,
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "selectors,expected",
-    [
-        # two specific column lists → union
-        (
-            [
-                FrameLoopAndTagSelectors(
-                    "shifts", "chemical_shift", loop_tags=["chain_code"]
-                ),
-                FrameLoopAndTagSelectors(
-                    "shifts", "chemical_shift", loop_tags=["value"]
-                ),
-            ],
-            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
-        ),
-        # wildcard + specific columns → wildcard wins (expands to concrete full column list)
-        (
-            [
-                FrameLoopAndTagSelectors("shifts", "chemical_shift", loop_tags=["*"]),
-                FrameLoopAndTagSelectors(
-                    "shifts", "chemical_shift", loop_tags=["chain_code"]
-                ),
-            ],
-            EXPECTED_FRAME_WITH_WILDCARD_LOOP_COLUMNS,
-        ),
-        # not-projected ([]) + specific columns → specific columns win
-        (
-            [
-                FrameLoopAndTagSelectors("shifts", "chemical_shift"),
-                FrameLoopAndTagSelectors(
-                    "shifts", "chemical_shift", loop_tags=["chain_code"]
-                ),
-            ],
-            EXPECTED_MERGED_LOOP_TAGS_NEUTRAL,
-        ),
-    ],
+    "test_id,selectors,expected",
+    SELECTION_TO_FRAME_LOOPS_LOOP_TAG_MERGE_CASES,
+    ids=[x[0] for x in SELECTION_TO_FRAME_LOOPS_LOOP_TAG_MERGE_CASES],
 )
-def test_selection_to_frame_loops_and_tags_loop_tag_merge(selectors, expected):
+def test_selection_to_frame_loops_and_tags_loop_tag_merge(test_id, selectors, expected):
     """Multiple selectors targeting the same loop merge their column lists correctly."""
     entry = Entry.from_string(NEF_FOR_SELECTOR_TESTS)
 
@@ -3055,7 +3189,7 @@ def test_print_output_auto_tty_prints_to_stdout(capsys):
         print_output_or_exit_error(None, "@auto", OUTPUT_DICT, False)
 
     captured = capsys.readouterr()
-    assert EXPECTED_DISPLAY_TEXT in captured.out
+    assert captured.out == EXPECTED_DISPLAY_TEXT
     assert captured.err == ""
 
 
@@ -3067,8 +3201,8 @@ def test_print_output_auto_pipe_prints_to_stderr_and_entry(capsys):
         print_output_or_exit_error(entry, "@auto", OUTPUT_DICT, False)
 
     captured = capsys.readouterr()
-    assert EXPECTED_DISPLAY_TEXT in captured.err
-    assert "NEF_ENTRY" in captured.out
+    assert captured.err == EXPECTED_DISPLAY_TEXT
+    assert captured.out == "NEF_ENTRY\n"
 
 
 def test_print_output_out_flag_prints_to_stdout_no_entry(capsys):
@@ -3078,8 +3212,8 @@ def test_print_output_out_flag_prints_to_stdout_no_entry(capsys):
     print_output_or_exit_error(entry, "@out", OUTPUT_DICT, False)
 
     captured = capsys.readouterr()
-    assert EXPECTED_DISPLAY_TEXT in captured.out
-    assert "NEF_ENTRY" not in captured.out
+    assert captured.out == EXPECTED_DISPLAY_TEXT
+    assert captured.err == ""
 
 
 def test_print_output_err_flag_prints_to_stderr_and_entry(capsys):
@@ -3089,8 +3223,8 @@ def test_print_output_err_flag_prints_to_stderr_and_entry(capsys):
     print_output_or_exit_error(entry, "@err", OUTPUT_DICT, False)
 
     captured = capsys.readouterr()
-    assert EXPECTED_DISPLAY_TEXT in captured.err
-    assert "NEF_ENTRY" in captured.out
+    assert captured.err == EXPECTED_DISPLAY_TEXT
+    assert captured.out == "NEF_ENTRY\n"
 
 
 def test_print_output_to_file(tmp_path):
@@ -3098,23 +3232,22 @@ def test_print_output_to_file(tmp_path):
 
     print_output_or_exit_error(None, out_file, OUTPUT_DICT, False)
 
-    assert open(out_file).read() == EXPECTED_DISPLAY_TEXT
+    with open(out_file) as fh:
+        assert fh.read() == EXPECTED_DISPLAY_TEXT
 
 
-def test_print_output_to_file_no_overwrite_raises(tmp_path, capsys):
+def test_print_output_to_file_no_overwrite_raises(tmp_path):
     out_file = tmp_path / "out.txt"
     out_file.write_text("existing")
 
-    with pytest.raises(SystemExit):
-        print_output_or_exit_error(None, str(out_file), OUTPUT_DICT, False)
+    with patch("nef_pipelines.lib.cli_lib.exit_error") as mock_exit:
+        mock_exit.side_effect = SystemExit(1)
+        with pytest.raises(SystemExit):
+            print_output_or_exit_error(None, str(out_file), OUTPUT_DICT, False)
 
-    EXPECTED_NO_OVERWRITE_ERROR = f"""
-        ERROR [in: unknown unknown]: file {out_file} already exists, run with --force to overwrite
-        exiting...
-    """
-
-    stderr = capsys.readouterr().err
-    assert_lines_match(EXPECTED_NO_OVERWRITE_ERROR, stderr)
+    mock_exit.assert_called_once()
+    expected_msg = f"file {out_file} already exists, run with --force to overwrite"
+    assert mock_exit.call_args[0][0] == expected_msg
 
 
 def test_print_output_to_file_force_overwrites(tmp_path):
@@ -3166,19 +3299,17 @@ def test_extract_initial_file_first_selector_is_file_no_remaining_selectors(tmp_
     assert result_selectors == []
 
 
-def test_extract_initial_file_explicit_input_and_file_selector_raises(tmp_path, capsys):
+def test_extract_initial_file_explicit_input_and_file_selector_raises(tmp_path):
     nef_file = tmp_path / "test.nef"
     nef_file.write_text("")
     explicit_input = tmp_path / "explicit.nef"
     explicit_input.write_text("")
 
-    with pytest.raises(SystemExit):
-        extract_initial_file_from_arguments(explicit_input, [str(nef_file)])
+    with patch("nef_pipelines.lib.cli_lib.exit_error") as mock_exit:
+        mock_exit.side_effect = SystemExit(1)
+        with pytest.raises(SystemExit):
+            extract_initial_file_from_arguments(explicit_input, [str(nef_file)])
 
-    EXPECTED_TWO_INPUTS_ERROR = f"""
-        ERROR [in: unknown unknown]: you specified two inputs --input {explicit_input} and {nef_file} please choose only one!
-        exiting...
-    """  # noqa: E501
-
-    stderr = capsys.readouterr().err
-    assert_lines_match(EXPECTED_TWO_INPUTS_ERROR, stderr)
+    mock_exit.assert_called_once()
+    expected_msg = f"you specified two inputs --input {explicit_input} and {nef_file} please choose only one!"
+    assert mock_exit.call_args[0][0] == expected_msg
