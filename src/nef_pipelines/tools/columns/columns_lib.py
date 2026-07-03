@@ -14,7 +14,7 @@ from nef_pipelines.lib.structures import NEFColumnsException
 from nef_pipelines.lib.util import (
     escape_spaces_with_underscore,
     find_index_of_first_unescaped,
-    read_utf8_file,
+    read_utf8_sig_file,
     unescape_backslashes,
     warn,
 )
@@ -266,7 +266,7 @@ def _read_column_from_file(
         raise NEFColumnsFileNotFoundException(str(path))
 
     try:
-        file_content = read_utf8_file(path.resolve())
+        file_content = read_utf8_sig_file(path.resolve())
     except (OSError, PermissionError, UnicodeDecodeError) as e:
         raise NEFColumnsFileIOException(str(path), "read", e)
 
@@ -316,7 +316,7 @@ def _csv_column_names(path: Path, skip: int = 0, comment: str = "") -> List[str]
         raise NEFColumnsFileNotFoundException(str(path))
 
     try:
-        file_content = read_utf8_file(path.resolve())
+        file_content = read_utf8_sig_file(path.resolve())
     except (OSError, PermissionError, UnicodeDecodeError) as e:
         raise NEFColumnsFileIOException(str(path), "read", e)
 
