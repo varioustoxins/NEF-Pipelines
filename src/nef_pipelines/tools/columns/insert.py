@@ -6,12 +6,9 @@ import typer
 from click import Context
 from pynmrstar import Entry
 
+from nef_pipelines.lib.cli_lib import BadFrameLoopTagSyntaxException
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
-from nef_pipelines.lib.structures import (
-    BadFrameLoopTagSyntaxException,
-    NEFColumnsException,
-    NEFPipelinesException,
-)
+from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.tools.columns import columns_app
 from nef_pipelines.tools.columns.columns_cli_lib import (
@@ -33,6 +30,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     InsertInstruction,
     InsertPlacement,
     NEFColumnsDuplicateLoopException,
+    NEFColumnsException,
     NEFColumnsFileColumnNotFoundException,
     NEFColumnsFileIOException,
     NEFColumnsFileNotFoundException,
@@ -45,8 +43,8 @@ from nef_pipelines.tools.columns.columns_structures import (
 @columns_app.command()
 def insert(
     ctx: Context,
-    specs: List[str] = typer.Argument(
-        ...,
+    specs: Optional[List[str]] = typer.Argument(
+        None,
         help="column specifications (col=value, @file, frame.loop:col=val, etc.)",
     ),
     nef_input: Path = typer.Option(
@@ -163,6 +161,8 @@ def insert(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(nef_input)
 
+    _exit_error_if_no_column_specifications(specs)
+
     raw_loops_and_column_specifications = _parse_ordered_col_instructions(ctx, specs)
 
     column_specifications_grouped_by_frame_loop = (
@@ -191,6 +191,11 @@ def insert(
         _exit_error_on_pipe_exception(e, specs)
 
     print(entry)
+
+
+def _exit_error_if_no_column_specifications(specs: list[str] | None):
+    if not specs:
+        exit_error("no column specifications provided")
 
 
 def _exit_error_on_pipe_exception(e, specs):
