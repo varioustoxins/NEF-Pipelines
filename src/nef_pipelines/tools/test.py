@@ -101,7 +101,7 @@ try:
 
             # Only disable warnings if explicitly requested (no --warnings flag)
             # This allows Python warnings (like pyparsing) to be captured by pytest
-            if not warnings:
+            if not warnings and not (report and "w" in report):
                 command = ["--disable-warnings", *command]
 
             if show_capture:
