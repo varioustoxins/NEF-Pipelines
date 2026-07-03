@@ -193,7 +193,7 @@ def insert(
     print(entry)
 
 
-def _exit_error_if_no_column_specifications(specs: list[str] | None):
+def _exit_error_if_no_column_specifications(specs: Optional[List[str]]):
     if not specs:
         exit_error("no column specifications provided")
 
