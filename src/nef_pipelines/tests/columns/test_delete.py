@@ -191,24 +191,36 @@ WARNING_ERROR_CASES = [
     (
         "unknown_column_warns",
         ["--in", "-", "myshifts.chemical_shift:nonexistent"],
-        "no columns matching ['nonexistent'] found in loop chemical_shift",
+        "WARNING: no columns matching ['nonexistent'] found in loop nef_chemical_shift",
         EXIT_SUCCESS,
+        True,
     ),
     (
         "invalid_selector_shows_ordinal",
         ["--in", "-", "myshifts.chemical_shift:value", "invalid:::syntax"],
-        "invalid selector syntax for the 2nd selector: invalid:::syntax",
+        """\
+            ERROR [in: delete]: invalid selector syntax for the 2nd selector: invalid:::syntax
+
+            exiting...""",
         EXIT_ERROR,
+        False,
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "test_id, args, expected, exit_code", WARNING_ERROR_CASES, ids=lambda x: x[0]
+    "test_id, args, expected, exit_code, check_stderr",
+    WARNING_ERROR_CASES,
+    ids=[c[0] for c in WARNING_ERROR_CASES],
 )
-def test_delete_warnings_and_errors(test_id, args, expected, exit_code):
+def test_delete_warnings_and_errors(test_id, args, expected, exit_code, check_stderr):
     """Test warnings and errors in column deletion."""
     result = run_and_report(
-        app, args, input=NEF_WITH_SHIFT_LOOP, expected_exit_code=exit_code
+        app,
+        args,
+        input=NEF_WITH_SHIFT_LOOP,
+        expected_exit_code=exit_code,
+        merge_stderr=not check_stderr,
     )
-    assert_lines_match(expected, result.stdout)
+    output = result.stderr if check_stderr else result.stdout
+    assert_lines_match(expected, output)
