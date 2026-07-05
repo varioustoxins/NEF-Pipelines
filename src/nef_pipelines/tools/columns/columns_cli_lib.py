@@ -17,7 +17,7 @@ from nef_pipelines.lib.nef_lib import (
     select_loops_by_category,
 )
 from nef_pipelines.lib.structures import FrameLoopsAndTags
-from nef_pipelines.lib.util import escape_spaces_with_underscore, to_ordinal
+from nef_pipelines.lib.util import escape_spaces_with_underscore, exit_error, to_ordinal
 from nef_pipelines.tools.columns.columns_lib import (
     _csv_column_names,
     _resolve_file_col_name,
@@ -84,6 +84,29 @@ def _parse_selected_loops_or_raise(
                     )
                 )
     return result
+
+
+def _parse_frame_loop_and_tag_selectors_or_exit_error(
+    entry: Entry, selectors: List[str]
+) -> List[FrameLoopsAndTags]:
+    """Parse selectors into FrameLoopsAndTags, exits on invalid syntax.
+
+    This is a convenience wrapper around _parse_selected_loops_or_raise that
+    provides user-friendly error messages when selector syntax is invalid.
+    """
+    try:
+        return _parse_selected_loops_or_raise(entry, selectors)
+    except BadFrameLoopTagSyntaxException as e:
+        for index, selector_str in enumerate(selectors):
+            try:
+                parse_frame_loop_and_tags(selector_str)
+            except BadFrameLoopTagSyntaxException:
+                exit_error(
+                    _build_frame_loop_and_tag_selector_error_message(
+                        selector_str, index, e
+                    )
+                )
+        raise
 
 
 # CLI Argument Parsing Functions
