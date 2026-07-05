@@ -526,7 +526,7 @@ def calculate_noise_level_from_replicates(xy_data: RelaxationSeriesValues) -> fl
         for combination in combinations(repetiton_set, 2):
             differences.append(combination[0] - combination[1])
 
-    noise_level = stdev(differences) if differences else None
+    noise_level = stdev(differences) if len(differences) >= 2 else None
 
     fraction_error_in_stdev = (
         1 / sqrt(2) * 1 / sqrt(len(differences)) if differences else None
