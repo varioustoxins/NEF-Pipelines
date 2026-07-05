@@ -489,17 +489,19 @@ def _get_atoms_and_values(
     for (index, x_value, spectrum_name), peaks in peaks_by_times_and_indices.items():
 
         for peak in peaks:
+            y_value = (
+                peak.height
+                if data_type == IntensityMeasurementType.HEIGHT
+                else peak.volume
+            )
+            if y_value is None:
+                continue
             peak_atoms = tuple([shift.atom for shift in peak.shifts])
             x_and_y = atoms_to_values.setdefault(
                 tuple(peak_atoms), RelaxationSeriesValues()
             )
             x_and_y.peak_ids.append(peak.id)
             x_and_y.variable_values.append(x_value)
-            y_value = (
-                peak.height
-                if data_type == IntensityMeasurementType.HEIGHT
-                else peak.volume
-            )
             x_and_y.values.append(y_value)
             x_and_y.spectra.append(spectrum_name)
 
@@ -564,6 +566,8 @@ def _series_frame_to_id_series_data(series_frame: Saveframe, prefix: str, entry:
         relaxation_series = id_to_xy_data.setdefault(data_id, RelaxationSeriesValues())
         for row in rows:
             nmr_spectrum_id, peak_id, variable_value, value = row
+            if value is None or value == ".":
+                continue
             relaxation_series.spectra.append(nmr_spectrum_id)
             relaxation_series.peak_ids.append(peak_id)
             relaxation_series.variable_values.append(variable_value)
