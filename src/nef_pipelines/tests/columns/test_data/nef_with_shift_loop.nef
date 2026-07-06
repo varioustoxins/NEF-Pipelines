@@ -1,0 +1,19 @@
+data_test
+
+save_nef_chemical_shift_list_myshifts
+   _nef_chemical_shift_list.sf_category  nef_chemical_shift_list
+   _nef_chemical_shift_list.sf_framecode nef_chemical_shift_list_myshifts
+
+   loop_
+      _nef_chemical_shift.chain_code
+      _nef_chemical_shift.sequence_code
+      _nef_chemical_shift.residue_name
+      _nef_chemical_shift.atom_name
+      _nef_chemical_shift.value
+
+     A  2  GLN  N  123.22
+     A  2  GLN  H  8.90
+
+   stop_
+
+save_

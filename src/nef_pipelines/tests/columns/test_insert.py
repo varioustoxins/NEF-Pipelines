@@ -7,6 +7,7 @@ from nef_pipelines.lib.test_lib import (
     assert_lines_match,
     isolate_loop,
     path_in_test_data,
+    read_test_data,
     run_and_report,
 )
 from nef_pipelines.tools.columns.insert import insert
@@ -16,27 +17,7 @@ EXIT_ERROR = 1
 app = typer.Typer()
 app.command()(insert)
 
-NEF_WITH_SHIFT_LOOP = """\
-data_test
-
-    save_nef_chemical_shift_list_myshifts
-       _nef_chemical_shift_list.sf_category  nef_chemical_shift_list
-       _nef_chemical_shift_list.sf_framecode nef_chemical_shift_list_myshifts
-
-       loop_
-          _nef_chemical_shift.chain_code
-          _nef_chemical_shift.sequence_code
-          _nef_chemical_shift.residue_name
-          _nef_chemical_shift.atom_name
-          _nef_chemical_shift.value
-
-         A  2  GLN  N  123.22
-         A  2  GLN  H  8.90
-
-       stop_
-
-    save_
-"""
+NEF_WITH_SHIFT_LOOP = read_test_data("nef_with_shift_loop.nef", __file__)
 
 NEF_WITH_EMPTY_FRAME = """\
 data_test

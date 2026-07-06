@@ -1,7 +1,12 @@
 import pytest
 import typer
 
-from nef_pipelines.lib.test_lib import assert_lines_match, isolate_loop, run_and_report
+from nef_pipelines.lib.test_lib import (
+    assert_lines_match,
+    isolate_loop,
+    read_test_data,
+    run_and_report,
+)
 from nef_pipelines.tools.columns.delete import delete
 
 EXIT_SUCCESS = 0
@@ -11,44 +16,58 @@ EXIT_ERROR = 1
 app = typer.Typer()
 app.command()(delete)
 
-NEF_WITH_SHIFT_LOOP = """\
-data_test
+NEF_WITH_SHIFT_LOOP = read_test_data("nef_with_shift_loop.nef", __file__)
 
-    save_nef_chemical_shift_list_myshifts
-       _nef_chemical_shift_list.sf_category  nef_chemical_shift_list
-       _nef_chemical_shift_list.sf_framecode nef_chemical_shift_list_myshifts
-
-       loop_
-          _nef_chemical_shift.chain_code
-          _nef_chemical_shift.sequence_code
-          _nef_chemical_shift.residue_name
-          _nef_chemical_shift.atom_name
-          _nef_chemical_shift.value
-          _nef_chemical_shift.value_uncertainty
-
-         A  2  GLN  N  123.22  0.1
-         A  2  GLN  H  8.90    0.05
-
-       stop_
-
-    save_
-"""
-
-EXPECTED_AFTER_DELETE_UNCERTAINTY = """\
+EXPECTED_AFTER_DELETE_ATOM_NAME = """\
     loop_
        _nef_chemical_shift.chain_code
        _nef_chemical_shift.sequence_code
        _nef_chemical_shift.residue_name
-       _nef_chemical_shift.atom_name
        _nef_chemical_shift.value
 
-      A   2   GLN   N   123.22
-      A   2   GLN   H   8.90
+      A   2   GLN   123.22
+      A   2   GLN   8.90
 
     stop_
 """
 
-EXPECTED_AFTER_DELETE_RESIDUE_NAME_AND_UNCERTAINTY = """\
+EXPECTED_AFTER_DELETE_NAME_WILDCARD = """\
+    loop_
+       _nef_chemical_shift.chain_code
+       _nef_chemical_shift.sequence_code
+       _nef_chemical_shift.value
+
+      A   2   123.22
+      A   2   8.90
+
+    stop_
+"""
+
+EXPECTED_AFTER_DELETE_CHAIN_AND_ATOM = """\
+    loop_
+       _nef_chemical_shift.sequence_code
+       _nef_chemical_shift.residue_name
+       _nef_chemical_shift.value
+
+      2   GLN   123.22
+      2   GLN   8.90
+
+    stop_
+"""
+
+EXPECTED_AFTER_DELETE_CODE_WILDCARD = """\
+    loop_
+       _nef_chemical_shift.residue_name
+       _nef_chemical_shift.atom_name
+       _nef_chemical_shift.value
+
+      GLN   N   123.22
+      GLN   H   8.90
+
+    stop_
+"""
+
+EXPECTED_AFTER_DELETE_RESIDUE_NAME = """\
     loop_
        _nef_chemical_shift.chain_code
        _nef_chemical_shift.sequence_code
@@ -61,69 +80,42 @@ EXPECTED_AFTER_DELETE_RESIDUE_NAME_AND_UNCERTAINTY = """\
     stop_
 """
 
-EXPECTED_AFTER_DELETE_VALUE_WILDCARD = """\
-    loop_
-       _nef_chemical_shift.chain_code
-       _nef_chemical_shift.sequence_code
-       _nef_chemical_shift.residue_name
-       _nef_chemical_shift.atom_name
-
-      A   2   GLN   N
-      A   2   GLN   H
-
-    stop_
-"""
-
-EXPECTED_AFTER_DELETE_VALUE_UNCERTAINTY = """\
-    loop_
-       _nef_chemical_shift.chain_code
-       _nef_chemical_shift.sequence_code
-       _nef_chemical_shift.residue_name
-       _nef_chemical_shift.atom_name
-       _nef_chemical_shift.value
-
-      A   2   GLN   N   123.22
-      A   2   GLN   H   8.90
-
-    stop_
-"""
-
 # Standard deletion tests: NEF_WITH_SHIFT_LOOP input, check loop output
 STANDARD_DELETE_CASES = [
     (
         "single_column",
-        ["--in", "-", "myshifts.chemical_shift:value_uncertainty"],
-        EXPECTED_AFTER_DELETE_UNCERTAINTY,
+        ["--in", "-", "myshifts.chemical_shift:atom_name"],
+        EXPECTED_AFTER_DELETE_ATOM_NAME,
     ),
     (
         "prefixed_wildcard",
-        ["--in", "-", "myshifts.chemical_shift:*_uncertainty"],
-        EXPECTED_AFTER_DELETE_UNCERTAINTY,
+        ["--in", "-", "myshifts.chemical_shift:*_name"],
+        EXPECTED_AFTER_DELETE_NAME_WILDCARD,
     ),
     (
         "comma_separated",
-        ["--in", "-", "myshifts.chemical_shift:residue_name,value_uncertainty"],
-        EXPECTED_AFTER_DELETE_RESIDUE_NAME_AND_UNCERTAINTY,
+        ["--in", "-", "myshifts.chemical_shift:chain_code,atom_name"],
+        EXPECTED_AFTER_DELETE_CHAIN_AND_ATOM,
     ),
     (
         "multiple_selector_args",
         [
             "--in",
             "-",
-            "myshifts.chemical_shift:residue_name",
-            "myshifts.chemical_shift:value_uncertainty",
+            "myshifts.chemical_shift:chain_code",
+            "myshifts.chemical_shift:atom_name",
         ],
-        EXPECTED_AFTER_DELETE_RESIDUE_NAME_AND_UNCERTAINTY,
+        EXPECTED_AFTER_DELETE_CHAIN_AND_ATOM,
     ),
     (
         "wildcard_pattern",
-        ["--in", "-", "myshifts.chemical_shift:value"],
-        EXPECTED_AFTER_DELETE_VALUE_WILDCARD,
+        ["--in", "-", "myshifts.chemical_shift:*_code"],
+        EXPECTED_AFTER_DELETE_CODE_WILDCARD,
     ),
     (
         "suffixed_wildcard",
-        ["--in", "-", "myshifts.chemical_shift:value_*"],
-        EXPECTED_AFTER_DELETE_VALUE_UNCERTAINTY,
+        ["--in", "-", "myshifts.chemical_shift:residue_*"],
+        EXPECTED_AFTER_DELETE_RESIDUE_NAME,
     ),
 ]
 
@@ -151,27 +143,26 @@ def test_delete_with_escaped_wildcard():
            _nef_chemical_shift.value
            _nef_chemical_shift.test_other_column
 
-          A   2   GLN   N   123.22   0.1
-          A   2   GLN   H   8.90     0.05
+          A   2   GLN   N   123.22   kept
+          A   2   GLN   H   8.90     kept
 
         stop_
     """
 
     nef_with_special = NEF_WITH_SHIFT_LOOP.replace(
-        "_nef_chemical_shift.value_uncertainty",
-        "_nef_chemical_shift.test*column",
+        "     A  2  GLN  N  123.22",
+        "     A  2  GLN  N  123.22  delete_me  kept",
     )
     nef_with_special = nef_with_special.replace(
-        "   A  2  GLN  N  123.22  0.1",
-        "   A  2  GLN  N  123.22  delete_me  0.1",
+        "     A  2  GLN  H  8.90",
+        "     A  2  GLN  H  8.90  delete_me  kept",
     )
     nef_with_special = nef_with_special.replace(
-        "   A  2  GLN  H  8.90    0.05",
-        "   A  2  GLN  H  8.90    delete_me  0.05",
-    )
-    nef_with_special = nef_with_special.replace(
-        "_nef_chemical_shift.test*column",
-        "_nef_chemical_shift.test*column\n          _nef_chemical_shift.test_other_column",
+        "      _nef_chemical_shift.value",
+        """
+            _nef_chemical_shift.value\n      _nef_chemical_shift.test*column
+            _nef_chemical_shift.test_other_column
+        """,
     )
 
     result = run_and_report(
