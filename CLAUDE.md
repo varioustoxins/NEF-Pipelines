@@ -179,6 +179,38 @@ The package follows PyScaffold conventions with src-layout:
 - Always add doc strings to functions / methods etc
 - Do not add inline comments to the code you write apart from doc strings, unless asked to, or if the code is complex and requires additional context.
 
+### Docstring Style
+**ALWAYS use Google-style docstrings** (not NumPy or Sphinx).
+
+```python
+def function_name(param1, param2):
+    """Brief one-line description.
+
+    Longer description if needed. Use LaTeX for math:
+
+    .. math::
+        y = A \cdot e^{-k \cdot x}
+
+    Args:
+        param1: Description of param1
+        param2: Description of param2
+
+    Returns:
+        Description of return value
+    """
+```
+
+**Rationale:** Compatible with great-docs documentation generator (`parser: google` in great-docs.yml).
+
+**Note:** Some existing files use Sphinx-style (`:param:`, `:return:`). When editing those files, convert to Google-style.
+
+### Math Notation in Docstrings
+Use LaTeX math in docstrings:
+- Inline: `:math:`y = A \cdot e^{-k \cdot x}``
+- Display block: `.. math::\n    y = A \cdot e^{-k \cdot x}`
+
+Renders properly in great-docs.
+
 ## Code Style
 
 - Functions should have a single return statement at the end when possible
