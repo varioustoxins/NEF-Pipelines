@@ -29,6 +29,16 @@ class NoiseInfoSource(LowercaseStrEnum):
     NONE = auto()
 
 
+class FailureHandling(LowercaseStrEnum):
+    FAIL = auto()  # Raise exception when fit fails DOF check
+    WARN = auto()  # Log warning and continue
+
+
+class FailureOutput(LowercaseStrEnum):
+    COMMENT = auto()  # Output row with UNUSED values and fit_status="insufficient_dof"
+    SKIP = auto()  # Skip row entirely, no output
+
+
 @dataclass
 class NoiseInfo:
     source: Optional[NoiseInfoSource]
