@@ -30,7 +30,7 @@ class NoiseInfoSource(LowercaseStrEnum):
 
 
 class FailureHandling(LowercaseStrEnum):
-    FAIL = auto()  # Raise exception when fit fails DOF check
+    STOP = auto()  # stop further fitting if there's an error
     WARN = auto()  # Log warning and continue
 
 
