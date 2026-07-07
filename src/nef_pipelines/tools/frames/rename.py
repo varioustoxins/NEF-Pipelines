@@ -14,20 +14,19 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
     select_frames_by_name,
 )
-from nef_pipelines.lib.structures import (
-    NEFFrameAlreadyExistsException,
-    NEFPipelinesInternalError,
-    SaveframeNameParts,
-)
+from nef_pipelines.lib.structures import NEFPipelinesInternalError, SaveframeNameParts
 from nef_pipelines.lib.util import (
     FOUR_SPACES,
     STDIN,
     exit_error,
+    find_index_of_first_unescaped,
     oxford_join,
     parse_comma_separated_options,
     strings_to_table_terminal_sensitive,
+    unescape_backslashes,
 )
 from nef_pipelines.tools.frames import frames_app
+from nef_pipelines.tools.frames.frames_lib import NEFFrameAlreadyExistsException
 
 # TODO: add mmv like semantics as an option [https://manpages.ubuntu.com/manpages/bionic/man1/mmv.1.html]
 # TODO: --singleton should also be added to frames create
@@ -49,6 +48,7 @@ class Mode(str, Enum):
     singleton = "singleton"
     replace = "replace"
     delete = "delete"
+    bulk = "bulk"
 
 
 @frames_app.command()
@@ -88,6 +88,11 @@ def rename(
         "--force",
         help="overwrite a pre-existing fram of the same name",
     ),
+    bulk: bool = typer.Option(
+        False,
+        "--bulk",
+        help="apply multiple independent SELECTOR=/OLD/NEW/ triples; positional args are the triples",
+    ),
     old_new_names: Optional[List[str]] = typer.Argument(
         None,
         help="""
@@ -96,6 +101,7 @@ def rename(
             `--replace`: `NEW` [`FRAME-SELECTOR`...] the complete text of the part of the frame name with `NEW`
             `--delete`: `STRING` [`FRAME-SELECTOR`...] delete the `STRING` from the part of the frame name targeted
             `--singleton`: [`FRAME-SELECTOR`...] make the selected frames singletons remove their identities
+            `--bulk`: `SELECTOR=/OLD/NEW/` ... apply independent rename triples (comma or space separated)
         """,
     ),
 ):
@@ -199,22 +205,50 @@ def rename(
         #    nef_nmr_spectrum_k_ubi_hncaco`1`          (unchanged)
         #    nef_nmr_spectrum
 
+        # --bulk: apply independent SELECTOR=/OLD/NEW/ triples (single quotes avoid shell escaping)
+        frames rename --bulk '*hnco*=/k_ubi/k_ubiquitin/' '*hncaco*=/k_ubi/k_ubiquitin/'
+        #    nef_nmr_spectrum_k_ubiquitin_hncoca`1`
+        #    nef_nmr_spectrum_k_ubiquitin_hncaco`1`
+        #    nef_nmr_spectrum_k_ubiquitin_hnco`1`
+
+        # --bulk: comma-separated in one arg
+        frames rename --bulk '*hnco*=/k_ubi/k_ubiquitin/,*hncaco*=/k_ubi/k_ubiquitin/'
+
+        # --bulk: composes with --target
+        frames rename --target namespace --bulk '*=/nef/ccpn/'
+
     ```
     """
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    args = parse_comma_separated_options(old_new_names or [])
-
     category_filter = category or ""
 
-    mode = _mode_from_flags_or_exit_error(replace, delete, singleton, target)
+    mode = _mode_from_flags_or_exit_error(replace, delete, singleton, bulk, target)
 
-    operation_args, selectors = _extract_args_and_selectors_or_exit_error(args, mode)
-
-    frames = _select_frames_or_exit_error(entry, selectors, category_filter, exact)
-
-    renames = _build_rename_pairs_or_exit_error(frames, operation_args, target, mode)
+    if mode == Mode.bulk:
+        renames = []
+        for arg in old_new_names or []:
+            for chunk in _split_on_unescaped_comma(arg):
+                for selector, old_val, new_val in _parse_bulk_triples_or_exit_error(
+                    chunk
+                ):
+                    selected = _select_frames_or_exit_error(
+                        entry, [selector], category_filter, exact
+                    )
+                    pairs = _build_rename_pairs_or_exit_error(
+                        selected, [old_val, new_val], target, Mode.find_and_replace
+                    )
+                    renames.extend(pairs)
+    else:
+        args = parse_comma_separated_options(old_new_names or [])
+        operation_args, selectors = _extract_args_and_selectors_or_exit_error(
+            args, mode
+        )
+        frames = _select_frames_or_exit_error(entry, selectors, category_filter, exact)
+        renames = _build_rename_pairs_or_exit_error(
+            frames, operation_args, target, mode
+        )
 
     try:
         entry = pipe(entry, renames, force=force)
@@ -323,8 +357,10 @@ def _exit_no_frames_selected(target_name, target_category, entry, exact):
 
 
 def _mode_from_flags_or_exit_error(
-    replace: bool, delete: bool, singleton: bool, target: RenameTarget
+    replace: bool, delete: bool, singleton: bool, bulk: bool, target: RenameTarget
 ) -> Mode:
+    if bulk and (replace or delete or singleton):
+        exit_error("--bulk cannot be used with --replace, --delete, or --singleton")
     if replace and delete:
         exit_error("--replace and --delete are mutually exclusive")
     if singleton and (replace or delete):
@@ -333,7 +369,9 @@ def _mode_from_flags_or_exit_error(
         exit_error(
             "--singleton cannot be used with --target set to category, namespace, or type"
         )
-    if replace:
+    if bulk:
+        mode = Mode.bulk
+    elif replace:
         mode = Mode.replace
     elif delete:
         mode = Mode.delete
@@ -365,6 +403,67 @@ def _extract_args_and_selectors_or_exit_error(
         exit_error(f"internal error unknown mode: {mode}; please report this as a bug")
 
     return operation_args, selectors
+
+
+_BULK_SELECTOR_ESCAPES = (".", "*", "?", "=", "\\")
+_BULK_VALUE_ESCAPES = (".", "*", "?", "/", "\\")
+
+
+def _split_on_unescaped_comma(s: str) -> List[str]:
+    chunks = []
+    start = 0
+    while True:
+        idx = find_index_of_first_unescaped(s[start:], ",")
+        if idx is None:
+            chunks.append(s[start:])
+            break
+        chunks.append(s[start : start + idx])
+        start += idx + 1
+    return [c for c in chunks if c]
+
+
+def _parse_bulk_triples_or_exit_error(chunk: str) -> List[Tuple[str, str, str]]:
+    results = []
+    remainder = chunk
+    while remainder:
+        eq_idx = find_index_of_first_unescaped(remainder, "=")
+        if eq_idx is None:
+            exit_error(
+                f"bulk expression {chunk!r}: missing '=' separator (SELECTOR=/OLD/NEW/)"
+            )
+        selector = unescape_backslashes(
+            remainder[:eq_idx], escapes=_BULK_SELECTOR_ESCAPES
+        )
+        remainder = remainder[eq_idx + 1 :]
+
+        if not remainder.startswith("/"):
+            exit_error(
+                f"bulk expression {chunk!r}: replacement must start with '/' after '=' (SELECTOR=/OLD/NEW/)"
+            )
+        remainder = remainder[1:]
+
+        slash_idx = find_index_of_first_unescaped(remainder, "/")
+        if slash_idx is None:
+            exit_error(
+                f"bulk expression {chunk!r}: missing '/' between OLD and NEW (SELECTOR=/OLD/NEW/)"
+            )
+        old_val = unescape_backslashes(
+            remainder[:slash_idx], escapes=_BULK_VALUE_ESCAPES
+        )
+        remainder = remainder[slash_idx + 1 :]
+
+        slash_idx2 = find_index_of_first_unescaped(remainder, "/")
+        if slash_idx2 is None:
+            new_val = unescape_backslashes(remainder, escapes=_BULK_VALUE_ESCAPES)
+            remainder = ""
+        else:
+            new_val = unescape_backslashes(
+                remainder[:slash_idx2], escapes=_BULK_VALUE_ESCAPES
+            )
+            remainder = remainder[slash_idx2 + 1 :]
+
+        results.append((selector, old_val, new_val))
+    return results
 
 
 def _exit_spaces_in_new_name(new_name):
