@@ -207,45 +207,46 @@ results = {
 **File**: `/Users/garythompson/Dropbox/git/streamfitter/src/streamfitter/fitter.py`
 
 **Update signature and add helper** (line 348):
+
 ```python
 def _fit_series(ids_and_values, fitter,
                 failure_handling=FailureHandling.WARN,
                 failure_output=FailureOutput.COMMENT,
                 debug=False):
-    fits = {}
-    estimates = {}
+   fits = {}
+   estimates = {}
 
-    min_dof = fitter.min_dof()  # Get minimum DOF requirement once
+   min_dof = fitter.minimum_degrees_of_freedom()  # Get minimum DOF requirement once
 
-    def _check_and_handle_dof(data_id, xs, ys):
-        """Check DOF and handle failure according to policies.
+   def _check_and_handle_dof(data_id, xs, ys):
+      """Check DOF and handle failure according to policies.
 
-        Returns: (should_skip: bool, placeholder_fit: Fit|None)
-        """
-        num_points = len(xs)
+      Returns: (should_skip: bool, placeholder_fit: Fit|None)
+      """
+      num_points = len(xs)
 
-        if num_points <= min_dof:
-            # DOF check failed
+      if num_points <= min_dof:
+         # DOF check failed
 
-            if failure_handling == FailureHandling.FAIL:
-                raise InsufficientDegreesOfFreedomException(
-                    data_id, num_points, min_dof
-                )
-            elif failure_handling == FailureHandling.WARN:
-                logging.warning(
-                    f"Insufficient DOF for {data_id}: "
-                    f"{num_points} points, needs >{min_dof} "
-                    f"(DOF = {num_points - min_dof}, should be > 0)"
-                )
-            # IGNORE: no logging
+         if failure_handling == FailureHandling.STOP:
+            raise InsufficientDegreesOfFreedomException(
+               data_id, num_points, min_dof
+            )
+         elif failure_handling == FailureHandling.WARN:
+            logging.warning(
+               f"Insufficient DOF for {data_id}: "
+               f"{num_points} points, needs >{min_dof} "
+               f"(DOF = {num_points - min_dof}, should be > 0)"
+            )
+         # IGNORE: no logging
 
-            if failure_output == FailureOutput.SKIP:
-                return True, None  # Skip this fit entirely
-            else:  # COMMENT
-                placeholder = _create_failed_fit(fitter, "insufficient_dof")
-                return True, placeholder
+         if failure_output == FailureOutput.SKIP:
+            return True, None  # Skip this fit entirely
+         else:  # COMMENT
+            placeholder = _create_failed_fit(fitter, "insufficient_dof")
+            return True, placeholder
 
-        return False, None  # Continue with normal fitting
+      return False, None  # Continue with normal fitting
 ```
 
 **Update NONLINEAR section** (around line 351):
@@ -477,166 +478,179 @@ Add comprehensive test suite:
 import pytest
 import logging
 from streamfitter.fitter import (
-    fit, InsufficientDegreesOfFreedomException,
+   fit, InsufficientDegreesOfFreedomException,
 )
 from streamfitter.ExponentialDecay2Parameter import ExponentialDecay2ParameterFitter
 from streamfitter.mean import Mean
 from nef_pipelines.lib.interface import FailureHandling, FailureOutput
 
+
 # Test min_dof determination
 def test_min_dof_exponential():
-    """Verify ExponentialDecay2ParameterFitter.min_dof() returns correct value."""
-    fitter = ExponentialDecay2ParameterFitter()
-    params = fitter.params()
-    assert fitter.min_dof() == len(params)
-    assert len(params) == 2  # A, T2 (or similar)
+   """Verify ExponentialDecay2ParameterFitter.min_dof() returns correct value."""
+   fitter = ExponentialDecay2ParameterFitter()
+   params = fitter.params()
+   assert fitter.minimum_degrees_of_freedom() == len(params)
+   assert len(params) == 2  # A, T2 (or similar)
+
 
 def test_min_dof_mean():
-    """Verify Mean.min_dof() returns 1 (only mean is a function parameter)."""
-    fitter = Mean()
-    assert fitter.params() == ['mean']  # stddev is derived, not a parameter
-    assert fitter.min_dof() == 1
+   """Verify Mean.min_dof() returns 1 (only mean is a function parameter)."""
+   fitter = Mean()
+   assert fitter.params() == ['mean']  # stddev is derived, not a parameter
+   assert fitter.minimum_degrees_of_freedom() == 1
+
 
 # Test DOF checking with FAIL policy
 def test_insufficient_dof_nonlinear_fail_policy():
-    """2 points with FAIL policy should raise exception for 2-param exponential."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}  # Only 2 points, need >2
+   """2 points with FAIL policy should raise exception for 2-param exponential."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}  # Only 2 points, need >2
 
-    with pytest.raises(InsufficientDegreesOfFreedomException) as exc_info:
-        fit(fitter, id_xy_data, cycles=0, noise_info=None,
-            failure_handling=FailureHandling.FAIL)
+   with pytest.raises(InsufficientDegreesOfFreedomException) as exc_info:
+      fit(fitter, id_xy_data, cycles=0, noise_info=None,
+          failure_handling=FailureHandling.STOP)
 
-    assert exc_info.value.data_id == 1
-    assert exc_info.value.num_points == 2
-    assert exc_info.value.min_required == 2
+   assert exc_info.value.data_id == 1
+   assert exc_info.value.num_points == 2
+   assert exc_info.value.min_required == 2
+
 
 def test_insufficient_dof_linear_fail_policy():
-    """1 point with FAIL policy should raise exception for Mean."""
-    fitter = Mean(    id_xy_data = {1: ([0.0], [100.0])}  # Only 1 point, need >1
+   """1 point with FAIL policy should raise exception for Mean."""
+   fitter = Mean(id_xy_data={1: ([0.0], [100.0])}  # Only 1 point, need >1
 
-    with pytest.raises(InsufficientDegreesOfFreedomException) as exc_info:
-        fit(fitter, id_xy_data, cycles=0, noise_info=None,
-            failure_handling=FailureHandling.FAIL)
+   with pytest.raises(InsufficientDegreesOfFreedomException) as exc_info:
+      fit(fitter, id_xy_data, cycles=0, noise_info=None,
+          failure_handling=FailureHandling.STOP)
 
-    assert exc_info.value.num_points == 1
-    assert exc_info.value.min_required == 1
+   assert exc_info.value.num_points == 1
+   assert exc_info.value.min_required == 1
 
-# Test DOF checking with COMMENT policy
+   # Test DOF checking with COMMENT policy
+
+
 def test_insufficient_dof_comment_policy():
-    """2 points with COMMENT policy should return placeholder fit."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
+   """2 points with COMMENT policy should return placeholder fit."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
-                  failure_handling=FailureHandling.WARN,
-                  failure_output=FailureOutput.COMMENT)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
+                 failure_handling=FailureHandling.WARN,
+                 failure_output=FailureOutput.COMMENT)
 
-    fits = results['fits']
-    assert 1 in fits
-    assert hasattr(fits[1], 'fit_status')
-    assert fits[1].fit_status == "insufficient_dof"
-    assert fits[1].success == False
+   fits = results['fits']
+   assert 1 in fits
+   assert hasattr(fits[1], 'fit_status')
+   assert fits[1].fit_status == "insufficient_dof"
+   assert fits[1].success == False
+
 
 # Test DOF checking with SKIP policy
 def test_insufficient_dof_skip_policy():
-    """2 points with SKIP policy should omit fit from results."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {
-        1: ([0.0, 1.0], [100.0, 50.0]),  # Insufficient
-        2: ([0.0, 1.0, 2.0, 3.0], [100.0, 50.0, 25.0, 12.5]),  # Sufficient
-    }
+   """2 points with SKIP policy should omit fit from results."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {
+      1: ([0.0, 1.0], [100.0, 50.0]),  # Insufficient
+      2: ([0.0, 1.0, 2.0, 3.0], [100.0, 50.0, 25.0, 12.5]),  # Sufficient
+   }
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
-                  failure_handling=FailureHandling.IGNORE,
-                  failure_output=FailureOutput.SKIP)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
+                 failure_handling=FailureHandling.IGNORE,
+                 failure_output=FailureOutput.SKIP)
 
-    fits = results['fits']
-    assert 1 not in fits  # Skipped
-    assert 2 in fits      # Included
-    assert fits[2].fit_status in ["success", "fit_failed"]
+   fits = results['fits']
+   assert 1 not in fits  # Skipped
+   assert 2 in fits  # Included
+   assert fits[2].fit_status in ["success", "fit_failed"]
+
 
 # Test sufficient DOF succeeds
 def test_sufficient_dof_succeeds_nonlinear():
-    """3 points (minimal DOF=1) should succeed for 2-param exponential."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0, 2.0], [100.0, 50.0, 25.0])}
+   """3 points (minimal DOF=1) should succeed for 2-param exponential."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0, 2.0], [100.0, 50.0, 25.0])}
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
 
-    fits = results['fits']
-    assert 1 in fits
-    assert hasattr(fits[1], 'fit_status')
-    assert fits[1].fit_status in ["success", "fit_failed"]
+   fits = results['fits']
+   assert 1 in fits
+   assert hasattr(fits[1], 'fit_status')
+   assert fits[1].fit_status in ["success", "fit_failed"]
+
 
 def test_sufficient_dof_succeeds_linear():
-    """2 points (minimal DOF=1) should succeed for Mean."""
-    fitter = Mean()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}  # 2 points, min_dof=1, DOF=1
+   """2 points (minimal DOF=1) should succeed for Mean."""
+   fitter = Mean()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}  # 2 points, min_dof=1, DOF=1
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
 
-    fits = results['fits']
-    assert 1 in fits
-    assert fits[1].fit_status == "success"
+   fits = results['fits']
+   assert 1 in fits
+   assert fits[1].fit_status == "success"
+
 
 # Test mixed scenarios
 def test_mixed_dof_scenarios():
-    """Multiple series with different point counts."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {
-        1: ([0.0, 1.0], [100.0, 50.0]),  # Insufficient: DOF = 0
-        2: ([0.0, 1.0, 2.0], [100.0, 50.0, 25.0]),  # Minimal: DOF = 1
-        3: ([0.0, 1.0, 2.0, 3.0], [100.0, 50.0, 25.0, 12.5]),  # Good: DOF = 2
-    }
+   """Multiple series with different point counts."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {
+      1: ([0.0, 1.0], [100.0, 50.0]),  # Insufficient: DOF = 0
+      2: ([0.0, 1.0, 2.0], [100.0, 50.0, 25.0]),  # Minimal: DOF = 1
+      3: ([0.0, 1.0, 2.0, 3.0], [100.0, 50.0, 25.0, 12.5]),  # Good: DOF = 2
+   }
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
-                  failure_handling=FailureHandling.WARN,
-                  failure_output=FailureOutput.COMMENT)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
+                 failure_handling=FailureHandling.WARN,
+                 failure_output=FailureOutput.COMMENT)
 
-    fits = results['fits']
-    assert fits[1].fit_status == "insufficient_dof"
-    assert fits[2].fit_status in ["success", "fit_failed"]  # May fail to converge
-    assert fits[3].fit_status in ["success", "fit_failed"]
+   fits = results['fits']
+   assert fits[1].fit_status == "insufficient_dof"
+   assert fits[2].fit_status in ["success", "fit_failed"]  # May fail to converge
+   assert fits[3].fit_status in ["success", "fit_failed"]
+
 
 # Test policy combinations
 def test_warn_plus_skip():
-    """WARN+SKIP should log warning and skip output."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
+   """WARN+SKIP should log warning and skip output."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
 
-    # Capture logging
-    with pytest.warns(None) as warning_list:
-        results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
-                      failure_handling=FailureHandling.WARN,
-                      failure_output=FailureOutput.SKIP)
+   # Capture logging
+   with pytest.warns(None) as warning_list:
+      results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
+                    failure_handling=FailureHandling.WARN,
+                    failure_output=FailureOutput.SKIP)
 
-    fits = results['fits']
-    assert 1 not in fits  # Skipped
+   fits = results['fits']
+   assert 1 not in fits  # Skipped
+
 
 def test_ignore_plus_comment():
-    """IGNORE+COMMENT should silently create placeholder."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
+   """IGNORE+COMMENT should silently create placeholder."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
 
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
-                  failure_handling=FailureHandling.IGNORE,
-                  failure_output=FailureOutput.COMMENT)
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None,
+                 failure_handling=FailureHandling.IGNORE,
+                 failure_output=FailureOutput.COMMENT)
 
-    fits = results['fits']
-    assert fits[1].fit_status == "insufficient_dof"
+   fits = results['fits']
+   assert fits[1].fit_status == "insufficient_dof"
+
 
 def test_warn_plus_comment_default():
-    """Default behavior should be WARN+COMMENT."""
-    fitter = ExponentialDecay2ParameterFitter()
-    id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
+   """Default behavior should be WARN+COMMENT."""
+   fitter = ExponentialDecay2ParameterFitter()
+   id_xy_data = {1: ([0.0, 1.0], [100.0, 50.0])}
 
-    # No policy specified - should use defaults
-    results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
+   # No policy specified - should use defaults
+   results = fit(fitter, id_xy_data, cycles=0, noise_info=None)
 
-    fits = results['fits']
-    assert 1 in fits  # COMMENT creates output
-    assert fits[1].fit_status == "insufficient_dof"
+   fits = results['fits']
+   assert 1 in fits  # COMMENT creates output
+   assert fits[1].fit_status == "insufficient_dof"
 ```
 
 #### 4.2 nef_pipelines integration tests (MINIMAL)
