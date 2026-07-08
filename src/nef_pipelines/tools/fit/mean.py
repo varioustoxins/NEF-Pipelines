@@ -173,6 +173,7 @@ def pipe(
 
         monte_carlo_value_stats = None
         monte_carlo_param_values = None
+        mc_failed_cycles = None
         noise_level = results["noise_level"]
         version_strings = results["versions"]
 
@@ -195,6 +196,7 @@ def pipe(
             noise_info,
             version_strings,
             "mean",
+            mc_failed_cycles=mc_failed_cycles,
         )
 
         entry.add_saveframe(frame)

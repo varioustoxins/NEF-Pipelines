@@ -20,10 +20,17 @@ from nef_pipelines.tools.fit.fit_lib import (
     _select_relaxation_series_or_exit,
     _series_frame_to_id_series_data,
     calculate_noise_level_from_replicates,
+    report_fit_status_and_exit_error_if_required,
 )
 
 try:
-    from nef_pipelines.lib.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
+    from nef_pipelines.lib.interface import (
+        FailureHandling,
+        FailureOutput,
+        LoggingLevels,
+        NoiseInfo,
+        NoiseInfoSource,
+    )
 
 except ImportError as e:
     from enum import IntEnum
@@ -69,6 +76,16 @@ def exponential(
         IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
     ),
     verbose: int = typer.Option(LoggingLevels.WARNING, count=True, help=VERBOSE_HELP),
+    failure_handling: FailureHandling = typer.Option(
+        FailureHandling.WARN,
+        "--failure-handling",
+        help="how to handle DOF failures: fail (exit on error), warn (log warning), ignore (silent)",
+    ),
+    failure_output: FailureOutput = typer.Option(
+        FailureOutput.COMMENT,
+        "--failure-output",
+        help="output format for failed fits: comment (UNUSED values), skip (omit row)",
+    ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
     """- fit a data series to an exponential decay with error propagation [alpha]"""
@@ -98,11 +115,14 @@ def exponential(
         data_type,
         seed,
         verbose,
+        failure_handling,
+        failure_output,
     )
 
     print(entry)
 
 
+# TODO: this function is way too long
 def pipe(
     entry: Entry,
     series_frames: List[Saveframe],
@@ -111,13 +131,17 @@ def pipe(
     data_type: IntensityMeasurementType,
     seed: int,
     verbose: int = 0,
+    failure_handling: FailureHandling = FailureHandling.WARN,
+    failure_output: FailureOutput = FailureOutput.COMMENT,
 ) -> Entry:
 
     try:
         from streamfitter import fitter  # deferred
 
         if fitter:
-            function = fitter.get_function(fitter.FUNCTION_EXPONENTIAL_DECAY_2_PAMETER)
+            function = fitter.get_function(
+                fitter.FUNCTION_EXPONENTIAL_DECAY_2_PARAMETER
+            )
         else:
             raise ImportError(stream_fitter_import_error)
     except ImportError as e:
@@ -176,16 +200,28 @@ def pipe(
             noise_info,
             seed,
             verbose=verbose,
+            failure_handling=failure_handling,
+        )
+
+        # Check exit status and handle STOPPED case
+        report_fit_status_and_exit_error_if_required(
+            results, series_frame, entry, NEF_PIPELINES_NAMESPACE
         )
 
         fits = results["fits"]
-        monte_carlo_errors = results["monte_carlo_errors"]
-        monte_carlo_value_stats = results["monte_carlo_value_stats"]
-        monte_carlo_param_values = results["monte_carlo_param_values"]
+        monte_carlo_errors = results.get("monte_carlo_errors", {})
+        monte_carlo_value_stats = results.get("monte_carlo_value_stats", {})
+        monte_carlo_param_values = results.get("monte_carlo_param_values", {})
+        mc_failed_cycles = results.get("mc_failed_cycles", {})
         noise_level = results["noise_level"]
         version_strings = results["versions"]
 
-        fit_name = "time_constant"
+        # Handle failure_output policy at NEF-Pipelines level
+        if failure_output == FailureOutput.SKIP:
+            # Remove failed fits from output
+            fits = {id: fit for id, fit in fits.items() if fit.success}
+
+        fit_name = "rate"
         output = series_frame.name.replace(
             f"{NEF_PIPELINES_NAMESPACE}_series_list_", ""
         )
@@ -204,6 +240,7 @@ def pipe(
             noise_info,
             version_strings,
             "exponential-decay",
+            mc_failed_cycles=mc_failed_cycles,
         )
 
         entry.add_saveframe(frame)

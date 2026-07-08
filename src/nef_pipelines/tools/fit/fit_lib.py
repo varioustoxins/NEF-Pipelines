@@ -24,8 +24,47 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.peak_lib import frame_to_peaks
 from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.structures import NEFPipelinesException
+from nef_pipelines.lib.util import exit_error
 
 SERIES_DATA_CATEGORY = "_{NAMESPACE}_series_data"
+
+
+def report_fit_status_and_exit_error_if_required(
+    results, series_frame, entry, namespace
+):
+    """Check fit results exit status and exit with error message if STOPPED.
+
+    Args:
+        results: Dictionary of fit results from fitter.fit()
+        series_frame: The saveframe being processed
+        entry: The NEF entry
+        namespace: Namespace prefix (e.g., NEF_PIPELINES_NAMESPACE)
+
+    Raises:
+        SystemExit: If fitting stopped due to error (exit_status == STOPPED)
+    """
+    from streamfitter.fitter import FitExitStatus
+
+    if results["exit_status"] == FitExitStatus.STOPPED:
+        attempted = len(
+            results["fits"]
+        )  # Number of rows processed (successful + failed)
+        loop_category = f"_{namespace}_series_data"
+        failed_id = results["last_attempted_id"]
+        failed_fit = results["fits"][failed_id]
+        error_reason = (
+            failed_fit.fit_status if hasattr(failed_fit, "fit_status") else "unknown"
+        )
+
+        exit_error(
+            f"""
+                Fitting stopped because of '{error_reason}' when fitting data_id
+                {failed_id} from loop {loop_category} in saveframe '{series_frame.name}'
+                in entry {entry.entry_id}.
+
+                Processed {attempted} rows of {results['total_requested']}.
+            """
+        )
 
 
 class NEFPLSFitLibException(NEFPipelinesException):
@@ -129,6 +168,7 @@ def _fit_results_as_frame(
     noise_info: NoiseInfo,
     version_strings,
     fitter_name,
+    mc_failed_cycles=None,
 ):
 
     spectrum_frames = _series_frame_to_spectrum_frames(series_frame, prefix, entry)
@@ -174,7 +214,28 @@ def _fit_results_as_frame(
 
     result_frame.add_tag("error_method", noise_info.source)
 
+    # Count failures by checking fit_status on each fit object
+    failed_fits = [
+        data_id
+        for data_id, fit in fits.items()
+        if hasattr(fit, "fit_status") and fit.fit_status != "success"
+    ]
+    num_failed = len(failed_fits)
+    num_total = len(fits)
+
     # TODO move these to tags under nefpls...
+    failed_info = (
+        f"\n        fits: {num_total - num_failed} successful, {num_failed} failed"
+    )
+    if failed_fits:
+        failed_info += f"\n        failed data_ids: {', '.join(map(str, failed_fits))}"
+
+    # Add MC failure statistics
+    mc_info = ""
+    if mc_failed_cycles:
+        total_mc_failed = sum(mc_failed_cycles.values())
+        mc_info = f"\n        monte carlo failed cycles: {total_mc_failed}"
+
     comment = f"""
         fitting software: {version_strings}
         random seed {monte_carlo_random_seed}
@@ -182,7 +243,7 @@ def _fit_results_as_frame(
         source of noise estimate: {noise_info.source}
         noise estimate: {noise_info.noise}
         noise estimate fractional error: {noise_info.fraction_error_in_noise}
-        noise estimate number replicates: {noise_info.num_replicates}
+        noise estimate number replicates: {noise_info.num_replicates}{failed_info}{mc_info}
     """
     # error_in_noise-estimate {}
     # fit_time {}
@@ -191,7 +252,7 @@ def _fit_results_as_frame(
     relaxation_loop = Loop.from_scratch(f"{prefix}_relaxation")
     result_frame.add_loop(relaxation_loop)
 
-    RELAXATION_LOOP_TAGS = "index data_id data_combination_id value value_error".split()
+    RELAXATION_LOOP_TAGS = "index data_id data_combination_id value value_error fit_status mc_failed_cycles".split()
     RELAXATION_LOOP_ATOM_TAGS = (
         "chain_code_{axis} sequence_code_{axis} residue_name_{axis} atom_name_{axis}"
     )
@@ -226,16 +287,38 @@ def _fit_results_as_frame(
                 }
             )
 
-        if monte_carlo_errors:
-            mc_error = monte_carlo_errors[data_id].get(f"{fit_name}_mc_error", UNUSED)
+        # Check fit status from fit object
+        status = getattr(fit, "fit_status", "success")
+
+        # Get MC failed cycles count for this data_id
+        mc_failed_count = mc_failed_cycles.get(data_id, 0) if mc_failed_cycles else 0
+
+        if status != "success":
+            # Use UNUSED ('.') for failed fits
+            data_row.update(
+                {
+                    "value": UNUSED,
+                    "value_error": UNUSED,
+                    "fit_status": status,
+                    "mc_failed_cycles": UNUSED,  # No MC if fit failed
+                }
+            )
         else:
-            mc_error = UNUSED
-        data_row.update(
-            {
-                "value": f"{fit.params[fit_name].value:.6f}",
-                "value_error": f"{mc_error:.6}",
-            }
-        )
+            # Existing success handling
+            if monte_carlo_errors:
+                mc_error = monte_carlo_errors[data_id].get(
+                    f"{fit_name}_mc_error", UNUSED
+                )
+            else:
+                mc_error = UNUSED
+            data_row.update(
+                {
+                    "value": f"{fit.params[fit_name].value:.6f}",
+                    "value_error": f"{mc_error:.6}",
+                    "fit_status": status,
+                    "mc_failed_cycles": mc_failed_count,
+                }
+            )
         data.append(data_row)
 
     relaxation_loop.add_data(data)

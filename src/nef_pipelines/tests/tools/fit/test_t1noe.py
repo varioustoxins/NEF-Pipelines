@@ -23,6 +23,8 @@ EXPECTED_R1_DATA_SINGLE_R1 = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
+      _nefpls_relaxation.mc_failed_cycles
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -32,7 +34,7 @@ EXPECTED_R1_DATA_SINGLE_R1 = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.300000   .   B   145   THR   H   B   145   THR   N
+     1   1   .   1.300000   .   success   .   B   145   THR   H   B   145   THR   N
 
    stop_
 """
@@ -44,6 +46,8 @@ EXPECTED_R1_DATA_SINGLE_NOE = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
+      _nefpls_relaxation.mc_failed_cycles
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -53,7 +57,7 @@ EXPECTED_R1_DATA_SINGLE_NOE = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.000000   .   B   145   THR   H   B   145   THR   N
+     1   1   .   1.000000   .   success   .   B   145   THR   H   B   145   THR   N
 
    stop_
 """
@@ -66,6 +70,8 @@ EXPECTED_R1_DATA_SINGLE_R1_MC = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
+      _nefpls_relaxation.mc_failed_cycles
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -75,7 +81,7 @@ EXPECTED_R1_DATA_SINGLE_R1_MC = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.300000   0.108797   B   145   THR   H   B   145   THR   N
+     1   1   .   1.300000   0.1088   success   0   B   145   THR   H   B   145   THR   N
 
    stop_
 """
@@ -87,6 +93,8 @@ EXPECTED_R1_DATA_SINGLE_NOE_MC = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
+      _nefpls_relaxation.mc_failed_cycles
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -96,7 +104,7 @@ EXPECTED_R1_DATA_SINGLE_NOE_MC = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.000000   0.0170893   B   145   THR   H   B   145   THR   N
+     1   1   .   1.000000   0.0170893   success   0   B   145   THR   H   B   145   THR   N
 
    stop_
 """

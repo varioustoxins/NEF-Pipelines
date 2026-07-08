@@ -24,6 +24,7 @@ from nef_pipelines.tools.fit.fit_lib import (
     _select_relaxation_series_or_exit,
     _series_frame_to_id_series_data,
     calculate_noise_level_from_replicates,
+    report_fit_status_and_exit_error_if_required,
 )
 
 VERBOSE_HELP = """
@@ -137,7 +138,7 @@ def pipe(
         from streamfitter import fitter  # deferred
 
         function = fitter.get_function(
-            fitter.FUNCTION_TWO_EXPONENTIAL_DECAYS_2_PAMETER_SHARED_RATE
+            fitter.FUNCTION_TWO_EXPONENTIAL_DECAYS_2_PARAMETER_SHARED_RATE
         )
 
     except ImportError as e:
@@ -240,14 +241,20 @@ def pipe(
             verbose=verbose,
         )
 
+        # Check exit status and handle STOPPED case
+        report_fit_status_and_exit_error_if_required(
+            results, series_frame_1, entry, NEF_PIPELINES_NAMESPACE
+        )
+
         fits = results["fits"]
         monte_carlo_errors = results["monte_carlo_errors"]
         monte_carlo_value_stats = results["monte_carlo_value_stats"]
         monte_carlo_param_values = results["monte_carlo_param_values"]
+        mc_failed_cycles = results.get("mc_failed_cycles", {})
         noise_level = results["noise_level"]
         version_strings = results["versions"]
 
-        fit_ids = ["time_constant", "offset"]
+        fit_ids = ["rate", "offset"]
         for fit_name, output in zip(fit_ids, outputs):
             frame = _fit_results_as_frame(
                 series_frame_1,
@@ -263,6 +270,7 @@ def pipe(
                 noise_info,
                 version_strings,
                 "r1-noe-symmetric-double-exponential",
+                mc_failed_cycles=mc_failed_cycles,
             )
 
             entry.add_saveframe(frame)
