@@ -1,12 +1,11 @@
-# TODO: whould the upload and calculate functionality be in a different tool shiftx2 calculate?
+# TODO: should the upload and calculate functionality be in a different tool shiftx2 calculate?
 
+import io
 import os
 import re
-import shutil
 import sys
-import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 from textwrap import dedent, indent
@@ -88,6 +87,7 @@ class PDBDownloadResult(NetworkResult, PdbAndUniprotIDs, PbdUniprotChainMapping)
     pdb_url: str
     alphafold_id: str
     pdb_file_path: Optional[Path]
+    pdb_content: Optional[str] = field(default=None)
 
 
 def tag_visible(element):
@@ -209,7 +209,7 @@ def pipe(
             pdb_file_info = _pdb_code_to_alphafold_pdb_file(
                 code_or_filename, source_chain, verbose
             )
-            code_or_filename = pdb_file_info.pdb_file_path
+            code_or_filename = _get_filename_from_url(pdb_file_info.pdb_url)
             use_file = True
         elif is_structure_file:
 
@@ -240,11 +240,25 @@ def pipe(
             use_file = True
         else:
             use_file = False
+            if structure_path:
+                msg = f"""
+                    a request to retain the structure used is ignored when submitting a pdb code directly to the server
+                    the pdb code was: {code_or_filename}
+                """
+
+                warn(msg)
+                structure_path = None
+            pdb_file_info = None
 
         timeout = DEFAULT_TIMEOUT
+        pdb_content = pdb_file_info.pdb_content if alphafold else None
         for i in range(1, SHIFTX2_RETRY_COUNT + 1):
             shifts, request = _get_shifts_from_server(
-                code_or_filename, source_chain, chain, use_file=use_file
+                code_or_filename,
+                source_chain,
+                chain,
+                use_file=use_file,
+                pdb_content=pdb_content,
             )
             time.sleep(timeout)
             if shifts:
@@ -321,24 +335,23 @@ def pipe(
 def _retain_structure_if_requested(structure_path, pdb_file_info, verbose):
     if structure_path:
         try:
-            if structure_path:
-                code = pdb_file_info.pdb_code.upper()
-                uniprot = pdb_file_info.uniprot_id
-                alphafold = pdb_file_info.alphafold_id
-                uniprot_start = pdb_file_info.pdb_uniprot_end
-                uniprot_end = pdb_file_info.pdb_uniprot_end
-                pdb_start = pdb_file_info.pdb_start_residue
+            code = pdb_file_info.pdb_code.upper()
+            uniprot = pdb_file_info.uniprot_id
+            alphafold = pdb_file_info.alphafold_id
+            uniprot_start = pdb_file_info.pdb_uniprot_end
+            uniprot_end = pdb_file_info.pdb_uniprot_end
+            pdb_start = pdb_file_info.pdb_start_residue
 
-                replacements = {
-                    "code": code,
-                    "uniprot": uniprot,
-                    "alphafold": alphafold,
-                    "uniprot_start": uniprot_start,
-                    "uniprot_end": uniprot_end,
-                    "pdb_start": pdb_start,
-                }
+            replacements = {
+                "code": code,
+                "uniprot": uniprot,
+                "alphafold": alphafold,
+                "uniprot_start": uniprot_start,
+                "uniprot_end": uniprot_end,
+                "pdb_start": pdb_start,
+            }
 
-                structure_path = Path(str(structure_path).format(**replacements))
+            structure_path = Path(str(structure_path).format(**replacements))
         except Exception as e:
             msg = f"""
                 when trying to build the retained structure path {structure_path} there was  an error
@@ -348,19 +361,18 @@ def _retain_structure_if_requested(structure_path, pdb_file_info, verbose):
             """
             exit_error(msg)
 
-        suffix = pdb_file_info.pdb_file_path.suffix
-        structure_path = structure_path.with_suffix(suffix)
+        structure_path = structure_path.with_suffix(".pdb")
         try:
-            shutil.move(pdb_file_info.pdb_file_path, structure_path)
+            structure_path.write_text(pdb_file_info.pdb_content)
         except Exception as e:
             msg = f"""
-                couldn't move retained structure pdb_file_info.pdb_file_path to requested location
+                couldn't save retained structure to requested location
                 {structure_path} because {e}
             """
             exit_error(msg)
         if verbose:
             msg = f"""
-                moved {pdb_file_info.pdb_file_path} to {structure_path}
+                saved structure to {structure_path}
             """
             info(msg)
 
@@ -555,9 +567,13 @@ def _tabular_lines_to_csv_layout(lines):
 
 
 def _get_shifts_from_server(
-    pdb_file_or_code, chain_code, cli_chain_code, use_file=False
+    pdb_file_or_code, chain_code, cli_chain_code, use_file=False, pdb_content=None
 ):
+    """Submit a structure to the shiftx2 server and return the predicted shifts.
 
+    When pdb_content is provided the PDB data is streamed from memory (io.BytesIO)
+    rather than opened from disk; pdb_file_or_code is used only as the upload filename.
+    """
     data = {
         "deuterate": 1,
         "ph": 7,
@@ -572,8 +588,12 @@ def _get_shifts_from_server(
     files = {}
     fh = None
     if use_file:
-        fh = open(pdb_file_or_code, "rb")
-        files = {"file": fh}
+        if pdb_content is not None:
+            fh = io.BytesIO(pdb_content.encode())
+            files = {"file": (str(pdb_file_or_code), fh)}
+        else:
+            fh = open(pdb_file_or_code, "rb")
+            files = {"file": fh}
     else:
         pdb_file_or_code = (
             f"{pdb_file_or_code}{chain_code}" if chain_code else pdb_file_or_code
@@ -582,11 +602,10 @@ def _get_shifts_from_server(
 
     if use_file:
         request = requests.request("POST", CGI_URL, data=data, files=files)
-
     else:
         request = requests.request("POST", CGI_URL, data=data)
 
-    if fh:
+    if fh and not isinstance(fh, io.BytesIO):
         fh.close()
 
     soup = BeautifulSoup(request.text, features="html.parser")
@@ -718,7 +737,7 @@ def _exit_if_pdb_download_bad(pdb_file_data: PDBDownloadResult):
     if not pdb_file_data.file_system_ok:
         msg = f"""
             The pdb file for the alphafold structure {pdb_file_data.alphafold_id} derived from {pdb_file_data.pdb_code}
-            with chain  {pdb_file_data.chain_code} could not be saved to the file system at the path, is your disk full?
+            with chain {pdb_file_data.chain_code} could not be downloaded — the server returned empty content.
             """
 
     if msg:
@@ -763,29 +782,22 @@ def _note_uniprot_mapping_if_verbose(mapping, verbose):
 
 
 def _download_pdb_file(alphafold_result: AlphafoldResult) -> PDBDownloadResult:
-
+    """Download a PDB file from the AlphaFold URL and return its content in memory."""
     response = requests.get(alphafold_result.pdb_url)
 
     network_ok = response.status_code == NETWORK_200_OK
-
-    data = response.text
-
-    if data:
-        pdb_filename = _get_filename_from_url(alphafold_result.pdb_url)
-        tmpdirname = tempfile.mkdtemp()
-        file_path = Path(tmpdirname) / pdb_filename
-        with open(file_path, "w") as fp:
-            fp.write(data)
+    data = response.text if network_ok else None
 
     result = PDBDownloadResult(
         network_ok=network_ok,
-        file_system_ok=file_path.is_file(),
+        file_system_ok=bool(data),
         pdb_url=alphafold_result.pdb_url,
         pdb_code=alphafold_result.pdb_code,
         chain_code=alphafold_result.chain_code,
         uniprot_id=alphafold_result.uniprot_id,
         alphafold_id=alphafold_result.alphafold_id,
-        pdb_file_path=file_path,
+        pdb_file_path=None,
+        pdb_content=data,
         pdb_uniprot_start=alphafold_result.pdb_uniprot_start,
         pdb_uniprot_end=alphafold_result.pdb_uniprot_end,
         pdb_start_residue=alphafold_result.pdb_start_residue,
