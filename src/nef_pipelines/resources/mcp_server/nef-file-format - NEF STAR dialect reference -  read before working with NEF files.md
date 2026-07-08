@@ -15,9 +15,10 @@ model you need to choose the right commands, frame/loop/tag selectors, and to re
 modify versus what must be preserved.
 
 *   **What NEF is:** a STAR text file holding NMR experimental data. Exactly one `data_<entry_name>` block
-    containing **saveframes** (named tables), **loops** (tabular rows), and **tags** (key/value pairs).
+    containing **saveframes** (named tables), **loops** (tabular rows), and **tags** (key/value pairs) is present
+    in each file.
 *   **Namespace = software owner; Category = data schema.** A saveframe header
-    `save_<NAMESPACE>_<CATEGORY>...` (e.g. `save_nef_nmr_spectrum_hsqc`1``) encodes both. Every saveframe
+    `save_<NAMESPACE>_<CATEGORY>...` (e.g. `` save_nef_nmr_spectrum_hsqc`1` ``) encodes both. Every saveframe
     declares a **registered** namespace (`nef`, `ccpn`, `aria`, ...). Loop and tag namespaces follow
     inheritance rules — see §6.
 *   **The 4-string identifier** — `chain_code` + `sequence_code` + `residue_name` + `atom_name` — is the
@@ -89,18 +90,20 @@ data_Sec5Part4
 save_
 ```
 
-| Element                           | What it is                                                                                   |
-|-----------------------------------|----------------------------------------------------------------------------------------------|
-| Saveframe name / frame code       | the complete name of the frame including `namespace`,`category` and `id` [which maybe empty] |
-| Saveframe namespace               | `nef` (first token of the category, before its first `_`)                                    |
-| Saveframe category                | `nef_nmr_spectrum` (the `.sf_category` value — authoritative)                                |
-| Saveframe id                      | `hsqc` (the part of the framecode after the category)                                        |
-| Saveframe index                   | `` `1` `` (CCPN backtick extension — see §7). This is a part of the index                    |
-| Tag `num_dimensions`              | tag namespace = `nef` (inherited from frame; bare tag with no registered prefix)             |
+| Element                    | What it is                                                                              |
+|----------------------------|-----------------------------------------------------------------------------------------|
+| Saveframe framecode (name) | complete framecode e.g. `` nef_nmr_spectrum_hsqc`1` ``; maps to `.sf_framecode`        |
+| Saveframe namespace        | `nef` (first token of the category, before its first `_`)                               |
+| Saveframe category         | `nef_nmr_spectrum` (the `.sf_category` value — authoritative; = namespace + type)       |
+| Saveframe type             | `nmr_spectrum` (non-namespace portion of category)                                      |
+| Saveframe identity         | `hsqc` (optional descriptive part of the framecode after the category)                  |
+| Saveframe index            | `` `1` `` (CCPN backtick extension — see §7)                                            |
+| Tag `num_dimensions`       | tag namespace = `nef` (inherited from frame; bare tag with no registered prefix)        |
 
 
-A second frame in the same file, `save_ccpn_substance_Sec5.None`, illustrates the `.identity` suffix:
-namespace = `ccpn`, category = `ccpn_substance`, id = `Sec5.None`, identity = `None`. All its tags inherit the
+A second frame in the same file, `save_ccpn_substance_Sec5.None`, illustrates the dot suffix:
+namespace = `ccpn`, category = `ccpn_substance`, identity = `Sec5`, suffix = `.None` (the parser
+returns `identity="Sec5.None"` - the suffix is not split out). All its tags inherit the
 `ccpn` namespace because none carry a different registered prefix.
 
 The Entry name is `Sec5Part4` (from the `data_` block).
@@ -110,8 +113,8 @@ The loop defined is the `peak` loop is in the `nef` namespace
 part of the ccpn namespace (e.g. `ccpn_annotation`) — this is a common pattern for loops with software-specific
 extensions.
 >
-> Note 2. names for frames in NEF files must be unique, two frames **cannot** have the same category and id [equivalent
->         to the same name or framecode] within an entry
+> Note 2. names for frames in NEF files must be unique, two frames **cannot** have the same category and identity [equivalent
+>         to the same framecode] within an entry
 >
 > Note 3. generally frames, tags, loop and columns in a specific namespace other than `nef` are data specific
           to a specific program and are passed through by other programs.
@@ -152,8 +155,8 @@ A **Namespace** is a string containing **no underscores** (`_`).
 > Use `nef namespace catalog` to list all currently registered namespaces from a local cache or the NEF website.
 
 ### 2.2 Categories
-A **Category** defines the data schema (e.g., `nmr_spectrum`, `sequence`). Categories always exist within a
-Namespace.
+A **Category** combines a namespace and a data type, e.g. `nef_nmr_spectrum` (namespace `nef`, type `nmr_spectrum`).
+The **type** (e.g. `nmr_spectrum`, `sequence`) defines the data schema. Categories always exist within a Namespace.
 
 ---
 
@@ -169,16 +172,29 @@ NEF expands the definition of saveframes to encode Namespaces, Categories, and N
 > * Display part of a frame's loops and tag values: `nef frames display --tags <tag-pattern> <frame-selector>`
 
 ### 3.1 Decomposition Algorithm
-Saveframe headers SHOULD follow this pattern:`` save_<NAMESPACE>_<CATEGORY>[_<NAME>][`INDEX`|.identity] ``
 
-*   **NAMESPACE:** All characters preceding the **second underscore** (e.g., in `save_nef_...`, the Namespace
-    component is `nef`).
-*   **CATEGORY:** The data type identifier following the Namespace.
-*   **NAME:** (Optional) A descriptive name.
-*   **INDEX:** (Optional; CCPN extension) An integer surrounded by literal backticks, e.g., `` `1` ``.
-    > **Note:** Treating this as an index is not strictly part of the official NEF definition but is widely used by
-      the **CCPN software suite** and other packages, and is fully supported by **NEF-Pipelines**.
-*   **.identity:** (Optional; CCPN Extension) A literal suffix indicating a reference or template frame.
+Framecodes follow this grammar:
+
+```
+framecode            ::= category ["_" identity] [qualifier]
+category             ::= namespace "_" type
+qualifier            ::= index | suffix              (* mutually exclusive *)
+index                ::= "`" integer "`"
+suffix               ::= "." token                   (* CCPN; parser folds into identity — not split *)
+namespace            ::= token                       (* no underscores; e.g. "nef", "ccpn" *)
+type                 ::= token {"_" token}           (* e.g. "nmr_spectrum" *)
+identity             ::= token {"_" token}           (* optional; e.g. "k_ubi_hnco" *)
+```
+
+- **framecode** — the complete frame name after the save and first _; maps to `.sf_framecode`. Colloquially also called the frames "name".
+- **category** — `namespace` & `type` (e.g. `nef_nmr_spectrum`); maps to `.sf_category` — authoritative.
+- **namespace** — all characters before the second underscore (e.g. `nef`).
+- **type** — non-namespace portion of category (e.g. `nmr_spectrum`).
+- **identity** — optional descriptive part after the category (e.g. `k_ubi_hnco`).
+- **index** — (CCPN extension; common) integer in backticks, e.g. `` `1` ``.
+- **suffix** — (CCPN extension; rare) dot suffix, e.g. `.None`. The parser currently returns the
+  suffix folded into `identity` (e.g. `identity="Sec5.None"`) rather than as a separate field.
+- **singleton** — framecode with no identity and no qualifier; framecode equals category.
 
 ### 3.2 Identification Tags (The .sf Tags)
 Every saveframe MUST contain these identity tags to confirm its type and name:
@@ -188,12 +204,12 @@ Every saveframe MUST contain these identity tags to confirm its type and name:
 
 > **The `.sf_category` tag is authoritative.** When you need the category of a frame you see in command
 > output, read its `.sf_category` value rather than splitting the header string yourself. This avoids
-> tripping over CCPN-style backtick indices and `.identity` suffixes embedded in the framecode (§7).
+> tripping over CCPN-style backtick indices and dot suffixes embedded in the framecode (§7).
 
 ### 3.3 Singleton Logic
 Saveframes like `nef_nmr_meta_data` and `nef_molecular_system` are **Singletons** [`sf_category` == `sf_framecode`]
-and they lack the `<NAME>` and `<INDEX>` components. Only one instance is permitted per data block / file [frame names
-must be unique in a datablock and are an invariant which is enforced by NEF-Pipelines],
+and they lack an `identity` and `index`. Only one instance is permitted per data block / file [framecodes
+must be unique in a datablock, an invariant enforced by STAR parsers and the STAR syntax],
 
 ---
 
@@ -435,13 +451,13 @@ MUST include the Namespace and Category of the parent saveframe, but SHOULD use 
 CCPN Analysis (AnalysisAssign) is a common source of NEF files in practice. It introduces several
 extensions beyond the core NEF spec that NEF-Pipelines handles transparently but that you will see frequently:
 
-**Backtick index** `` `<INDEX>` ``: Appended to a framecode to distinguish multiple instances of the same
-category/name, e.g. `save_nef_nmr_spectrum_hsqc`1``. The index is an integer surrounded by literal backtick
-characters. NEF-Pipelines parses and preserves these.
+**Backtick index** `` `<N>` ``: Appended to a framecode to distinguish multiple instances of the same
+category/identity, e.g. `` save_nef_nmr_spectrum_hsqc`1` ``. The index is an integer surrounded by literal backtick
+characters. NEF-Pipelines parses and preserves these. Commonly encountered.
 
-**`.identity` suffix**: Appended to disambiguate save frames by an additional name rather than an index, e.g.
-`save_ccpn_substance_Sec5.None`. The dot and word after it form the identity qualifier. NEF-Pipelines parses
-and preserves these.
+**Dot suffix** (e.g. `.None`): Appended after the identity to add a qualifier, e.g.
+`save_ccpn_substance_Sec5.None`. The parser currently folds the dot suffix into the `identity` field
+(returning `identity="Sec5.None"` rather than `identity="Sec5"`, `suffix="None"`). Rarely encountered.
 
 **`ccpn` namespace tags and frames**: CCPN adds many extension frames and tags in the `ccpn` namespace, such
 as `ccpn_assignment`, `ccpn_additional_data`, `ccpn_substance_*`. These are generally pass-through opaque data for
@@ -454,7 +470,7 @@ non-CCPN software though in some cases NEF-Pipelines may analyse them or modify 
        ...
     save_
 
-    save_ccpn_substance_Sec5.None          # .identity suffix: reference frame for substance Sec5
+    save_ccpn_substance_Sec5.None          # dot suffix: reference frame for substance Sec5
        _ccpn_substance.sf_category      ccpn_substance
        _ccpn_substance.sf_framecode     ccpn_substance_Sec5.None
        ...
@@ -462,7 +478,7 @@ non-CCPN software though in some cases NEF-Pipelines may analyse them or modify 
 ```
 
 > **NEF-Pipelines commands:**
-> Framecodes containing `` `N` `` or `.identity` appear verbatim in `nef frames list` output — pass them
+> Framecodes containing `` `N` `` or dot suffixes appear verbatim in `nef frames list` output — pass them
 > unchanged to selector arguments. Frame selectors support glob patterns, so `nef_nmr_spectrum_hsqc*` will
 > match across backtick variants.
 
@@ -545,7 +561,7 @@ These are easy traps when reasoning about NEF files and choosing which NEF-Pipel
     pipeline (§2.1). Don't suggest a `frames delete` or namespace-strip operation unless the user
     explicitly asks for it.
 *   **Treating `Sec5.None` or `` `hsqc`1` `` as malformed when you see them in `frames list` output.** The
-    `.identity` suffix and the backtick index are legal CCPN extensions and appear in most real NEF files
+    The dot suffix and the backtick index are legal CCPN extensions and appear in most real NEF files
     (§7). Use them verbatim as frame selectors — don't try to "clean them up".
 *   **Reading the category off the framecode visually.** When you need to know a frame's category, prefer
     its `.sf_category` value (or use `frames tabulate` which shows it directly). Visual decomposition can
