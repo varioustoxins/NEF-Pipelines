@@ -1,5 +1,6 @@
 import inspect
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from importlib import import_module
@@ -179,22 +180,44 @@ def _shutdown_stdout_for_broken_pipe():
     # https://stackoverflow.com/questions/26692284/how-to-prevent-brokenpipeerror-when-doing-a-flush-in-python
     # note: https://docs.python.org/3/library/signal.html#note-on-sigpipe
     #      doesn't appear to work for us, not quite sure why
-    sys.stdout.flush()
-    sys.stderr.flush()
-    sys.stdout.close()
+    try:
+        sys.stdout.flush()
+    except (BrokenPipeError, OSError):
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except Exception:
+            pass
+
+    try:
+        sys.stdout.close()
+    except (BrokenPipeError, OSError):
+        pass
+
+    try:
+        sys.stderr.flush()
+    except (BrokenPipeError, OSError):
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stderr.fileno())
+        except Exception:
+            pass
 
 
 def run():
-    nef_app_module = _make_nef_app_or_exit_error()
+    try:
+        nef_app_module = _make_nef_app_or_exit_error()
 
-    load_failure_message = load_nef_modules_and_build_failure()
-    bad_command_message = _if_typer_debug_get_bad_command_messages(nef_app_module)
+        load_failure_message = load_nef_modules_and_build_failure()
+        bad_command_message = _if_typer_debug_get_bad_command_messages(nef_app_module)
 
-    _report_typer_load_problems([load_failure_message, bad_command_message])
+        _report_typer_load_problems([load_failure_message, bad_command_message])
 
-    _exit_if_bad_typer_commands(bad_command_message)
+        _exit_if_bad_typer_commands(bad_command_message)
 
-    _run_command_or_exit_error(nef_app_module)
+        _run_command_or_exit_error(nef_app_module)
+    finally:
+        _shutdown_stdout_for_broken_pipe()
 
 
 def _run_command_or_exit_error(nef_app_module: ModuleType) -> None:
@@ -215,8 +238,6 @@ def _run_command_or_exit_error(nef_app_module: ModuleType) -> None:
               """
 
         do_exit_error(msg)
-    finally:
-        _shutdown_stdout_for_broken_pipe()
 
 
 def _exit_if_bad_typer_commands(bad_command_message: Optional[str]):
