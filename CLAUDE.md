@@ -264,6 +264,7 @@ Test data files are stored in:
         (input_2, expected_2),
     ], ids=["test-id-1", "test-id-2"])  # DON'T DO THIS
     ```
+14. **UNLESS ASKED TO** always test the pipe not the cli / `Typer` function
 
 These are non-negotiable requirements, not suggestions. Apply them automatically without asking unless told otherwise.
 
