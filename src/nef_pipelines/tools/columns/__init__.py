@@ -17,4 +17,9 @@ if nef_app.app:
 
     # import of specific commands must be after app creation to avoid circular imports
     import nef_pipelines.tools.columns.delete  # noqa: F401
+    import nef_pipelines.tools.columns.extract  # noqa: F401
     import nef_pipelines.tools.columns.insert  # noqa: F401
+    import nef_pipelines.tools.columns.list_  # noqa: F401
+    import nef_pipelines.tools.columns.rename  # noqa: F401
+    import nef_pipelines.tools.columns.reorder  # noqa: F401
+    import nef_pipelines.tools.columns.replace  # noqa: F401
