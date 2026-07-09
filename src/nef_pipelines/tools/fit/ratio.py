@@ -14,7 +14,6 @@ from nef_pipelines.lib.nef_lib import (
     get_frame_id,
     read_entry_from_file_or_stdin_or_exit_error,
 )
-from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
 from nef_pipelines.tools.fit.fit_lib import (
@@ -56,9 +55,6 @@ def ratio(
         "--noise",
         help="noise level to use instead of value from spectra",
     ),
-    data_type: IntensityMeasurementType = typer.Option(
-        IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
-    ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
     """- calculate ratio of peak intensities with error propagation" [alpha]"""
@@ -80,7 +76,7 @@ def ratio(
 
     _exit_if_no_series_frames_selected(series_frames, frame_selectors)
 
-    entry = pipe(entry, series_frames, noise_level, data_type)
+    entry = pipe(entry, series_frames, noise_level)
 
     print(entry)
 
@@ -89,7 +85,6 @@ def pipe(
     entry: Entry,
     series_frames: List[Saveframe],
     noise_level,
-    intensity_measurement_type: IntensityMeasurementType,
 ) -> Entry:
 
     for series_frame in series_frames:

@@ -12,7 +12,6 @@ from pynmrstar import Entry, Saveframe
 from nef_pipelines.lib.interface import LoggingLevels, NoiseInfo, NoiseInfoSource
 from nef_pipelines.lib.nef_frames_lib import NEF_PIPELINES_NAMESPACE
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
-from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
 from nef_pipelines.tools.fit.fit_lib import (
@@ -61,9 +60,6 @@ def t1noe(
     ),
     seed: int = typer.Option(
         42, "-s", "--seed", help="seed for random number generator"
-    ),
-    data_type: IntensityMeasurementType = typer.Option(
-        IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
     ),
     verbose: int = typer.Option(LoggingLevels.WARNING, count=True, help=VERBOSE_HELP),
     frames_selectors: List[str] = typer.Argument(
@@ -120,9 +116,7 @@ def t1noe(
 
         exit_error(msg)
 
-    entry = pipe(
-        entry, series_frames, cycles, noise_level, data_type, seed, verbose, outputs
-    )
+    entry = pipe(entry, series_frames, cycles, noise_level, seed, verbose, outputs)
 
     print(entry)
 
@@ -132,7 +126,6 @@ def pipe(
     series_frames: List[Saveframe],
     cycles: int,
     noise_level,
-    data_type: IntensityMeasurementType,
     seed: int,
     verbose: int = 0,
     outputs=None,
