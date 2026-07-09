@@ -129,15 +129,30 @@ The application uses a hierarchical command structure built on Typer. Commands s
    **this includes error messages**. If used _once_ the `EXPECTED` strings can just be `EXPECTED` and be embedded in the test functio. For
    shared `EXPECTED` strings they should be names and be a the module _scope_ just before first use and tests that share
    an `EXPECTED` string should follow each other sequentially in the file
-3. **ALWAYS use assert_lines_match()** - For NEF content comparison: `assert_lines_match(EXPECTED_STRING, actual_content)`
-4. **ALWAYS use isolate_loop()** - For NEF loops: `isolate_loop(content, frame_name, loop_name)`
-5. **ALWAYS test complete structures** - Use complete NEF frames/loops, not partial string matching
-6. **ALWAYS use path_in_test_data()** - Use `path_in_test_data(filename, __file__)` to locate test data files, never hardcode paths
-7. **NEVER skip tests for missing test data** - Tests must FAIL (not skip) if required test data files are missing
-8. **ALWAYS use temporary directories for output** - Test output files must be written to temporary directories (use pytest's `tmp_path` fixture), never to the working directory or test data directories
-9. **ALWAYS use pytest parameterisation for related tests** - When multiple tests follow the same pattern with different inputs, use `@pytest.mark.parametrize` instead of writing separate test functions.
+3. **NEVER use implicit string joining** - For long strings that exceed line length limits, use explicit concatenation with `+`
+   operator inside parentheses. Implicit string joining (adjacent string literals) is dangerous:
+   ```python
+   # CORRECT: Explicit concatenation with + inside parentheses
+   EXPECTED_WARNING = (
+       "WARNING: no columns specified for 'nef_chemical_shift_list_myshifts.nef_chemical_shift'; "
+       + "adding placeholder column 'place_holder'"
+   )
+
+   # WRONG: Implicit string joining, joing string should be indicated by an operation
+   EXPECTED_WARNING = (
+       "WARNING: no columns specified for 'nef_chemical_shift_list_myshifts.nef_chemical_shift'; "
+       "adding placeholder column 'place_holder'"
+   )
+   ```
+4. **ALWAYS use assert_lines_match()** - For NEF content comparison: `assert_lines_match(EXPECTED_STRING, actual_content)`
+5. **ALWAYS use isolate_loop()** - For NEF loops: `isolate_loop(content, frame_name, loop_name)`
+6. **ALWAYS test complete structures** - Use complete NEF frames/loops, not partial string matching
+7. **ALWAYS use path_in_test_data()** - Use `path_in_test_data(filename, __file__)` to locate test data files, never hardcode paths
+8. **NEVER skip tests for missing test data** - Tests must FAIL (not skip) if required test data files are missing
+9. **ALWAYS use temporary directories for output** - Test output files must be written to temporary directories (use pytest's `tmp_path` fixture), never to the working directory or test data directories
+10. **ALWAYS use pytest parameterisation for related tests** - When multiple tests follow the same pattern with different inputs, use `@pytest.mark.parametrize` instead of writing separate test functions.
      This improves readability and makes tests easier to extend.
-10. **ALWAYS compare result dataclasses and structures by equality if possible** - Build a complete expected instance and use
+11. **ALWAYS compare result dataclasses and structures by equality if possible** - Build a complete expected instance and use
     `assert result == expected`, not a series of individual field assertions. For fields with dynamic values (error
     messages, generated paths), capture the value first, include it in the expected instance, then separately check
     anything else required:
@@ -146,8 +161,8 @@ The application uses a hierarchical command structure built on Typer. Commands s
     assert result == EXPECTED
     assert EXPECTED_ERROR_CANCELLED in result.error.lower()
     ```
-11. **ALWAYS use nef_pipelines.lib.test_lib.run_and_report** don't use typer.testing.CliRunner
-12. **ALWAYS include test IDs in parametrized test data** - Do NOT use separate `ids=` lists. Instead, structure test data
+12. **ALWAYS use nef_pipelines.lib.test_lib.run_and_report** don't use typer.testing.CliRunner
+13. **ALWAYS include test IDs in parametrized test data** - Do NOT use separate `ids=` lists. Instead, structure test data
     as tuples with the ID as the first element. This keeps IDs co-located with test data and prevents sync issues:
     ```python
     # CORRECT: ID is part of the test data
