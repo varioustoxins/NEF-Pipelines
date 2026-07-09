@@ -139,8 +139,177 @@ building a GUI interface to the NEF-Pipelines commands using the same methodolog
 > the ability to tabulate NEF loops using the NEF-Pipelines library.
 
 
+## Separation of CLI and Library Concerns
 
-## Types of NEF-Piplines `Pipes` and there Common Structural Features
+A core architectural principle of NEF-Pipelines is the **separation between CLI functions and library functions**.
+This separation ensures that library functions (like `pipe`) remain reusable in programmatic contexts, while CLI
+functions handle all user interaction and I/O concerns.
+
+### Library Functions (pipe, helper functions)
+
+**Library functions are silent** — they transform data and either return results or raise exceptions. They never:
+
+* Print to stdout/stderr (except for legitimate output like NEF streams)
+* Print warnings or informational messages
+* Call `exit_error()` or other termination functions
+* Have side effects beyond their documented purpose
+
+**Library functions should:**
+
+* Raise custom exceptions (inheriting from `NEFPipelinesException`) when errors occur
+* Return transformed data structures
+* Be pure, testable functions that can be composed programmatically
+* Accept structured parameters (dataclasses, typed arguments) not raw CLI strings
+
+### CLI Functions (typer-decorated command functions)
+
+**CLI functions handle all user interaction**. They are responsible for:
+
+* Parsing command-line arguments into structured parameters
+* Catching exceptions from library functions and formatting user-friendly error messages via `exit_error()`
+* Printing warnings (via `warn()`) about edge cases or potentially problematic input
+* Reading from stdin/files and writing to stdout/files
+* Printing the final NEF stream or other output
+
+### CLI and Pipe functions are high level
+
+The `typer` cli and  `pipe` fucntions are high level functions. They should therefore contain a series of  hogh level
+function calls that define how the cli should be processed and validated and in the case of the `pipe` function how
+the data is processed. They should read somewhat like pseudo code!
+
+**Example Pattern:**
+
+```python
+@columns_app.command()
+def rename(
+    arguments: List[str] = typer.Argument(...),
+    input: Path = typer.Option(STDIN, "--in"),
+) -> None:
+    """- rename columns"""
+    # CLI: Read input
+    entry = read_entry_from_file_or_stdin_or_exit_error(input)
+
+    # CLI: Parse arguments, catch exceptions, call exit_error
+    try:
+        rename_pairs = _parse_rename_arguments(arguments, selector)
+    except RenameParseError as e:
+        exit_error(str(e))
+
+    # CLI: Validate and warn about edge cases
+    _warn_if_duplicate_targets(rename_pairs)
+
+    # CLI: Call library function, catch exceptions, call exit_error
+    try:
+        entry = pipe(entry, rename_pairs)
+    except ColumnNotFoundException as e:
+        exit_error(str(e))
+
+    # CLI: Print output
+    print(entry)
+
+
+def pipe(entry: Entry, rename_pairs: List[Tuple[FrameLoopAndTagSelectors, str]]) -> Entry:
+    """Library function: silent transformation, raises exceptions on error."""
+    # Pure transformation - no printing, no exit_error, no warnings
+    _raise_if_selectors_dont_have_single_tag(rename_pairs)
+    renames_by_loop = _group_renames_by_loop(rename_pairs)
+    _apply_renames_to_entry(entry, renames_by_loop)
+    return entry
+```
+
+This separation ensures that `pipe` can be imported and used in any Python program without unexpected
+side effects, while the CLI function provides a user-friendly command-line interface with appropriate
+error handling and feedback.
+
+### The _or_raise / _or_exit_error Pattern
+
+A common pattern for separating library logic from CLI error handling is the **`raise` /  `exit_error` function pair**:
+
+- **`_or_raise` functions**: Library functions that raise dataclass exceptions with structured data
+- **`_or_exit_error` functions**: CLI wrappers that catch exceptions, format user-friendly messages, and call `exit_error()`
+
+**Exception Structure:**
+
+Exceptions inherit from `NEFPipelinesException` , carrying only the data needed to describe the error. If the data is
+complex tjhey can also be `@dataclass` classes:
+
+```python
+@dataclass
+class NEFColumnsRenameParseException(NEFPipelinesException):
+    """Parse error in rename argument specification."""
+
+    error_type: str  # 'empty_tag', 'empty_new_name', 'unpaired_tag', 'missing_selector'
+    arg: str  # The problematic argument
+    selector: Optional[str] = None  # Value of --selector (for context)
+    index: Optional[int] = None  # Argument position (for unpaired case)
+```
+
+**Library Function (raises with data only):**
+
+```python
+def _parse_rename_arguments_or_raise(
+    arguments: List[str], selector: str = None
+) -> List[Tuple[FrameLoopAndTagSelectors, str]]:
+    """Parse rename arguments into structured pairs.
+
+    Raises:
+        NEFColumnsRenameParseException: if arguments are malformed
+    """
+    # ... parsing logic ...
+    if not tag_part:
+        raise NEFColumnsRenameParseException("empty_tag", arg, selector)
+    # Returns structured data, no user-facing strings
+```
+
+**Formatting Helper (transforms data to user message):**
+
+```python
+def _build_rename_parse_error_message(
+    e: NEFColumnsRenameParseException,
+    entry: Optional[Entry] = None,
+    input_file: Optional[Path] = None,
+) -> str:
+    """Format exception into user-friendly message with context."""
+    if e.error_type == "empty_tag":
+        msg = f"tag name is empty in rename spec '{e.arg}'"
+    # ... other error types ...
+
+    # Add context if available
+    context_parts = []
+    if entry:
+        context_parts.append(f"entry '{entry.entry_id}'")
+    if input_file and input_file != STDIN:
+        context_parts.append(f"file '{input_file}'")
+
+    if context_parts:
+        msg = f"{msg} [{', '.join(context_parts)}]"
+
+    return msg
+```
+
+**CLI Wrapper (catches, formats, exits):**
+
+```python
+def _parse_rename_arguments_or_exit_error(
+    arguments: list[str], selector: str, entry: Entry, input_file: Path
+) -> list[tuple[FrameLoopAndTagSelectors, str]]:
+    """Parse rename arguments or exit with formatted error message."""
+    try:
+        return _parse_rename_arguments_or_raise(arguments, selector)
+    except NEFColumnsRenameParseException as e:
+        msg = _build_rename_parse_error_message(e, entry, input_file)
+        exit_error(msg)
+```
+
+**Benefits:**
+
+- **Reusability**: Library functions can be called programmatically without CLI dependencies
+- **Testability**: Exceptions carry structured data that's easy to inspect in tests
+- **Flexibility**: Error formatting can vary by context (include file/entry info when available)
+- **Maintainability**: Error messages centralized in formatting functions, not scattered through parsing logic
+
+
+## Types of NEF-Pipelines `Pipes` and there Common Structural Features
 
 There are effectively three types of _pipe_ commands
 
