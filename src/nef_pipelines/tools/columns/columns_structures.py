@@ -146,7 +146,7 @@ class NEFColumnsFileIOException(NEFPipelinesException):
 
 
 @dataclass
-class NEFColumnsLoopColumnNotFoundException(NEFPipelinesException):
+class NEFColumnsColumnNotFoundInLoopException(NEFPipelinesException):
     """A column reference (name or index) could not be resolved in a loop."""
 
     ref: Union[int, str]  # column name or 1-based index
@@ -155,7 +155,7 @@ class NEFColumnsLoopColumnNotFoundException(NEFPipelinesException):
 
 
 @dataclass
-class NEFColumnsFileColumnNotFoundException(NEFPipelinesException):
+class NEFColumnsColumnNotFoundInFileException(NEFPipelinesException):
     """A column reference (name or index) could not be resolved in a file."""
 
     ref: Union[int, str]  # column name or 1-based index

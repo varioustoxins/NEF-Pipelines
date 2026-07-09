@@ -29,12 +29,12 @@ from nef_pipelines.tools.columns.columns_structures import (
     ColumnPlacement,
     InsertInstruction,
     InsertPlacement,
+    NEFColumnsColumnNotFoundInFileException,
+    NEFColumnsColumnNotFoundInLoopException,
     NEFColumnsDuplicateLoopException,
     NEFColumnsException,
-    NEFColumnsFileColumnNotFoundException,
     NEFColumnsFileIOException,
     NEFColumnsFileNotFoundException,
-    NEFColumnsLoopColumnNotFoundException,
     NEFColumnsTagCategoryMismatchException,
     NEFInsertCLILoopNotDefinedException,
 )
@@ -222,7 +222,7 @@ def _exit_error_on_pipe_exception(e, specs):
                 {format_specs(relevant_spec)}
             """
         msg = textwrap.dedent(msg).strip()
-    elif isinstance(e, NEFColumnsLoopColumnNotFoundException):
+    elif isinstance(e, NEFColumnsColumnNotFoundInLoopException):
         if isinstance(e.ref, int):
             detail = f"column index {e.ref} out of range (loop has {e.n_columns} columns, indices are 1-based)"
         else:
@@ -232,7 +232,7 @@ def _exit_error_on_pipe_exception(e, specs):
                 {format_specs()}
             """
         msg = textwrap.dedent(msg).strip()
-    elif isinstance(e, NEFColumnsFileColumnNotFoundException):
+    elif isinstance(e, NEFColumnsColumnNotFoundInFileException):
         available_str = ", ".join(e.available) if e.available else "(no columns)"
         if isinstance(e.ref, int):
             detail = f"""

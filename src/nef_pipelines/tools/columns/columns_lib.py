@@ -25,11 +25,11 @@ from nef_pipelines.tools.columns.columns_structures import (
     InsertInstruction,
     InsertPlacement,
     LiteralsValueSpecification,
+    NEFColumnsColumnNotFoundInFileException,
+    NEFColumnsColumnNotFoundInLoopException,
     NEFColumnsException,
-    NEFColumnsFileColumnNotFoundException,
     NEFColumnsFileIOException,
     NEFColumnsFileNotFoundException,
-    NEFColumnsLoopColumnNotFoundException,
     NEFColumnsTagCategoryMismatchException,
     RangeFromValueSpec,
     RangeValueSpec,
@@ -166,7 +166,7 @@ def _resolve_tag(
     if 1 <= idx <= len(tags):
         return tags[idx - 1]
     if loop_category is not None:
-        raise NEFColumnsLoopColumnNotFoundException(idx, loop_category, len(tags))
+        raise NEFColumnsColumnNotFoundInLoopException(idx, loop_category, len(tags))
     raise NEFColumnsException(
         f"column index {idx} out of range (loop has {len(tags)} columns, indices are 1-based)"
     )
@@ -186,7 +186,7 @@ def _resolve_file_col_name(
         return escape_spaces_with_underscore(col_name)
     if 1 <= idx <= len(headers):
         return headers[idx - 1]
-    raise NEFColumnsFileColumnNotFoundException(
+    raise NEFColumnsColumnNotFoundInFileException(
         idx, str(path) if path else "<unknown>", headers
     )
 
@@ -236,7 +236,7 @@ def _parse_ragged_whitespace(lines: List[str], col_name: str, path: Path) -> Lis
         )
     norm_col = escape_spaces_with_underscore(col_name)
     if not rows or norm_col not in rows[0]:
-        raise NEFColumnsFileColumnNotFoundException(col_name, str(path), headers)
+        raise NEFColumnsColumnNotFoundInFileException(col_name, str(path), headers)
     return [row[norm_col] for row in rows]
 
 
@@ -304,7 +304,7 @@ def _read_column_from_file(
                 norm_col = escape_spaces_with_underscore(col_name)
                 if norm_col not in rows[0]:
                     available = list(rows[0].keys())
-                    raise NEFColumnsFileColumnNotFoundException(
+                    raise NEFColumnsColumnNotFoundInFileException(
                         col_name, str(path), available
                     )
                 result = [row[norm_col] for row in rows]
@@ -414,7 +414,7 @@ def _filter_tags(
                 result.append(tags[idx - 1])
             else:
                 if loop_category is not None:
-                    raise NEFColumnsLoopColumnNotFoundException(
+                    raise NEFColumnsColumnNotFoundInLoopException(
                         idx, loop_category, len(tags)
                     )
                 raise NEFColumnsException(
@@ -532,7 +532,7 @@ def _resolve_insert_index(
         category = loop.category.lstrip("_")
         resolved_anchor = _resolve_tag(position_anchor, loop.tags, category)
         if resolved_anchor not in loop.tags:
-            raise NEFColumnsLoopColumnNotFoundException(
+            raise NEFColumnsColumnNotFoundInLoopException(
                 position_anchor, category, len(loop.tags)
             )
         idx = loop.tags.index(resolved_anchor)
