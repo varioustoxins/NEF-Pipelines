@@ -25,12 +25,27 @@ NEF-Pipelines is a Python package for manipulating NEF (NMR Exchange Format) fil
 - `nef` runs the installed version which may be stale
 
 ### Testing
+
+**CRITICAL: `nefl` vs `nef` for Testing**
+
+on a __developers__ machine
+
+- `nef` is the **installed/production** version (what end users see after `uv tool install nef-pipelines`)
+- `nefl` is the **local development** version (tests your current uncommitted changes in `src/`)
+
+**For development work, ONLY `nefl test` results matter** - those test against the current local changes.
+The `nef test` results would be testing the old installed version, which doesn't have any of the current
+refactoring or changes. Ignore `nef test` results during development - they may be broken or out of sync.
+
 ```bash
-# PREFERRED: Run tests with nefl (uses local development version)
+# CORRECT: Run tests with nefl (uses local development version)
 nefl test src/nef_pipelines/tests/entry/test_tree.py
 
 # Run specific test
 nefl test src/nef_pipelines/tests/entry/test_tree.py::test_tree_basic
+
+# WRONG: Do NOT use nef test during development
+# nef test <...>  # This tests the OLD installed version!
 ```
 >NOTE: nefl is on the global path and there are versions for various version of python nefl39 nefl314 etc.
 
