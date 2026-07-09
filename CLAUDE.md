@@ -126,6 +126,9 @@ The application uses a hierarchical command structure built on Typer. Commands s
 
 1. **NEVER use bare asserts for NEF content** - Do not use `assert "some text" in result.stdout` unless told otherwise
 2. **ALWAYS use EXPECTED_ constants** - All expected strings named with EXPECTED_ prefix in UPPER_SNAKE_CASE for text output from output NEF text
+   **this includes error messages**. If used _once_ the `EXPECTED` strings can just be `EXPECTED` and be embedded in the test functio. For
+   shared `EXPECTED` strings they should be names and be a the module _scope_ just before first use and tests that share
+   an `EXPECTED` string should follow each other sequentially in the file
 3. **ALWAYS use assert_lines_match()** - For NEF content comparison: `assert_lines_match(EXPECTED_STRING, actual_content)`
 4. **ALWAYS use isolate_loop()** - For NEF loops: `isolate_loop(content, frame_name, loop_name)`
 5. **ALWAYS test complete structures** - Use complete NEF frames/loops, not partial string matching
