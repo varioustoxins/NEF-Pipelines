@@ -450,6 +450,7 @@ def _resolve_values(value_spec: ValueSpec, n_rows: int, default: str) -> List[st
         result = _read_column_from_file(
             value_spec.path,
             value_spec.col,
+            format=value_spec.format,
             skip=value_spec.skip,
             comment=value_spec.comment,
         )
@@ -513,6 +514,22 @@ def _force_replace_column(
     """Replace all values in an existing column in place."""
     rows = list(loop_row_dict_iter(loop, convert=False))
     values = _resolve_values(value_spec, len(rows), default)
+
+    # Warn about row count mismatches when using file value specs
+    if isinstance(value_spec, FileValueSpecification):
+        file_rows = "row" if len(values) == 1 else "rows"
+        loop_rows = "row" if len(rows) == 1 else "rows"
+        if len(values) < len(rows):
+            warn(
+                f"file {value_spec.path} has {len(values)} {file_rows}, "
+                f"loop has {len(rows)} {loop_rows} - filling remaining with '.'"
+            )
+        elif len(values) > len(rows):
+            warn(
+                f"file {value_spec.path} has {len(values)} {file_rows}, "
+                f"loop has {len(rows)} {loop_rows} - extending loop with '.' in other columns"
+            )
+
     if len(values) < len(rows):
         values = values + [default] * (len(rows) - len(values))
     elif len(values) > len(rows):

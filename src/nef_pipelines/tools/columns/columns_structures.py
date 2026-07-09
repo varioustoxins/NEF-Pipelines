@@ -47,6 +47,7 @@ class FileValueSpecification:
     col: Optional[str]
     skip: int = 0
     comment: str = ""
+    format: ExtractFormat = ExtractFormat.CSV
 
 
 @dataclass
@@ -208,6 +209,17 @@ class NEFColumnsRenameParseException(NEFPipelinesException):
     arg: str  # The problematic argument
     selector: Optional[str] = None  # Value of --selector (for context)
     index: Optional[int] = None  # Argument position (for unpaired case)
+
+
+@dataclass
+class NEFColumnsReplaceInvalidFormatException(NEFPipelinesException):
+    """Invalid replace specification format."""
+
+    arg: str
+    expected_format: str = "selector @file:col or col @file:col"
+
+    def __str__(self) -> str:
+        return f"invalid replace format '{self.arg}'; expected: {self.expected_format}"
 
 
 class NEFColumnsException(NEFPipelinesException): ...  # noqa: E701

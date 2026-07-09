@@ -26,12 +26,14 @@ from nef_pipelines.tools.columns.columns_structures import (
     ColumnPlacement,
     ColumnSpecification,
     DefaultValueSpecification,
+    ExtractFormat,
     FileValueSpecification,
     InsertInstruction,
     InsertPlacement,
     LiteralsValueSpecification,
     NEFColumnsDuplicateLoopException,
     NEFColumnsRenameParseException,
+    NEFColumnsReplaceInvalidFormatException,
     NEFInsertCLILoopNotDefinedException,
     OrderedArguments,
     RangeFromValueSpec,
@@ -151,16 +153,24 @@ def parse_value_spec(spec: Optional[str]) -> ValueSpec:
 
 
 def column_spec_from_str(
-    token: str, skip: int = 0, comment: str = ""
+    token: str,
+    skip: int = 0,
+    comment: str = "",
+    format: Optional["ExtractFormat"] = None,
 ) -> ColumnSpecification:
     """Parse 'col_name' or 'col_name=value_spec' into a ColumnSpec."""
+
     parts = token.split("=", 1)
     col_name = parts[0]
     value_spec = parse_value_spec(parts[1] if len(parts) == 2 else None)
     if isinstance(value_spec, FileValueSpecification):
         col = col_name if value_spec.col is None else value_spec.col
         value_spec = FileValueSpecification(
-            path=value_spec.path, col=col, skip=skip, comment=comment
+            path=value_spec.path,
+            col=col,
+            skip=skip,
+            comment=comment,
+            format=format if format is not None else ExtractFormat.CSV,
         )
     return ColumnSpecification(col_name=col_name, value_spec=value_spec)
 
@@ -672,6 +682,7 @@ def _build_column_instructions(
     resolved_loop_column_specification_pairs: _ResolvedLoopColumnSpecificationPairs,
     skip: int = 0,
     comment: str = "",
+    format: Optional["ExtractFormat"] = None,
 ) -> List[InsertInstruction]:
     column_instructions: List[InsertInstruction] = []
     for loop, group in resolved_loop_column_specification_pairs:
@@ -679,7 +690,7 @@ def _build_column_instructions(
             column_instructions.append(
                 InsertInstruction(
                     column_spec_from_str(
-                        instruction.col_spec, skip=skip, comment=comment
+                        instruction.col_spec, skip=skip, comment=comment, format=format
                     ),
                     instruction.placement,
                     _parse_position_anchor(instruction.anchor),
@@ -854,3 +865,215 @@ def _build_rename_selector_structure(
         frame_tags=[],
         loop_tags=[tag_part],
     )
+
+
+# ===== REORDER PARSING =====
+
+
+def _parse_reorder_arguments_or_raise(
+    selector: Optional[str],
+    column_order: List[str],
+    policy: str,
+) -> FrameLoopAndTagSelectors:
+    """Parse reorder arguments into FrameLoopAndTagSelectors with new column order.
+
+    Returns FrameLoopAndTagSelectors where loop_tags specifies the new order.
+    Columns not in loop_tags stay at end in current order.
+
+    Raises:
+        NEFColumnsReorderMissingSelectorException: no selector and no frame.loop: prefix
+        NEFColumnsReorderInvalidPolicyException: invalid policy value
+        NEFColumnsReorderDuplicateColumnsException: duplicate columns in specification
+    """
+    from nef_pipelines.lib.structures import FrameLoopAndTagSelectors
+    from nef_pipelines.tools.columns.columns_structures import (
+        NEFColumnsReorderDuplicateColumnsException,
+        NEFColumnsReorderInvalidPolicyException,
+        NEFColumnsReorderMissingSelectorException,
+    )
+
+    # Validate policy
+    valid_policies = ["custom", "alphabetical"]
+    if policy not in valid_policies:
+        raise NEFColumnsReorderInvalidPolicyException(policy, valid_policies)
+
+    # If no --selector, first arg should be frame.loop:cols
+    if selector is None:
+        if not column_order:
+            raise NEFColumnsReorderMissingSelectorException(None)
+        first_arg = column_order[0]
+        if ":" in first_arg:
+            selector, _, cols = first_arg.partition(":")
+            if cols:
+                column_order = cols.split(",") + column_order[1:]
+            else:
+                column_order = column_order[1:]
+        else:
+            raise NEFColumnsReorderMissingSelectorException(first_arg)
+
+    # Check for duplicates (excluding *)
+    non_star_cols = [c for c in column_order if c != "*"]
+    seen = set()
+    duplicates = [c for c in non_star_cols if c in seen or seen.add(c)]
+    if duplicates:
+        raise NEFColumnsReorderDuplicateColumnsException(
+            list(dict.fromkeys(duplicates)), selector
+        )
+
+    # Parse selector and return structure with column order in loop_tags
+    parsed_selector = parse_frame_loop_and_tags(selector)
+    return FrameLoopAndTagSelectors(
+        frame_name=parsed_selector.frame_name,
+        loop_name=parsed_selector.loop_name,
+        frame_tags=[],
+        loop_tags=column_order,
+    )
+
+
+def _parse_reorder_arguments_or_exit_error(
+    selector: Optional[str],
+    column_order: List[str],
+    policy: str,
+    entry: Entry,
+    input_file: Path,
+) -> FrameLoopAndTagSelectors:
+    """Wrapper that formats exceptions and exits."""
+    from nef_pipelines.lib.structures import NEFPipelinesException
+    from nef_pipelines.lib.util import exit_error
+
+    try:
+        return _parse_reorder_arguments_or_raise(selector, column_order, policy)
+    except NEFPipelinesException as e:
+        msg = _format_exception_with_context(e, entry, input_file)
+        exit_error(msg)
+
+
+# ===== REPLACE PARSING =====
+
+
+def _parse_replace_arguments_or_raise(
+    selector: Optional[str],
+    replacements: List[str],
+    entry: Entry,
+    format: "ExtractFormat",
+) -> List[InsertInstruction]:
+    """Parse replace arguments into InsertInstructions.
+
+    Replace is just insert with @file:col specifications and --at placement.
+    Directly builds InsertInstructions without roundtrip string parsing.
+
+    TODO: Currently only supports paired format (frame.loop:col @file) and @file value specs.
+          Should support insert syntax: frame.loop:col=@file, frame.loop:col=1..10, etc.
+          Imbalanced argument sets (odd number of args) are not allowed in paired format.
+
+    Raises:
+        NEFColumnsReplaceInvalidFormatException: invalid argument format
+    """
+
+    if len(replacements) % 2 != 0:
+        raise NEFColumnsReplaceInvalidFormatException(
+            f"{len(replacements)} arguments",
+            "selector @file:col or col @file:col (must be pairs)",
+        )
+
+    instructions = []
+    for i in range(0, len(replacements), 2):
+        selector_arg = replacements[i]
+        file_arg = replacements[i + 1]
+
+        if not file_arg.startswith("@"):
+            raise NEFColumnsReplaceInvalidFormatException(
+                file_arg, "file reference must start with '@'"
+            )
+
+        # Parse selector to get frame, loop, and column
+        parsed_selector = parse_frame_loop_and_tags(selector_arg)
+        if not parsed_selector.loop_tags or len(parsed_selector.loop_tags) != 1:
+            raise NEFColumnsReplaceInvalidFormatException(
+                selector_arg,
+                "each selector must specify exactly one column",
+            )
+
+        col_name = parsed_selector.loop_tags[0]
+
+        # Parse file reference: @file:col or @file
+        remainder = file_arg[1:]
+        file_part, _, file_col_part = remainder.partition(":")
+        file_path = Path(file_part)
+        file_col = file_col_part if file_col_part else col_name
+
+        # Find the target loop
+        frames = select_frames(entry, [parsed_selector.frame_name], SelectionType.ANY)
+        for frame in frames:
+            loops = select_loops_by_category(
+                frame.loops,
+                [parsed_selector.loop_name] if parsed_selector.loop_name else [],
+            )
+            for loop in loops:
+                # Build InsertInstruction directly
+                value_spec = FileValueSpecification(
+                    path=file_path,
+                    col=file_col,
+                    format=format,
+                )
+                col_spec = ColumnSpecification(
+                    col_name=col_name,
+                    value_spec=value_spec,
+                )
+                instructions.append(
+                    InsertInstruction(
+                        column_spec=col_spec,
+                        keyword=InsertPlacement.AT,
+                        position_anchor=col_name,
+                        loop=loop,
+                    )
+                )
+
+    return instructions
+
+
+def _parse_replace_arguments_or_exit_error(
+    selector: Optional[str],
+    replacements: List[str],
+    entry: Entry,
+    input_file: Path,
+    format: "ExtractFormat",
+) -> List[InsertInstruction]:
+    """Wrapper that formats exceptions and exits."""
+    from nef_pipelines.lib.structures import NEFPipelinesException
+    from nef_pipelines.lib.util import exit_error
+
+    try:
+        return _parse_replace_arguments_or_raise(selector, replacements, entry, format)
+    except NEFPipelinesException as e:
+        msg = _format_exception_with_context(e, entry, input_file)
+        exit_error(msg)
+
+
+# ===== SHARED UTILITIES =====
+
+
+def _format_exception_with_context(
+    e: Exception,
+    entry: Optional[Entry] = None,
+    input_file: Optional[Path] = None,
+) -> str:
+    """Format any NEFPipelinesException with entry/file context.
+
+    Uses exception's __str__() for base message, adds context.
+    Each exception class defines its own __str__() with specific fields.
+    """
+    from nef_pipelines.lib.util import STDIN
+
+    msg = str(e)
+
+    context_parts = []
+    if entry:
+        context_parts.append(f"entry '{entry.entry_id}'")
+    if input_file and input_file != STDIN:
+        context_parts.append(f"file '{input_file}'")
+
+    if context_parts:
+        msg = f"{msg} [{', '.join(context_parts)}]"
+
+    return msg
