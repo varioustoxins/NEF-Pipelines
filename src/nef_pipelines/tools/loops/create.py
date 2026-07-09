@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Union
 
 import typer
 
@@ -124,7 +124,7 @@ def create(
 
 def _resolve_loop_speification_pairs_or_exit_error(
     entry,
-    specs: list[str] | list[ColumnPlacement],
+    specs: Union[List[str], List[ColumnPlacement]],
     column_specifications_grouped_by_frame_loop: dict[Any, Any],
 ) -> list[tuple[Any, list[ColumnPlacement]]]:
     try:

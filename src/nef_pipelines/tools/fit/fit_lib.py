@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from itertools import combinations
 from math import sqrt
 from statistics import stdev
-from typing import Dict, List, OrderedDict, Tuple, Union
+from typing import Dict, List, Optional, OrderedDict, Tuple, Union
 
 from ordered_set import OrderedSet
 from pynmrstar import Entry, Loop, Saveframe
@@ -80,8 +80,8 @@ def _warn_if_montecarlo_cycles_is_1(cycles: int) -> None:
 
 
 def _get_mc_failed_cycles_or_none(
-    results: dict, cycles: int, noise_level
-) -> dict | None:
+    results: Dict, cycles: int, noise_level
+) -> Optional[Dict]:
     """Extract mc_failed_cycles from results if MC actually ran, else None.
 
     Monte Carlo error propagation only runs when:
