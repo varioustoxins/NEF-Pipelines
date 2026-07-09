@@ -189,4 +189,25 @@ class NEFInsertCLILoopNotDefinedException(NEFPipelinesException):
     is_file_ref: bool
 
 
+@dataclass
+class NEFColumnsRenameColumnNotFoundException(NEFPipelinesException):
+    """A column to rename was not found in the loop."""
+
+    col_name: str
+    loop_category: str
+
+    def __str__(self) -> str:
+        return f"column '{self.col_name}' not found in loop {self.loop_category}"
+
+
+@dataclass
+class NEFColumnsRenameParseException(NEFPipelinesException):
+    """Parse error in rename argument specification."""
+
+    error_type: str  # 'empty_tag', 'empty_new_name', 'unpaired_tag', 'missing_selector'
+    arg: str  # The problematic argument
+    selector: Optional[str] = None  # Value of --selector (for context)
+    index: Optional[int] = None  # Argument position (for unpaired case)
+
+
 class NEFColumnsException(NEFPipelinesException): ...  # noqa: E701

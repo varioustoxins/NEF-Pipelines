@@ -16,7 +16,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames,
     select_loops_by_category,
 )
-from nef_pipelines.lib.structures import FrameLoopsAndTags
+from nef_pipelines.lib.structures import FrameLoopAndTagSelectors, FrameLoopsAndTags
 from nef_pipelines.lib.util import escape_spaces_with_underscore, exit_error, to_ordinal
 from nef_pipelines.tools.columns.columns_lib import (
     _csv_column_names,
@@ -31,6 +31,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     InsertPlacement,
     LiteralsValueSpecification,
     NEFColumnsDuplicateLoopException,
+    NEFColumnsRenameParseException,
     NEFInsertCLILoopNotDefinedException,
     OrderedArguments,
     RangeFromValueSpec,
@@ -313,6 +314,11 @@ def _peel_selector_prefix(token: str) -> Tuple[str, str]:
     ):
         return "", token[: colon + 1] + token[eq + 1 :]
 
+    # Recognize bare "frame.loop" (dot but no colon/eq) as empty-loop selector
+    # Used by loops create to allow "frame.loop" meaning "create empty loop"
+    if dot != -1 and colon == -1 and eq == -1:
+        return token + ":", ""
+
     return "", token
 
 
@@ -478,6 +484,12 @@ def _merge_selector_and_prefix(
             raise NEFInsertCLILoopNotDefinedException(original_col_spec, selector, True)
         return selector, original_col_spec
     if selector is None:
+        # Before raising generic error, check for syntax errors (better error message)
+        # Try parsing as frame.loop - if it fails with syntax error, let that propagate
+        try:
+            parse_frame_loop_and_tags(original_col_spec)
+        except BadFrameLoopTagSyntaxException:
+            raise  # Let syntax errors propagate with specific message
         raise NEFInsertCLILoopNotDefinedException(original_col_spec, None, False)
     if "." not in selector:
         colon = bare_spec.find(":")
@@ -574,17 +586,33 @@ def _parse_ordered_col_instructions(
 
     ctx_args is retained for error-message context in the caller; ordering comes entirely
     from ctx.obj["sequence"].
+
+    If no sequence exists (no position flags), builds a simple sequence from ctx_args with
+    all specs treated as cols (all get APPEND placement).
     """
-    sequence = (ctx.obj or {}).get("sequence", [])
+    sequence = (ctx.obj or {}).get("sequence", []) if ctx else []
+
+    # Fallback for commands without position flags (e.g., loops create)
+    if not sequence and ctx_args:
+        sequence = [
+            OrderedArguments(i, "col", None, arg) for i, arg in enumerate(ctx_args)
+        ]
+
     pending: List[str] = []
     instructions: List[ColumnPlacement] = []
     for arg in sequence:
         if arg.kind == "col":
             prefix, col_specs = _peel_selector_prefix(arg.value)
-            for col_spec in _split_on_column_specification_on_assignment_boundaries(
+            split_specs = _split_on_column_specification_on_assignment_boundaries(
                 col_specs
-            ):
-                pending.append(prefix + col_spec)
+            )
+            if split_specs:
+                for col_spec in split_specs:
+                    pending.append(prefix + col_spec)
+            elif prefix:
+                # Has frame.loop: prefix but no column specs (empty remainder after colon)
+                # Keep the colon to maintain frame.loop: format for empty loops
+                pending.append(prefix)
         else:  # flag
             for col in pending:
                 instructions.append(
@@ -692,3 +720,137 @@ def _build_missing_loop_error_message(e: NEFInsertCLILoopNotDefinedException):
             msg = textwrap.dedent(msg).strip()
 
     return msg
+
+
+# Rename Argument Parsing Functions
+
+
+def _build_rename_parse_error_message(
+    e: NEFColumnsRenameParseException,
+    entry: Optional[Entry] = None,
+    input_file: Optional[Path] = None,
+) -> str:
+    """Format rename parse exception into user-friendly message with context."""
+    from nef_pipelines.lib.util import STDIN
+
+    # Build error-specific message
+    if e.error_type == "empty_tag":
+        msg = f"tag name is empty in rename spec '{e.arg}'"
+    elif e.error_type == "empty_new_name":
+        msg = f"new name is empty in rename spec '{e.arg}'"
+    elif e.error_type == "unpaired_tag":
+        msg = f"unpaired tag '{e.arg}' - tags must come in pairs"
+    elif e.error_type == "missing_selector":
+        msg = f"bare tag '{e.arg}' requires --selector to be specified"
+    else:
+        msg = f"invalid rename specification: {e.arg}"
+
+    # Add context if available
+    context_parts = []
+    if entry:
+        context_parts.append(f"entry '{entry.entry_id}'")
+    if input_file and input_file != STDIN:
+        context_parts.append(f"file '{input_file}'")
+
+    if context_parts:
+        msg = f"{msg} [{', '.join(context_parts)}]"
+
+    return msg
+
+
+def _parse_rename_arguments_or_raise(
+    arguments: List[str], selector: str = None
+) -> List[Tuple[FrameLoopAndTagSelectors, str]]:
+    """Parse rename arguments into (FrameLoopAndTagSelectors, new_name) pairs.
+
+    Supports: frame.loop:tag=new, frame.loop:tag new, tag=new, tag new
+
+    Raises:
+        NEFColumnsRenameParseException: if arguments are malformed
+    """
+    pairs = []
+    i = 0
+
+    while i < len(arguments):
+        if "=" in arguments[i]:
+            parsed_selector, new_name = _parse_rename_equals_format(
+                arguments[i], selector
+            )
+            pairs.append((parsed_selector, new_name))
+            i += 1
+        else:
+            parsed_selector, new_name = _parse_rename_bare_pair(arguments, i, selector)
+            pairs.append((parsed_selector, new_name))
+            i += 2
+
+    return pairs
+
+
+def _parse_rename_equals_format(
+    arg: str, selector: str
+) -> Tuple[FrameLoopAndTagSelectors, str]:
+    """Parse 'tag=new' or 'frame.loop:tag=new' format.
+
+    Raises:
+        NEFColumnsRenameParseException: if tag or new name is empty
+    """
+    tag_part, _, new_name = arg.partition("=")
+
+    if not tag_part:
+        raise NEFColumnsRenameParseException("empty_tag", arg, selector)
+    if not new_name:
+        raise NEFColumnsRenameParseException("empty_new_name", arg, selector)
+
+    parsed_selector = _build_rename_selector_structure(tag_part, selector)
+    return parsed_selector, new_name.strip()
+
+
+def _parse_rename_bare_pair(
+    arguments: List[str], index: int, selector: str
+) -> Tuple[FrameLoopAndTagSelectors, str]:
+    """Parse 'tag new' or 'frame.loop:tag new' bare pair format.
+
+    Raises:
+        NEFColumnsRenameParseException: if tag is unpaired
+    """
+    arg = arguments[index]
+
+    if index + 1 >= len(arguments):
+        raise NEFColumnsRenameParseException("unpaired_tag", arg, selector, index)
+
+    next_arg = arguments[index + 1]
+    if "=" in next_arg:
+        raise NEFColumnsRenameParseException("unpaired_tag", arg, selector, index)
+
+    parsed_selector = _build_rename_selector_structure(arg, selector)
+    return parsed_selector, next_arg.strip()
+
+
+def _build_rename_selector_structure(
+    tag_part: str, selector: str
+) -> FrameLoopAndTagSelectors:
+    """Build FrameLoopAndTagSelectors directly from tag and optional --selector.
+
+    Raises:
+        NEFColumnsRenameParseException: if bare tag provided without --selector
+    """
+    from nef_pipelines.lib.structures import FrameLoopAndTagSelectors
+
+    has_frame_loop = ":" in tag_part or "." in tag_part
+
+    if has_frame_loop:
+        # Parse full selector: frame.loop:tag
+        return parse_frame_loop_and_tags(tag_part)
+
+    # Bare tag - combine with --selector
+    if not selector:
+        raise NEFColumnsRenameParseException("missing_selector", tag_part, selector)
+
+    # Parse selector to get frame and loop, then add tag
+    base_selector = parse_frame_loop_and_tags(selector)
+    return FrameLoopAndTagSelectors(
+        frame_name=base_selector.frame_name,
+        loop_name=base_selector.loop_name,
+        frame_tags=[],
+        loop_tags=[tag_part],
+    )
