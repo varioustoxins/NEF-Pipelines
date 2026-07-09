@@ -1,0 +1,1208 @@
+data_GB1_T1_Relaxation
+
+
+save_nef_nmr_spectrum_T2_0ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_0ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_1_3-6ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            902979.7083
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#FF0000'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -902979.7083
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#4682B4'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#FF0000'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_1_3-6ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#FF0000'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#FF0000'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.17832125    11.29083699   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   139.0178879   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.115940534   11.29426178   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.04552364   139.0374152   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.00000000   .   16518682   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_444ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_444ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_2_7-2ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            807473.0554
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#008000'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -807473.0554
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#8A2BE2'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#008000'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_2_7-2ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#008000'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#008000'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.000000000   .   16122042   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_888ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_888ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_3_21-6ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            765399.2998
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#800000'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -765399.2998
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#00CED1'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#800000'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_3_21-6ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#800000'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#800000'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.10000000         .   15322907   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_1333ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_1333ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_4_21-6ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            766188.8227
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#000080'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -766188.8227
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#FF4500'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#000080'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_4_21-6ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#000080'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#000080'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    0.90000000         .   15504337   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+save_
+
+save_nef_nmr_spectrum_T2_1777ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_1777ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_5_36ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            703076.2533
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#FF1493'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -703076.2533
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#32CD32'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#FF1493'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_5_36ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#FF1493'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#FF1493'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.20000000         .   13934732   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_2222ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_2222ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_6_54ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            622431.9973
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#008080'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -622431.9973
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#DA70D6'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#008080'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_6_54ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#008080'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#008080'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    0.80000000          .   12218569   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+   stop_
+save_
+
+save_nef_nmr_spectrum_T2_2666ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_2666ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_7_54ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            621661.4378
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#800080'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -621661.4378
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#808000'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#800080'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_7_54ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#800080'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#800080'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.30000000         .   12163243   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+save_
+
+save_nef_nmr_spectrum_T2_3111ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_3111ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_8_75-6ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            550711.1906
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#1E90FF'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -550711.1906
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#FFA500'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#1E90FF'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_8_75-6ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#1E90FF'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#1E90FF'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    0.70000000     .   10507608   .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_3555ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_3555ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_9_101ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            500223.0067
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#FF0000'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -500223.0067
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#4682B4'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#FF0000'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_9_101ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#FF0000'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#FF0000'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    1.40000000     .   9431731     .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_T2_4000ms`1`
+   _nef_nmr_spectrum.sf_category                           nef_nmr_spectrum
+   _nef_nmr_spectrum.sf_framecode                          nef_nmr_spectrum_T2_4000ms`1`
+   _nef_nmr_spectrum.num_dimensions                        2
+   _nef_nmr_spectrum.chemical_shift_list                   nef_chemical_shift_list_default
+   _nef_nmr_spectrum.experiment_classification             .
+   _nef_nmr_spectrum.experiment_type                       T2_9_101ms
+   _nef_nmr_spectrum.ccpn_reference_experiment_dimensions  '(None, None)'
+   _nef_nmr_spectrum.ccpn_positive_contour_count           10
+   _nef_nmr_spectrum.ccpn_positive_contour_base            500223.0067
+   _nef_nmr_spectrum.ccpn_positive_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_positive_contour_colour          '#FF0000'
+   _nef_nmr_spectrum.ccpn_negative_contour_count           10
+   _nef_nmr_spectrum.ccpn_negative_contour_base            -500223.0067
+   _nef_nmr_spectrum.ccpn_negative_contour_factor          1.41
+   _nef_nmr_spectrum.ccpn_negative_contour_colour          '#4682B4'
+   _nef_nmr_spectrum.ccpn_slice_colour                     '#FF0000'
+   _nef_nmr_spectrum.ccpn_spectrum_scale                   1
+   _nef_nmr_spectrum.ccpn_spinning_rate                    .
+   _nef_nmr_spectrum.ccpn_spectrum_comment                 .
+   _nef_nmr_spectrum.ccpn_spectrum_file_path               /Users/garyt/programs/ccpnmr/tutorial_data/CcpnDynamicsTutorial/spectra/GB1_T2/T2_9_101ms.ucsf
+   _nef_nmr_spectrum.ccpn_file_type                        UCSF
+   _nef_nmr_spectrum.ccpn_file_scale_factor                1
+   _nef_nmr_spectrum.ccpn_sample                           .
+   _nef_nmr_spectrum.ccpn_peaklist_serial                  1
+   _nef_nmr_spectrum.ccpn_peaklist_comment                 .
+   _nef_nmr_spectrum.ccpn_peaklist_name                    .
+   _nef_nmr_spectrum.ccpn_peaklist_is_simulated            false
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_colour           '#FF0000'
+   _nef_nmr_spectrum.ccpn_peaklist_symbol_style            cross
+   _nef_nmr_spectrum.ccpn_peaklist_text_colour             '#FF0000'
+   _nef_nmr_spectrum.ccpn_file_header_size                 109
+   _nef_nmr_spectrum.ccpn_file_number_type                 float
+   _nef_nmr_spectrum.ccpn_file_is_big_endian               true
+   _nef_nmr_spectrum.ccpn_file_byte_number                 4
+   _nef_nmr_spectrum.ccpn_file_block_header_size           0
+
+   loop_
+      _nef_spectrum_dimension.dimension_id
+      _nef_spectrum_dimension.axis_unit
+      _nef_spectrum_dimension.axis_code
+      _nef_spectrum_dimension.spectrometer_frequency
+      _nef_spectrum_dimension.spectral_width
+      _nef_spectrum_dimension.value_first_point
+      _nef_spectrum_dimension.folding
+      _nef_spectrum_dimension.absolute_peak_positions
+      _nef_spectrum_dimension.is_acquisition
+      _nef_spectrum_dimension.ccpn_axis_code
+
+     1   ppm   1H    600.0529785   6.178321657   11.29414645   circular   true   true    H
+     2   ppm   15N   60.81000137   39.99189159   138.9959611   circular   true   false   N
+
+   stop_
+
+   loop_
+      _ccpn_spectrum_dimension.dimension_id
+      _ccpn_spectrum_dimension.point_count
+      _ccpn_spectrum_dimension.reference_point
+      _ccpn_spectrum_dimension.total_point_count
+      _ccpn_spectrum_dimension.assignment_tolerance
+      _ccpn_spectrum_dimension.lower_aliasing_limit
+      _ccpn_spectrum_dimension.higher_aliasing_limit
+      _ccpn_spectrum_dimension.measurement_type
+      _ccpn_spectrum_dimension.phase_0
+      _ccpn_spectrum_dimension.phase_1
+      _ccpn_spectrum_dimension.window_function
+      _ccpn_spectrum_dimension.lorentzian_broadening
+      _ccpn_spectrum_dimension.gaussian_broadening
+      _ccpn_spectrum_dimension.sine_window_shift
+
+     1   902    .   .   0.03   5.11924958    11.29757124   Shift   .   .   .   .   .   .
+     2   1024   .   .   0.4    99.02359676   139.0154883   Shift   .   .   .   .   .   .
+
+   stop_
+
+   loop_
+      _nef_spectrum_dimension_transfer.dimension_1
+      _nef_spectrum_dimension_transfer.dimension_2
+      _nef_spectrum_dimension_transfer.transfer_type
+      _nef_spectrum_dimension_transfer.is_indirect
+
+
+   stop_
+
+   loop_
+      _nef_peak.index
+      _nef_peak.peak_id
+      _nef_peak.volume
+      _nef_peak.volume_uncertainty
+      _nef_peak.height
+      _nef_peak.height_uncertainty
+      _nef_peak.position_1
+      _nef_peak.position_uncertainty_1
+      _nef_peak.position_2
+      _nef_peak.position_uncertainty_2
+      _nef_peak.chain_code_1
+      _nef_peak.sequence_code_1
+      _nef_peak.residue_name_1
+      _nef_peak.atom_name_1
+      _nef_peak.chain_code_2
+      _nef_peak.sequence_code_2
+      _nef_peak.residue_name_2
+      _nef_peak.atom_name_2
+      _nef_peak.ccpn_figure_of_merit
+      _nef_peak.ccpn_linked_integral
+      _nef_peak.ccpn_annotation
+      _nef_peak.ccpn_comment
+      _nef_peak.ccpn_peak_list_serial
+
+     1    1    0.60000000     .   9431731     .   9.033274158   .   122.4242592   .   A   18   LYS   H   A   18   LYS   N   1   .   .   .   1
+
+   stop_
+
+save_
+
+save_nefpls_series_list_MEAN
+   _nefpls_series_list.sf_category           nefpls_series_list
+   _nefpls_series_list.sf_framecode          nefpls_series_list_MEAN
+   _nefpls_series_list.experiment_type       heteronuclear_R2_relaxation
+   _nefpls_series_list.series_variable_type  time
+   _nefpls_series_list.series_variable_unit  ms
+   _nefpls_series_list.data_variable_type    time
+   _nefpls_series_list.data_variable_unit    ms
+   _nefpls_series_list.data_value_type       intensity
+   _nefpls_series_list.data_value_unit       .
+   _nefpls_series_list.version               0.1.0a
+   _nefpls_series_list.comment               .
+
+   loop_
+      _nefpls_series_experiment.nmr_spectrum_id
+      _nefpls_series_experiment.reference_experiment
+      _nefpls_series_experiment.combination_id
+      _nefpls_series_experiment.pseudo_dimension
+      _nefpls_series_experiment.pseudo_dimension_point
+      _nefpls_series_experiment.series_variable
+      _nefpls_series_experiment.series_variable_error
+
+     nef_nmr_spectrum_T2_0ms`1`        false   .   .   .   0.000000000   .
+     nef_nmr_spectrum_T2_444ms`1`      false   .   .   .   0.444444444   .
+     nef_nmr_spectrum_T2_888ms`1`      false   .   .   .   0.888888889   .
+     nef_nmr_spectrum_T2_1333ms`1`     false   .   .   .   1.333333333   .
+     nef_nmr_spectrum_T2_1777ms`1`     false   .   .   .   1.777777778   .
+     nef_nmr_spectrum_T2_2222ms`1`     false   .   .   .   2.222222222   .
+     nef_nmr_spectrum_T2_2666ms`1`     false   .   .   .   2.666666666   .
+     nef_nmr_spectrum_T2_3111ms`1`     false   .   .   .   3.111111111   .
+     nef_nmr_spectrum_T2_3555ms`1`     false   .   .   .   3.555555555   .
+     nef_nmr_spectrum_T2_4000ms`1`     false   .   .   .   4.000000000   .
+
+   stop_
+
+   loop_
+      _nefpls_series_data.nmr_spectrum_id
+      _nefpls_series_data.peak_id
+      _nefpls_series_data.variable_value
+      _nefpls_series_data.variable_error
+      _nefpls_series_data.value
+      _nefpls_series_data.value_error
+      _nefpls_series_data.relaxation_list_id
+      _nefpls_series_data.data_id
+
+     nef_nmr_spectrum_T2_0ms`1`       1    0.000000000   .   1.00000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_444ms`1`     1    0.444444444   .   1.00000000   .    nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_888ms`1`     1    0.888888889   .   1.10000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_1333ms`1`    1    1.333333333   .   0.90000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_1777ms`1`    1    1.777777778   .   1.20000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_2222ms`1`    1    2.222222222   .   0.80000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_2666ms`1`    1    2.666666666   .   1.30000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_3111ms`1`    1    3.111111111   .   0.70000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_3555ms`1`    1    3.555555555   .   1.40000000    .   nefpls_relaxation_list_MEAN   1
+     nef_nmr_spectrum_T2_4000ms`1`    1    4.000000000   .   0.60000000    .   nefpls_relaxation_list_MEAN   1
+
+   stop_
+
+save_

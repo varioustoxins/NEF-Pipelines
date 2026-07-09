@@ -1,0 +1,1071 @@
+data_paxx_hetnoecopy
+
+save_nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_category           nef_nmr_meta_data
+   _nef_nmr_meta_data.sf_framecode          nef_nmr_meta_data
+   _nef_nmr_meta_data.format_name           nmr_exchange_format
+   _nef_nmr_meta_data.format_version        1.1
+   _nef_nmr_meta_data.program_name          NEFPipelines
+   _nef_nmr_meta_data.program_version       0.1.110
+   _nef_nmr_meta_data.creation_date         2025-08-01T11:11:10.712869
+   _nef_nmr_meta_data.uuid                  NEFPipelines-2025-08-01T11:11:10.712869-0040554382
+   _nef_nmr_meta_data.coordinate_file_name  .
+   _nef_nmr_meta_data.script_name           series/build.py
+
+   loop_
+      _nef_program_script.program_name
+      _nef_program_script.script_name
+      _nef_program_script.script
+
+     CcpNmr   exportProject   .
+
+   stop_
+
+save_
+
+save_nef_nmr_spectrum_0.00_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.00_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_0.44_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.44_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_0.88_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.88_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_1.33_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_1.33_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_1.77_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_1.77_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_2.22_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_2.22_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_2.66_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_2.66_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_3.11_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_3.11_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_3.55_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_3.55_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_4.00_2`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_4.00_2`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+
+
+save_nef_nmr_spectrum_0.00_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.00_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_0.44_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.44_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_0.88_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_0.88_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_1.33_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_1.33_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_1.77_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_1.77_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_2.22_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_2.22_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_2.66_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_2.66_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_3.11_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_3.11_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_3.55_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_3.55_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+save_nef_nmr_spectrum_4.00_4`2`
+      _nef_nmr_spectrum.sf_category                   nef_nmr_spectrum
+      _nef_nmr_spectrum.sf_framecode                  nef_nmr_spectrum_4.00_4`2`
+      _nef_nmr_spectrum.num_dimensions                2
+      loop_
+         _nef_spectrum_dimension.dimension_id
+         _nef_spectrum_dimension.axis_unit
+         _nef_spectrum_dimension.axis_code
+         _nef_spectrum_dimension.spectrometer_frequency
+         _nef_spectrum_dimension.spectral_width
+         _nef_spectrum_dimension.value_first_point
+         _nef_spectrum_dimension.folding
+         _nef_spectrum_dimension.absolute_peak_positions
+         _nef_spectrum_dimension.is_acquisition
+         _nef_spectrum_dimension.ccpn_axis_code
+         1  ppm  1H   800.3099151  8.009717597  12.65  circular  true  true   H
+         2  ppm  15N  81.09469954  20.00529228  127.6  circular  true  false  N
+      stop_
+      loop_
+         _nef_peak.index
+         _nef_peak.peak_id
+         _nef_peak.volume
+         _nef_peak.volume_uncertainty
+         _nef_peak.height
+         _nef_peak.height_uncertainty
+         _nef_peak.position_1
+         _nef_peak.position_uncertainty_1
+         _nef_peak.position_2
+         _nef_peak.position_uncertainty_2
+         _nef_peak.chain_code_1
+         _nef_peak.sequence_code_1
+         _nef_peak.residue_name_1
+         _nef_peak.atom_name_1
+         _nef_peak.chain_code_2
+         _nef_peak.sequence_code_2
+         _nef_peak.residue_name_2
+         _nef_peak.atom_name_2
+         _nef_peak.ccpn_figure_of_merit
+         _nef_peak.ccpn_linked_integral
+         _nef_peak.ccpn_annotation
+         _nef_peak.ccpn_comment
+         _nef_peak.ccpn_peak_list_serial
+         1   1   .  .  213700.3281  .  7.762719869  .  120.7989446  .  B  145  THR  H  B  145  THR  N  1  .  .  .  2
+      stop_
+save_
+
+
+save_nefpls_series_list_T1_NOE_pos
+   _nefpls_series_list.sf_category           nefpls_series_list
+   _nefpls_series_list.sf_framecode          nefpls_series_list_T1_NOE_pos
+   _nefpls_series_list.experiment_type       OTHER
+   _nefpls_series_list.series_variable_type  unknown
+   _nefpls_series_list.series_variable_unit  .
+   _nefpls_series_list.data_variable_type    unknown
+   _nefpls_series_list.data_variable_unit    .
+   _nefpls_series_list.data_value_type       unknown
+   _nefpls_series_list.data_value_unit       .
+   _nefpls_series_list.version               0.1.0a
+   _nefpls_series_list.comment               .
+
+   loop_
+      _nefpls_series_experiment.nmr_spectrum_id
+      _nefpls_series_experiment.reference_experiment
+      _nefpls_series_experiment.combination_id
+      _nefpls_series_experiment.pseudo_dimension
+      _nefpls_series_experiment.pseudo_dimension_point
+      _nefpls_series_experiment.series_variable
+      _nefpls_series_experiment.series_variable_error
+
+     nef_nmr_spectrum_0.00_2`2`   false   .   .   .   0.000000000   .
+     nef_nmr_spectrum_0.44_2`2`   false   .   .   .   0.444444444   .
+     nef_nmr_spectrum_0.88_2`2`   false   .   .   .   0.888888889   .
+     nef_nmr_spectrum_1.33_2`2`   false   .   .   .   1.333333333   .
+     nef_nmr_spectrum_1.77_2`2`   false   .   .   .   1.777777778   .
+     nef_nmr_spectrum_2.22_2`2`   false   .   .   .   2.222222222   .
+     nef_nmr_spectrum_2.66_2`2`   false   .   .   .   2.666666666   .
+     nef_nmr_spectrum_3.11_2`2`   false   .   .   .   3.111111111   .
+     nef_nmr_spectrum_3.55_2`2`   false   .   .   .   3.555555555   .
+     nef_nmr_spectrum_4.00_2`2`   false   .   .   .   4.000000000   .
+
+
+   stop_
+
+   loop_
+      _nefpls_series_data.nmr_spectrum_id
+      _nefpls_series_data.peak_id
+      _nefpls_series_data.variable_value
+      _nefpls_series_data.variable_error
+      _nefpls_series_data.value
+      _nefpls_series_data.value_error
+      _nefpls_series_data.relaxation_list_id
+      _nefpls_series_data.data_id
+
+      nef_nmr_spectrum_0.00_2`2`  1   0.000000000   .   2.50000000  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_0.44_2`2`  1   0.444444444   .   1.84171595  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_0.88_2`2`  1   0.888888889   .   1.47232383  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_1.33_2`2`  1   1.333333333   .   1.26504167  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_1.77_2`2`  1   1.777777778   .   1.14872653  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_2.22_2`2`  1   2.222222222   .   1.08345700  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_2.66_2`2`  1   2.666666666   .   1.04683139  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_3.11_2`2`  1   3.111111111   .   1.02627915  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_3.55_2`2`  1   3.555555555   .   1.01474639  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_4.00_2`2`  1   4.000000000   .   1.00827485  .   nefpls_relaxation_list_r1    1
+
+      nef_nmr_spectrum_0.00_2`2`  1   0.000000000   .   2.50000000  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_0.44_2`2`  1   0.444444444   .   1.84171595  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_0.88_2`2`  1   0.888888889   .   1.47232383  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_1.33_2`2`  1   1.333333333   .   1.26504167  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_1.77_2`2`  1   1.777777778   .   1.14872653  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_2.22_2`2`  1   2.222222222   .   1.08345700  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_2.66_2`2`  1   2.666666666   .   1.04683139  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_3.11_2`2`  1   3.111111111   .   1.02627915  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_3.55_2`2`  1   3.555555555   .   1.01474639  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_4.00_2`2`  1   4.000000000   .   1.00827485  .   nefpls_relaxation_list_noe   1
+
+   stop_
+
+save_
+
+save_nefpls_series_list_T1_NOE_neg
+   _nefpls_series_list.sf_category           nefpls_series_list
+   _nefpls_series_list.sf_framecode          nefpls_series_list_T1_NOE_neg
+   _nefpls_series_list.experiment_type       OTHER
+   _nefpls_series_list.series_variable_type  unknown
+   _nefpls_series_list.series_variable_unit  .
+   _nefpls_series_list.data_variable_type    unknown
+   _nefpls_series_list.data_variable_unit    .
+   _nefpls_series_list.data_value_type       unknown
+   _nefpls_series_list.data_value_unit       .
+   _nefpls_series_list.version               0.1.0a
+   _nefpls_series_list.comment               .
+
+   loop_
+      _nefpls_series_experiment.nmr_spectrum_id
+      _nefpls_series_experiment.reference_experiment
+      _nefpls_series_experiment.combination_id
+      _nefpls_series_experiment.pseudo_dimension
+      _nefpls_series_experiment.pseudo_dimension_point
+      _nefpls_series_experiment.series_variable
+      _nefpls_series_experiment.series_variable_error
+
+     nef_nmr_spectrum_0.00_4`2`   false   .   .   .   0.000000000   .
+     nef_nmr_spectrum_0.44_4`2`   false   .   .   .   0.444444444   .
+     nef_nmr_spectrum_0.88_4`2`   false   .   .   .   0.888888889   .
+     nef_nmr_spectrum_1.33_4`2`   false   .   .   .   1.333333333   .
+     nef_nmr_spectrum_1.77_4`2`   false   .   .   .   1.777777778   .
+     nef_nmr_spectrum_2.22_4`2`   false   .   .   .   2.222222222   .
+     nef_nmr_spectrum_2.66_4`2`   false   .   .   .   2.666666666   .
+     nef_nmr_spectrum_3.11_4`2`   false   .   .   .   3.111111111   .
+     nef_nmr_spectrum_3.55_4`2`   false   .   .   .   3.555555555   .
+     nef_nmr_spectrum_4.00_4`2`   false   .   .   .   4.000000000   .
+
+   stop_
+
+   loop_
+      _nefpls_series_data.nmr_spectrum_id
+      _nefpls_series_data.peak_id
+      _nefpls_series_data.variable_value
+      _nefpls_series_data.variable_error
+      _nefpls_series_data.value
+      _nefpls_series_data.value_error
+      _nefpls_series_data.relaxation_list_id
+      _nefpls_series_data.data_id
+
+      nef_nmr_spectrum_0.00_4`2`  1   0.000000000   .  -0.50000000  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_0.44_4`2`  1   0.444444444   .   0.15828405  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_0.88_4`2`  1   0.888888889   .   0.52767617  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_1.33_4`2`  1   1.333333333   .   0.73495833  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_1.77_4`2`  1   1.777777778   .   0.85127347  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_2.22_4`2`  1   2.222222222   .   0.91654300  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_2.66_4`2`  1   2.666666666   .   0.95316861  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_3.11_4`2`  1   3.111111111   .   0.97372085  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_3.55_4`2`  1   3.555555555   .   0.98525361  .   nefpls_relaxation_list_r1    1
+      nef_nmr_spectrum_4.00_4`2`  1   4.000000000   .   0.99172515  .   nefpls_relaxation_list_r1    1
+
+      nef_nmr_spectrum_0.00_4`2`  1   0.000000000   .  -0.50000000  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_0.44_4`2`  1   0.444444444   .   0.15828405  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_0.88_4`2`  1   0.888888889   .   0.52767617  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_1.33_4`2`  1   1.333333333   .   0.73495833  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_1.77_4`2`  1   1.777777778   .   0.85127347  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_2.22_4`2`  1   2.222222222   .   0.91654300  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_2.66_4`2`  1   2.666666666   .   0.95316861  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_3.11_4`2`  1   3.111111111   .   0.97372085  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_3.55_4`2`  1   3.555555555   .   0.98525361  .   nefpls_relaxation_list_noe   1
+      nef_nmr_spectrum_4.00_4`2`  1   4.000000000   .   0.99172515  .   nefpls_relaxation_list_noe   1
+
+   stop_
+
+save_
