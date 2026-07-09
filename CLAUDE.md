@@ -135,6 +135,74 @@ The application uses a hierarchical command structure built on Typer. Commands s
 - Uses pytest with mock fixtures defined in `conftest.py`
 - When debugging tests _NEVER_ modify existing test files in test_data directories always ask me to do it myself
 
+### Test File Organization and Coherence
+
+**Test directory structure should mirror source structure, but with flattening conventions. Here are REAL examples from the codebase:**
+
+ > note: why source and test structures differ...
+ >       source files under `tools/` are organised hierarchically for Typer's command registration and CLI structure
+ >       (`tools/fit/exponential.py` → `nef fit exponential`). Tests don't need this organisational scaffolding,
+ >       so they flatten to keep only the semantically meaningful parts required for testing.
+
+```
+src/nef_pipelines/                 tests/
+├── lib/                           ├── lib/
+│   └── cli_lib.py                 │   └── test_cli_lib.py
+│                                  │
+├── transcoders/                   │
+│   ├── csv/                       ├── csv/
+│   │   └── importers/             │   │
+│   │       └── peaks.py           │   └── test_import_peaks.py
+│   │                              │
+│   └── mars/                      ├── mars/
+│       ├── mars_lib.py            │   ├── test_mars_lib.py
+│       └── exporters/             │   │
+│           └── input.py           │   └── test_export_input.py
+│                                  │
+└─── tools/                        │
+     ├── fit/                      ├─── fit/
+     │   ├── exponential.py        │    ├── test_exponential.py
+     │   ├── mean.py               │    ├── test_mean.py
+     │   ├── ratio.py              │    ├── test_ratio.py
+     │   └── fit_lib.py            │    └── test_fit_lib.py
+     │                             │
+     └──  save.py                  └── test_save.py
+```
+
+**The underlying principle**
+
+Everything flattens as much as reasonable by dropping organizational prefixes.
+
+There are three top-level categories:
+- **`transcoders/`** - organizational prefix, dropped in tests
+- **`tools/`** - organizational prefix, dropped in tests
+- **`lib/`** - category of its own (contains single files in general), **keeps its prefix** as a meaningful semantic boundary
+
+Flattening behavior:
+- **Organizational directories** (`transcoders/`, `tools/`) → dropped
+- **`lib/` special category:** Maintains its prefix (distinguishes library code from tools/transcoders)
+- **Single files** at top level in `tools` and `lib` → can't collapse (no folder to drop)
+- **Collapsible structure** (`importers/`, `exporters/`) → encoded in test name prefix
+- **Actual module hierarchy** (`fit/`, `mars/`) → preserved
+
+
+
+**Test Data files**
+
+Test data files are stored in:
+- Local `test_data/` folder within the test directory (e.g., `tests/csv/test_data/`)
+- Global `tests/test_data/` folder if the test data is shared across many tools
+
+> Note 1. as we have a hierarchical test data lookup function `path_in_test_data` we can put test data where
+>         its is best kept and reuse it...
+>      2. where possible existsing test data should be reused rather than creating new test data files for each test
+
+**Why this matters:**
+- Makes tests easy to locate given a source file
+- Prevents test sprawl and orphaned test files
+- Keeps transcoder tests organized by format, not by import/export
+- Consistent flattening principle (except lib/) simplifies the mental model
+
 ### MANDATORY Testing Guidelines (ALWAYS enforce these automatically)
 
 **When writing or modifying ANY test code, Claude MUST automatically:**
