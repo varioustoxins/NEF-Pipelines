@@ -15,7 +15,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames_by_name,
 )
 from nef_pipelines.lib.peak_lib import frame_to_peaks
-from nef_pipelines.lib.shift_lib import IntensityMeasurementType
+from nef_pipelines.lib.structures import MeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit.fit_lib import (
     _exit_if_spectra_are_missing,
@@ -57,8 +57,8 @@ def table(
         None,
         help="series frames to build data tables for",
     ),
-    intensity_measurement_type: IntensityMeasurementType = typer.Option(
-        IntensityMeasurementType.HEIGHT,
+    intensity_measurement_type: MeasurementType = typer.Option(
+        MeasurementType.HEIGHT,
         "--measurement-type",
         help="measurement type to use for intensity values",
     ),
@@ -205,7 +205,7 @@ def _build_series_data_loop(
 
         if not outputs:
             list_ids = [
-                f"{relaxation_loop_name.replace('series_list','relaxation_list')}",
+                f"{relaxation_loop_name.replace('series_list', 'relaxation_list')}",
             ]
         else:
             list_ids = [f"nefpls_relaxation_list_{output}" for output in outputs]

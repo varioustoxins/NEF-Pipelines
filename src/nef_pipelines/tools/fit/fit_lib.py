@@ -22,8 +22,7 @@ from nef_pipelines.lib.nef_lib import (
     select_frames,
 )
 from nef_pipelines.lib.peak_lib import frame_to_peaks
-from nef_pipelines.lib.shift_lib import IntensityMeasurementType
-from nef_pipelines.lib.structures import NEFPipelinesException
+from nef_pipelines.lib.structures import MeasurementType, NEFPipelinesException
 from nef_pipelines.lib.util import exit_error, warn
 
 SERIES_DATA_CATEGORY = "_{NAMESPACE}_series_data"
@@ -75,7 +74,8 @@ def _warn_if_montecarlo_cycles_is_1(cycles: int) -> None:
     """
     if cycles == 1:
         warn(
-            "cycles=1 is the same as cycles=0 (no Monte Carlo error analysis); use cycles=0 to disable MC or cycles >= 2 to enable it"
+            "cycles=1 is the same as cycles=0 (no Monte Carlo error analysis); "
+            + "use cycles=0 to disable MC or cycles >= 2 to enable it"
         )
 
 
@@ -614,16 +614,14 @@ def _exit_if_spectra_are_missing(spectra_by_times_and_indices, series_name):
 
 
 def _get_atoms_and_values(
-    peaks_by_times_and_indices, data_type: IntensityMeasurementType
+    peaks_by_times_and_indices, data_type: MeasurementType
 ) -> Dict:
     atoms_to_values = {}
     for (index, x_value, spectrum_name), peaks in peaks_by_times_and_indices.items():
 
         for peak in peaks:
             y_value = (
-                peak.height
-                if data_type == IntensityMeasurementType.HEIGHT
-                else peak.volume
+                peak.height if data_type == MeasurementType.HEIGHT else peak.volume
             )
             if y_value is None:
                 continue

@@ -710,3 +710,8 @@ class SeriesData:
     variable_errors: List[Optional[float]]
     value_errors: List[Optional[float]]
     noise_estimate: Optional[float] = None
+
+
+class MeasurementType(StrEnum):
+    HEIGHT = auto()
+    VOLUME = auto()

@@ -3,11 +3,9 @@
 """
 
 import dataclasses
-from enum import auto
 from typing import Dict, Iterable, List, Tuple
 
 from pynmrstar import Loop, Saveframe
-from strenum import StrEnum
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
 from nef_pipelines.lib.structures import (
@@ -20,11 +18,6 @@ from nef_pipelines.lib.structures import (
 from nef_pipelines.lib.util import fnmatch_one_of
 
 NEF_CHEMICAL_SHIFT_LOOP = "nef_chemical_shift"
-
-
-class IntensityMeasurementType(StrEnum):
-    HEIGHT = auto()
-    VOLUME = auto()
 
 
 def nef_frames_to_shifts(frames: List[Saveframe]) -> List[ShiftData]:

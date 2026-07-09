@@ -11,7 +11,6 @@ from nef_pipelines.lib.nef_lib import (
     UNUSED,
     read_entry_from_file_or_stdin_or_exit_error,
 )
-from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
 from nef_pipelines.tools.fit import fit_app
 from nef_pipelines.tools.fit.fit_lib import (
@@ -57,9 +56,6 @@ def mean(
         "--noise-level",
         help="noise level to use instead of value from replicates",
     ),
-    data_type: IntensityMeasurementType = typer.Option(
-        IntensityMeasurementType.HEIGHT, "-d", "--data-type", help="data type to fit"
-    ),
     frames_selectors: List[str] = typer.Argument(None, help="select frames to fit"),
 ):
     """- calculate the mean and standard deviation [as error] of a data series [alpha]"""
@@ -85,7 +81,6 @@ def mean(
         entry,
         series_frames,
         noise_level,
-        data_type,
     )
 
     print(entry)
@@ -95,7 +90,6 @@ def pipe(
     entry: Entry,
     series_frames: List[Saveframe],
     noise_level,
-    data_type: IntensityMeasurementType,
 ) -> Entry:
 
     try:
