@@ -88,6 +88,7 @@ EXPERIMENT_TYPE_TO_DATA_VARIABLE_TYPE = {
 
 DATA_VARIABLE_TYPE_TO_DATA_VARIABLE_UNIT = {
     "intensity": UNUSED,
+    "height": UNUSED,
     "volume": UNUSED,
     "unknown": UNUSED,
 }
@@ -185,39 +186,53 @@ def build(
 
     frame_selectors = parse_comma_separated_options(frame_selectors)
 
+    timings = parse_comma_separated_options(timings)
+
     _exit_if_no_frame_selectors(frame_selectors)
 
-    frames_by_selector = _select_relaxation_frames_by_selector_or_exit_if_other(
-        entry, frame_selectors
-    )
+    # Detect which path to use based on {var} presence
+    has_var_selectors = any("{var}" in selector for selector in frame_selectors)
 
-    frame_timings_and_units_by_selector = {}
-    for selector, frames in frames_by_selector.items():
-        frame_timings_and_units_by_selector[selector] = (
-            _get_timings_and_units_for_frames(
-                frames,
-                [
-                    selector,
-                ],
-                timings,
-                input_unit,
-                display_parsed_values,
-            )
+    if has_var_selectors:
+        # Path 1: Pattern-based extraction from frame names
+        _exit_if_explicit_timings_with_var_selectors(timings, frame_selectors)
+
+        frames_by_selector = _select_relaxation_frames_by_selector_or_exit_if_other(
+            entry, frame_selectors
         )
 
-    for (
-        selector,
-        frame_timings_and_units,
-    ) in frame_timings_and_units_by_selector.items():
-        frames_and_timings, unit = (
-            _ensure_units_consistent_and_get_unit_and_timings_or_exit(
-                frame_timings_and_units
+        frame_timings_and_units_by_selector = {}
+        for selector, frames in frames_by_selector.items():
+            frame_timings_and_units_by_selector[selector] = (
+                _get_timings_and_units_for_frames(
+                    frames,
+                    [
+                        selector,
+                    ],
+                    timings,
+                    input_unit,
+                    display_parsed_values,
+                )
             )
-        )
 
-    frames_and_timings = {}
-    for frame_timings_and_units in frame_timings_and_units_by_selector.values():
-        frames_and_timings.update(frame_timings_and_units)
+        for (
+            selector,
+            frame_timings_and_units,
+        ) in frame_timings_and_units_by_selector.items():
+            frames_and_timings, unit = (
+                _ensure_units_consistent_and_get_unit_and_timings_or_exit(
+                    frame_timings_and_units
+                )
+            )
+
+        frames_and_timings = {}
+        for frame_timings_and_units in frame_timings_and_units_by_selector.values():
+            frames_and_timings.update(frame_timings_and_units)
+    else:
+        # Path 2: Explicit frame names with command-line timings
+        frames_and_timings, unit = _build_explicit_frame_timings(
+            entry, frame_selectors, timings, input_unit
+        )
 
     # TODO aren't these the same? add a name and expt attribute to the template and only use this notherwise
     if not name:
@@ -251,22 +266,22 @@ def pipe(
     if series_variable_type == "unknown":
         series_variable_unit = "unknown"
     else:
-
+        # Always use the expected unit for the series variable type
+        # Values will be scaled in the loop if needed
         series_variable_unit = SERIES_VARIABLE_TYPE_TO_SERIES_VARIABLE_UNIT[
             series_variable_type
         ]
 
-    series_variable_unit = (
-        unit if unit != series_variable_unit else series_variable_unit
-    )
-
     if experiment_type == "unknown":
         data_value_type = "unknown"
     else:
-        data_value_type = EXPERIMENT_TYPE_TO_DATA_VARIABLE_TYPE[
-            RelaxationExperimentType[experiment_type]
-        ]
-    data_value_unit = DATA_VARIABLE_TYPE_TO_DATA_VARIABLE_UNIT[data_value_type]
+        # When building, we don't yet know the measurement type (height vs volume)
+        # That's determined when filling the series with 'series table'
+        data_value_type = UNUSED
+
+    data_value_unit = DATA_VARIABLE_TYPE_TO_DATA_VARIABLE_UNIT.get(
+        data_value_type, UNUSED
+    )
 
     if experiment_type == "unknown":
         experiment_type = RelaxationExperimentType.OTHER
@@ -509,7 +524,7 @@ def _select_relaxation_frames_by_selector_or_exit_if_other(
         ]
     )
 
-    # Process selectors with variable substitution and rememebr originals
+    # Process selectors with variable substitution and remember originals
     processed_selectors_and_original_selectors = {}
     for frame_selector in frame_selectors:
 
@@ -762,3 +777,150 @@ def _scale_value_by_unit(value, unit):
         warn(msg)
 
     return round(value, 6)
+
+
+def _exit_if_explicit_timings_with_var_selectors(timings, frame_selectors):
+    """Exit if --timings provided with {var} frame selectors."""
+    if timings:
+        msg = """
+            Cannot use --timings with {var} frame selectors.
+            Timings are extracted from frame names when using {var} patterns.
+
+            Either:
+            - Use {var} pattern without --timings (extracts from names)
+            - Use explicit frame names with --timings (1:1 pairing)
+            """
+        msg = dedent(msg)
+        exit_error(msg)
+
+
+def _exit_if_no_timings_with_explicit_selectors(timings, frame_selectors):
+    """Exit if explicit selectors provided without --timings."""
+    if not timings:
+        msg = """
+            Explicit frame selectors require --timings parameter.
+
+            Provide timing values with --timings:
+              --timings 8ms --timings 48ms
+            Or use {var} pattern to extract from frame names:
+              'nef_nmr_spectrum_T1_{}_{var}`1`'
+            """
+        msg = dedent(msg)
+        exit_error(msg)
+
+
+def _exit_if_timings_count_mismatch(timings, frame_selectors):
+    """Exit if number of timings doesn't match number of selectors."""
+    if len(timings) != len(frame_selectors):
+        selectors_str = strings_to_tabulated_terminal_sensitive(frame_selectors)
+        timings_str = strings_to_tabulated_terminal_sensitive(timings)
+        msg = f"""
+            Number of --timings ({len(timings)}) doesn't match number of frame selectors ({len(frame_selectors)}).
+
+            Each explicit frame selector needs one corresponding timing value.
+
+            Selectors:
+            {selectors_str}
+
+            Timings:
+            {timings_str}
+            """
+        msg = dedent(msg)
+        exit_error(msg)
+
+
+def _exit_if_input_unit_with_units_in_timings(input_unit, timings_and_units):
+    """Exit if --unit provided but timings already have units."""
+    units_in_timings = [unit for _, unit in timings_and_units if unit]
+    if units_in_timings:
+        units_str = strings_to_tabulated_terminal_sensitive(list(set(units_in_timings)))
+        msg = f"""
+            Cannot use --unit when timing values already include units.
+
+            --unit was: {input_unit}
+            Timing units found:
+            {units_str}
+
+            Either:
+            - Remove --unit and provide units in timings: --timings 8ms 48ms
+            - Remove units from timings and use --unit: --timings 8 48 --unit ms
+            """
+        msg = dedent(msg)
+        exit_error(msg)
+
+
+def _exit_if_units_inconsistent(timings_and_units):
+    """Exit if timing units are inconsistent."""
+    units = [unit for _, unit in timings_and_units if unit]
+    if len(set(units)) > 1:
+        units_str = strings_to_tabulated_terminal_sensitive(list(set(units)))
+        msg = f"""
+            Inconsistent units in timing values:
+            {units_str}
+
+            All timings must use the same unit.
+            """
+        msg = dedent(msg)
+        exit_error(msg)
+
+
+def _build_explicit_frame_timings(
+    entry: Entry,
+    frame_selectors: List[str],
+    timings: List[str],
+    input_unit: str,
+) -> Tuple[Dict[Tuple[str, int], Tuple[Union[int, float], str]], str]:
+    """Build frame_timings for explicit selectors with command-line timings.
+
+    Each selector matches exactly one frame (itself) and pairs with corresponding timing.
+
+    Args:
+        entry: NEF entry containing frames
+        frame_selectors: List of exact frame names (no {var})
+        timings: List of timing values from --timings parameter
+        input_unit: Unit from --unit parameter
+
+    Returns:
+        Tuple of (frames_and_timings dict, unit string)
+    """
+
+    # Validate inputs
+    _exit_if_no_timings_with_explicit_selectors(timings, frame_selectors)
+    _exit_if_timings_count_mismatch(timings, frame_selectors)
+
+    # Parse timings to extract values and units
+    timings_and_units = _parse_timings(timings)
+
+    # If input_unit provided, override extracted units
+    if input_unit:
+        _exit_if_input_unit_with_units_in_timings(input_unit, timings_and_units)
+        timings_and_units = [(value, input_unit) for value, _ in timings_and_units]
+
+    # Get unit from first timing
+    unit = timings_and_units[0][1] if timings_and_units else ""
+    _exit_if_units_inconsistent(timings_and_units)
+
+    # Select frames - each selector should match exactly one frame
+    frames_by_selector = _select_relaxation_frames_by_selector_or_exit_if_other(
+        entry, frame_selectors
+    )
+
+    # Validate that each selector matched exactly one frame
+    for selector, frames in frames_by_selector.items():
+        if len(frames) != 1:
+            msg = f"""
+                Explicit selector '{selector}' matched {len(frames)} frames, expected 1.
+                When using explicit frame names (no {{var}}), each selector must match exactly one frame.
+                """
+            msg = dedent(msg)
+            exit_error(msg)
+
+    # Build frames_and_timings by pairing selectors with timings 1:1
+    frames_and_timings = {}
+    for selector, (value, timing_unit) in zip(frame_selectors, timings_and_units):
+        frames = frames_by_selector[selector]
+        frame = frames[0]  # Already validated len == 1
+        frame_key = (frame.name, id(frame))
+        frames_and_timings[frame_key] = (value, timing_unit)
+
+    return frames_and_timings, unit
