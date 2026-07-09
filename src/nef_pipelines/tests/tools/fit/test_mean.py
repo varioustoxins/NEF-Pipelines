@@ -23,6 +23,7 @@ EXPECTED_DATA_MEAN = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -32,7 +33,7 @@ EXPECTED_DATA_MEAN = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.000000  0.244949   A   18   LYS   H   A   18   LYS   N
+     1   1   .   1.000000  0.244949   success   A   18   LYS   H   A   18   LYS   N
 
    stop_
 """

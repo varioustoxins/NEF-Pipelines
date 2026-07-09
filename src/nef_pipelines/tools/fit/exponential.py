@@ -17,8 +17,10 @@ from nef_pipelines.tools.fit.fit_lib import (
     _exit_if_no_frame_selectors,
     _exit_if_no_series_frames_selected,
     _fit_results_as_frame,
+    _get_mc_failed_cycles_or_none,
     _select_relaxation_series_or_exit,
     _series_frame_to_id_series_data,
+    _warn_if_montecarlo_cycles_is_1,
     calculate_noise_level_from_replicates,
     report_fit_status_and_exit_error_if_required,
 )
@@ -106,6 +108,8 @@ def exponential(
     series_frames = _select_relaxation_series_or_exit(entry, frames_selectors)
 
     _exit_if_no_series_frames_selected(series_frames, frame_selectors)
+
+    _warn_if_montecarlo_cycles_is_1(cycles)
 
     entry = pipe(
         entry,
@@ -212,8 +216,8 @@ def pipe(
         monte_carlo_errors = results.get("monte_carlo_errors", {})
         monte_carlo_value_stats = results.get("monte_carlo_value_stats", {})
         monte_carlo_param_values = results.get("monte_carlo_param_values", {})
-        mc_failed_cycles = results.get("mc_failed_cycles", {})
         noise_level = results["noise_level"]
+        mc_failed_cycles = _get_mc_failed_cycles_or_none(results, cycles, noise_level)
         version_strings = results["versions"]
 
         # Handle failure_output policy at NEF-Pipelines level

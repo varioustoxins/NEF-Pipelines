@@ -24,7 +24,7 @@ from nef_pipelines.lib.nef_lib import (
 from nef_pipelines.lib.peak_lib import frame_to_peaks
 from nef_pipelines.lib.shift_lib import IntensityMeasurementType
 from nef_pipelines.lib.structures import NEFPipelinesException
-from nef_pipelines.lib.util import exit_error
+from nef_pipelines.lib.util import exit_error, warn
 
 SERIES_DATA_CATEGORY = "_{NAMESPACE}_series_data"
 
@@ -65,6 +65,44 @@ def report_fit_status_and_exit_error_if_required(
                 Processed {attempted} rows of {results['total_requested']}.
             """
         )
+
+
+def _warn_if_montecarlo_cycles_is_1(cycles: int) -> None:
+    """Warn if cycles is 1 (same as 0 - no Monte Carlo).
+
+    Args:
+        cycles: Number of Monte Carlo cycles requested
+    """
+    if cycles == 1:
+        warn(
+            "cycles=1 is the same as cycles=0 (no Monte Carlo error analysis); use cycles=0 to disable MC or cycles >= 2 to enable it"
+        )
+
+
+def _get_mc_failed_cycles_or_none(
+    results: dict, cycles: int, noise_level
+) -> dict | None:
+    """Extract mc_failed_cycles from results if MC actually ran, else None.
+
+    Monte Carlo error propagation only runs when:
+    - cycles > 1 (requested)
+    - noise_level is not None (available)
+
+    Args:
+        results: Dictionary of fit results from fitter.fit()
+        cycles: Number of cycles requested
+        noise_level: Noise level from results (None if unavailable)
+
+    Returns:
+        mc_failed_cycles dict if MC ran, None otherwise
+
+    TODO: Wrap fitter.fit to systematically return warnings from the pipe
+    """
+    return (
+        results.get("mc_failed_cycles", {})
+        if (cycles > 1 and noise_level is not None)
+        else None
+    )
 
 
 class NEFPLSFitLibException(NEFPipelinesException):
@@ -252,7 +290,15 @@ def _fit_results_as_frame(
     relaxation_loop = Loop.from_scratch(f"{prefix}_relaxation")
     result_frame.add_loop(relaxation_loop)
 
-    RELAXATION_LOOP_TAGS = "index data_id data_combination_id value value_error fit_status mc_failed_cycles".split()
+    RELAXATION_LOOP_TAGS = (
+        "index data_id data_combination_id value value_error fit_status".split()
+    )
+
+    # Only add mc_failed_cycles column if Monte Carlo was attempted
+    # mc_failed_cycles is None when MC is skipped (mean.py, cycles=0), dict when MC ran
+    if mc_failed_cycles is not None:
+        RELAXATION_LOOP_TAGS.append("mc_failed_cycles")
+
     RELAXATION_LOOP_ATOM_TAGS = (
         "chain_code_{axis} sequence_code_{axis} residue_name_{axis} atom_name_{axis}"
     )
@@ -290,9 +336,6 @@ def _fit_results_as_frame(
         # Check fit status from fit object
         status = getattr(fit, "fit_status", "success")
 
-        # Get MC failed cycles count for this data_id
-        mc_failed_count = mc_failed_cycles.get(data_id, 0) if mc_failed_cycles else 0
-
         if status != "success":
             # Use UNUSED ('.') for failed fits
             data_row.update(
@@ -300,9 +343,11 @@ def _fit_results_as_frame(
                     "value": UNUSED,
                     "value_error": UNUSED,
                     "fit_status": status,
-                    "mc_failed_cycles": UNUSED,  # No MC if fit failed
                 }
             )
+            # Only add mc_failed_cycles if Monte Carlo was attempted
+            if mc_failed_cycles is not None:
+                data_row["mc_failed_cycles"] = UNUSED  # No MC if fit failed
         else:
             # Existing success handling
             if monte_carlo_errors:
@@ -316,9 +361,12 @@ def _fit_results_as_frame(
                     "value": f"{fit.params[fit_name].value:.6f}",
                     "value_error": f"{mc_error:.6}",
                     "fit_status": status,
-                    "mc_failed_cycles": mc_failed_count,
                 }
             )
+            # Only add mc_failed_cycles if Monte Carlo was attempted
+            if mc_failed_cycles is not None:
+                mc_failed_count = mc_failed_cycles.get(data_id, 0)
+                data_row["mc_failed_cycles"] = mc_failed_count
         data.append(data_row)
 
     relaxation_loop.add_data(data)

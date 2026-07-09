@@ -16,6 +16,8 @@ app = typer.Typer()
 app.command()(exponential)
 
 
+EXPECTED_CYCLES_1_WARNING = "WARNING: cycles=1 is the same as cycles=0 (no Monte Carlo error analysis); use cycles=0 to disable MC or cycles >= 2 to enable it\n"
+
 EXPECTED_R1_DATA_SINGLE_R2 = """
    loop_
       _nefpls_relaxation.index
@@ -23,6 +25,7 @@ EXPECTED_R1_DATA_SINGLE_R2 = """
       _nefpls_relaxation.data_combination_id
       _nefpls_relaxation.value
       _nefpls_relaxation.value_error
+      _nefpls_relaxation.fit_status
       _nefpls_relaxation.chain_code_1
       _nefpls_relaxation.sequence_code_1
       _nefpls_relaxation.residue_name_1
@@ -32,7 +35,7 @@ EXPECTED_R1_DATA_SINGLE_R2 = """
       _nefpls_relaxation.residue_name_2
       _nefpls_relaxation.atom_name_2
 
-     1   1   .   1.300000   .   A   18   LYS   H   A   18   LYS   N
+     1   1   .   1.300000   .   success   A   18   LYS   H   A   18   LYS   N
 
    stop_
 """
@@ -44,7 +47,12 @@ def test_exponential_single():
     test_data = Path(path_in_test_data(__file__, "test_1_exponential.nef")).read_text()
 
     # Test that function exits with error when no noise level provided
-    result = run_and_report(app, ["T2", "--cycles", "1"], input=test_data)
+    result = run_and_report(
+        app, ["T2", "--cycles", "1"], input=test_data, merge_stderr=False
+    )
+
+    # Should warn about cycles=1
+    assert result.stderr == EXPECTED_CYCLES_1_WARNING
 
     r1_loop = isolate_loop(
         result.stdout, "nefpls_relaxation_list_T2", "nefpls_relaxation"
