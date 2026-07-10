@@ -24,6 +24,25 @@ def replace(
         metavar="|PIPE|",
         help="read NEF data from a file or stdin",
     ),
+    # TODO remove simple format?
+    #   ⏺ Agree - SIMPLE format is problematic:
+    #
+    # Why remove it:
+    # 1. Ambiguous - No way to verify you're reading the right data
+    # 2. Not self-documenting - What does line 1 represent? No idea.
+    # 3. Error-prone - Easy to use wrong file or wrong column
+    # 4. Trivial to add header - echo "value" > temp.csv && cat data.txt >> temp.csv
+    # 5. CSV is standard - Every tool expects headers
+    # 6. Less code to maintain - Remove format parameter, simplify FileValueSpecification
+    #
+    # If you remove it:
+    # - Take out format parameter from replace, columns_cli_lib, columns_lib
+    # - Remove ExtractFormat.SIMPLE handling
+    # - Remove format field from FileValueSpecification
+    # - Update tests to only use CSV
+    # - Add migration note: "Use CSV with headers - add a header line to headerless files"
+    #
+    # The test that uses it (test_replace_from_simple_file) gets removed.
     format: ExtractFormat = typer.Option(
         ExtractFormat.CSV,
         "--format",
