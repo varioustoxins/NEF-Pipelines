@@ -1,0 +1,6 @@
+chain_code_1,sequence_code_1,atom_1,chain_code_2,sequence_code_2,atom_2,value
+AAAA,-5,H,AAAA,-5,N,1.1
+AAAA,-4,H,AAAA,-4,N,1.2
+AAAA,0,H,AAAA,0,N,1.5
+AAAA,999,H,AAAA,999,N,2.1
+AAAA,1000,H,AAAA,1000,N,2.2

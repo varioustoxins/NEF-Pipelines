@@ -8,8 +8,29 @@ from dataclasses import dataclass, field
 from enum import Flag, auto
 from typing import Dict, List, Optional, Tuple, Union
 
-from pynmrstar import Loop, Saveframe
+from pynmrstar import Entry, Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
+
+
+@dataclass
+class PipeOutput:
+    """Return value for pipe functions that includes entry, warnings, and output.
+
+    This structure allows pipe functions to return:
+    - The modified NEF entry
+    - A list of non-fatal warnings to be displayed
+    - Optional text output keyed by destination
+
+    Attributes:
+        entry: The modified NEF entry, or None for terminating export/display pipes
+        warnings: Non-fatal warnings collected during processing
+        output: Text output keyed by destination ('-'/@stdout for stdout,
+                @stderr for stderr, filename for file output)
+    """
+
+    entry: Optional[Entry]
+    warnings: List[str] = field(default_factory=list)
+    output: Dict[str, str] = field(default_factory=dict)
 
 
 class EntryPart(Flag):
