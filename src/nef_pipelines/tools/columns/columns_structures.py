@@ -212,6 +212,61 @@ class NEFColumnsRenameParseException(NEFPipelinesException):
 
 
 @dataclass
+class NEFColumnsReorderMissingSelectorException(NEFPipelinesException):
+    """Missing loop selector specification."""
+
+    provided: Optional[str] = None
+
+    def __str__(self) -> str:
+        if self.provided:
+            result = f"invalid loop selector: '{self.provided}'"
+        else:
+            result = "missing loop selector"
+
+        return result
+
+
+@dataclass
+class NEFColumnsReorderInvalidPolicyException(NEFPipelinesException):
+    """Invalid policy specified (not exact/append/prepend)."""
+
+    policy: str
+    valid_policies: List[str]
+
+    def __str__(self) -> str:
+        valid_str = ", ".join(self.valid_policies)
+        return f"invalid policy '{self.policy}'; valid policies are: {valid_str}"
+
+
+@dataclass
+class NEFColumnsReorderUnknownColumnsException(NEFPipelinesException):
+    """Specified columns don't exist in loop."""
+
+    unknown_columns: List[str]
+    selector: str
+    available_columns: List[str]
+
+    def __str__(self) -> str:
+        unknown_str = ", ".join(self.unknown_columns)
+        available_str = ", ".join(self.available_columns)
+        return f"columns not found in loop {self.selector}: {unknown_str}; available columns: {available_str}"
+
+
+@dataclass
+class NEFColumnsReorderDuplicateColumnsException(NEFPipelinesException):
+    """Duplicate columns in reorder specification."""
+
+    duplicate_columns: List[str]
+    selector: str = ""
+
+    def __str__(self) -> str:
+        dupes_str = ", ".join(self.duplicate_columns)
+        if self.selector:
+            return f"duplicate columns in reorder specification for {self.selector}: {dupes_str}"
+        return f"duplicate columns in reorder specification: {dupes_str}"
+
+
+@dataclass
 class NEFColumnsReplaceInvalidFormatException(NEFPipelinesException):
     """Invalid replace specification format."""
 

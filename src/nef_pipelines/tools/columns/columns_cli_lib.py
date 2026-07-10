@@ -893,7 +893,9 @@ def _parse_reorder_arguments_or_raise(
     )
 
     # Validate policy
-    valid_policies = ["custom", "alphabetical"]
+    from nef_pipelines.tools.columns.reorder import ColumnOrderPolicy
+
+    valid_policies = [p.value for p in ColumnOrderPolicy]
     if policy not in valid_policies:
         raise NEFColumnsReorderInvalidPolicyException(policy, valid_policies)
 
@@ -940,9 +942,23 @@ def _parse_reorder_arguments_or_exit_error(
     """Wrapper that formats exceptions and exits."""
     from nef_pipelines.lib.structures import NEFPipelinesException
     from nef_pipelines.lib.util import exit_error
+    from nef_pipelines.tools.columns.columns_structures import (
+        NEFColumnsReorderMissingSelectorException,
+    )
 
     try:
         return _parse_reorder_arguments_or_raise(selector, column_order, policy)
+    except NEFColumnsReorderMissingSelectorException as e:
+        # Add helpful context for missing selector
+        msg = str(e)
+        msg += "\n\nLoop selector must specify both saveframe and loop."
+        msg += "\nExamples:"
+        msg += "\n  --selector myshifts.chemical_shift atom_name value"
+        msg += "\n  myshifts.chemical_shift:atom_name,value"
+        msg = _format_exception_with_context(
+            NEFPipelinesException(msg), entry, input_file
+        )
+        exit_error(msg)
     except NEFPipelinesException as e:
         msg = _format_exception_with_context(e, entry, input_file)
         exit_error(msg)
