@@ -2,18 +2,18 @@
 
 NEF-Pipelines is a collection of python scripts that are designed to be chained together in a unix pipeline to provide manipulation of NMR Exchange Format (NEF) based data. The scripts are designed to collaborate with each other because they share a common base command line interface (CLI) and a common data format in the form of NEF files or a stream of NEF text. This simple design which combines with the UNIX Tools Philosophy [^1] provides an approach to data manipulation that is both powerful and flexible and allows the inclusion of external programs and builtin unix commands in the pipeline
 
-The base component of a nef pipeline is a _pipe_ whichis a single program that takes a NMR Exchange
-Format based text data stream which it maniuplates, modifies and usually finally outputs back to the
-pipeline or terminal. In NEF-Pipelines hese pipeline elements are single python scripts which share
-a common command structure provided by the _typer_ libraries implimentation of sub commands.
+The base component of a nef pipeline is a _pipe_ which is a single program that takes a NMR Exchange
+Format based text data stream which it manipulates, modifies and usually finally outputs back to the
+pipeline or terminal. In NEF-Pipelines these pipeline elements are single python scripts which share
+a common command structure provided by the _typer_ library's implementation of sub commands.
 
 ## The Typer library and the NEF-Pipelines command line interface
 The Typer Library [^2] is a python library that provides a simple way to build command line interfaces
-for python programs. It is based on the _click_ library and provides a simple way to build command
+for python programs. It is based on the _click_ library and provides a simple way to build commands
 using type annotations.
 
 As each subcommand is based on _typer_ their entry points are defined by a single function
-which is decorated with type annotations and typer based paramaters defining arguments and options
+which is decorated with type annotations and typer based parameters defining arguments and options
 and registered as a sub command of the main application which is called _nef_. A typical nef pipeline
 command is shown below [details of the sub command registration process are discussed below]
 
@@ -68,15 +68,16 @@ However, to allow the commands to be used as python libraries an extra level of
 function calls is added. This is because, for example, the `sequence` command above
 only processes text parameters required by the command line interface which is not suitable
 for a programming environment. Therefore, sequence then calls a function `pipe` which does the actual
-work. Geneally this command is called `pipe` as it is part of a pipeline, but it can also be command for
+work. Generally this command is called `pipe` as it is part of a pipeline, but it can also be a command for
 a standalone `command` such as nef_pipelines.about.command which provides information about the
-NEF-Pipelines system. This is shown  below in outline for the `nef fasta export sequence` subcommand.
+NEF-Pipelines system. This is shown below in outline for the `nef fasta export sequence` subcommand.
 
 ```python
 from typing import List
 import typer
 from nef_pipelines.transcoders.fasta import export_app
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.types import PipeReturn
 from pynmrstar import Entry
 from pathlib import Path
 
@@ -92,20 +93,23 @@ def sequence(
 
     ... # more code here to convert command line parameters to function parameters
 
-    entry = pipe(entry, chain_codes, output_file)
+    result = pipe(entry, chain_codes, output_file)
 
-    if entry:
-        print(entry)
+    for warning in result.warnings:
+        warn(warning)
 
-def pipe(entry: Entry, chain_codes: List[str], output_file: Path) -> Entry:
+    if result.entry:
+        print(result.entry)
+
+def pipe(entry: Entry, chain_codes: List[str], output_file: Path) -> PipeReturn:
 
     ... # the implementation of the command
 
-    return entry
+    return PipeReturn(entry=entry)
 ```
 
 Thus while `sequence` is not suitable for use as a python library function the `pipe`
-function inside `nef_pipelines.transcoders.fasta.importers.sequence `and could be
+function inside `nef_pipelines.transcoders.fasta.importers.sequence` could be
 imported into a python program and used as follows
 
 ```python
@@ -117,7 +121,8 @@ with open('input.nef') as nef_file:
     nef_data = nef_file.read()
 
 entry = Entry.from_string(nef_data)
-entry = import_sequence(entry, ['A'], 'output.fasta')
+result = import_sequence(entry, ['A'], 'output.fasta')
+entry = result.entry
 
 molecular_system = entry.get_loops_by_category('nef_sequence')[0]
 table = [row for row in molecular_system]
@@ -126,7 +131,7 @@ print(tabulate(table, headers=molecular_system.tags))
 ```
 
 Thus, it is possible to use the nef pipeline commands as a python library and
-build  complex programs using  nef-pipeline commands as building blocks inside any
+build complex programs using nef-pipeline commands as building blocks inside any
 python program. In this case the program reads a NEF file, imports a fasta sequence
 into a `pynmrstar` `Entry` as chain `A` and then prints the sequence as a table using tabulate.
 It should be noted that provision of the python command interface also opens up the possibility of
@@ -134,7 +139,7 @@ building a GUI interface to the NEF-Pipelines commands using the same methodolog
 
 > [!NOTE]
 > Nota bene: `pipe` is used for all commands that process a NEF stream, commands
-> that can just be called are called `command`. Also is it should be noted that this
+> that can just be called are called `command`. Also it should be noted that this
 > python script is a bit redundant as the `tabulate` sub command already provides
 > the ability to tabulate NEF loops using the NEF-Pipelines library.
 
@@ -147,7 +152,8 @@ functions handle all user interaction and I/O concerns.
 
 ### Library Functions (pipe, helper functions)
 
-**Library functions are silent** — they transform data and either return results or raise exceptions. They never:
+**Library functions are silent and pure** — they transform data and either return a structured result or raise
+exceptions. They never:
 
 * Print to stdout/stderr (except for legitimate output like NEF streams)
 * Print warnings or informational messages
@@ -156,8 +162,9 @@ functions handle all user interaction and I/O concerns.
 
 **Library functions should:**
 
+* Return a standardised `PipeReturn` container carrying the transformed `Entry`, any auxiliary `output`, and any
+  collected `warnings` (see [The PipeReturn Communication Contract](#the-pipereturn-communication-contract))
 * Raise custom exceptions (inheriting from `NEFPipelinesException`) when errors occur
-* Return transformed data structures
 * Be pure, testable functions that can be composed programmatically
 * Accept structured parameters (dataclasses, typed arguments) not raw CLI strings
 
@@ -167,13 +174,13 @@ functions handle all user interaction and I/O concerns.
 
 * Parsing command-line arguments into structured parameters
 * Catching exceptions from library functions and formatting user-friendly error messages via `exit_error()`
-* Printing warnings (via `warn()`) about edge cases or potentially problematic input
+* Inspecting the returned `PipeReturn` and printing warnings (via `warn()`) to stderr
 * Reading from stdin/files and writing to stdout/files
-* Printing the final NEF stream or other output
+* Printing the final NEF stream or routing auxiliary output
 
 ### CLI and Pipe functions are high level
 
-The `typer` cli and  `pipe` fucntions are high level functions. They should therefore contain a series of  hogh level
+The `typer` cli and `pipe` functions are high level functions. They should therefore contain a series of high level
 function calls that define how the cli should be processed and validated and in the case of the `pipe` function how
 the data is processed. They should read somewhat like pseudo code!
 
@@ -200,21 +207,33 @@ def rename(
 
     # CLI: Call library function, catch exceptions, call exit_error
     try:
-        entry = pipe(entry, rename_pairs)
+        result = pipe(entry, rename_pairs)
     except ColumnNotFoundException as e:
         exit_error(str(e))
 
+    # CLI: Route warnings collected by the library to stderr
+    for warning in result.warnings:
+        warn(warning)
+
     # CLI: Print output
-    print(entry)
+    if result.entry:
+        print(result.entry)
 
 
-def pipe(entry: Entry, rename_pairs: List[Tuple[FrameLoopAndTagSelectors, str]]) -> Entry:
-    """Library function: silent transformation, raises exceptions on error."""
-    # Pure transformation - no printing, no exit_error, no warnings
+def pipe(entry: Entry, rename_pairs: List[Tuple[FrameLoopAndTagSelectors, str]]) -> PipeReturn:
+    """Library function: silent transformation, returns PipeReturn, raises exceptions on error."""
+    # Pure transformation - no printing, no exit_error, warnings collected not printed
+    warnings = []
+
+    if not rename_pairs:
+        warnings.append("No rename specifications provided; entry left unmodified.")
+        return PipeReturn(entry=entry, warnings=warnings)
+
     _raise_if_selectors_dont_have_single_tag(rename_pairs)
     renames_by_loop = _group_renames_by_loop(rename_pairs)
     _apply_renames_to_entry(entry, renames_by_loop)
-    return entry
+
+    return PipeReturn(entry=entry, warnings=warnings)
 ```
 
 This separation ensures that `pipe` can be imported and used in any Python program without unexpected
@@ -223,15 +242,15 @@ error handling and feedback.
 
 ### The _or_raise / _or_exit_error Pattern
 
-A common pattern for separating library logic from CLI error handling is the **`raise` /  `exit_error` function pair**:
+A common pattern for separating library logic from CLI error handling is the **`raise` / `exit_error` function pair**:
 
 - **`_or_raise` functions**: Library functions that raise dataclass exceptions with structured data
 - **`_or_exit_error` functions**: CLI wrappers that catch exceptions, format user-friendly messages, and call `exit_error()`
 
 **Exception Structure:**
 
-Exceptions inherit from `NEFPipelinesException` , carrying only the data needed to describe the error. If the data is
-complex tjhey can also be `@dataclass` classes:
+Exceptions inherit from `NEFPipelinesException`, carrying only the data needed to describe the error. If the data is
+complex they can also be `@dataclass` classes:
 
 ```python
 @dataclass
@@ -309,7 +328,120 @@ def _parse_rename_arguments_or_exit_error(
 - **Maintainability**: Error messages centralized in formatting functions, not scattered through parsing logic
 
 
-## Types of NEF-Pipelines `Pipes` and there Common Structural Features
+## The PipeReturn Communication Contract
+
+To completely untangle data transformation from terminal input/output, all library-level `pipe` functions return a
+structured `PipeReturn` object rather than a bare `Entry`. This lets a `pipe` transform data _and_ communicate
+non-fatal telemetry (warnings and auxiliary text output) back up to the caller without ever touching a stream itself.
+The CLI layer is then solely responsible for deciding how that telemetry reaches the terminal, a file, or is
+suppressed entirely.
+
+The `PipeReturn` covers only the **non-fatal** path. A `pipe` signals a **fatal** error by *raising* an exception
+derived from `NEFPipelinesException` — it never calls `exit_error()` and never returns a `PipeReturn` describing a
+failure. The two channels are therefore complementary and unambiguous: recoverable conditions are collected on
+`result.warnings` (and the pipe still returns), while unrecoverable ones are raised as structured
+`NEFPipelinesException` subclasses for the CLI wrapper to catch and turn into a user-facing `exit_error()` message.
+This keeps the library layer pure — a caller embedding a `pipe` in its own program catches the exception rather
+than having the process exit from under it.
+
+```python
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+from pynmrstar import Entry
+
+@dataclass
+class PipeReturn:
+    entry: Optional[Entry]
+    """The modified NEF entry to be passed down the pipeline.
+    Only a *sink* — a pipe that terminates the NEF stream rather than passing it
+    on (e.g. an export or display writing to stdout) — returns None here.
+    Every other pipe returns the entry so the pipeline keeps flowing."""
+
+    output: Dict[str, str] = field(default_factory=dict)
+    """Text output to emit, keyed by destination. A filename writes to that file;
+    '-' and '@stdout' write to standard output; '@stderr' writes to standard error.
+    The value is the text content sent to that destination."""
+
+    warnings: List[str] = field(default_factory=list)
+    """Non-fatal execution warnings collected during processing,
+    to be routed cleanly to stderr by the CLI layer."""
+```
+
+Note the use of `field(default_factory=...)` for the `output` and `warnings` fields — this avoids Python's mutable
+default argument gotcha, so every `PipeReturn` gets its own fresh dict and list.
+
+**Key Structural Benefits:**
+
+- **No stream pollution**: Third-party programs importing NEF-Pipelines as a library are never surprised by
+  unsolicited printing to `sys.stderr` or `sys.stdout`.
+- **Deterministic interception**: Calling code retains full control to filter, format, suppress, or forward warnings
+  programmatically.
+- **Streamlined testing**: `pytest` can assert directly against `result.warnings` or `result.output` without setting
+  up `capsys` stream-redirection fixtures or mocking the file system.
+
+The CLI wrapper is the "operator" that translates the contents of a `PipeReturn` into standard UNIX stream behaviour.
+The general shape is always the same: call `pipe`, drain `result.warnings` to `warn()`, then print or route
+`result.entry` / `result.output`.
+
+### Dispatching a PipeReturn by default
+
+Because that shape is identical for almost every command, it is wrapped in a single support routine in
+`nef_pipelines.lib.cli_lib` so that a CLI can simply hand off the whole `PipeReturn` and have it dealt with
+correctly by default, rather than writing the warning loop and output routing out by hand each time:
+
+```python
+from nef_pipelines.lib.cli_lib import output_pipe_return_or_exit_error
+
+result = pipe(entry, ...)
+output_pipe_return_or_exit_error(result, out=out, force=force)
+```
+
+`output_pipe_return_or_exit_error` performs the whole default hand-off, in order:
+
+1. Drains `result.warnings` to `warn()`, so every warning reaches stderr.
+2. Routes `result.output` to its destinations — a filename to that file, `-`/`@stdout` to stdout, `@stderr` to
+   stderr — and prints `result.entry` down the pipeline when it is not `None` (i.e. when the command is not a
+   sink). This step reuses the existing `print_output_or_exit_error` routing, which already handles the
+   stdout / file / stderr and TTY cases correctly, and exits via `exit_error()` on an unwritable or already-existing
+   file.
+
+A command only needs to route output by hand when it wants behaviour the default hand-off does not cover; otherwise
+the one-liner above is preferred, since it keeps every CLI wrapper uniform and confines all stream and file handling
+to a single well-tested routine.
+
+Fatal errors remain on the exception channel: a `pipe` surfaces them by *raising* a `NEFPipelinesException`, and
+`output_pipe_return_or_exit_error` only handles the non-fatal `PipeReturn` it is given. To fold the fatal catch into
+the same one-liner — so a CLI does not have to write its own `try/except` — call the `run_pipe_or_exit_error`
+runner, which wraps the `pipe` call, converts a raised `NEFPipelinesException` into an `exit_error()`, and then
+dispatches the resulting `PipeReturn`:
+
+```python
+from nef_pipelines.lib.cli_lib import run_pipe_or_exit_error
+
+# equivalent to: try: result = pipe(...) except NEFPipelinesException: exit_error(...)
+#                output_pipe_return_or_exit_error(result, out=out, force=force)
+run_pipe_or_exit_error(pipe, entry, ..., out=out, force=force)
+```
+
+This keeps the two error channels distinct — fatal via `raise`, non-fatal via `PipeReturn` — while still reducing
+the whole CLI tail to a single call. Prefer `run_pipe_or_exit_error` when the CLI needs no custom error formatting;
+drop to an explicit `try/except` around `pipe` only when a command wants to catch specific exception types and build
+a bespoke message.
+
+```python
+def test_pipe_warns_on_missing_frames():
+    entry = create_mock_entry()
+
+    # No stream capture hooks needed!
+    result = pipe(entry, frame_selectors=["missing_frame_99"])
+
+    assert result.entry is not None
+    assert len(result.warnings) == 1
+    assert "missing_frame_99" in result.warnings[0]
+```
+
+
+## Types of NEF-Pipelines `Pipes` and their Common Structural Features
 
 There are effectively three types of _pipe_ commands
 
@@ -327,13 +459,17 @@ There are effectively three types of _pipe_ commands
                       would be the command `nef fasta export sequence` which converts the `NEF` sequence  \
                       data to a fasta file which is the output to disk or stdout.
 
+All three share the same contract: the `pipe` function is silent and returns a `PipeReturn`, while the CLI wrapper
+drains `result.warnings` to `warn()` and then routes `result.entry` / `result.output`.
+
 ### The Structure of an Input Pipe
 
 The basic structure of an input pipe is as follows:
 
 ```python
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.util import STDIN
+from nef_pipelines.lib.util import STDIN, warn
+from nef_pipelines.lib.types import PipeReturn
 from nef_pipelines.transcoders.fasta import import_app
 
 from pynmrstar import Entry
@@ -343,7 +479,7 @@ import typer
 from pathlib import Path
 from typing import List
 
-@import_app
+@import_app.command()
 def sequence(
     entry_name: str = typer.Option("fasta", help="a name for the entry if required"),
     input: Path = typer.Option(
@@ -364,25 +500,32 @@ def sequence(
     ... # Any work to convert command line parameters to function parameters goes here
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name=entry_name)
-    entry = pipe(entry, file_paths, ...)
-    print(entry)
 
-def pipe(entry: Entry, file_paths: List[Path], *other_args_here) -> Entry:
+    result = pipe(entry, file_paths, ...)
+
+    for warning in result.warnings:
+        warn(warning)
+
+    if result.entry:
+        print(result.entry)
+
+def pipe(entry: Entry, file_paths: List[Path], *other_args_here) -> PipeReturn:
 
     ... # the implementation of the command
 
-    return entry
+    return PipeReturn(entry=entry)
 ```
-As can be seen an input pipe is defined by a function which is decorated with the `@import_app` from a
+As can be seen an input pipe is defined by a function which is decorated with `@import_app.command()` from a
 NEF-Pipelines `pipe`. The function takes a number of parameters which are defined by the `typer.Option` and
 `typer.Argument` functions. The function then calls the `pipe` function which does the actual work of the
 command. The input commands CLI always takes an input file which is defined by the command line options
-`-i` `-i` or `--in` which is a NEF stream and the name of the entry which is defined by the `entry_name`
+`-i` or `--in` which is a NEF stream and the name of the entry which is defined by the `entry_name`
 parameter. The correct NEF entry is then created by the python function `read_or_create_entry_exit_error_on_bad_file` that either creates a new entry [named from the parameter]
 if in_file is `STDIN` [-] or reads an existing entry from input. The function `read_or_create_entry_exit_error_on_bad_file`
 calls `exit_error` if the input file is not of the correct format which takes any actions required
-to shut down the pipeline. The `pipe` function then does the actual work of the command and returns the
-NEF entry which then gets printed to stdout by the command line function. It should be noted that the
+to shut down the pipeline. The `pipe` function then does the actual work of the command and returns a
+`PipeReturn` whose `entry` is then printed to stdout by the command line function, after any collected
+`warnings` have been routed to stderr. It should be noted that the
 main parameters for the function, in this case a list of Paths to fasta files, are passed to the CLI
 function as an Argument.
 
@@ -393,8 +536,9 @@ The basic structure of a filter pipe is as follows, and is similar to the input 
 minor differences. Here is an example of a _pipe_ which implements the frames filter pipe:
 
 ```python
-from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.util import STDIN
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.util import STDIN, warn
+from nef_pipelines.lib.types import PipeReturn
 from nef_pipelines.tools.frames import frames_app
 
 from pynmrstar import Entry
@@ -404,7 +548,7 @@ import typer
 from pathlib import Path
 from typing import List
 
-@frames_app
+@frames_app.command()
 def manipulate(
     input: Path = typer.Option(
         STDIN,
@@ -420,45 +564,60 @@ def manipulate(
 
     ... # Any work to convert command line parameters to function parameters goes here
 
-    entry = read_or_create_entry_exit_error_on_bad_file(input)
-    entry = pipe(entry, frame_selectors, ...)
-    print(entry)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-def pipe(entry: Entry, frame_selectors: List[str], *other_args_here) -> Entry:
+    result = pipe(entry, frame_selectors, ...)
 
-    ... # the implementation of the command
+    for warning in result.warnings:
+        warn(warning)
 
-    return entry
+    if result.entry:
+        print(result.entry)
+
+def pipe(entry: Entry, frame_selectors: List[str], *other_args_here) -> PipeReturn:
+
+    warnings = []
+
+    ... # the implementation of the command; append to warnings for non-fatal edge cases
+
+    return PipeReturn(entry=entry, warnings=warnings)
 ```
 
 As can be seen the input parameter to the CLI is still present but because the command is a filter it
 won't be creating a new NEF stream and so doesn't need a name for the NEF stream [Entity]. Also, when
 reading the NEF stream it uses the function `read_entry_from_file_or_stdin_or_exit_error` which will
 exit with an error if the stream can't be read as it needs a set of frames to filter [this may not be
-true for filters].
+true for all filters]. Note how a filter that encounters a non-fatal edge case — for example a selector
+that matches no frames — collects a message on the `warnings` list rather than printing it, leaving the CLI
+to route it to stderr.
 
-### The Structure of as Export Pipe
+### The Structure of an Export Pipe
 
-The basic structure of a exort pipe is shown below, and is similar to the previous examples, again with
-some differences. The example  _pipe_ implements the fasta export sequences CLI command:
+The basic structure of an export pipe is shown below, and is similar to the previous examples, again with
+some differences. The example _pipe_ implements the fasta export sequences CLI command. Note that under the
+`PipeReturn` contract the `pipe` function no longer opens or writes files itself: it generates the text and
+places it in `result.output`, and the CLI layer performs all file-system side effects. This keeps the library
+function pure and removes the unclosed-file-descriptor warnings that the old inline approach produced during testing.
+The manual side-effect block below is spelled out to show exactly what happens; in practice a CLI hands the whole
+result to `output_pipe_return_or_exit_error` (see [Dispatching a PipeReturn by default](#dispatching-a-pipereturn-by-default))
+and does not write this routing itself.
 
 ```python
-from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.util import STDIN, STDOUT, exit_error
+from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.util import STDIN, STDOUT, exit_error, warn
+from nef_pipelines.lib.types import PipeReturn
 from nef_pipelines.transcoders.fasta import export_app
 
 from pynmrstar import Entry
-
-from fyeah import f
 
 import typer
 
 from pathlib import Path
 import sys
 
-FASTA_FILE_TEMPLATE =  '{entry_name}.fasta'
+FASTA_FILE_TEMPLATE = '{entry_name}.fasta'
 
-@export_app
+@export_app.command()
 def sequence(
     input: Path = typer.Option(
         STDIN,
@@ -475,58 +634,66 @@ def sequence(
 ):
     """- output the molecular system from a nef stream as a fasta file"""
 
-    entry = read_or_create_entry_exit_error_on_bad_file(input)
+    entry = read_entry_from_file_or_stdin_or_exit_error(input)
 
-    entry_name =  entry.entry_id
-    output_file = f(FASTA_FILE_TEMPLATE) if not output_file else output_file
+    # Resolve the output filename at the CLI layer
+    entry_name = entry.entry_id
+    output_file = FASTA_FILE_TEMPLATE.format(entry_name=entry_name) if not output_file else output_file
 
     ... # Any work to convert command line parameters to function parameters goes here
 
-    entry = pipe(entry, output_file, ...)
-    if entry:
-        print(entry)
+    result = pipe(entry, ...)
 
-def pipe(entry: Entry, output_file: str, *other_args_here) -> Entry:
+    for warning in result.warnings:
+        warn(warning)
+
+    # CLI layer performs all file-system / stream side effects
+    fasta_text = result.output.get("-", "")
+    if output_file == STDOUT:
+        sys.stdout.write(fasta_text)
+    else:
+        try:
+            with open(output_file, 'w') as out_handle:
+                out_handle.write(fasta_text)
+        except Exception as e:
+            msg = f"Error opening output file {output_file} for writing fasta file because {e}"
+            exit_error(msg, e)
+
+    # Forward the intact entry down the pipeline unless output went to stdout
+    if output_file != STDOUT and result.entry:
+        print(result.entry)
+
+def pipe(entry: Entry, *other_args_here) -> PipeReturn:
 
     ... # the implementation of the command
 
-    fasta_text =  ...
+    fasta_text = ...
 
-    try:
-        out_handle = sys.stdout if output_file == STDOUT else open(output_file, 'w')
-    except Exception as e:
-        msg = f"Error opening output file {output_file} for writing fasa file because {e}"
-        exit_error(msg, e)
-
-    print(fasta_text, file=out_handle)
-
-    if output_file != STDOUT:
-        out_handle.close()
-
-    return None if output_file == STDOUT else entry
+    return PipeReturn(entry=entry, output={"-": fasta_text})
 ```
 
 As can be seen the input parameter to the CLI is still present but because the command is an output it
-it again won't be creating a new NEF stream and so doesn't need a name for the NEF stream [Entity]. Also,
+again won't be creating a new NEF stream and so doesn't need a name for the NEF stream [Entity]. Also,
 when reading the NEF stream it uses the function `read_entry_from_file_or_stdin_or_exit_error` which will
-exit with an error if the stream can't be read as it needs a molecular system frames to output sequences from.
-The output file is defined by the `output_file` parameter which is defined as None [disk using the fasta
-file name template] by default. The name of the output file is defined by the FASTA_FILE_TEMPLATE if the
-output is to the default and the file is written to the current working directory. Users can also provide
+exit with an error if the stream can't be read as it needs a molecular system frame to output sequences from.
+The output file is defined by the `output_file` parameter which is `None` [disk using the fasta
+file name template] by default. The name of the output file is defined by the `FASTA_FILE_TEMPLATE` if the
+output is the default and the file is written to the current working directory. Users can also provide
 their own filename and include the entry_name template parameter {entry_name} in the filename.
 
 > [!WARNING]
-> The way filename templates are currently supported makes NEF-Pipelines insecure to use as web service as
-> the internal data can be leaked from the program and arbitary code run as part of file name templates.
-> This will be adressed in a future version of NEF-Pipelines if there is a need or a request is recieved
+> The way filename templates are currently supported makes NEF-Pipelines insecure to use as a web service as
+> the internal data can be leaked from the program and arbitrary code run as part of file name templates.
+> This will be addressed in a future version of NEF-Pipelines if there is a need or a request is received
 > to use it as part of a web service.
 
 > [!NOTE]
-> Nota bene: note how the output of the fasta files text is structured with the output text being
-> sent to `sys.stdout` if the output file is `STDOUT` and to a file otherwise. Also, especially note how the
-> pipe function arranges for the output file to be closed if it is not `STDOUT` as not closing the output
-> file creates warnings during testing. It should also be noted that if the output file is `STDOUT` the
-> pipe returns `None` and the CLI doesn't print anything as STDOUT is no longer a NEF stream.
+> Nota bene: note how, under the `PipeReturn` contract, the `pipe` function only generates the fasta text and
+> places it in `result.output`, while the CLI decides whether that text goes to `sys.stdout` or to a file. Keeping
+> the file open/write/close logic in the CLI layer means the `pipe` function has no file handles to leak, which
+> removes the unclosed-descriptor warnings the old inline approach produced during testing. It should also be
+> noted that when output is written to a file the CLI forwards the intact `result.entry` down the pipeline, whereas
+> when output goes to `STDOUT` nothing further is printed as STDOUT is no longer a NEF stream.
 
 ### Handling Display Output: `print_output_or_exit_error`
 
@@ -536,12 +703,14 @@ whether stdout is a terminal or a pipe, and the caller may also want the underly
 to continue flowing down the pipeline.
 
 The utility function `print_output_or_exit_error` in `nef_pipelines.lib.cli_lib` encapsulates
-this routing logic so it never needs to be written inline:
+this routing logic so it never needs to be written inline. It pairs naturally with the `output`
+dictionary of a `PipeReturn`, which can be passed straight in as `output_dict`:
 
 ```python
 from nef_pipelines.lib.cli_lib import print_output_or_exit_error
 
-print_output_or_exit_error(entry, out, output_dict, force)
+result = pipe(entry, ...)
+print_output_or_exit_error(result.entry, out, result.output, force)
 ```
 
 **Parameters**
@@ -574,13 +743,143 @@ The function uses `nef_pipelines.lib.util.is_stdout_tty()` rather than
 
 ### How the Subcommands in NEF-Pipelines are Created, Organised and Discovered
 
-### How the NEF-Pipelines is Tested and How the Tests are Organised
+### How NEF-Pipelines is Tested and How the Tests are Organised
 
-### How NEF-Pipelines Cleany Shutsdown the Pipeline When an Error Occurs
+### How NEF-Pipelines Cleanly Shuts Down the Pipeline When an Error Occurs
 
-### The Structure of the NEF-Pipelines Repositiory and Distribution
+### The Structure of the NEF-Pipelines Repository and Distribution
 
 ### The NEF-Pipelines Library and How it is Used in NEF-Pipelines
+
+## Evolutionary History: Transitioning to PipeReturn
+
+### Design Note: Transition from Legacy Raw Returns
+
+In early iterations of NEF-Pipelines, library `pipe` functions always used the same simple signature — a pipe's a
+pipe: an `Entry` goes in and an `Entry` comes out, keeping the stream flowing — and handled warnings and auxiliary
+file output inline:
+
+```python
+# LEGACY PATTERN (deprecated)
+def pipe(entry: Entry, *args) -> Entry:
+    # Warnings were printed inline here to sys.stderr
+    # Auxiliary files were opened and written directly here
+    return entry
+```
+
+The one awkward exception to "entry in, entry out" was the original `export` pipe acting as a **sink**: when output
+went to `STDOUT` it opened, wrote, and closed the output stream itself and returned `None`, because stdout was no
+longer a NEF stream. It worked, but it both coupled the library layer to the terminal and file system and quietly
+broke the uniform `-> Entry` contract — which is part of what motivated `PipeReturn`, where `entry` becoming `None`
+is now explicit and expected. Only a sink returns `None`; every other pipe returns its entry so the stream keeps
+flowing.
+
+**Why the legacy pattern was replaced**
+
+- **Testing side-effects**: Inline printing to `sys.stderr` and direct file writing forced tests to constantly
+  mock the file system and capture `stdout`/`stderr`, making the test suite rigid and prone to resource leaks
+  (e.g. unclosed file descriptors flagging warnings in `pytest`).
+- **Library pollution**: Programs importing NEF-Pipelines as a raw Python library had their standard error
+  streams involuntarily polluted by internal pipeline telemetry.
+- **Loss of control**: The calling interface had no programmatically safe way to intercept, suppress, or reformat
+  warnings generated deep within a `pipe` function.
+
+The `PipeReturn` contract shifts all stream routing, file opening, and terminal formatting strictly to the
+`@app.command()` CLI boundaries, ensuring the underlying library remains pure, silent, and easily embeddable.
+There is no compatibility shim: existing pipes that still return a bare `Entry` remain exactly as they are.
+Because the Python library interface is not yet published and is a work in progress, there is no external
+contract to preserve, so pipes can be migrated to `PipeReturn` incrementally as they are touched.
+
+## Design Decisions and Rejected Alternatives
+
+This section records design choices made while shaping the `PipeReturn` contract, including alternatives that
+were considered and deliberately not adopted. It exists so the reasoning behind the current design is not lost,
+and so the same alternatives are not silently reintroduced later.
+
+### Progressive (generator) telemetry — rejected
+
+An alternative to returning a single `PipeReturn` at the end of a `pipe` was for a `pipe` to `yield` warnings and
+outputs progressively, generator-style, as a long-running operation proceeds. This was rejected as too much
+complication for too little benefit. Because a bare `yield` carries no type information, yielded values would need
+an out-of-band convention to say what each one is — for example treating a `str` as a line bound for stdout and a
+`tuple` as a file destination — and that implicit protocol makes the pipeline harder to debug. The single
+`PipeReturn` object keeps destinations explicit through the `output` dict keys and avoids introducing generator
+control-flow into every pipe.
+
+### The `output` dictionary convention — decided
+
+The `output` field of `PipeReturn` maps a destination to the text to send there:
+
+- A **filename** key writes the value to that file.
+- `-` and `@stdout` write the value to standard output.
+- `@stderr` writes the value to standard error.
+- The **value** in every case is the file contents / text emitted to that destination.
+
+Note that this key set is intentionally distinct from the `--out` CLI option values (`@auto`, `@out`, `@err`)
+consumed by `print_output_or_exit_error`: the `output` dict keys describe where a `pipe` wants its text to go,
+whereas `--out` is a user-facing routing option handled entirely at the CLI layer.
+
+### No compatibility shim — decided
+
+No shim was added to translate legacy bare-`Entry` pipes into `PipeReturn` (see *Evolutionary History* above).
+Old pipes remain exactly as they are; because the Python library interface is unpublished and a work in progress,
+there is no external contract to preserve and migration can happen incrementally.
+
+### Filename-template web-service exposure — deferred
+
+The filename-template mechanism remains insecure for use as a public web service (see the warning under *The
+Structure of an Export Pipe*). This is deliberately left as-is and treated as a future item, to be addressed only
+if a genuine web-service need arises.
+
+### Folding fatal exceptions into `PipeReturn` — considered, rejected
+
+It was considered whether a `pipe` should catch `NEFPipelinesException` internally and hand the error back inside the
+`PipeReturn` (e.g. an `error` field) rather than raising, so that a caller always receives a `PipeReturn` and never
+has to write a `try/except`. This was rejected.
+
+The point of a fatal error being an exception is that it *cannot be ignored*: a `raise` unwinds the stack so no
+caller can accidentally keep processing, whereas an error carried in a return field relies on every caller
+remembering to check it before trusting `result.entry`. It also creates an ambiguous half-state — if `pipe` catches
+at the top level and returns, `entry` holds a partially-mutated, untrustworthy value that nonetheless looks like a
+normal result. And converting exceptions to values is un-idiomatic in Python; a library user embedding `pipe()`
+expects `try/except`, not a Go-style value check. Keeping fatal (raise) and non-fatal (`PipeReturn.warnings`) on
+two distinct channels is precisely what makes the model easy to reason about.
+
+The real motivation behind the idea — removing the `try/except` boilerplate from every CLI — is better solved by
+the `run_pipe_or_exit_error` runner (see [Dispatching a PipeReturn by default](#dispatching-a-pipereturn-by-default)),
+which wraps the `pipe` call, turns a raised `NEFPipelinesException` into an `exit_error()`, and dispatches the
+resulting `PipeReturn` — keeping the two channels distinct while still giving a one-line call site.
+
+The one case where capturing errors *as data* is genuinely correct is batch / per-item work ("import 50 files, 3
+failed, report all 3 and continue"). Those are not fatal errors but a collection of recoverable ones, and they
+belong in an optional `errors` (or extended `warnings`) list with the `pipe` choosing to continue — not the single
+top-level fatal exception being swallowed.
+
+> note one way to structure this is
+>
+> ```python
+> def run_pipe_or_exit_error(pipe, *args, error_formatter=str, out=None, force=False, **kwargs):
+>      try:
+>          result = pipe(*args, **kwargs)
+>      except NEFPipelinesException as e:
+>          exit_error(error_formatter(e))
+>      output_pipe_return_or_exit_error(result, out=out, force=force)
+>
+>  # caller supplies context via partial:
+>  run_pipe_or_exit_error(
+>      pipe, entry, rename_pairs,
+>      error_formatter=partial(_build_rename_parse_error_message, entry=entry, input_file=input_file),
+>      out=out, force=force,
+>  )
+>
+> ```
+>
+> or you could just pass in an exception formatter funtion as well as `pipe`
+
+### Open questions
+
+Five sections of this document remain stubs and are deferred: subcommand creation/discovery; the testing strategy;
+clean pipeline shutdown on error; repository structure and distribution; and the library-integration deep-dive.
 
 [^1]:  https://en.wikipedia.org/wiki/Unix_philosophy ↩
 [^2]:  https://typer.tiangolo.com
