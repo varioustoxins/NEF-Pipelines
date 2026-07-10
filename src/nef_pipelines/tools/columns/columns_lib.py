@@ -295,19 +295,19 @@ def _read_column_from_file(
         else:
             rows = _parse_csv_rows(remaining, format_result)
             if not rows:
-                result = []
-            else:
-                rows = [
-                    {escape_spaces_with_underscore(k): v for k, v in row.items()}
-                    for row in rows
-                ]
-                norm_col = escape_spaces_with_underscore(col_name)
-                if norm_col not in rows[0]:
-                    available = list(rows[0].keys())
-                    raise NEFColumnsColumnNotFoundInFileException(
-                        col_name, str(path), available
-                    )
-                result = [row[norm_col] for row in rows]
+                return []
+
+            normalized_rows = [
+                {escape_spaces_with_underscore(k): v for k, v in row.items()}
+                for row in rows
+            ]
+            normalised_column = escape_spaces_with_underscore(col_name)
+            if normalised_column not in normalized_rows[0]:
+                available = list(normalized_rows[0].keys())
+                raise NEFColumnsColumnNotFoundInFileException(
+                    col_name, str(path), available
+                )
+            result = [row[normalised_column] for row in normalized_rows]
 
     return result
 
