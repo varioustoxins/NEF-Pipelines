@@ -1,5 +1,3 @@
-import functools
-import io
 from dataclasses import dataclass
 from enum import auto
 from pathlib import Path
@@ -11,23 +9,17 @@ from strenum import KebabCaseStrEnum, LowercaseStrEnum
 
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
 from nef_pipelines.lib.structures import PipeOutput
-from nef_pipelines.lib.util import (
-    STDIN,
-    chunks,
-    escape_spaces_with_underscore,
-    exit_error,
-    warn,
-)
-from nef_pipelines.tools.columns.columns_lib import _apply_skip_and_comment
-from nef_pipelines.transcoders.csv import import_app
-from nef_pipelines.transcoders.csv.importers.csv_lib import (
+from nef_pipelines.lib.tabular_data_lib import (
+    ENCODING,
     HELP_FOR_FORMATS,
     CsvLikeFormats,
     CsvParseError,
-    _get_csv_reader_for_format,
+    _apply_skip_and_comment,
+    _parse_csv_rows_from_text,
+    parse_csv_text,
 )
-
-ENCODING = "utf-8-sig"
+from nef_pipelines.lib.util import STDIN, chunks, exit_error, warn
+from nef_pipelines.transcoders.csv import import_app
 
 
 @dataclass(frozen=True)
@@ -110,9 +102,14 @@ def loop(
         file_args, csv_format, frame_policy, comment, skip
     )
 
-    # HEADER policy consumes first line for framecode/loop_category, so skip it when reading CSV data
+    # HEADER policy: skip is already applied when parsing framecode/loop_category,
+    # and we need to skip 1 more row (the framecode line itself) before reading column headers
     if frame_policy == FrameNamePolicy.HEADER:
-        skip += 1
+        header_skip = 1 + skip  # Skip initial rows + framecode line
+        data_skip = 0  # Don't skip again when reading data
+    else:
+        header_skip = 0  # No rows to skip before headers
+        data_skip = skip  # Skip rows after headers
 
     # Look up frames and build FrameLoopPath objects
     frame_loop_paths = []
@@ -121,7 +118,9 @@ def loop(
     )
 
     try:
-        result = pipe(entry, frame_loop_paths, csv_format, skip, comment)
+        result = pipe(
+            entry, frame_loop_paths, csv_format, data_skip, comment, header_skip
+        )
     except CsvParseError as e:
         exit_error(str(e))
 
@@ -137,6 +136,7 @@ def pipe(
     csv_format: CsvLikeFormats,
     skip: int = 0,
     comment: str = "",
+    header_skip: int = 0,
 ) -> PipeOutput:
     """Add loops read from CSV files to existing saveframes in entry.
 
@@ -146,6 +146,7 @@ def pipe(
         csv_format: Format of CSV files (CSV, TSV, SSV, or AUTO)
         skip: Number of extra header rows to skip after column headers
         comment: Prefix for comment lines to ignore
+        header_skip: Number of rows to skip before reading column headers
 
     Returns:
         PipeOutput with modified entry and warnings about normalized headers
@@ -154,8 +155,14 @@ def pipe(
     all_warnings = []
 
     for frame_loop_path in frame_loop_paths:
-        tags, data_rows, warnings = _read_csv(
-            frame_loop_path.path, csv_format, skip, comment
+        # Read file once, parse as text
+        try:
+            text = frame_loop_path.path.read_text(encoding=ENCODING)
+        except (OSError, PermissionError, UnicodeDecodeError) as e:
+            exit_error(f"failed to read {frame_loop_path.path}: {e}")
+
+        tags, data_rows, warnings = parse_csv_text(
+            text, csv_format, skip, comment, header_skip, frame_loop_path.path
         )
         all_warnings.extend(warnings)
 
@@ -169,12 +176,6 @@ def pipe(
         frame_loop_path.frame.add_loop(nef_loop)
 
     return PipeOutput(entry=entry, warnings=all_warnings)
-
-
-@functools.lru_cache(maxsize=128)
-def _read_raw_csv_file(path: Path) -> str:
-    """Read a CSV file from disk; result is cached for the process lifetime."""
-    return path.read_text(encoding=ENCODING)
 
 
 def _build_frames_loops_and_paths_or_exit_error(
@@ -227,56 +228,6 @@ def _load_frames_loops_and_paths_or_exit_error(
     return framecode_loop_category_paths
 
 
-def _read_csv(
-    csv_file: Path, csv_format: CsvLikeFormats, skip: int = 0, comment: str = ""
-) -> Tuple[List[str], List[List[str]], List[str]]:
-    """Read a CSV file and return (tags, data_rows, warnings).
-
-    The file is cached after the first read so repeated calls for the same path
-    within one pipeline step incur only one disk read.
-
-    Returns:
-        Tuple of (tags, data_rows, warnings) where warnings is a list of warning strings
-
-    Raises:
-        CsvParseError: If CSV file is empty
-    """
-    encoding_kwargs = {"encoding": ENCODING}
-    raw_text = _read_raw_csv_file(csv_file.resolve())
-    filtered_text = _apply_skip_and_comment(raw_text, skip=skip, comment=comment)
-
-    csv_fp = io.StringIO(filtered_text)
-    reader = _get_csv_reader_for_format(csv_format, csv_fp, encoding_kwargs)
-    rows = list(reader)
-
-    if not rows:
-        raise CsvParseError(f"the CSV file {csv_file} is empty")
-
-    header_row = rows[0]
-    data_start = 1
-
-    # Track headers that get normalized (spaces replaced with underscores)
-    warnings = []
-    tags = []
-    normalized_headers = []
-    for header in header_row:
-        stripped = header.strip()
-        normalized = escape_spaces_with_underscore(stripped)
-        tags.append(normalized)
-        if stripped != normalized:
-            normalized_headers.append(f"{stripped!r} -> {normalized!r}")
-
-    if normalized_headers:
-        msg = f"normalized headers with spaces in {csv_file}:\n  " + "\n  ".join(
-            normalized_headers
-        )
-        warnings.append(msg)
-
-    data_rows = [[cell.strip() for cell in row] for row in rows[data_start:]]
-
-    return tags, data_rows, warnings
-
-
 def _parse_file_name_policy(file_args: List[str]) -> List[Tuple[str, str, Path]]:
     """Parse FILE_NAME policy: filename is <framecode>__<loop_category>.csv."""
     result = []
@@ -297,18 +248,16 @@ def _parse_file_name_policy(file_args: List[str]) -> List[Tuple[str, str, Path]]
 def _parse_frame_and_loop_from_file_header(
     file_args: List[str], csv_format: CsvLikeFormats, skip: int, comment: str = ""
 ) -> List[Tuple[str, str, Path]]:
-    """Parse HEADER policy: first line of each CSV which isn't skipped or commented contains framecode,loop_category."""
+    """Parse HEADER policy: first line after comments and skip rows contains framecode,loop_category."""
     result = []
     for path_str in file_args:
         path = Path(path_str)
-        encoding_kwargs = {"encoding": ENCODING}
         raw_text = path.read_text(encoding=ENCODING)
-        filtered_text = _apply_skip_and_comment(raw_text, skip=0, comment=comment)
+        filtered_text = _apply_skip_and_comment(raw_text, skip=skip, comment=comment)
 
-        csv_fp = io.StringIO(filtered_text)
-        with csv_fp:
-            reader = _get_csv_reader_for_format(csv_format, csv_fp, encoding_kwargs)
-            first_row = next(reader, None)
+        # Parse CSV rows from text (no file pointer needed)
+        rows = _parse_csv_rows_from_text(filtered_text, csv_format)
+        first_row = rows[0] if rows else None
 
         if first_row is None:
             exit_error(f"the CSV file {path} is empty")

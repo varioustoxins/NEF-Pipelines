@@ -1,18 +1,23 @@
-import csv
-import io
-from collections import Counter
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
-import clevercsv
-from clevercsv.dialect import SimpleDialect
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_reorder_columns, loop_row_dict_iter
+from nef_pipelines.lib.tabular_data_lib import (
+    ColumnNotFoundError,
+    CsvLikeFormats,
+    TabularDataError,
+)
+from nef_pipelines.lib.tabular_data_lib import (
+    _resolve_file_col_name as _generic_resolve_file_col_name,
+)
+from nef_pipelines.lib.tabular_data_lib import (
+    extract_column_from_text as _generic_extract_column_from_text,
+)
 from nef_pipelines.lib.util import (
     escape_for_fnmatch,
-    escape_spaces_with_underscore,
     find_index_of_first_unescaped,
     read_utf8_sig_file,
     unescape_backslashes,
@@ -34,124 +39,13 @@ from nef_pipelines.tools.columns.columns_structures import (
     RangeFromValueSpec,
     RangeValueSpec,
     RepeatValueSpec,
-    TabularFormatResult,
     ValueSpec,
 )
 
 _DEFAULT_FILL = UNUSED
 
 
-def detect_tabular_format(
-    lines: Sequence[str],
-    consistency: float = 0.9,
-) -> Union[TabularFormatResult, SimpleDialect]:
-    """
-    Detect the format of tabular data.
-
-    Assumes `lines` contains only data lines — no comments, no blank
-    lines, no header row with a mismatched column count. Strip those
-    upstream.
-
-    Returns:
-    - TabularFormatResult.RAGGED_WHITESPACE for space-aligned columnar data
-    - TabularFormatResult.CLEVERCSV_AUTO to use clevercsv.DictReader without a dialect
-    - a clevercsv.Dialect for proper delimited data
-    - TabularFormatResult.UNKNOWN_OR_MESSY on failure
-
-    Parameters
-    ----------
-    lines
-        Data lines to inspect. Trailing newlines are tolerated.
-    consistency
-        Fraction of lines that must share the same column count for
-        whitespace splitting to count as a "grid". 0.9 = 90%.
-    """
-
-    cleaned = _validate_and_clean_lines(lines)
-
-    ragged_result = _check_ragged_whitespace(cleaned, consistency)
-    if ragged_result:
-        return ragged_result
-
-    return _detect_csv_with_clevercsv(cleaned)
-
-
-def _validate_and_clean_lines(raw_lines: Sequence[str]) -> List[str]:
-    """Validate input and normalise lines by stripping whitespace and removing blanks."""
-    if not raw_lines:
-        raise NEFColumnsException("No lines provided")
-    cleaned = [line.rstrip("\r\n") for line in raw_lines if line.strip()]
-    if not cleaned:
-        raise NEFColumnsException("No non-blank lines provided")
-    return cleaned
-
-
-def _check_ragged_whitespace(
-    clean_lines: List[str], min_consistency: float
-) -> Optional[TabularFormatResult]:
-    """Check if lines form a ragged whitespace grid. Returns TabularFormatResult.RAGGED_WHITESPACE or None."""
-    if len(clean_lines) < 2:
-        return None
-
-    ws_counts = [len(line.split()) for line in clean_lines]
-    tab_counts = [len(line.split("\t")) for line in clean_lines]
-
-    def dominant(counts: list[int]) -> tuple[int, float]:
-        mode, count = Counter(counts).most_common(1)[0]
-        return mode, count / len(counts)
-
-    ws_mode, ws_frac = dominant(ws_counts)
-    tab_mode, tab_frac = dominant(tab_counts)
-
-    header_ws_count = ws_counts[0]
-    data_ws_counts = ws_counts[1:]
-    max_data_ws = max(data_ws_counts) if data_ws_counts else 0
-
-    if header_ws_count > max_data_ws and max_data_ws == 1:
-        return None
-
-    ws_grid = ws_frac >= min_consistency and ws_mode > 1
-    tab_grid = tab_frac >= min_consistency and tab_mode > 1
-
-    if ws_grid and not tab_grid:
-        return TabularFormatResult.RAGGED_WHITESPACE
-    return None
-
-
-def _detect_csv_with_clevercsv(
-    clean_lines: List[str],
-) -> Union[TabularFormatResult, SimpleDialect]:
-    """Use CleverCSV to detect delimiter, with special handling for space delimiters."""
-    text = "\n".join(clean_lines) + "\n"
-    try:
-        dialect = clevercsv.Sniffer().sniff(text)
-        if dialect and dialect.delimiter == " ":
-            data_counts = [len(line.split()) for line in clean_lines[1:]]
-            if data_counts and max(data_counts) == 1:
-                return TabularFormatResult.CLEVERCSV_AUTO
-            return TabularFormatResult.RAGGED_WHITESPACE
-        return dialect
-    except (clevercsv.exceptions.Error, csv.Error):
-        return TabularFormatResult.UNKNOWN_OR_MESSY
-
-
-def _make_detected_dialect(delim: str, quote: str, escape):
-    """Create a csv.Dialect subclass with the given delimiter, quotechar, and escapechar."""
-    return type(
-        "DetectedDialect",
-        (csv.Dialect,),
-        {
-            "delimiter": delim,
-            "quotechar": quote if quote else '"',
-            "escapechar": escape,
-            "doublequote": True,
-            "skipinitialspace": False,
-            "lineterminator": "\n",
-            "quoting": csv.QUOTE_MINIMAL,
-        },
-    )
-
-
+# TODO may need callers to be reworked to just use tabular_data_lib
 def _resolve_tag(
     ref: Union[int, str], tags: List[str], loop_category: Optional[str] = None
 ) -> str:
@@ -172,87 +66,31 @@ def _resolve_tag(
     )
 
 
+# TODO may need callers to be reworked to just use tabular_data_lib
 def _resolve_file_col_name(
     col_name: str, headers: List[str], path: Optional[Path] = None
 ) -> str:
     """Resolve a file-column reference to a normalised header name.
 
-    Integer tokens use 1-based indexing (1 = first column).
-    Non-integer tokens are normalised via _norm_col and returned as-is.
+    Wrapper around tabular_data_lib version that throws NEFColumns exceptions.
     """
     try:
-        idx = int(col_name)
-    except ValueError:
-        return escape_spaces_with_underscore(col_name)
-    if 1 <= idx <= len(headers):
-        return headers[idx - 1]
-    raise NEFColumnsColumnNotFoundInFileException(
-        idx, str(path) if path else "<unknown>", headers
-    )
-
-
-def _apply_skip_and_comment(raw_text: str, skip: int, comment: str) -> str:
-    """Strip comment lines and skip leading non-empty rows; return remaining text."""
-    if comment:
-        raw_text = "\n".join(
-            line
-            for line in raw_text.splitlines()
-            if not line.strip().startswith(comment)
-        )
-    non_empty = [line.rstrip() for line in raw_text.splitlines() if line.strip()]
-    return "\n".join(non_empty[skip:])
-
-
-_MAX_RAGGED_WARNINGS = 3
-
-
-def _parse_ragged_whitespace(lines: List[str], col_name: str, path: Path) -> List[str]:
-    """Extract one column from space-aligned tabular text (header on line 0)."""
-    if not lines:
-        return []
-    headers = [escape_spaces_with_underscore(h) for h in lines[0].split()]
-    rows = []
-    overwide = []
-    for line_index, line in enumerate(lines[1:], start=2):
-        fields = line.split()
-        if len(fields) > len(headers):
-            overwide.append(
-                f"  line {line_index}: {len(fields)} fields but only {len(headers)} headers"
+        return _generic_resolve_file_col_name(col_name, headers, path)
+    except ColumnNotFoundError:
+        # Re-raise as NEFColumns exception for API compatibility
+        try:
+            idx = int(col_name)
+            raise NEFColumnsColumnNotFoundInFileException(
+                idx, str(path) if path else "<unknown>", headers
             )
-        row = dict(zip(headers, fields))
-        for h in headers[len(fields) :]:
-            row[h] = UNUSED
-        rows.append(row)
-    if overwide:
-        examples = "\n".join(overwide[:_MAX_RAGGED_WARNINGS])
-        total = len(overwide)
-        suffix = (
-            f"\n  ... and {total - _MAX_RAGGED_WARNINGS} more"
-            if total > _MAX_RAGGED_WARNINGS
-            else ""
-        )
-        warn(
-            f"in {path}, {total} row(s) have more fields than headers; extra fields ignored:\n{examples}{suffix}"
-        )
-    norm_col = escape_spaces_with_underscore(col_name)
-    if not rows or norm_col not in rows[0]:
-        raise NEFColumnsColumnNotFoundInFileException(col_name, str(path), headers)
-    return [row[norm_col] for row in rows]
+        except ValueError:
+            # col_name is not an integer
+            raise NEFColumnsColumnNotFoundInFileException(
+                col_name, str(path) if path else "<unknown>", headers
+            )
 
 
-def _parse_csv_rows(
-    remaining: str, format_result: Union[TabularFormatResult, SimpleDialect]
-) -> List[dict]:
-    """Parse delimited rows from `remaining` using the detected format."""
-    if format_result == TabularFormatResult.CLEVERCSV_AUTO:
-        reader = clevercsv.DictReader(io.StringIO(remaining))
-    elif format_result == TabularFormatResult.UNKNOWN_OR_MESSY:
-        reader = csv.DictReader(io.StringIO(remaining))
-    else:
-        reader = clevercsv.DictReader(io.StringIO(remaining), dialect=format_result)
-    return list(reader)
-
-
+# TODO may need callers to be reworked to just use tabular_data_lib
 def _read_column_from_file(
     path: Path,
     col_name: Optional[str],
@@ -272,86 +110,59 @@ def _read_column_from_file(
     except (OSError, PermissionError, UnicodeDecodeError) as e:
         raise NEFColumnsFileIOException(str(path), "read", e)
 
-    remaining = _apply_skip_and_comment(file_content, skip, comment)
+    # Extract column from text (no double file read)
+    return extract_column_from_text(file_content, col_name, format, skip, comment, path)
 
-    if format == ExtractFormat.SIMPLE or (
-        format == ExtractFormat.CSV and col_name is None
-    ):
+
+# TODO may need callers to be reworked to just use tabular_data_lib
+def extract_column_from_text(
+    text: str,
+    col_name: Optional[str],
+    format: ExtractFormat = ExtractFormat.CSV,
+    skip: int = 0,
+    comment: str = "",
+    source_path: Optional[Path] = None,
+) -> List[str]:
+    """Extract a single column from CSV or whitespace-aligned text.
+
+    Args:
+        text: File content as string
+        col_name: Column name or index to extract (ignored for SIMPLE format)
+        format: Format type (CSV or SIMPLE)
+        skip: Rows to skip after header
+        comment: Comment prefix to filter
+        source_path: Optional path for error messages
+
+    Returns:
+        List of values from the specified column
+
+    Raises:
+        NEFColumnsException if the column is not found
+    """
+    # Handle SIMPLE format - return all lines without column extraction
+    if format == ExtractFormat.SIMPLE:
+        import io
+
+        from nef_pipelines.lib.tabular_data_lib import _apply_skip_and_comment
+
+        remaining = _apply_skip_and_comment(text, skip, comment)
         lines = [line.rstrip() for line in io.StringIO(remaining) if line.strip()]
-        if format == ExtractFormat.CSV and col_name is None:
-            lines = lines[1:]
-        result = lines
-    else:
-        lines = remaining.splitlines()
-        headers_for_resolve = _csv_column_names(path, skip=skip, comment=comment)
-        col_name = _resolve_file_col_name(col_name, headers_for_resolve, path)
-        try:
-            format_result = detect_tabular_format(lines)
-        except NEFColumnsException as e:
-            raise NEFColumnsFileIOException(str(path), "parse", e)
+        return lines
 
-        if format_result == TabularFormatResult.RAGGED_WHITESPACE:
-            result = _parse_ragged_whitespace(lines, col_name, path)
-        else:
-            rows = _parse_csv_rows(remaining, format_result)
-            if not rows:
-                return []
-
-            normalized_rows = [
-                {escape_spaces_with_underscore(k): v for k, v in row.items()}
-                for row in rows
-            ]
-            normalised_column = escape_spaces_with_underscore(col_name)
-            if normalised_column not in normalized_rows[0]:
-                available = list(normalized_rows[0].keys())
-                raise NEFColumnsColumnNotFoundInFileException(
-                    col_name, str(path), available
-                )
-            result = [row[normalised_column] for row in normalized_rows]
-
-    return result
-
-
-def _csv_column_names(path: Path, skip: int = 0, comment: str = "") -> List[str]:
-    """Return normalised column names from the header row of a CSV file."""
-    if not path.exists():
-        raise NEFColumnsFileNotFoundException(str(path))
-
+    # CSV format - use generic column extraction
     try:
-        file_content = read_utf8_sig_file(path.resolve())
-    except (OSError, PermissionError, UnicodeDecodeError) as e:
-        raise NEFColumnsFileIOException(str(path), "read", e)
-
-    remaining = _apply_skip_and_comment(file_content, skip, comment)
-    if not remaining.strip():
-        return []
-
-    # Detect format and extract header
-    lines = remaining.splitlines()
-    if not lines:
-        return []
-
-    format_result = detect_tabular_format(lines)
-
-    if format_result == TabularFormatResult.RAGGED_WHITESPACE:
-        # Space-separated - use str.split()
-        return [escape_spaces_with_underscore(h) for h in lines[0].split()]
-    elif format_result == TabularFormatResult.CLEVERCSV_AUTO:
-        # Use clevercsv without a dialect for auto-detection
-        reader = clevercsv.reader(io.StringIO(remaining))
-        for row in reader:
-            return [escape_spaces_with_underscore(h.strip()) for h in row if h.strip()]
-    elif format_result == TabularFormatResult.UNKNOWN_OR_MESSY:
-        # Fall back to standard csv.reader
-        reader = csv.reader(io.StringIO(remaining))
-        for row in reader:
-            return [escape_spaces_with_underscore(h.strip()) for h in row if h.strip()]
-    else:
-        # Use clevercsv with detected dialect
-        reader = clevercsv.reader(io.StringIO(remaining), dialect=format_result)
-        for row in reader:
-            return [escape_spaces_with_underscore(h.strip()) for h in row if h.strip()]
-    return []
+        result = _generic_extract_column_from_text(
+            text, col_name, CsvLikeFormats.AUTO, skip, comment, source_path
+        )
+        return result
+    except ColumnNotFoundError as e:
+        # Re-raise as NEFColumns exception
+        raise NEFColumnsException(str(e)) from e
+    except TabularDataError as e:
+        # Re-raise as NEFColumns exception
+        if source_path:
+            raise NEFColumnsFileIOException(str(source_path), "parse", e) from e
+        raise NEFColumnsException(str(e)) from e
 
 
 def _rebuild_loop(frame, loop: Loop, new_tags: List[str], rows: List[dict]) -> Loop:

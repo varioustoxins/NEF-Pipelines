@@ -25,14 +25,6 @@ class ExtractFormat(LowercaseStrEnum):
     SIMPLE = auto()
 
 
-class TabularFormatResult(LowercaseStrEnum):
-    """Format detection results for tabular data files."""
-
-    RAGGED_WHITESPACE = auto()
-    CLEVERCSV_AUTO = auto()
-    UNKNOWN_OR_MESSY = auto()
-
-
 # Value Specification Structures
 
 

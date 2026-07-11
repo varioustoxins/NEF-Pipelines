@@ -17,11 +17,14 @@ from nef_pipelines.lib.nef_lib import (
     select_loops_by_category,
 )
 from nef_pipelines.lib.structures import FrameLoopAndTagSelectors, FrameLoopsAndTags
-from nef_pipelines.lib.util import escape_spaces_with_underscore, exit_error, to_ordinal
-from nef_pipelines.tools.columns.columns_lib import (
-    _csv_column_names,
-    _resolve_file_col_name,
+from nef_pipelines.lib.tabular_data_lib import CsvLikeFormats, parse_csv_text
+from nef_pipelines.lib.util import (
+    escape_spaces_with_underscore,
+    exit_error,
+    read_utf8_sig_file,
+    to_ordinal,
 )
+from nef_pipelines.tools.columns.columns_lib import _resolve_file_col_name
 from nef_pipelines.tools.columns.columns_structures import (
     ColumnPlacement,
     ColumnSpecification,
@@ -567,10 +570,18 @@ def _expand_bare_file_refs(
             path = Path(file_part)
             if csv_cols:
                 raw_cols = [c.strip() for c in csv_cols.split(",") if c.strip()]
-                headers = _csv_column_names(path, skip=skip, comment=comment)
+                # Get column names from CSV file using csv_lib
+                text = read_utf8_sig_file(path)
+                headers, _, _ = parse_csv_text(
+                    text, CsvLikeFormats.AUTO, skip, comment, source_path=path
+                )
                 cols = [_resolve_file_col_name(c, headers, path) for c in raw_cols]
             else:
-                cols = _csv_column_names(path, skip=skip, comment=comment)
+                # Get all column names from CSV file
+                text = read_utf8_sig_file(path)
+                cols, _, _ = parse_csv_text(
+                    text, CsvLikeFormats.AUTO, skip, comment, source_path=path
+                )
             for c in cols:
                 nef_col = escape_spaces_with_underscore(c)
                 result.append(

@@ -18,6 +18,7 @@ from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
     sequence_from_entry,
     sequence_to_residue_name_lookup,
+    unknown_residues_to_warning,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
@@ -26,6 +27,13 @@ from nef_pipelines.lib.structures import (
     PipeOutput,
     SequenceResidue,
     ShiftData,
+)
+from nef_pipelines.lib.tabular_data_lib import (
+    ENCODING,
+    HELP_FOR_FORMATS,
+    CsvLikeFormats,
+    CsvParseError,
+    _parse_csv_rows_from_text,
 )
 from nef_pipelines.lib.util import (
     STDIN,
@@ -36,13 +44,6 @@ from nef_pipelines.lib.util import (
     warn,
 )
 from nef_pipelines.transcoders.csv import import_app
-from nef_pipelines.transcoders.csv.importers.csv_lib import (
-    HELP_FOR_FORMATS,
-    CsvLikeFormats,
-    CsvParseError,
-    _get_csv_reader_for_format,
-    _unknown_residues_to_warning,
-)
 
 app = typer.Typer()
 
@@ -384,34 +385,35 @@ def _parse_csv(
     unknown_residues = set()
     column_offsets = {}
 
-    with open(csv_file, **encoding) as csv_fp:
-        peak_reader = _get_csv_reader_for_format(csv_format, csv_fp, encoding)
+    # Read file and parse as text
+    text = csv_file.read_text(encoding=ENCODING)
+    rows = _parse_csv_rows_from_text(text, csv_format)
 
-        for i, row in enumerate(peak_reader):
-            row = [elem.strip() for elem in row]
-            line_info = LineInfo(file_name, i + 1, ", ".join(row))
+    for i, row in enumerate(rows):
+        row = [elem.strip() for elem in row]
+        line_info = LineInfo(file_name, i + 1, ", ".join(row))
 
-            if i == 0:
-                column_offsets = _process_header_row(row, file_name)
-            else:
-                shifts = []
-                for column_index in range(1, 16):
-                    shift = _extract_shift_from_row(
-                        row,
-                        column_index,
-                        column_offsets,
-                        default_chain_code,
-                        lookup,
-                        unknown_residues,
-                        line_info,
-                    )
-                    if shift:
-                        shifts.append(shift)
+        if i == 0:
+            column_offsets = _process_header_row(row, file_name)
+        else:
+            shifts = []
+            for column_index in range(1, 16):
+                shift = _extract_shift_from_row(
+                    row,
+                    column_index,
+                    column_offsets,
+                    default_chain_code,
+                    lookup,
+                    unknown_residues,
+                    line_info,
+                )
+                if shift:
+                    shifts.append(shift)
 
-                peak = NewPeak(shifts)
-                peaks.append(peak)
+            peak = NewPeak(shifts)
+            peaks.append(peak)
 
-    warning = _unknown_residues_to_warning(unknown_residues, lookup)
+    warning = unknown_residues_to_warning(unknown_residues, lookup)
     warnings = [warning] if warning else []
     return peaks, warnings
 

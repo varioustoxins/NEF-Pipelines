@@ -14,12 +14,21 @@ from nef_pipelines.lib.sequence_lib import (
     get_residue_name_from_lookup,
     sequence_from_entry_or_exit,
     sequence_to_residue_name_lookup,
+    unknown_residues_to_warning,
 )
 from nef_pipelines.lib.structures import (
     AtomLabel,
     PipeOutput,
     RdcRestraint,
     SequenceResidue,
+)
+from nef_pipelines.lib.tabular_data_lib import (
+    COLUMN_SEPARATORS_MAY_HAVE_CHANGED,
+    ENCODING,
+    HELP_FOR_FORMATS,
+    CsvLikeFormats,
+    CsvParseError,
+    _parse_csv_rows_from_text,
 )
 from nef_pipelines.lib.util import (
     STDIN,
@@ -30,14 +39,6 @@ from nef_pipelines.lib.util import (
     warn,
 )
 from nef_pipelines.transcoders.csv import import_app
-from nef_pipelines.transcoders.csv.importers.csv_lib import (
-    COLUMN_SEPARATORS_MAY_HAVE_CHANGED,
-    HELP_FOR_FORMATS,
-    CsvLikeFormats,
-    CsvParseError,
-    _get_csv_reader_for_format,
-    _unknown_residues_to_warning,
-)
 
 app = typer.Typer()
 
@@ -390,55 +391,56 @@ def _parse_csv(
     weight = 1.0
     column_offsets = None
 
-    with open(csv_file, **encoding) as csv_fp:
-        rdc_reader = _get_csv_reader_for_format(csv_format, csv_fp, encoding)
+    # Read file and parse as text
+    text = csv_file.read_text(encoding=ENCODING)
+    rows = _parse_csv_rows_from_text(text, csv_format)
 
-        for i, row in enumerate(rdc_reader):
-            if i == 0:
-                column_offsets = _process_header_row(row, i + 1, file_name)
-            else:
-                # Extract and validate row data
-                chain_code_1, chain_code_2 = _extract_chain_codes(
-                    row, column_offsets, default_chain_code
-                )
-                sequence_code_1, sequence_code_2 = _extract_and_validate_sequence_codes(
-                    row, column_offsets, i + 1, file_name
-                )
-                value, value_uncertainty = _extract_and_validate_values(
-                    row, column_offsets, i + 1, file_name
-                )
+    for i, row in enumerate(rows):
+        if i == 0:
+            column_offsets = _process_header_row(row, i + 1, file_name)
+        else:
+            # Extract and validate row data
+            chain_code_1, chain_code_2 = _extract_chain_codes(
+                row, column_offsets, default_chain_code
+            )
+            sequence_code_1, sequence_code_2 = _extract_and_validate_sequence_codes(
+                row, column_offsets, i + 1, file_name
+            )
+            value, value_uncertainty = _extract_and_validate_values(
+                row, column_offsets, i + 1, file_name
+            )
 
-                # Lookup residue names, track unknown residues
-                residue_name_1 = get_residue_name_from_lookup(
-                    chain_code_1, sequence_code_1, lookup
-                )
-                if residue_name_1 == UNUSED:
-                    unknown_residues.add((chain_code_1, sequence_code_1))
+            # Lookup residue names, track unknown residues
+            residue_name_1 = get_residue_name_from_lookup(
+                chain_code_1, sequence_code_1, lookup
+            )
+            if residue_name_1 == UNUSED:
+                unknown_residues.add((chain_code_1, sequence_code_1))
 
-                residue_name_2 = get_residue_name_from_lookup(
-                    chain_code_2, sequence_code_2, lookup
-                )
-                if residue_name_2 == UNUSED:
-                    unknown_residues.add((chain_code_2, sequence_code_2))
+            residue_name_2 = get_residue_name_from_lookup(
+                chain_code_2, sequence_code_2, lookup
+            )
+            if residue_name_2 == UNUSED:
+                unknown_residues.add((chain_code_2, sequence_code_2))
 
-                # Build RDC restraint
-                rdc = _build_rdc_from_row(
-                    chain_code_1,
-                    chain_code_2,
-                    sequence_code_1,
-                    sequence_code_2,
-                    residue_name_1,
-                    residue_name_2,
-                    row,
-                    column_offsets,
-                    atoms,
-                    value,
-                    value_uncertainty,
-                    weight,
-                )
-                data.append(rdc)
+            # Build RDC restraint
+            rdc = _build_rdc_from_row(
+                chain_code_1,
+                chain_code_2,
+                sequence_code_1,
+                sequence_code_2,
+                residue_name_1,
+                residue_name_2,
+                row,
+                column_offsets,
+                atoms,
+                value,
+                value_uncertainty,
+                weight,
+            )
+            data.append(rdc)
 
-    warning = _unknown_residues_to_warning(unknown_residues, lookup)
+    warning = unknown_residues_to_warning(unknown_residues, lookup)
     warnings = [warning] if warning else []
     return data, warnings
 
