@@ -1,0 +1,50 @@
+data_isotope_only
+
+   save_nef_nmr_meta_data
+      _nef_nmr_meta_data.sf_category      nef_nmr_meta_data
+      _nef_nmr_meta_data.sf_framecode     nef_nmr_meta_data
+      _nef_nmr_meta_data.format_name      nmr_exchange_format
+      _nef_nmr_meta_data.format_version   1.1
+      _nef_nmr_meta_data.program_name     test
+      _nef_nmr_meta_data.program_version  1.0
+      _nef_nmr_meta_data.creation_date    2026-07-11
+      _nef_nmr_meta_data.uuid             test-isotope-only-uuid
+   save_
+
+   save_nef_molecular_system
+      _nef_molecular_system.sf_category   nef_molecular_system
+      _nef_molecular_system.sf_framecode  nef_molecular_system
+
+      loop_
+         _nef_sequence.index
+         _nef_sequence.chain_code
+         _nef_sequence.sequence_code
+         _nef_sequence.residue_name
+         _nef_sequence.linking
+         _nef_sequence.residue_variant
+         _nef_sequence.cis_peptide
+
+         1  A  1  ALA  start   .  .
+      stop_
+   save_
+
+   save_nef_chemical_shift_list_isotope
+      _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+      _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list_isotope
+
+      loop_
+         _nef_chemical_shift.chain_code
+         _nef_chemical_shift.sequence_code
+         _nef_chemical_shift.residue_name
+         _nef_chemical_shift.atom_name
+         _nef_chemical_shift.value
+         _nef_chemical_shift.value_uncertainty
+         _nef_chemical_shift.element
+         _nef_chemical_shift.isotope_number
+
+         A  1  ALA  C    174.0  .  C  13
+         A  1  ALA  C    180.0  .  C  13
+         A  1  ALA  N    120.0  .  N  15
+         A  1  ALA  H    8.5    .  H  1
+      stop_
+   save_
