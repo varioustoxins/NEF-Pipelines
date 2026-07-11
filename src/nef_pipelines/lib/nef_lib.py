@@ -8,6 +8,7 @@ import sys
 from collections.abc import MutableMapping
 from enum import auto
 from fnmatch import fnmatchcase
+from io import StringIO
 from itertools import zip_longest
 from pathlib import Path
 from textwrap import dedent
@@ -1110,6 +1111,23 @@ def create_nef_save_frame(
     return frame
 
 
+def get_empty_schema() -> Schema:
+    """Create an empty schema to avoid network I/O.
+
+    Provides bare-minimum structural markers with all necessary columns
+    and one dummy row to satisfy the parser's skip logic.
+    """
+    empty_schema = """\
+        Dictionary sequence,ADIT category view type,Nullable,Tag
+        SKIP_ROW,throwaway_data,,
+        TBL_BEGIN,custom_empty_schema,,
+        TBL_END,,,
+    """
+    empty_schema = dedent(empty_schema).strip()
+
+    return Schema(schema_file=StringIO(empty_schema))
+
+
 def loop_reorder_columns(loop: Loop, new_order: List[str]) -> None:
     """Reorder loop columns to match new_order.
 
@@ -1126,7 +1144,8 @@ def loop_reorder_columns(loop: Loop, new_order: List[str]) -> None:
         )
     if new_order == current:
         return
-    schema = Schema()
+    # Use an empty schema to avoid network IO!
+    schema = get_empty_schema()
     for tag in new_order:
         fq_tag = f"{loop.category}.{tag}"
         if fq_tag not in schema.schema_order:
