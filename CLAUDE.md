@@ -88,6 +88,24 @@ pip install -e .
 pip install -r requirements.txt
 ```
 
+## PyCharm MCP Integration
+
+PyCharm MCP server is available and should be used when it offers efficiency gains over standard tools.
+
+**When to use PyCharm MCP tools:**
+- Multi-file searches (symbol lookups, code references across the codebase)
+- Regex searches across files (`mcp__pycharm__search_in_files_by_regex`)
+- Symbol resolution and navigation (`mcp__pycharm__search_symbol`, `mcp__pycharm__get_symbol_info`)
+- Getting code diagnostics and problems (`mcp__pycharm__get_file_problems`)
+- Refactoring operations (rename, reformat)
+
+**When to use standard tools:**
+- Single file reads/edits (use `Read`/`Edit` directly)
+- Simple file operations where PyCharm features aren't needed
+- Grep for known patterns in specific directories (use `Bash` with grep)
+
+Load PyCharm tools via `ToolSearch` when needed. The server is confirmed working in this project.
+
 ## Architecture Overview
 
 ### Plugin-based Architecture
