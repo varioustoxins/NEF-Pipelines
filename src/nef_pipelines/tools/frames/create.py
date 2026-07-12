@@ -10,6 +10,7 @@ from nef_pipelines.lib.nef_lib import (
     is_save_frame_name_in_entry,
     read_or_create_entry_exit_error_on_bad_file,
 )
+from nef_pipelines.lib.structures import FrameAlreadyExistsError
 from nef_pipelines.lib.util import (
     STDIN,
     chunks,
@@ -63,7 +64,14 @@ def create(
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name=entry_name)
 
-    result = pipe(entry, pairs, overwrite=force)
+    try:
+        result = pipe(entry, pairs, overwrite=force)
+    except FrameAlreadyExistsError as e:
+        msg = f"""\
+            {e}
+            use --force to overwrite it
+        """
+        exit_error(msg)
 
     print(result)
 
@@ -73,13 +81,17 @@ def pipe(
     category_name_pairs: List[Tuple[str, str]],
     overwrite: bool = False,
 ) -> Entry:
-    """Create one or more empty NEF saveframes and add them to entry."""
+    """Create one or more empty NEF saveframes and add them to entry.
+
+    Raises:
+        FrameAlreadyExistsError: If frame already exists and overwrite=False
+    """
 
     for category, id_part in category_name_pairs:
 
         framecode = _build_framecode(category, id_part)
 
-        _exit_error_if_frame_exists_and_no_force(entry, framecode, overwrite)
+        _raise_if_frame_exists_and_no_overwrite(entry, framecode, overwrite)
 
         _delete_save_frame_if_exists(entry, framecode)
 
@@ -104,15 +116,12 @@ def _build_framecode(category: str, id_part: str) -> str:
     return category if not id_part else f"{category}_{id_part}"
 
 
-def _exit_error_if_frame_exists_and_no_force(
+def _raise_if_frame_exists_and_no_overwrite(
     entry: Entry, framecode: str, overwrite: bool
 ):
+    """Raise FrameAlreadyExistsError if frame exists and overwrite is False."""
     if is_save_frame_name_in_entry(entry, framecode) and not overwrite:
-        msg = f"""\
-                a frame with the name {framecode} already exists in entry {entry.entry_id}
-                use --force to overwrite it
-            """
-        exit_error(msg)
+        raise FrameAlreadyExistsError(framecode, entry.entry_id)
 
 
 def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:

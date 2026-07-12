@@ -97,6 +97,17 @@ class NEFPipelinesInternalError(NEFPipelinesException):
     ...
 
 
+class FrameAlreadyExistsError(NEFPipelinesException):
+    """Exception raised when attempting to create a frame that already exists."""
+
+    def __init__(self, framecode: str, entry_id: str):
+        self.framecode = framecode
+        self.entry_id = entry_id
+        super().__init__(
+            f"a frame with the name {framecode} already exists in entry {entry_id}"
+        )
+
+
 class NEFBadLoopSelectionException(NEFPipelinesException):
     """Exception raised when a loop selection is incorrectly defined
     in FrameLoopAndTags.
