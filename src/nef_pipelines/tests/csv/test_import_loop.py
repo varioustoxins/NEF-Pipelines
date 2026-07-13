@@ -178,6 +178,23 @@ def test_loop_import_header_policy():
     assert_lines_match(EXPECTED_SHIFT_LOOP, loop_text)
 
 
+def test_loop_import_header_policy_with_skip():
+    """Test HEADER policy with --skip: framecode,loop_category comes AFTER skipped rows."""
+    csv_path = path_in_test_data(__file__, "shifts_with_header_policy_and_skip.csv")
+    nef_input = ENTRY_WITH_SHIFT_FRAME
+
+    result = run_and_report(
+        app,
+        ["--in", "-", "--frame-policy", "header", "--skip", "1", csv_path],
+        input=nef_input,
+    )
+
+    loop_text = isolate_loop(
+        result.stdout, "nef_chemical_shift_list_myshifts", "nef_chemical_shift"
+    )
+    assert_lines_match(EXPECTED_SHIFT_LOOP, loop_text)
+
+
 def test_loop_import_comment_policy():
     """Test COMMENT policy where framename: and loop: are in comment lines."""
     csv_path = path_in_test_data(__file__, "shifts_with_comment_policy.csv")
