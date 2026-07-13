@@ -134,3 +134,63 @@ def test_shifts_import_with_skip():
         result.stdout, "nef_chemical_shift_list_myshifts", "nef_chemical_shift"
     )
     assert_lines_match(EXPECTED_SHIFT_LOOP_DEFAULT_CHAIN, loop_text)
+
+
+def test_shifts_import_duplicate_frame_warns():
+    """Test that importing shifts with duplicate frame name warns (after successful import)."""
+    csv_path = path_in_test_data(__file__, "shifts_basic.csv")
+
+    EXPECTED_WARNING = (
+        "WARNING: frame nef_chemical_shift_list_myshifts already exists, replacing it"
+    )
+
+    # First import
+    first = run_and_report(app, ["myshifts", csv_path])
+
+    # Second import with same frame name - should warn after importing
+    result = run_and_report(
+        app,
+        ["--in", "-", "myshifts", csv_path],
+        input=first.stdout,
+        merge_stderr=False,
+    )
+
+    # Should succeed (not error)
+    assert result.exit_code == 0
+
+    # Should warn after import completes
+    assert result.stderr.strip() == EXPECTED_WARNING
+
+    # Should still have the frame with correct data (replaced)
+    loop_text = isolate_loop(
+        result.stdout, "nef_chemical_shift_list_myshifts", "nef_chemical_shift"
+    )
+    assert_lines_match(EXPECTED_SHIFT_LOOP_DEFAULT_CHAIN, loop_text)
+
+
+def test_shifts_import_duplicate_frame_quiet():
+    """Test that --quiet suppresses the duplicate frame warning."""
+    csv_path = path_in_test_data(__file__, "shifts_basic.csv")
+
+    # First import
+    first = run_and_report(app, ["myshifts", csv_path])
+
+    # Second import with --quiet - should not warn
+    result = run_and_report(
+        app,
+        ["--in", "-", "--quiet", "myshifts", csv_path],
+        input=first.stdout,
+        merge_stderr=False,
+    )
+
+    # Should succeed (not error)
+    assert result.exit_code == 0
+
+    # Should be silent with --quiet
+    assert result.stderr.strip() == ""
+
+    # Should still have the frame with correct data
+    loop_text = isolate_loop(
+        result.stdout, "nef_chemical_shift_list_myshifts", "nef_chemical_shift"
+    )
+    assert_lines_match(EXPECTED_SHIFT_LOOP_DEFAULT_CHAIN, loop_text)

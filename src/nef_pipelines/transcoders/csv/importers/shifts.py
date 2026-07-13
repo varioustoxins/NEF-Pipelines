@@ -5,11 +5,13 @@ from typing import List, Tuple
 import typer
 from pynmrstar import Entry, Loop
 
-from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.structures import FrameAlreadyExistsError
+from nef_pipelines.lib.nef_lib import (
+    is_save_frame_name_in_entry,
+    read_or_create_entry_exit_error_on_bad_file,
+)
 from nef_pipelines.lib.tabular_data_lib import HELP_FOR_FORMATS, CsvLikeFormats
 from nef_pipelines.lib.tabular_data_lib import read_csv as _read_csv
-from nef_pipelines.lib.util import STDIN, chunks, exit_error
+from nef_pipelines.lib.util import STDIN, chunks, exit_error, warn
 from nef_pipelines.tools.frames.create import pipe as frames_create_pipe
 from nef_pipelines.transcoders.csv import import_app
 
@@ -44,6 +46,9 @@ def shifts(
     comment: str = typer.Option(
         "", "--comment", help="ignore lines that start with this prefix before parsing"
     ),
+    quiet: bool = typer.Option(
+        False, "-q", "--quiet", help="suppress warnings about replacing existing frames"
+    ),
     name_file: List[str] = typer.Argument(
         ...,
         help=HELP_NAME_FILE,
@@ -59,14 +64,12 @@ def shifts(
 
     name_file_pairs = [(name, Path(path)) for name, path in chunks(name_file, 2)]
 
-    try:
-        result = pipe(entry, name_file_pairs, chain_codes, csv_format, skip, comment)
-    except FrameAlreadyExistsError as e:
-        msg = f"""\
-            {e}
-            frames are created automatically - consider using a different name
-        """
-        exit_error(msg)
+    # Check which frames exist before import (to warn after)
+    existing_frames = _check_existing_frames(entry, name_file_pairs)
+
+    result = pipe(entry, name_file_pairs, chain_codes, csv_format, skip, comment)
+
+    _warn_about_replaced_frames(existing_frames, quiet)
 
     print(result)
 
@@ -107,6 +110,25 @@ def pipe(
         frame.add_loop(nef_loop)
 
     return entry
+
+
+def _check_existing_frames(
+    entry: Entry, name_file_pairs: List[Tuple[str, Path]]
+) -> List[str]:
+    """Check which frames will be replaced and return their names."""
+    existing = []
+    for name, _ in name_file_pairs:
+        framecode = f"{FRAME_CATEGORY}_{name}"
+        if is_save_frame_name_in_entry(entry, framecode):
+            existing.append(framecode)
+    return existing
+
+
+def _warn_about_replaced_frames(existing_frames: List[str], quiet: bool) -> None:
+    """Warn about frames that were replaced (unless --quiet)."""
+    if not quiet:
+        for framecode in existing_frames:
+            warn(f"frame {framecode} already exists, replacing it")
 
 
 def _check_names_and_file_are_pairs_or_exit_errors(name_file: list[str]):
