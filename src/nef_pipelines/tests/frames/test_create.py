@@ -19,14 +19,46 @@ EXPECTED_SHIFT_LIST_FRAME = """\
     save_
 """
 
+EXPECTED_RDC_RESTRAINT_LIST_FRAME = """\
+    save_nef_rdc_restraint_list_myrdcs
+       _nef_rdc_restraint_list.sf_category   nef_rdc_restraint_list
+       _nef_rdc_restraint_list.sf_framecode  nef_rdc_restraint_list_myrdcs
+
+    save_
+"""
+
+EXPECTED_SINGLETON_FRAME = """\
+    save_nef_chemical_shift_list
+       _nef_chemical_shift_list.sf_category   nef_chemical_shift_list
+       _nef_chemical_shift_list.sf_framecode  nef_chemical_shift_list
+
+    save_
+"""
+
+EXPECTED_MOLECULAR_SYSTEM_FRAME = """\
+    save_nef_molecular_system
+       _nef_molecular_system.sf_category   nef_molecular_system
+       _nef_molecular_system.sf_framecode  nef_molecular_system
+
+    save_
+"""
+
+EXPECTED_DUPLICATE_WARNING = (
+    "WARNING: frame nef_chemical_shift_list_myshifts already exists, replacing it"
+)
+
 
 def test_create_single_frame():
     result = run_and_report(app, ["nef_chemical_shift_list", "myshifts"])
 
     entry = Entry.from_string(result.stdout)
-    frame_names = list(entry.frame_dict.keys())
+    frame_names = set(entry.frame_dict.keys())
 
-    assert "nef_chemical_shift_list_myshifts" in frame_names
+    # Complete set: metadata + created frame
+    expected_frames = {"nef_nmr_meta_data", "nef_chemical_shift_list_myshifts"}
+    assert frame_names == expected_frames
+
+    # Verify frame structure
     assert_lines_match(
         EXPECTED_SHIFT_LIST_FRAME,
         isolate_frame(result.stdout, "nef_chemical_shift_list_myshifts"),
@@ -45,26 +77,53 @@ def test_create_multiple_frames():
     )
 
     entry = Entry.from_string(result.stdout)
-    frame_names = list(entry.frame_dict.keys())
+    frame_names = set(entry.frame_dict.keys())
 
-    assert "nef_chemical_shift_list_myshifts" in frame_names
-    assert "nef_rdc_restraint_list_myrdcs" in frame_names
+    # Complete set of frames: metadata + the two created frames
+    expected_frames = {
+        "nef_nmr_meta_data",
+        "nef_chemical_shift_list_myshifts",
+        "nef_rdc_restraint_list_myrdcs",
+    }
+    assert frame_names == expected_frames
+
+    # Verify complete structure of both frames
+    assert_lines_match(
+        EXPECTED_SHIFT_LIST_FRAME,
+        isolate_frame(result.stdout, "nef_chemical_shift_list_myshifts"),
+    )
+    assert_lines_match(
+        EXPECTED_RDC_RESTRAINT_LIST_FRAME,
+        isolate_frame(result.stdout, "nef_rdc_restraint_list_myrdcs"),
+    )
 
 
-def test_create_duplicate_errors_without_force():
+def test_create_duplicate_warns_by_default():
+    """By default, creating a duplicate frame succeeds with a warning."""
     first = run_and_report(app, ["nef_chemical_shift_list", "myshifts"])
 
     result = run_and_report(
         app,
         ["--in", "-", "nef_chemical_shift_list", "myshifts"],
         input=first.stdout,
-        expected_exit_code=EXIT_ERROR,
+        merge_stderr=False,
     )
 
-    assert "already exists" in result.stdout
+    # Should succeed (not error)
+    assert result.exit_code == 0
+
+    # Complete stderr check - exactly the warning, nothing else
+    assert result.stderr.strip() == EXPECTED_DUPLICATE_WARNING
+
+    # Verify complete NEF structure
+    assert_lines_match(
+        EXPECTED_SHIFT_LIST_FRAME,
+        isolate_frame(result.stdout, "nef_chemical_shift_list_myshifts"),
+    )
 
 
-def test_create_force_overwrites_duplicate():
+def test_create_quiet_suppresses_warning():
+    """Using --quiet suppresses the replacement warning."""
     first = run_and_report(app, ["nef_chemical_shift_list", "myshifts"])
 
     # Add a marker tag to the frame to verify it gets replaced
@@ -73,30 +132,40 @@ def test_create_force_overwrites_duplicate():
     frame.add_tag("test_marker", "original_frame")
     modified_input = str(entry)
 
-    # Recreate with --force
+    # Recreate with --quiet
     result = run_and_report(
         app,
-        ["--in", "-", "--force", "nef_chemical_shift_list", "myshifts"],
+        ["--in", "-", "--quiet", "nef_chemical_shift_list", "myshifts"],
         input=modified_input,
+        merge_stderr=False,
     )
 
-    # Verify frame exists and marker tag is gone (frame was replaced)
+    # Should succeed
+    assert result.exit_code == 0
+
+    # Complete stderr check - should be empty (--quiet suppresses)
+    assert result.stderr.strip() == ""
+
+    # Verify complete NEF structure (frame was replaced)
+    assert_lines_match(
+        EXPECTED_SHIFT_LIST_FRAME,
+        isolate_frame(result.stdout, "nef_chemical_shift_list_myshifts"),
+    )
+
+    # Verify marker tag is gone (confirms replacement happened)
     final_entry = Entry.from_string(result.stdout)
     final_frame = final_entry.get_saveframe_by_name("nef_chemical_shift_list_myshifts")
-
-    assert final_frame is not None
     assert "test_marker" not in final_frame.tags
 
 
 def test_create_singleton_from_bare_category():
-    result = run_and_report(app, ["nef_chemical_shift_list"])
+    """Singleton requires explicit syntax (trailing . or empty string)."""
+    result = run_and_report(app, ["nef_chemical_shift_list."])
 
-    entry = Entry.from_string(result.stdout)
-    frame = entry.get_saveframe_by_name("nef_chemical_shift_list")
-
-    assert frame is not None
-    assert frame.get_tag("sf_category")[0] == "nef_chemical_shift_list"
-    assert frame.get_tag("sf_framecode")[0] == "nef_chemical_shift_list"
+    assert_lines_match(
+        EXPECTED_SINGLETON_FRAME,
+        isolate_frame(result.stdout, "nef_chemical_shift_list"),
+    )
 
 
 def test_create_with_entry_name():
@@ -140,11 +209,6 @@ def test_create_with_entry_name():
             ["nef_molecular_system.", "nef_chemical_shift_list.default"],
             ["nef_molecular_system", "nef_chemical_shift_list_default"],
         ),
-        # Odd number of args: last becomes singleton
-        (
-            ["nef_chemical_shift_list", "shifts1", "nef_rdc_restraint_list"],
-            ["nef_chemical_shift_list_shifts1", "nef_rdc_restraint_list"],
-        ),
     ],
 )
 def test_create_format_variations(args, expected_framecode):
@@ -169,6 +233,11 @@ def test_create_format_variations(args, expected_framecode):
         ([".myshifts"], "invalid frame specification"),
         # Invalid dot notation - empty category
         ([".."], "invalid frame specification"),
+        # Odd number of args - should error (no auto-singleton)
+        (
+            ["nef_chemical_shift_list", "shifts1", "nef_rdc_restraint_list"],
+            "must come in pairs",
+        ),
     ],
 )
 def test_create_format_errors(args, expected_error):
@@ -180,13 +249,11 @@ def test_create_format_errors(args, expected_error):
 def test_create_singleton_produces_correct_framecode():
     """Verify singleton frames have category == framecode (no trailing underscore)."""
     result = run_and_report(app, ["nef_molecular_system."])
-    entry = Entry.from_string(result.stdout)
 
-    frame = entry.get_saveframe_by_name("nef_molecular_system")
-    # tag_prefix includes leading underscore per STAR format
-    assert frame.tag_prefix == "_nef_molecular_system"
-    assert frame.get_tag("sf_category")[0] == "nef_molecular_system"
-    assert frame.get_tag("sf_framecode")[0] == "nef_molecular_system"
+    assert_lines_match(
+        EXPECTED_MOLECULAR_SYSTEM_FRAME,
+        isolate_frame(result.stdout, "nef_molecular_system"),
+    )
 
 
 def test_create_with_escaped_dots():

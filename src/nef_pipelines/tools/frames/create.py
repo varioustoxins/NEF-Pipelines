@@ -10,7 +10,6 @@ from nef_pipelines.lib.nef_lib import (
     is_save_frame_name_in_entry,
     read_or_create_entry_exit_error_on_bad_file,
 )
-from nef_pipelines.lib.structures import FrameAlreadyExistsError
 from nef_pipelines.lib.util import (
     STDIN,
     chunks,
@@ -30,7 +29,9 @@ def create(
     entry_name: str = typer.Option(
         "nef", "--entry", help="entry name when creating a new entry from scratch"
     ),
-    force: bool = typer.Option(False, "--force", help="overwrite existing frames"),
+    quiet: bool = typer.Option(
+        False, "-q", "--quiet", help="suppress warnings about replacing existing frames"
+    ),
     category_names: List[str] = typer.Argument(
         ...,
         help="frame specifications: category.name or category name pairs (comma-separated supported)",
@@ -64,34 +65,46 @@ def create(
 
     entry = read_or_create_entry_exit_error_on_bad_file(input, entry_name=entry_name)
 
-    try:
-        result = pipe(entry, pairs, overwrite=force)
-    except FrameAlreadyExistsError as e:
-        msg = f"""\
-            {e}
-            use --force to overwrite it
-        """
-        exit_error(msg)
+    _warn_if_frame_existsing_and_not_quiet(entry, pairs, quiet)
 
-    print(result)
+    entry = pipe(entry, pairs)
+
+    print(entry)
+
+
+def _warn_if_frame_existsing_and_not_quiet(
+    entry: Entry, pairs: list[tuple[str, str]], quiet: bool
+):
+    # Warn about existing frames being replaced (unless --quiet)
+    if not quiet:
+        for category, id_part in pairs:
+            framecode = _build_framecode(category, id_part)
+            if is_save_frame_name_in_entry(entry, framecode):
+                from nef_pipelines.lib.util import warn
+
+                warn(f"frame {framecode} already exists, replacing it")
 
 
 def pipe(
     entry: Entry,
     category_name_pairs: List[Tuple[str, str]],
-    overwrite: bool = False,
 ) -> Entry:
     """Create one or more empty NEF saveframes and add them to entry.
 
-    Raises:
-        FrameAlreadyExistsError: If frame already exists and overwrite=False
+    Existing frames with the same name are replaced. This is a stream operation
+    (in-memory only), so it always succeeds.
+
+    Args:
+        entry: NEF entry to add frames to
+        category_name_pairs: List of (category, id) tuples for frames to create
+
+    Returns:
+        Entry with new frames added (existing frames with same name replaced)
     """
 
     for category, id_part in category_name_pairs:
 
         framecode = _build_framecode(category, id_part)
-
-        _raise_if_frame_exists_and_no_overwrite(entry, framecode, overwrite)
 
         _delete_save_frame_if_exists(entry, framecode)
 
@@ -114,14 +127,6 @@ def _delete_save_frame_if_exists(entry: Entry, framecode: str):
 def _build_framecode(category: str, id_part: str) -> str:
     # Singleton frames have no id component: sf_category == sf_framecode
     return category if not id_part else f"{category}_{id_part}"
-
-
-def _raise_if_frame_exists_and_no_overwrite(
-    entry: Entry, framecode: str, overwrite: bool
-):
-    """Raise FrameAlreadyExistsError if frame exists and overwrite is False."""
-    if is_save_frame_name_in_entry(entry, framecode) and not overwrite:
-        raise FrameAlreadyExistsError(framecode, entry.entry_id)
 
 
 def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:
@@ -166,9 +171,13 @@ def _parse_category_name_specs(specs: List[str]) -> List[Tuple[str, str]]:
     if not components:
         exit_error("no frame specifications provided")
 
-    # If odd number of components, treat last one as singleton (empty id)
+    # Error on odd number - singletons must be explicit (trailing . or empty "")
     if len(components) % 2 != 0:
-        components.append("")
+        exit_error(
+            f"frame specifications must come in pairs (category id), "
+            f'or use explicit singleton syntax (category. or category "")\n'
+            f"got {len(components)} components: {components}"
+        )
 
     pairs = list(chunks(components, 2))
     return pairs
