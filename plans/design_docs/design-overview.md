@@ -240,6 +240,84 @@ This separation ensures that `pipe` can be imported and used in any Python progr
 side effects, while the CLI function provides a user-friendly command-line interface with appropriate
 error handling and feedback.
 
+### CLI Design: --force vs --quiet (File vs Stream modification)
+
+NEF-Pipelines follows Unix conventions for when to require explicit confirmation vs when to proceed by default:
+
+**--force: Reserved for File Operations (Persistent State)**
+
+The `--force` flag is used **only** for operations that modify persistent state (such as files on disk). These
+operations are destructive and irreversible:
+
+```bash
+# File operations need --force
+nef save output.nef --force           # Overwrite existing file
+```
+
+**Rationale:** Writing to disk is permanent. If you overwrite `output.nef`, the old file is gone. The `--force` flag
+makes this destructive intent explicit, following Unix conventions (`rm -f`, `cp -f`, `mv -f`).
+
+**--quiet: For Stream Operations (Transient State)**
+
+For operations on **in-memory objects** (typically NEF streams), the default behavior is to **succeed and warn**
+if there will be surprising behaviour such as overwriting a saveframe that already exists. Such operations do not require
+a `--force` flag because these operations are:
+
+* Transient (in-memory only, nothing written to disk)
+* Reversible (discard the stream and start over)
+* Composable (pipelines transform streams without asking permission)
+
+In general, CLI warnings can be suppressed via a `--quiet` flag.
+
+```bash
+# Stream operations: succeed by default with warning
+nef frames create nef_chemical_shift_list.myshifts
+# WARNING: Frame nef_chemical_shift_list_myshifts already exists, replacing it
+
+# Use --quiet to suppress warnings (for scripting)
+nef frames create nef_chemical_shift_list.myshifts --quiet
+# (silent success)
+```
+
+This follows the Unix tools philosophy: protect permanent state, make temporary operations frictionless and quiet
+unless there is a problem that prevents an operation from succeeding [e.g. a file read fails; causes exit with an error
+message] or unexpected behaviour can occur [creating a new saveframe erases an existing one; leads to a warning].
+
+**`pipe()` functions and CLI functions**
+
+Generally CLI functions warn for operations that need warnings using the `warn` function. However, the underlying pipes
+generally succeed without warnings, as warnings in scripts and programs can be an annoyance. For example, the
+following pipe just succeeds if a frame already exists:
+
+```python
+def pipe(entry: Entry, frames_to_create: List[Tuple[str, str]]) -> Entry:
+    """Create frames, replacing any existing frames with the same name."""
+    for category, id_part in frames_to_create:
+        framecode = _build_framecode(category, id_part)
+        _delete_save_frame_if_exists(entry, framecode)   # Delete if exists
+        _add_save_frame(category, entry, id_part)        # Create new
+    return entry
+```
+
+whereas the CLI function gives a warning:
+
+```python
+@frames_app.command()
+def create(..., quiet: bool = False) -> None:
+    """Create empty NEF saveframes."""
+    entry = read_or_create_entry_exit_error_on_bad_file(input)
+
+    # Warn about replacements (unless --quiet)
+    if not quiet:
+        for category, id_part in pairs:
+            framecode = _build_framecode(category, id_part)
+            if is_save_frame_name_in_entry(entry, framecode):
+                warn(f"frame {framecode} already exists, replacing it")
+
+    entry = pipe(entry, pairs)  # Always succeeds
+    print(entry)
+```
+
 ### The _or_raise / _or_exit_error Pattern
 
 A common pattern for separating library logic from CLI error handling is the **`raise` / `exit_error` function pair**:
