@@ -12,7 +12,9 @@ from pynmrstar import Entry, Loop
 from nef_pipelines.lib.nef_lib import (  # dataframe_to_loop,; loop_to_dataframe,; NEF_CATEGORY_ATTR,
     UNUSED,
     BadNefFileException,
+    add_frames_to_entry,
     create_entry_from_stdin,
+    create_nef_save_frame,
     loop_row_dict_iter,
     loop_row_namespace_iter,
     read_entry_from_stdin_or_exit,
@@ -964,3 +966,44 @@ def test_loop_reorder_columns_raises_on_extra_tag():
                 "extra",
             ],
         )
+
+
+# TODO this should most probably replace and warn or should be under cli control
+def test_add_frames_to_entry_with_existing(capsys):
+    """Test that add_frames_to_entry auto-renames duplicate frame names.
+
+    When adding a frame with a name that already exists, pynmrstar (via
+    add_frames_to_entry) auto-renames the new frame by appending _1, _2, etc.
+    and prints a warning to stderr.
+    """
+
+    EXPECTED_WARNING = (
+        "WARNING: the frame named nef_chemical_shift_list_myshifts already "
+        + "exists in the stream, the frame name has been updated to\n"
+        + "nef_chemical_shift_list_myshifts_1. if you want to replace the "
+        + "original frame named nef_chemical_shift_list_myshifts delete\n"
+        + "it first!\n"
+    )
+
+    entry = Entry.from_scratch("test_entry")
+
+    # Add first frame
+    frame1 = create_nef_save_frame("nef_chemical_shift_list", "myshifts")
+    entry = add_frames_to_entry(entry, frame1)
+
+    # Verify first frame has original name
+    frame_names = {f.name for f in entry.frame_list}
+    assert "nef_chemical_shift_list_myshifts" in frame_names
+
+    # Add second frame with SAME name
+    frame2 = create_nef_save_frame("nef_chemical_shift_list", "myshifts")
+    entry = add_frames_to_entry(entry, frame2)
+
+    # Verify both frames exist: original and auto-renamed
+    frame_names = {f.name for f in entry.frame_list}
+    assert "nef_chemical_shift_list_myshifts" in frame_names
+    assert "nef_chemical_shift_list_myshifts_1" in frame_names
+
+    # Verify complete warning message
+    captured = capsys.readouterr()
+    assert captured.err == EXPECTED_WARNING
