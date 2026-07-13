@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
 import traceback
 from fnmatch import fnmatchcase
 from io import StringIO
@@ -349,6 +350,25 @@ def path_in_test_data(root: str, file_name: str) -> str:
     return str(Path(test_data, file_name).absolute())
 
 
+def _accepts_parameter(callable_obj, param_name: str) -> bool:
+    """Check if a class or function accepts a specific parameter in its signature.
+
+    Args:
+        callable_obj: The class or function to check
+        param_name: Name of the parameter to look for
+
+    Returns:
+        True if the parameter is accepted, False otherwise
+    """
+    try:
+        sig = inspect.signature(callable_obj)
+        return param_name in sig.parameters
+    except (TypeError, ValueError):
+        # TypeError: Object is not callable
+        # ValueError: No signature found (built-in C functions)
+        return False
+
+
 def run_and_report(
     typer_app: Typer,
     args: List[str],
@@ -367,16 +387,16 @@ def run_and_report(
     :return: results object
     """
 
-    try:
-        # TODO: click >= 8.3 — remove this branch (and _MarkerCliRunner /
-        # _split_marked_output) when 8.1.x support is dropped. click 8.1.x
-        # collapses stderr into stdout when mix_stderr=True, so we recover the
-        # split by tagging every stderr line with _STDERR_MARKER.
+    # Check if CliRunner accepts mix_stderr parameter (click < 8.3)
+    if _accepts_parameter(_MarkerCliRunner, "mix_stderr"):
+        # click < 8.3: use _MarkerCliRunner with mix_stderr to recover split streams
+        # click 8.1.x collapses stderr into stdout when mix_stderr=True, so we recover
+        # the split by tagging every stderr line with _STDERR_MARKER.
         runner = _MarkerCliRunner(mix_stderr=True)
         result = runner.invoke(typer_app, args, input=input)
         captured_stdout, captured_stderr = _split_marked_output(result.output)
-    except TypeError:
-        # click 8.3+ removed mix_stderr and separates the streams natively.
+    else:
+        # click 8.3+: mix_stderr removed, streams are separated natively
         # Note: result.output on click 8.3 is combined — use result.stdout.
         runner = CliRunner()
         result = runner.invoke(typer_app, args, input=input)
