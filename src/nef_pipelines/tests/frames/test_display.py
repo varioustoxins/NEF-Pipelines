@@ -180,7 +180,6 @@ def test_wildcard_in_frame():
     assert_lines_match(EXPECTED_CCPN_DATA_KEY, result.stderr)
 
 
-# TODO: COMPLETED - Implemented hidden frame hints showing "# framename ..." in original file order
 # Original: molecular system is missing
 EXPECTED_COMBINED_KEYS_VALUES = """\
 # frame nef_molecular_system ...
@@ -235,7 +234,6 @@ def test_multiple_selectors_same_loop():
         merge_stderr=False,
     )
 
-    # TODO: COMPLETED - Implemented hidden frame hints
     # Original: shouldn't EXPECTED_COMBINED_KEYS_VALUES have commenst for missing frames
     assert_lines_match(EXPECTED_COMBINED_KEYS_VALUES, result.stderr)
 
@@ -316,13 +314,11 @@ def test_default_selector():
 
     assert result.exit_code == 0
 
-    # TODO: COMPLETED - Verified default selector is * (all frames), output matches file minus NEF header
     # Original: shouldn't this just be the same as the contents of multi_frame_test.nef with the first two
     # lines or so missing
     assert_lines_match(EXPECTED_DEFAULT_OUTPUT, result.stderr)
 
 
-# TODO: COMPLETED - Implemented hidden frame hints showing "# framename ..." for non-selected frames
 # Original: missing other saveframes as comments
 EXPECTED_SAVEFRAME_TAG = """\
     # save_nef_molecular_system
@@ -564,7 +560,6 @@ EXPECTED_HEAD_OUTPUT = """\
 
 # save_
         """
-# TODO: COMPLETED - Ellipsis now positioned at end after all displayed rows (was in middle)
 # Original: ... 11 rows omitted ... should be at the end!
 EXPECTED_MIDDLE_OUTPUT = """\
 # frame nef_nmr_meta_data ...
@@ -599,7 +594,6 @@ EXPECTED_MIDDLE_OUTPUT = """\
 
 # save_
         """
-# TODO: COMPLETED - Verified correct structure: tags, "# more columns...", ellipsis, data, stop
 # Original: this one is correct!
 EXPECTED_TAIL_OUTPUT = """\
 # frame nef_nmr_meta_data ...
@@ -660,9 +654,7 @@ def test_display_mode_options(display_mode_flag, expected_output):
     assert_lines_match(expected_output, result.stderr)
 
 
-# TODO: COMPLETED - Verified test_count_option works correctly after ellipsis fix
 # Original: i presume these will be broken in the same way
-# TODO: COMPLETED - Added feature request to display.py for column count in "# more columns..."
 # Original: it would be nice to say n more columns and possibly even xxxx...yyyy, add as a todo!
 EXPECTED_COUNT_OUTPUT = """\
     # frame nef_nmr_meta_data ...
@@ -756,7 +748,6 @@ def test_no_truncation_for_small_loops():
     assert_lines_match(EXPECTED_NO_TRUNCATION, result.stderr)
 
 
-# TODO: COMPLETED - Renamed to describe behavior not test harness
 # Original: this is the wrong name running in cli_runner is the artifact that does it!
 def test_pipe_mode_output_routing():
     """\
@@ -842,9 +833,7 @@ def test_out_err_no_entry():
     assert_lines_match(Path(path).read_text(), result.stdout)
 
 
-# TODO: COMPLETED - Updated expectations after ellipsis positioning fix
 # Original: i assume these will be broken
-# TODO: COMPLETED - Added feature request to display.py for index range syntax
 # Original: add todo we should be able to specify indices as well 1...30,20..25 etc maybe useful for AIs
 EXPECTED_ADDITIVE_OUTPUT = """\
     # frame nef_nmr_meta_data ...
@@ -904,7 +893,6 @@ def test_additive_head_middle_tail():
     assert_lines_match(EXPECTED_ADDITIVE_OUTPUT, result.stderr)
 
 
-# TODO: COMPLETED - Updated expectations after ellipsis positioning fix
 # Original: i assume these will be broken
 EXPECTED_ELLIPSIS_POSITIONING = """\
     # frame nef_nmr_meta_data ...
@@ -1082,7 +1070,6 @@ def test_no_comments():
     assert_lines_match(EXPECTED_NO_SAVE_COMMENTS, result.stderr)
 
 
-# TODO: COMPLETED - Removed --tags-only flag, test now uses selector syntax
 # Original: is --tags-only still needed? I think it was written before we had a comprehensive selection syntax...
 EXPECTED_TAGS_ONLY = """\
     # save_nef_molecular_system
@@ -1117,7 +1104,6 @@ def test_tags_only():
     assert_lines_match(EXPECTED_TAGS_ONLY, result.stderr)
 
 
-# TODO: COMPLETED - Use 'molecular_system.' selector for loops-only (removed --loops-only flag)
 EXPECTED_NO_COMMENTS_OUTPUT = """\
     loop_
        _nef_chemical_shift.chain_code
@@ -1131,7 +1117,6 @@ EXPECTED_NO_COMMENTS_OUTPUT = """\
     """
 
 
-# TODO: COMPLETED - Verified test_no_comments_with_head works correctly after ellipsis fix
 # Original: i assume these will be broken
 def test_no_comments_with_head():
     """Test --no-comments suppresses ellipsis comments."""
@@ -1361,7 +1346,6 @@ def test_namespace_multiple():
     assert_lines_match(EXPECTED_NAMESPACE_MULTIPLE, result.stderr)
 
 
-# TODO: COMPLETED - Removed --tags-only flag, update test to use selector syntax
 # Original: see comment about tags-only
 EXPECTED_NAMESPACE_FILTER_TAGS = """\
     # frame nef_nmr_meta_data ...
@@ -1453,7 +1437,6 @@ def test_namespace_filter_loop_columns():
     assert_lines_match(EXPECTED_NAMESPACE_FILTERED, result.stderr)
 
 
-# TODO: COMPLETED - Removed --tags-only flag, update test to use selector syntax
 # Original: see my comments about tags only
 EXPECTED_CCPN_TAGS = """\
 _nef_chemical_shift_list.ccpn_serial        1
