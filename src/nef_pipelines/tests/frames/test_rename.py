@@ -8,6 +8,10 @@ from nef_pipelines.lib.test_lib import (
     path_in_test_data,
     run_and_report,
 )
+from nef_pipelines.tools.frames.rename import (
+    _parse_bulk_replace_triple_specs_or_exit_error,
+    _split_on_unescaped_comma,
+)
 from nef_pipelines.tools.frames.rename import pipe as rename_pipe
 from nef_pipelines.tools.frames.rename import rename
 
@@ -42,6 +46,24 @@ _UBIQUITIN_FRAME_TABLE = """\
     nef_nmr_spectrum_k_ubi_hncacb`1` nef_nmr_spectrum_k_ubi_cbcaconh`1`
     nef_nmr_spectrum_mars_ubi_n_hsqc`1` ccpn_substance_1D3Z_1|Chain.None
     ccpn_substance_mySubstance.None ccpn_assignment"""
+
+# Expected frames after renaming hnco and hnca to k_ubiquitin
+EXPECTED_BULK_HNCO_HNCA_RENAMED = [
+    "nef_nmr_meta_data",
+    "nef_molecular_system",
+    "nef_chemical_shift_list_default",
+    "nef_nmr_spectrum_k_ubi_n_hsqc`1`",
+    "nef_nmr_spectrum_k_ubiquitin_hnca`1`",
+    "nef_nmr_spectrum_k_ubi_hncoca`1`",
+    "nef_nmr_spectrum_k_ubi_hncaco`1`",
+    "nef_nmr_spectrum_k_ubiquitin_hnco`1`",
+    "nef_nmr_spectrum_k_ubi_hncacb`1`",
+    "nef_nmr_spectrum_k_ubi_cbcaconh`1`",
+    "nef_nmr_spectrum_mars_ubi_n_hsqc`1`",
+    "ccpn_substance_1D3Z_1|Chain.None",
+    "ccpn_substance_mySubstance.None",
+    "ccpn_assignment",
+]
 
 
 # --- pipe-level tests (unchanged) ---
@@ -408,10 +430,10 @@ def test_bad_exact_match():
 
 
 EXPECTED_CLASHING_MULTIPLE_RENAME_ERROR = """
-    ERROR [in: rename]: renaming 'nef_nmr_spectrum_mars_ubi_n_hsqc`1`' would overwrite the existing frame 'nef_nmr_spectrum_N15_hsqc'  # noqa: E501
+    ERROR [in: rename]: renaming 'nef_nmr_spectrum_mars_ubi_n_hsqc`1`' would overwrite the existing frame 'nef_nmr_spectrum_N15_hsqc'
     in entry 'ubiquitin', use --force to allow overwriting
     exiting...
-"""
+"""  # noqa: E501
 
 
 # TODO: this should actually say the error is that there are multiple matches...
@@ -682,4 +704,282 @@ def test_rename_target_type():
     assert sorted(EXPECTED_FRAME_NAMES) == sorted(frame_names)
 
 
-# TODO what happens if you do a rename to singleton and it produces multiple frams of the same name this should be an error  # noqa: E501
+# TODO: what happens if you do a rename to singleton and it produces clashes with another frame of the same name
+#  this should be a warning  # noqa: E501
+
+
+# --- bulk mode unit tests ---
+
+
+@pytest.mark.parametrize(
+    "input_spec, expected",
+    [
+        ("myframe=/old/new/", [("myframe", "old", "new")]),
+        (r"myframe=/old\/part/new/", [("myframe", "old/part", "new")]),
+    ],
+    ids=["basic", "escaped-slash"],
+)
+def test_parse_bulk_replace_triple_specs(input_spec, expected):
+    """Test parsing bulk replace triple specs with required trailing slash."""
+    assert _parse_bulk_replace_triple_specs_or_exit_error(input_spec) == expected
+
+
+@pytest.mark.parametrize(
+    "input_spec, expected_error",
+    [
+        ("myframe=/old/new", "missing trailing '/'"),
+        ("s1=/a/b/s2=/c/d/", "unexpected text after trailing '/'"),
+    ],
+    ids=["no-trailing-slash", "concatenated-without-comma"],
+)
+def test_parse_bulk_replace_triple_specs_errors(input_spec, expected_error):
+    """Test that bulk parsing errors on invalid syntax."""
+    with pytest.raises(SystemExit):
+        _parse_bulk_replace_triple_specs_or_exit_error(input_spec)
+
+
+@pytest.mark.parametrize(
+    "input_str, expected",
+    [
+        ("a,b,c", ["a", "b", "c"]),
+        (r"a\,b,c", [r"a\,b", "c"]),
+    ],
+    ids=["basic", "escaped"],
+)
+def test_split_on_unescaped_comma(input_str, expected):
+    assert _split_on_unescaped_comma(input_str) == expected
+
+
+def test_parse_bulk_comma_separated_triples():
+    """Test that comma-separated triples are properly split before parsing."""
+    # Comma separation is handled by _split_on_unescaped_comma
+    chunks = _split_on_unescaped_comma("s1=/a/b/,s2=/c/d/")
+    assert chunks == ["s1=/a/b/", "s2=/c/d/"]
+
+    # Each chunk parses independently
+    result1 = _parse_bulk_replace_triple_specs_or_exit_error(chunks[0])
+    result2 = _parse_bulk_replace_triple_specs_or_exit_error(chunks[1])
+
+    assert result1 == [("s1", "a", "b")]
+    assert result2 == [("s2", "c", "d")]
+
+
+# --- bulk mode integration tests ---
+
+
+def test_rename_bulk_basic():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        [
+            "--in",
+            path,
+            "--bulk",
+            "nef_nmr_spectrum_k_ubi_hnco`1`=/k_ubi/k_ubiquitin/",
+            "nef_nmr_spectrum_k_ubi_hnca`1`=/k_ubi/k_ubiquitin/",
+        ],
+    )
+
+    entry = Entry.from_string(result.stdout)
+    frame_names = list(entry.frame_dict.keys())
+
+    assert sorted(EXPECTED_BULK_HNCO_HNCA_RENAMED) == sorted(frame_names)
+
+
+def test_rename_bulk_wildcard_selector():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "*k_ubi_hnco*=/k_ubi/k_ubiquitin/"],
+    )
+
+    entry = Entry.from_string(result.stdout)
+    frame_names = list(entry.frame_dict.keys())
+
+    # Wildcard *k_ubi_hnco* matches both hnco and hncoca
+    EXPECTED_FRAME_NAMES = [
+        "nef_nmr_meta_data",
+        "nef_molecular_system",
+        "nef_chemical_shift_list_default",
+        "nef_nmr_spectrum_k_ubi_n_hsqc`1`",
+        "nef_nmr_spectrum_k_ubi_hnca`1`",
+        "nef_nmr_spectrum_k_ubiquitin_hncoca`1`",  # renamed
+        "nef_nmr_spectrum_k_ubi_hncaco`1`",
+        "nef_nmr_spectrum_k_ubiquitin_hnco`1`",  # renamed
+        "nef_nmr_spectrum_k_ubi_hncacb`1`",
+        "nef_nmr_spectrum_k_ubi_cbcaconh`1`",
+        "nef_nmr_spectrum_mars_ubi_n_hsqc`1`",
+        "ccpn_substance_1D3Z_1|Chain.None",
+        "ccpn_substance_mySubstance.None",
+        "ccpn_assignment",
+    ]
+
+    assert sorted(EXPECTED_FRAME_NAMES) == sorted(frame_names)
+
+
+def test_rename_bulk_missing_trailing_slash_error():
+    """Test that missing trailing slash produces an error."""
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "nef_nmr_spectrum_k_ubi_hnco`1`=/k_ubi/k_ubiquitin"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert "missing trailing '/'" in result.stdout.lower()
+
+
+def test_rename_bulk_comma_separated():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        [
+            "--in",
+            path,
+            "--bulk",
+            "nef_nmr_spectrum_k_ubi_hnco`1`=/k_ubi/k_ubiquitin/,nef_nmr_spectrum_k_ubi_hnca`1`=/k_ubi/k_ubiquitin/",
+        ],
+    )
+
+    entry = Entry.from_string(result.stdout)
+    frame_names = list(entry.frame_dict.keys())
+
+    assert sorted(EXPECTED_BULK_HNCO_HNCA_RENAMED) == sorted(frame_names)
+
+
+def test_rename_bulk_concatenated_without_comma_errors():
+    """Test that concatenated triples without comma separator produce an error."""
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    triple = (
+        "nef_nmr_spectrum_k_ubi_hnco`1`=/k_ubi/k_ubiquitin/"
+        "nef_nmr_spectrum_k_ubi_hnca`1`=/k_ubi/k_ubiquitin/"
+    )
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", triple],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert "unexpected text after trailing '/'" in result.stdout.lower()
+
+
+def test_rename_bulk_with_target():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--target", "namespace", "--bulk", "*_hnco*=/nef/ccpn/"],
+    )
+
+    entry = Entry.from_string(result.stdout)
+    frame_names = list(entry.frame_dict.keys())
+
+    # Frames matching *_hnco* pattern: hnco and hncoca (not hncaco - different order)
+    EXPECTED_FRAME_NAMES = [
+        "nef_nmr_meta_data",
+        "nef_molecular_system",
+        "nef_chemical_shift_list_default",
+        "nef_nmr_spectrum_k_ubi_n_hsqc`1`",
+        "nef_nmr_spectrum_k_ubi_hnca`1`",
+        "ccpn_nmr_spectrum_k_ubi_hncoca`1`",  # namespace renamed
+        "nef_nmr_spectrum_k_ubi_hncaco`1`",
+        "ccpn_nmr_spectrum_k_ubi_hnco`1`",  # namespace renamed
+        "nef_nmr_spectrum_k_ubi_hncacb`1`",
+        "nef_nmr_spectrum_k_ubi_cbcaconh`1`",
+        "nef_nmr_spectrum_mars_ubi_n_hsqc`1`",
+        "ccpn_substance_1D3Z_1|Chain.None",
+        "ccpn_substance_mySubstance.None",
+        "ccpn_assignment",
+    ]
+
+    assert sorted(EXPECTED_FRAME_NAMES) == sorted(frame_names)
+
+
+EXPECTED_BULK_MISSING_EQUALS_ERROR = """
+    ERROR [in: rename]: bulk expression 'no_equals_here': missing '=' separator (SELECTOR=/OLD/NEW/)
+    exiting...
+"""
+
+
+def test_rename_bulk_missing_equals_error():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "no_equals_here"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert_lines_match(EXPECTED_BULK_MISSING_EQUALS_ERROR, result.stdout)
+
+
+EXPECTED_BULK_BAD_REPLACEMENT_START_ERROR = (
+    "ERROR [in: rename]: bulk expression 'selector=OLD/NEW': "
+    + "replacement must start with '/' after '=' (SELECTOR=/OLD/NEW/)\n"
+    + "exiting..."
+)
+
+
+def test_rename_bulk_bad_replacement_start_error():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "selector=OLD/NEW"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert_lines_match(EXPECTED_BULK_BAD_REPLACEMENT_START_ERROR, result.stdout)
+
+
+EXPECTED_BULK_MISSING_SLASH_ERROR = """
+    ERROR [in: rename]: bulk expression 'selector=/OLD': missing '/' between OLD and NEW (SELECTOR=/OLD/NEW/)
+    exiting...
+"""
+
+
+def test_rename_bulk_missing_slash_separator_error():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "selector=/OLD"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert_lines_match(EXPECTED_BULK_MISSING_SLASH_ERROR, result.stdout)
+
+
+EXPECTED_BULK_NO_FRAMES_ERROR = f"""
+    ERROR [in: rename]:
+    the frame nef_no_such_frame wasn't found in the entry ubiquitin,
+    did you mean nef_nmr_meta_data [category: nef_nmr_meta_data]?
+    all the frame names in the entry ubiquitin were:
+    {_UBIQUITIN_FRAME_TABLE}
+    exiting...
+"""
+
+
+def test_rename_bulk_no_frames_error():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "nef_no_such_frame=/old/new/"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert_lines_match(EXPECTED_BULK_NO_FRAMES_ERROR, result.stdout)
+
+
+EXPECTED_BULK_WITH_REPLACE_ERROR = """
+    ERROR [in: rename]: --bulk cannot be used with --replace, --delete, or --singleton
+    exiting...
+"""
+
+
+def test_rename_bulk_with_replace_error():
+    path = path_in_test_data(__file__, "ubiquitin_short.nef")
+    result = run_and_report(
+        app,
+        ["--in", path, "--bulk", "--replace", "new_name"],
+        expected_exit_code=EXIT_ERROR,
+    )
+
+    assert_lines_match(EXPECTED_BULK_WITH_REPLACE_ERROR, result.stdout)

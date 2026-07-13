@@ -28,6 +28,12 @@ from nef_pipelines.lib.util import (
 from nef_pipelines.tools.frames import frames_app
 from nef_pipelines.tools.frames.frames_lib import NEFFrameAlreadyExistsException
 
+# TODO: Update rename to match frames create behavior and design-overview.md:
+#       - Stream operations should succeed and warn by default (not error)
+#       - Use --quiet to suppress warnings (not --force to allow overwriting)
+#       - Reserve --force for file operations only
+#       Currently: errors by default, --force allows overwriting (inconsistent with create)
+#       Should be: succeeds + warns by default, --quiet suppresses warning
 # TODO: add mmv like semantics as an option [https://manpages.ubuntu.com/manpages/bionic/man1/mmv.1.html]
 # TODO: --singleton should also be added to frames create
 # TODO: --index N|+N|-N flag for counter arithmetic (see plans/frames-rename-none-inherit-refactor.md)
@@ -230,9 +236,11 @@ def rename(
         renames = []
         for arg in old_new_names or []:
             for chunk in _split_on_unescaped_comma(arg):
-                for selector, old_val, new_val in _parse_bulk_triples_or_exit_error(
-                    chunk
-                ):
+                for (
+                    selector,
+                    old_val,
+                    new_val,
+                ) in _parse_bulk_replace_triple_specs_or_exit_error(chunk):
                     selected = _select_frames_or_exit_error(
                         entry, [selector], category_filter, exact
                     )
@@ -422,7 +430,9 @@ def _split_on_unescaped_comma(s: str) -> List[str]:
     return [c for c in chunks if c]
 
 
-def _parse_bulk_triples_or_exit_error(chunk: str) -> List[Tuple[str, str, str]]:
+def _parse_bulk_replace_triple_specs_or_exit_error(
+    chunk: str,
+) -> List[Tuple[str, str, str]]:
     results = []
     remainder = chunk
     while remainder:
@@ -454,13 +464,21 @@ def _parse_bulk_triples_or_exit_error(chunk: str) -> List[Tuple[str, str, str]]:
 
         slash_idx2 = find_index_of_first_unescaped(remainder, "/")
         if slash_idx2 is None:
-            new_val = unescape_backslashes(remainder, escapes=_BULK_VALUE_ESCAPES)
-            remainder = ""
-        else:
-            new_val = unescape_backslashes(
-                remainder[:slash_idx2], escapes=_BULK_VALUE_ESCAPES
+            exit_error(
+                f"bulk expression {chunk!r}: missing trailing '/' after NEW (SELECTOR=/OLD/NEW/)"
             )
-            remainder = remainder[slash_idx2 + 1 :]
+        new_val = unescape_backslashes(
+            remainder[:slash_idx2], escapes=_BULK_VALUE_ESCAPES
+        )
+        remainder = remainder[slash_idx2 + 1 :]
+
+        # After trailing slash, remainder should be empty
+        # (comma separation is handled by _split_on_unescaped_comma before parsing)
+        if remainder:
+            exit_error(
+                f"bulk expression {chunk!r}: unexpected text after trailing '/'. "
+                + "Multiple triples should be comma-separated or passed as separate arguments."
+            )
 
         results.append((selector, old_val, new_val))
     return results
