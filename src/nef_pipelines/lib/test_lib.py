@@ -148,15 +148,16 @@ def select_matching_tests(tests, selectors):
 
 
 def assert_lines_match(
-    expected: str, reported: str, squash_spaces: bool = True, ignore_empty=True
+    expected: str, reported: str, squash_spaces: bool = True, ignore_empty: bool = True
 ):
     """
     compare two multi line strings line by line with stripping and raise an assertion if they don't match
-    note: empty lines are ignoresd by default, and multiple spaces are squashed
+    note: spaces are squashed first (if squash_spaces), then empty lines are removed (if ignore_empty)
     Args:
         expected (str): the expected string
         reported (str): the input string
         squash_spaces (bool): remove duplicate spaces before comparison
+        ignore_empty (bool): remove empty lines before comparison; set to False to assert blank line structure
 
     Returns:
         None
@@ -164,21 +165,20 @@ def assert_lines_match(
     lines_expected = expected.split("\n")
     lines_reported = reported.split("\n")
 
+    if squash_spaces:
+        lines_expected = [" ".join(line.split()) for line in lines_expected]
+        lines_reported = [" ".join(line.split()) for line in lines_reported]
+
     if ignore_empty:
-        lines_expected = [line for line in lines_expected if len(line.strip()) != 0]
-        lines_reported = [line for line in lines_reported if len(line.strip()) != 0]
+        lines_expected = [line for line in lines_expected if line]
+        lines_reported = [line for line in lines_reported if line]
 
     zip_lines = zip_longest(lines_expected, lines_reported, fillvalue="")
     for i, (expected_line, reported_line) in enumerate(zip_lines, start=1):
 
-        if squash_spaces:
-            expected_line = " ".join(expected_line.split())
-            reported_line = " ".join(reported_line.split())
+        matched = reported_line == expected_line
 
-        expected_line = expected_line.strip()
-        reported_line = reported_line.strip()
-
-        if reported_line != expected_line:
+        if not matched:
 
             for line_no, line in enumerate(lines_expected, start=1):
                 print(f"exp|{line_no}|{line}")
@@ -194,7 +194,7 @@ def assert_lines_match(
             print(f"exp|{i}| {expected_line}|")
             print(f"rep|{i}| {reported_line}|")
 
-        assert reported_line == expected_line
+        assert matched
 
 
 def isolate_frame(target: str, frame_name: str) -> Optional[str]:
