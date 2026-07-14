@@ -10,7 +10,7 @@ if nef_app.app:
     nef_app.app.add_typer(
         loops_app,
         name="loops",
-        help="- carry out operations on loops in nef frames [trim]",
+        help="- carry out operations on loops in nef frames [delete, trim, create]",
         rich_help_panel="NEF manipulation",
         no_args_is_help=True,
         cls=FilteredHelpGroup,
