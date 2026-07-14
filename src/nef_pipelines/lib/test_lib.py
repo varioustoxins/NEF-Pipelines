@@ -6,21 +6,22 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import sys
 import traceback
 from fnmatch import fnmatchcase
 from io import StringIO
 from itertools import zip_longest
 from pathlib import Path
 from typing import IO, AnyStr, List, Optional, Tuple, Union
+from unittest import mock as _mock
 
 from click.testing import Result
 from pynmrstar import Entry
+from pytest import main
 from typer import Typer
 from typer.testing import CliRunner
 
 from nef_pipelines.lib.cli_runner_lib import _MarkerCliRunner, _split_marked_output
-
-from pytest import main
 
 NOQA_E501 = "# noqa: E501"
 
@@ -350,6 +351,20 @@ def path_in_test_data(root: str, file_name: str) -> str:
     return str(Path(test_data, file_name).absolute())
 
 
+def _columns_argv_patch(args):
+    """Patch sys.argv to make command args available to code that reads it directly.
+
+    Some commands (e.g., columns insert) read sys.argv via getopt to recover argument order.
+    Under CliRunner, sys.argv holds pytest's args, not the command args. This patches
+    sys.argv to match what CliRunner parses, keeping getopt and Click consistent.
+
+    TODO: For more realistic behavior, sys.argv should include the full command path
+          (e.g., ['nef', 'frames', 'create', ...] instead of ['test_program', ...]).
+          This would require extracting the command path from the Typer app/context.
+    """
+    return _mock.patch.object(sys, "argv", ["test_program"] + list(args))
+
+
 def _accepts_parameter(callable_obj, param_name: str) -> bool:
     """Check if a class or function accepts a specific parameter in its signature.
 
@@ -393,13 +408,15 @@ def run_and_report(
         # click 8.1.x collapses stderr into stdout when mix_stderr=True, so we recover
         # the split by tagging every stderr line with _STDERR_MARKER.
         runner = _MarkerCliRunner(mix_stderr=True)
-        result = runner.invoke(typer_app, args, input=input)
+        with _columns_argv_patch(args):
+            result = runner.invoke(typer_app, args, input=input)
         captured_stdout, captured_stderr = _split_marked_output(result.output)
     else:
         # click 8.3+: mix_stderr removed, streams are separated natively
         # Note: result.output on click 8.3 is combined — use result.stdout.
         runner = CliRunner()
-        result = runner.invoke(typer_app, args, input=input)
+        with _columns_argv_patch(args):
+            result = runner.invoke(typer_app, args, input=input)
         captured_stdout = result.stdout
         captured_stderr = result.stderr
 
