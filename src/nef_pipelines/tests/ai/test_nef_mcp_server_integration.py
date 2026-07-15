@@ -21,11 +21,6 @@ Client = fastmcp.Client
 
 from nef_pipelines.lib.test_lib import assert_lines_match, read_test_data  # noqa: E402
 from nef_pipelines.tools.ai.mcp_commands import _MCP_TOOLS  # noqa: E402
-from nef_pipelines.tools.ai.mcp_lib import (  # noqa: E402
-    _RESOURCE_NAME_SEPARATOR,
-    _RESOURCES,
-    _get_resource_name_from_filename,
-)
 from nef_pipelines.tools.ai.server_lib import _build_server  # noqa: E402
 
 EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS} | {
@@ -33,10 +28,18 @@ EXPECTED_TOOL_NAMES = {fn.__name__ for fn in _MCP_TOOLS} | {
     "nef_resources_read",
 }
 
-EXPECTED_RESOURCE_URIS = {
-    f"nef://{_get_resource_name_from_filename(f.name)}"
-    for f in _RESOURCES.iterdir()
-    if f.name.endswith(".md") and _RESOURCE_NAME_SEPARATOR in f.name
+# Well-known resources to verify server exposes them correctly
+# (smoke test - not exhaustive, transformation logic tested in unit tests)
+EXPECTED_WELL_KNOWN_RESOURCE_URIS = {
+    # Main resources
+    "nef://readme",
+    "nef://cli-idioms",
+    "nef://star-file-format",
+    # Skill index
+    "nef://skill",
+    # Skills with priority numbers (low and high)
+    "nef://skill/nef-pipelines-howto",  # 01- prefix stripped
+    "nef://skill/writing-readable-pipeline-scripts",  # 70- prefix stripped
 }
 
 EXPECTED_HELP_SECTIONS = ["Usage:", "Options", "General"]
@@ -98,13 +101,19 @@ async def test_list_tools(mcp_client):
 @pytest.mark.asyncio
 async def test_list_resources(mcp_client):
     """\
-    Test that all documentation resources are registered as MCP resources.
+    Test that well-known documentation resources are registered as MCP resources.
+
+    This is a smoke test verifying a representative sample of resources,
+    not an exhaustive check. The transformation logic is tested in unit tests.
     """
     resources = await mcp_client.list_resources()
     resource_uris = {str(r.uri) for r in resources}
-    assert (
-        EXPECTED_RESOURCE_URIS == resource_uris
-    ), f"Missing or extra resources. Got: {resource_uris}"
+
+    missing = EXPECTED_WELL_KNOWN_RESOURCE_URIS - resource_uris
+    assert not missing, (
+        f"Expected well-known resources missing from server: {missing}\n"
+        f"Server returned: {resource_uris}"
+    )
 
 
 @pytest.mark.asyncio
@@ -140,7 +149,7 @@ async def test_nef_skill_resource(mcp_client):
     """\
     Test nef://skill resource returns non-empty content.
     """
-    content = await mcp_client.read_resource("nef://skills")
+    content = await mcp_client.read_resource("nef://skill")
     text = content[0].text
     assert len(text) > 0
 

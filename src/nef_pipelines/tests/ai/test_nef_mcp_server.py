@@ -1509,3 +1509,117 @@ def test_real_nef_pipeline_multi_step_with_file_writes(
 
     # No files written outside sandbox
     assert list(tmp_path.glob("*.nef")) == []
+
+
+# --- _get_resource_name_from_filename ---
+
+
+@pytest.mark.parametrize(
+    "test_id,filename,expected",
+    [
+        (
+            "basic-no-separator",
+            "readme",
+            "readme",
+        ),
+        (
+            "basic-with-description",
+            "readme - README for the NEF-Pipelines MCP server.md",
+            "readme",
+        ),
+        (
+            "hyphenated-name",
+            "cli-idioms - NEF-Pipelines CLI common idioms and patterns.md",
+            "cli-idioms",
+        ),
+        (
+            "low-priority-skill",
+            "01-nef-pipelines-howto - how to use the NEF-Pipelines commands in a pipeline.md",
+            "nef-pipelines-howto",
+        ),
+        (
+            "high-priority-skill",
+            "70-writing-readable-pipeline-scripts - "
+            + "Conventions for converting pipeline invocations into human readable shell scripts.md",
+            "writing-readable-pipeline-scripts",
+        ),
+        (
+            "uppercase-converted",
+            "STAR-file-format - STAR format reference.md",
+            "star-file-format",
+        ),
+    ],
+    ids=lambda x: x[0] if isinstance(x, tuple) else x,
+)
+def test_get_resource_name_from_filename(test_id, filename, expected):
+    """\
+    Test _get_resource_name_from_filename extracts resource name correctly.
+
+    Validates:
+    - Extraction before ' - ' separator
+    - Stripping numeric priority prefixes (01-, 70-, etc.)
+    - Lowercasing
+    - Preserving hyphens in resource names
+    """
+    from nef_pipelines.tools.ai.mcp_lib import _get_resource_name_from_filename
+
+    result = _get_resource_name_from_filename(filename)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "test_id,resource_file,expected_uri",
+    [
+        (
+            "root-skill-index",
+            "skill - index of available expert workflow skills.md",
+            "nef://skill",
+        ),
+        (
+            "low-priority-skill",
+            "01-nef-pipelines-howto - how to use the NEF-Pipelines commands in a pipeline.md",
+            "nef://skill/nef-pipelines-howto",
+        ),
+        (
+            "high-priority-skill",
+            "70-writing-readable-pipeline-scripts"
+            + " - Conventions for converting pipeline invocations into human readable shell scripts.md",
+            "nef://skill/writing-readable-pipeline-scripts",
+        ),
+    ],
+    ids=lambda x: x[0],
+)
+def test_well_known_resources_exist(test_id, resource_file, expected_uri):
+    """\
+    Smoke test: verify well-known skill files exist and transform to expected URIs.
+
+    Tests a representative sample:
+    - Root skill index (nef://skill)
+    - Low priority skill (01- prefix)
+    - High priority skill (70- prefix)
+    """
+    from nef_pipelines.tools.ai.mcp_lib import (
+        _RESOURCES,
+        _SKILLS,
+        _get_resource_name_from_filename,
+    )
+
+    # Determine if this is a skill or regular resource from the expected URI
+    if expected_uri.startswith("nef://skill/"):
+        resource_dir = _SKILLS
+        uri_prefix = "nef://skill/"
+    else:
+        resource_dir = _RESOURCES
+        uri_prefix = "nef://"
+
+    # Check file exists
+    file_path = resource_dir / resource_file
+    assert file_path.exists(), f"Resource file not found: {file_path}"
+    assert file_path.suffix == ".md", f"Resource must be markdown: {file_path}"
+
+    # Check URI transformation
+    name = _get_resource_name_from_filename(resource_file)
+    actual_uri = f"{uri_prefix}{name}"
+    assert (
+        actual_uri == expected_uri
+    ), f"URI mismatch for {resource_file}: expected {expected_uri}, got {actual_uri}"

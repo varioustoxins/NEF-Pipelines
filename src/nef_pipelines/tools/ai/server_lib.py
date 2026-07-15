@@ -8,9 +8,11 @@ from nef_pipelines.tools.ai.mcp_commands import (  # noqa: F401 — import trigg
 )
 from nef_pipelines.tools.ai.mcp_lib import (
     _RESOURCES,
+    _SKILLS,
     _build_full_orientation,
     _get_resource_description_from_filename,
     _get_resource_name_from_filename,
+    _resource_sort_key,
 )
 
 
@@ -55,11 +57,11 @@ def _build_server() -> FastMCP:
         "nef-pipelines", version=get_version(), instructions=instructions
     )
 
-    for md_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
-        if not md_file.name.endswith(".md"):
+    for markdown_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
+        if not markdown_file.name.endswith(".md"):
             continue
-        name = _get_resource_name_from_filename(md_file.name)
-        description = _get_resource_description_from_filename(md_file.name)
+        name = _get_resource_name_from_filename(markdown_file.name)
+        description = _get_resource_description_from_filename(markdown_file.name)
         uri = f"nef://{name}"
 
         def _make_reader(f):
@@ -69,7 +71,24 @@ def _build_server() -> FastMCP:
             return _reader
 
         mcp_server.resource(uri, mime_type="text/markdown", description=description)(
-            _make_reader(md_file)
+            _make_reader(markdown_file)
+        )
+
+    for markdown_file in sorted(_SKILLS.iterdir(), key=_resource_sort_key):
+        if not markdown_file.name.endswith(".md"):
+            continue
+        name = _get_resource_name_from_filename(markdown_file.name)
+        description = _get_resource_description_from_filename(markdown_file.name)
+        uri = f"nef://skill/{name}"
+
+        def _make_reader(f):
+            def _reader() -> str:
+                return f.read_text()
+
+            return _reader
+
+        mcp_server.resource(uri, mime_type="text/markdown", description=description)(
+            _make_reader(markdown_file)
         )
 
     for tool_fn in _MCP_TOOLS:
