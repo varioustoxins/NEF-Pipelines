@@ -126,6 +126,14 @@ def simple_nef_data():
     return read_test_data("ubiquitin_short.nef", __file__)
 
 
+@pytest.fixture
+def suppress_sandbox_location_preference(monkeypatch):
+    """Suppress saved sandbox preference to test CLI arg/env var/temp fallback priority."""
+    monkeypatch.setattr(
+        "nef_pipelines.tools.ai.server.get_sandbox_preference", lambda: None
+    )
+
+
 # --- nef_list_commands ---
 
 
@@ -757,7 +765,9 @@ def test_change_sandbox_file_not_directory(tmp_path, monkeypatch):
     assert Path.cwd() == tmp_path.resolve()
 
 
-def test_sandbox_env_var_priority(tmp_path, monkeypatch):
+def test_sandbox_env_var_priority(
+    tmp_path, monkeypatch, suppress_sandbox_location_preference
+):
     """\
     Test that --path overrides the environment variable, and env var overrides temp.
     """
@@ -776,28 +786,21 @@ def test_sandbox_env_var_priority(tmp_path, monkeypatch):
     )
 
 
-def test_sandbox_temp_fallback(monkeypatch):
+def test_sandbox_temp_fallback(monkeypatch, suppress_sandbox_location_preference):
     """\
     Test that a temp directory is signalled when no path is specified.
     """
-    # Mock get_sandbox_preference to return None
-    monkeypatch.setattr(
-        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
-    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
 
     assert _get_sandbox_path(None) == SandboxPathResult(is_temp=True)
 
 
-def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
+def test_sandbox_invalid_path_fallback_to_env(
+    tmp_path, monkeypatch, suppress_sandbox_location_preference
+):
     """\
     Test that an invalid --path is used anyway with a warning (does NOT fall back).
     """
-    # Mock get_sandbox_preference to return None so we test CLI arg behavior
-    monkeypatch.setattr(
-        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
-    )
-
     env_dir = tmp_path / "env_sandbox"
     env_dir.mkdir()
     invalid_path = tmp_path / "does_not_exist"
@@ -813,14 +816,12 @@ def test_sandbox_invalid_path_fallback_to_env(tmp_path, monkeypatch):
     )
 
 
-def test_sandbox_invalid_path_fallback_to_temp(tmp_path, monkeypatch):
+def test_sandbox_invalid_path_fallback_to_temp(
+    tmp_path, monkeypatch, suppress_sandbox_location_preference
+):
     """\
     Test that an invalid --path is used anyway with a warning (does NOT fall back to temp).
     """
-    # Mock get_sandbox_preference to return None
-    monkeypatch.setattr(
-        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
-    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
     invalid_path = tmp_path / "does_not_exist"
 
@@ -833,14 +834,12 @@ def test_sandbox_invalid_path_fallback_to_temp(tmp_path, monkeypatch):
     )
 
 
-def test_sandbox_file_not_directory_fallback(tmp_path, monkeypatch):
+def test_sandbox_file_not_directory_fallback(
+    tmp_path, monkeypatch, suppress_sandbox_location_preference
+):
     """\
     Test that --path pointing to a file is used anyway with a warning (does NOT fall back).
     """
-    # Mock get_sandbox_preference to return None
-    monkeypatch.setattr(
-        "nef_pipelines.tools.ai.sandbox_lib.get_sandbox_preference", lambda: None
-    )
     monkeypatch.delenv(NEF_MCP_SANDBOX_ENV_VAR_NAME, raising=False)
     test_file = tmp_path / "test.txt"
     test_file.write_text("not a directory")
