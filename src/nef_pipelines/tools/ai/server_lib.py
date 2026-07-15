@@ -41,6 +41,38 @@ class _NefResourcesAsTools(ResourcesAsTools):
         return await call_next(name, version=version)
 
 
+def _register_resources(mcp_server, directory, uri_prefix="nef://", sort_key=None):
+    """Register markdown files from a directory as MCP resources.
+
+    Args:
+        mcp_server: FastMCP server instance
+        directory: Path to directory containing .md files
+        uri_prefix: URI prefix (e.g., "nef://" or "nef://skill/")
+        sort_key: Sort key function (defaults to alphabetical by name)
+    """
+    if sort_key is None:
+
+        def sort_key(f):
+            return f.name
+
+    for markdown_file in sorted(directory.iterdir(), key=sort_key):
+        if not markdown_file.name.endswith(".md"):
+            continue
+        name = _get_resource_name_from_filename(markdown_file.name)
+        description = _get_resource_description_from_filename(markdown_file.name)
+        uri = f"{uri_prefix}{name}"
+
+        def _make_reader(f):
+            def _reader() -> str:
+                return f.read_text()
+
+            return _reader
+
+        mcp_server.resource(uri, mime_type="text/markdown", description=description)(
+            _make_reader(markdown_file)
+        )
+
+
 def _build_server() -> FastMCP:
     """\
     Build and return a configured FastMCP server with all NEF tools and resources registered.
@@ -57,39 +89,13 @@ def _build_server() -> FastMCP:
         "nef-pipelines", version=get_version(), instructions=instructions
     )
 
-    for markdown_file in sorted(_RESOURCES.iterdir(), key=lambda f: f.name):
-        if not markdown_file.name.endswith(".md"):
-            continue
-        name = _get_resource_name_from_filename(markdown_file.name)
-        description = _get_resource_description_from_filename(markdown_file.name)
-        uri = f"nef://{name}"
+    # Register regular resources (alphabetical order)
+    _register_resources(mcp_server, _RESOURCES)
 
-        def _make_reader(f):
-            def _reader() -> str:
-                return f.read_text()
-
-            return _reader
-
-        mcp_server.resource(uri, mime_type="text/markdown", description=description)(
-            _make_reader(markdown_file)
-        )
-
-    for markdown_file in sorted(_SKILLS.iterdir(), key=_resource_sort_key):
-        if not markdown_file.name.endswith(".md"):
-            continue
-        name = _get_resource_name_from_filename(markdown_file.name)
-        description = _get_resource_description_from_filename(markdown_file.name)
-        uri = f"nef://skill/{name}"
-
-        def _make_reader(f):
-            def _reader() -> str:
-                return f.read_text()
-
-            return _reader
-
-        mcp_server.resource(uri, mime_type="text/markdown", description=description)(
-            _make_reader(markdown_file)
-        )
+    # Register skill resources (priority order)
+    _register_resources(
+        mcp_server, _SKILLS, uri_prefix="nef://skill/", sort_key=_resource_sort_key
+    )
 
     for tool_fn in _MCP_TOOLS:
         mcp_server.tool()(tool_fn)
