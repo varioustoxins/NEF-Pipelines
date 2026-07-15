@@ -109,12 +109,66 @@ failure modes.
 Diagnostics
 -----------
 Violation messages include the offending path, the sandbox root,
-the audit event name, AND up to four stack frames from outside this
+the audit event name, and  stack frames from outside this
 module showing which package and function attempted the write. The
 caller frames are captured at the point of violation and stored in
 ``state.violation_error``, so the backstop raise on context exit
 preserves them even if the original exception was swallowed by an
 intervening library.
+
+TODO: Delayed stack trace formatting
+-------------------------------------
+Currently, stack traces are formatted during the audit hook using
+``traceback.StackSummary.extract(..., lookup_lines=False)`` to avoid
+reading source files (which would trigger re-entrant audit events).
+This produces stack traces without source code context.
+
+**Improvement:** Delay formatting until after the audit hook is deactivated:
+
+1. **During hook (minimal):**
+   - Capture raw stack frames: ``list(traceback.walk_stack(None))``
+   - Store in violation record (don't format yet)
+   - Raise immediately or collect for later (design choice)
+
+2. **After command execution (in __exit__):**
+   - Format with ``lookup_lines=True`` (safe now, hook is off)
+   - Include full source code context for better debugging
+
+**Benefits:**
+- Richer error messages with source code snippets
+- Faster hook (less work during critical path)
+- No re-entrance risk (formatting happens after hook deactivated)
+- Can aggregate/filter multiple violations
+
+**Implementation sketch:**
+.. code-block:: python
+
+    @dataclass
+    class ViolationRecord:
+        path: Path
+        event: str
+        raw_frames: list  # Captured during hook
+
+    class audit_sandbox_writes:
+        def __init__(self, ...):
+            self.violations = []  # Collect here
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            # Format violations AFTER hook deactivated
+            for v in self.violations:
+                stack = traceback.StackSummary.extract(
+                    v.raw_frames,
+                    lookup_lines=True  # Safe now!
+                )
+                detailed = ''.join(traceback.format_list(stack))
+                logger.error(f"Violation: {v.path}\\n{detailed}")
+
+            # Deactivate hook
+            sys.removeaudithook(self._hook_id)
+
+**Design decision needed:** Should violations raise immediately
+(stopping command) or collect all violations and report after?
+Current behavior is immediate raise; delayed formatting allows either.
 """
 
 import logging
@@ -122,6 +176,7 @@ import mmap
 import os
 import sys
 import threading
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -294,38 +349,50 @@ def _is_write_operation(event: str, args: tuple) -> bool:
 _THIS_FILE = os.path.normcase(os.path.abspath(__file__))
 
 
-def _format_caller_frames(depth: int = 4) -> str:
-    """Walk up the stack and return the first ``depth`` frames outside
-    this module, formatted as ``file:line in function``.
+def _format_caller_frames() -> str:
+    """Return the complete call stack outside this module, plus any active exception chain.
 
-    The audit hook is at the bottom of the call stack; the actual
-    caller (numpy, matplotlib, user pipeline code, ...) is one or
-    more frames up. Frames inside this module are skipped so the
-    output points at *who* tried the write, not at the hook itself.
+    Captures all frames (no depth cap) so the full path from the nef pipeline
+    code down to the violating stdlib call is visible.  Frames inside this module
+    are excluded — they are hook internals, not the caller of interest.
 
-    Uses ``sys._getframe`` rather than ``traceback.extract_stack``
-    because the latter reads source files from disk — which on a
-    case where the violation involves a file that the hook is about
-    to check could be surprising. ``_getframe`` is in-memory only.
+    Uses ``traceback.StackSummary.extract`` with ``lookup_lines=False`` to avoid
+    reading source files from disk during the hook (reading files would itself
+    fire audit events and could cause re-entrant violations).
+
+    Any exception that is actively being handled at the time of the violation
+    (``sys.exc_info()``) is appended as a "Nested exception" section so chained
+    errors — e.g. ``tempfile`` swallowing an earlier OSError — are visible.
     """
-    frames = []
+    parts: list = []
+
+    # --- full call stack ---
     try:
-        frame = sys._getframe(1)  # skip this helper
-    except ValueError:
-        return "<no caller info available>"
+        summary = traceback.StackSummary.extract(
+            traceback.walk_stack(None),
+            lookup_lines=False,
+        )
+        stack_lines = []
+        for fs in summary:
+            filename = os.path.normcase(os.path.abspath(fs.filename))
+            if filename != _THIS_FILE:
+                stack_lines.append(f"  {fs.filename}:{fs.lineno} in {fs.name}")
+        parts.append("\n".join(stack_lines) if stack_lines else "  <no frames>")
+    except Exception as exc:
+        parts.append(f"  <could not capture stack: {exc}>")
 
-    while frame is not None and len(frames) < depth:
-        filename = os.path.normcase(os.path.abspath(frame.f_code.co_filename))
-        if filename != _THIS_FILE:
-            # Use the un-normalised path for the displayed message —
-            # easier to read.
-            display = frame.f_code.co_filename
-            frames.append(f"{display}:{frame.f_lineno} in {frame.f_code.co_name}")
-        frame = frame.f_back
+    # --- any active exception being handled at violation time ---
+    exc_type, exc_val, exc_tb = sys.exc_info()
+    if exc_val is not None:
+        try:
+            exc_lines = traceback.format_exception(exc_type, exc_val, exc_tb)
+            parts.append(
+                "Nested exception at time of violation:\n" + "".join(exc_lines)
+            )
+        except Exception:
+            pass
 
-    if not frames:
-        return "<no caller frames found>"
-    return "\n  ".join(frames)
+    return "\n".join(parts)
 
 
 def _sandbox_audit_hook(event: str, args: tuple) -> None:
@@ -338,6 +405,12 @@ def _sandbox_audit_hook(event: str, args: tuple) -> None:
 
     path_str = _extract_path_from_audit_event(event, args)
     if not path_str:
+        return
+
+    # fd-based operations (subprocess pipes, dup'd handles) pass an int, not a path.
+    # These are internal fd operations audited when the originating open() already
+    # passed sandbox checks, so skip them rather than attempting Path resolution.
+    if not isinstance(path_str, (str, bytes, os.PathLike)):
         return
 
     if not _is_write_operation(event, args):
@@ -357,6 +430,18 @@ def _sandbox_audit_hook(event: str, args: tuple) -> None:
             f"Caller:\n  {caller}"
         )
         raise SandboxViolation(state.violation_error)
+
+    # Allow Python bytecode caching: __pycache__ writes in site-packages / the venv
+    # are interpreter-internal, not user-data writes. Without this exemption, first-time
+    # imports of any library trigger false-positive violations when .pyc files are written.
+    if "__pycache__" in path.parts:
+        return
+
+    # Allow writes to /dev/null and other standard discard/special devices.
+    # dill (a dependency of lmfit) opens /dev/null at import time to determine the
+    # Python file type — this write has no persistent side-effect and must be permitted.
+    if path.parts[:2] == ("/", "dev"):
+        return
 
     if not is_path_in_sandbox(path, state.sandbox_path):
         caller = _format_caller_frames()
