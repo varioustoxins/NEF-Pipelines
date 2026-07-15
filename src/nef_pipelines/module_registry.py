@@ -28,6 +28,7 @@ _MODULES = [
     "nef_pipelines.tools.globals",
     "nef_pipelines.tools.header",
     "nef_pipelines.tools.help",
+    "nef_pipelines.tools.columns",
     "nef_pipelines.tools.loops",
     "nef_pipelines.tools.namespace",
     "nef_pipelines.tools.peaks",
