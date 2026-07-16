@@ -1,0 +1,7 @@
+SKIP_THIS_LINE
+nef_chemical_shift_list_myshifts,nef_chemical_shift
+chain_code,sequence_code,residue_name,atom_name,value,value_uncertainty
+A,2,GLN,N,123.22,0.1
+A,2,GLN,H,8.90,0.05
+A,3,ILE,N,115.34,0.1
+A,3,ILE,H,8.32,0.05
