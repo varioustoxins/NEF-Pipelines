@@ -12,5 +12,5 @@ nef_app.app.add_typer(
     rich_help_panel=ToolCategory.GENERAL,
 )
 
-from nef_pipelines.tools.ai import sandbox  # noqa: F401, E402
-from nef_pipelines.tools.ai import server  # noqa: F401, E402
+import nef_pipelines.tools.ai.sandbox  # noqa: F401, E402
+import nef_pipelines.tools.ai.server  # noqa: F401, E402
