@@ -55,6 +55,11 @@ def sandbox(
         "--validate",
         help="Check if sandbox is usable and give diagnostics on stderr (ignored by clear)",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="Show detailed sandbox allowlists (global and per-command); only for 'show' action",
+    ),
 ):
     """- manage persistent sandbox directory preferences"""
 
@@ -65,7 +70,7 @@ def sandbox(
     path_obj = Path(path) if path else None
 
     try:
-        output_lines = command(action, path_obj)
+        output_lines = command(action, path_obj, verbose=verbose)
     except SandBoxException as e:
         _exit_error_if_sanbox_command_fails(action, e)
 
@@ -82,7 +87,9 @@ def sandbox(
         print(line)
 
 
-def command(action: SandboxStorageAction, path: Optional[Path] = None) -> list[str]:
+def command(
+    action: SandboxStorageAction, path: Optional[Path] = None, verbose: bool = False
+) -> list[str]:
     """Execute the sandbox preference command and return output lines."""
 
     output_lines = []
@@ -120,6 +127,9 @@ def command(action: SandboxStorageAction, path: Optional[Path] = None) -> list[s
             output_lines.append("Path: (not set)")
         output_lines.append(f"Config File: {config_file}")
         output_lines.append("Field: mcp_sandbox_path")
+
+        if verbose:
+            output_lines.extend(_get_verbose_sandbox_info())
 
     else:
         raise SandBoxException(
@@ -163,3 +173,73 @@ def _exit_error_if_on_python_39():
             Please upgrade your Python version.
         """
         exit_error(msg)
+
+
+def _get_verbose_sandbox_info() -> list[str]:
+    """Get detailed sandbox allowlist information.
+
+    Returns:
+        List of output lines describing global and per-command allowlists
+    """
+    lines = []
+
+    try:
+        import nef_pipelines.tools.ai.sandbox_lib as sandbox_lib
+
+        # For plain CLI use (no `nef ai server` running), command modules were
+        # imported but nothing ever drained their setups — @setup_sandbox only
+        # records intent, never executes at import time. Run them for real here so
+        # --verbose shows actual directories/descriptions rather than just function
+        # names. Harmless: setup functions only mkdir(parents=True, exist_ok=True)
+        # and set env vars for this one-shot process; nothing persists beyond it.
+        # Each setup function self-reports what it did via SetupResult.description
+        # (stored in AllowedDirs.descriptions below) rather than this command
+        # inferring it by diffing os.environ.
+        if sandbox_lib._PENDING_SETUPS and not sandbox_lib._INSTANCE_ID:
+            sandbox_lib.init_sandbox_instance_with_generated_id(
+                prefix="PREVIEW-PID", preview=True
+            )
+
+        sandbox_data = sandbox_lib._SANDBOX_DATA
+
+        lines.append("")
+        msg = "Allow Lists"
+        lines.append(msg)
+        lines.append("-" * len(msg))
+
+        # Global allowlist
+        lines.append("")
+        if sandbox_data.globals.directories or sandbox_data.globals.glob_patterns:
+            lines.append("global directories:")
+            lines.append("")
+            for line in sorted(sandbox_data.globals.directories):
+                lines.append(f"{line}")
+            for line in sorted(sandbox_data.globals.glob_patterns):
+                lines.append(f"{str(line[0])}/{line[1]}")
+            lines.append("")
+
+        if sandbox_data.commands:
+            lines.append("per-command directories:")
+            for cmd_id in sorted(sandbox_data.commands.keys()):
+                lines.append("")
+                cmd_allowed = sandbox_data.commands[cmd_id]
+                cmd = f"  {cmd_id}:"
+                lines.append(cmd.strip())
+                for setup, descriptions in cmd_allowed.descriptions:
+                    setup = " ".join(setup.split("_")[1:])
+                    for description in descriptions:
+                        lines.append(f"  {setup} - {description}")
+
+        # Sandbox path
+        if sandbox_data.sandbox_path:
+            lines.append("")
+            lines.append(f"User sandbox path: {sandbox_data.sandbox_path}")
+
+    except ImportError:
+        lines.append("")
+        lines.append("Note: Sandbox runtime state not available")
+        lines.append(
+            "      (requires MCP server to be running or command modules imported)"
+        )
+
+    return lines
