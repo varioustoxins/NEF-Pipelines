@@ -1,5 +1,5 @@
 from enum import auto
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -368,7 +368,7 @@ def _matches_group(col: str, group: List[str]) -> bool:
 
     Matches exact names or wildcard patterns (* using fnmatch).
     """
-    return any(fnmatch(col, pattern) for pattern in group)
+    return any(fnmatchcase(col, pattern) for pattern in group)
 
 
 def _is_comment_column(col: str) -> bool:
@@ -409,7 +409,7 @@ def _find_measurement_pairs(
                 continue
 
             # Check if column matches this pattern
-            if not fnmatch(col, pattern):
+            if not fnmatchcase(col, pattern):
                 continue
 
             processed.add(col)
@@ -471,7 +471,7 @@ def _compute_typical_order(loop: Loop) -> List[str]:
             base, suffix = _extract_suffix(col)
             if suffix is not None:
                 continue
-            if fnmatch(col, pattern):
+            if fnmatchcase(col, pattern):
                 result.append(col)
                 categorized.add(col)
 
@@ -518,7 +518,7 @@ def _compute_typical_order(loop: Loop) -> List[str]:
                 base, suf = _extract_suffix(col)
                 if suf != suffix_num:
                     continue
-                if not fnmatch(base, pattern):
+                if not fnmatchcase(base, pattern):
                     continue
 
                 result.append(col)
