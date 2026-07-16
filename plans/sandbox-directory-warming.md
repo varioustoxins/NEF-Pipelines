@@ -1005,3 +1005,93 @@ Gemini: "should rename the decorator to something more structural—like @setup_
 - [Python sysconfig module docs](https://docs.python.org/3/library/sysconfig.html)
 - [fnmatch pattern matching](https://docs.python.org/3/library/fnmatch.html)
 - [Audit hooks (PEP 578)](https://peps.python.org/pep-0578/)
+
+---
+
+## IMPLEMENTATION COMPLETED - 2026-07-15
+
+### Summary
+
+**Status:** ✅ Complete - Phases 2 & 3 implemented and tested
+
+**Architecture Change:** Switched from MCP-layer execution to **decoration-time execution** with global registry.
+
+### What Was Built
+
+**Infrastructure (Phase 2):**
+- Global registry: `_GLOBAL_ALLOWED_DIRS`, `_GLOBAL_GLOB_PATTERNS`
+- Decorator executes setup at import time (not at command execution)
+- Instance ID format: `PID{pid}-TIME{nanoseconds}` (human-readable, debuggable)
+- Setup functions: `setup_matplotlib()`, `setup_jax()`, `setup_numba()`
+- Audit hook checks global registry before sandbox containment
+
+**Commands Decorated (Phase 3):**
+- `nef plot bar` → `setup_matplotlib`
+- `nef plot relaxation` → `setup_matplotlib`
+- `nef fit exponential` → `setup_jax`
+- `nef fit mean` → `setup_jax`
+- `nef fit t1noe` → `setup_jax`
+
+**Tests:**
+- 10 test functions in `test_sandbox_directory_management.py`
+- Coverage: instance creation, cache pre-allocation, decorator metadata, global registry, MCP tools
+
+### Key Decisions
+
+1. **Decoration-time vs Execution-time:** Setup runs at module import, not at command invocation
+   - Simpler: no command resolution needed
+   - Faster: zero runtime overhead
+   - Pre-allocation: directories created eagerly with `mkdir(parents=True, exist_ok=True)`
+
+2. **Instance ID Format:** `PID{pid}-TIME{nanoseconds}` instead of UUID
+   - Human-readable: can see PID for debugging
+   - Zero collision: nanosecond precision
+   - Chronologically sortable: timestamp-based
+   - Easy cleanup: identify orphaned caches by checking if PID is alive
+
+3. **__pycache__ Handling:** Special case in audit hook, not glob pattern or dynamic check
+   - Performance: checked on every write, O(1) lookup
+   - Simple: explicit code path
+   - Migration path: can move to dynamic_check if that infrastructure is needed later
+   - Note added to code documenting this decision
+
+### Cache Structure
+
+```
+/tmp/nef_pipelines_mcp_tmp/
+└── PID54321-TIME1739328543789123456/
+    ├── .matplotlib/      # matplotlib config/cache
+    ├── jax_cache/        # JAX compilation cache
+    ├── cuda_cache/       # CUDA kernels
+    └── triton_cache/     # Triton kernels
+```
+
+### Files Modified
+
+**9 files (+2,467/-10 lines):**
+- `sandbox_lib.py` - global registry, decorator, setup functions
+- `sandbox_audit.py` - global registry checks, __pycache__ note
+- `server.py` - instance ID generation
+- `fit/{exponential,mean,t1noe}.py` - JAX setup
+- `plot/{bar,relaxation}.py` - matplotlib setup
+- `test_sandbox_directory_management.py` - comprehensive tests
+
+### Testing
+
+```bash
+# Run all sandbox management tests
+nefl test src/nef_pipelines/tests/ai/test_sandbox_directory_management.py
+
+# Start server and verify cache directories
+nef ai server --sandbox-path /tmp/test_sandbox
+ls -la /tmp/nef_pipelines_mcp_tmp/PID*/
+```
+
+### Future Work (Deferred)
+
+- Dynamic check infrastructure (if use cases emerge)
+- Additional commands needing cache setup (numba-based commands)
+- Automatic cleanup of orphaned cache directories
+- Concurrency support via ContextVar (if concurrent commands needed)
+
+**Implementation matches original threat model:** User data files stay protected in sandbox, library caches are expendable and exempt in `/tmp`.
