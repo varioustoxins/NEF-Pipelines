@@ -25,6 +25,7 @@ from nef_pipelines.lib.preferences_storage_lib import (
 )
 from nef_pipelines.lib.util import info, warn
 from nef_pipelines.tools.ai.sandbox_data import (
+    _PENDING_DIRECTORY_SETUPS,
     _SANDBOX_DATA,
     SANDBOX_KEY,
     _current_command,
@@ -323,8 +324,8 @@ def drain_pending_setups_if_initialized() -> None:
             "this indicates a call-ordering bug, not a valid runtime state."
         )
 
-    global _PENDING_DIRECTORY_SETUPS
-    pending, _PENDING_DIRECTORY_SETUPS = _PENDING_DIRECTORY_SETUPS, []
+    pending = list(_PENDING_DIRECTORY_SETUPS)
+    _PENDING_DIRECTORY_SETUPS.clear()
     for setup in pending:
         _execute_setup(setup.command_id, setup.setup_callables, setup.static_items)
 
