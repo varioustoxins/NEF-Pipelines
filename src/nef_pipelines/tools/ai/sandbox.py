@@ -195,9 +195,9 @@ def _get_verbose_sandbox_info() -> list[str]:
         # Each setup function self-reports what it did via SetupResult.description
         # (stored in AllowedDirs.descriptions below) rather than this command
         # inferring it by diffing os.environ.
-        if sandbox_lib._PENDING_SETUPS and not sandbox_lib._INSTANCE_ID:
+        if sandbox_lib._PENDING_DIRECTORY_SETUPS and not sandbox_lib._INSTANCE_ID:
             sandbox_lib.init_sandbox_instance_with_generated_id(
-                prefix="PREVIEW-PID", preview=True
+                prefix="TEST-PID", test_mode=True
             )
 
         sandbox_data = sandbox_lib._SANDBOX_DATA

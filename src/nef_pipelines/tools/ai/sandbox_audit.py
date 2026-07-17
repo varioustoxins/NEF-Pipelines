@@ -188,7 +188,11 @@ try:
 except ImportError:
     fcntl = None
 
-from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox
+from nef_pipelines.tools.ai.sandbox_data import _SANDBOX_DATA, _current_command
+from nef_pipelines.tools.ai.sandbox_lib import (
+    is_path_in_sandbox,
+    register_site_packages_pycache_patterns,
+)
 
 WRITE_EVENTS = {
     "open",
@@ -431,18 +435,41 @@ def _sandbox_audit_hook(event: str, args: tuple) -> None:
         )
         raise SandboxViolation(state.violation_error)
 
-    # Allow Python bytecode caching: __pycache__ writes in site-packages / the venv
-    # are interpreter-internal, not user-data writes. Without this exemption, first-time
-    # imports of any library trigger false-positive violations when .pyc files are written.
-    if "__pycache__" in path.parts:
-        return
+    # Check global allowlist (system-wide directories)
+    if _SANDBOX_DATA.globals.directories:
+        if any(
+            path.is_relative_to(allowed)
+            for allowed in _SANDBOX_DATA.globals.directories
+        ):
+            return  # Allow - global system directory (all writes allowed)
 
-    # Allow writes to /dev/null and other standard discard/special devices.
-    # dill (a dependency of lmfit) opens /dev/null at import time to determine the
-    # Python file type — this write has no persistent side-effect and must be permitted.
-    if path.parts[:2] == ("/", "dev"):
-        return
+    # Check global glob patterns (paired with their base directories)
+    if _SANDBOX_DATA.globals.glob_patterns:
+        for base_dir, pattern in _SANDBOX_DATA.globals.glob_patterns:
+            if path.is_relative_to(base_dir):
+                relative_path = path.relative_to(base_dir)
+                if relative_path.match(pattern):
+                    return  # Allow - matches global pattern
 
+    # Check per-command allowlist (command-specific caches)
+    current_cmd_id = _current_command.get()
+    if current_cmd_id and current_cmd_id in _SANDBOX_DATA.commands:
+        cmd_allowed = _SANDBOX_DATA.commands[current_cmd_id]
+
+        # Check command's directories
+        if cmd_allowed.directories:
+            if any(path.is_relative_to(allowed) for allowed in cmd_allowed.directories):
+                return  # Allow - command-specific directory (all writes allowed)
+
+        # Check command's glob patterns (paired with their base directories)
+        if cmd_allowed.glob_patterns:
+            for base_dir, pattern in cmd_allowed.glob_patterns:
+                if path.is_relative_to(base_dir):
+                    relative_path = path.relative_to(base_dir)
+                    if relative_path.match(pattern):
+                        return  # Allow - matches command pattern
+
+    # Final check: is the path in the user sandbox?
     if not is_path_in_sandbox(path, state.sandbox_path):
         caller = _format_caller_frames()
         state.violation_error = (
@@ -553,6 +580,9 @@ def install_audit_hook():
     global _audit_hook_installed
     with _install_lock:
         if not _audit_hook_installed:
+
+            register_site_packages_pycache_patterns()
+
             sys.addaudithook(_sandbox_audit_hook)
             _audit_hook_installed = True
             logger.info("Sandbox write audit hook installed")

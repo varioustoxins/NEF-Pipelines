@@ -17,6 +17,7 @@ from nef_pipelines.tools.ai.mcp_lib import create_nef_pipelines_app
 from nef_pipelines.tools.ai.sandbox_audit import install_audit_hook
 from nef_pipelines.tools.ai.sandbox_lib import (
     get_sandbox_preference,
+    init_sandbox_instance_with_generated_id,
     validate_sandbox_path,
 )
 
@@ -130,6 +131,10 @@ def server(
 
     # Install audit hook to monitor file writes during pipeline execution
     install_audit_hook()
+
+    # Initialize sandbox instance with unique ID (before loading command modules)
+    # This allows @setup_sandbox decorators to execute at import time
+    init_sandbox_instance_with_generated_id()
 
     create_nef_pipelines_app()
 
@@ -273,7 +278,9 @@ def _try_environment_sandbox() -> Optional[SandboxPathResult]:
 
 def _get_build_server_or_exit_error_if_fast_mcp_is_missing() -> Callable[[], "FastMCP"]:
     try:
-        from nef_pipelines.tools.ai.server_lib import _build_server as _build  # deferred
+        from nef_pipelines.tools.ai.server_lib import (
+            _build_server as _build,  # deferred
+        )
     except ImportError:
         msg = """
                 ERROR: fastmcp is not installed

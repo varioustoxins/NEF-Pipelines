@@ -15,9 +15,16 @@ from typer.testing import CliRunner
 import nef_pipelines
 from nef_pipelines.lib.cli_runner_lib import _MarkerCliRunner, _split_marked_output
 from nef_pipelines.lib.util import warn
-from nef_pipelines.nef_app_runner import create_nef_app
+from nef_pipelines.nef_app_runner import (
+    create_nef_app,
+    load_nef_modules_and_build_failure,
+)
 from nef_pipelines.tools.ai.sandbox_audit import SandboxViolation, audit_sandbox_writes
-from nef_pipelines.tools.ai.sandbox_lib import is_path_in_sandbox, validate_sandbox_path
+from nef_pipelines.tools.ai.sandbox_lib import (
+    drain_pending_setups_if_initialized,
+    is_path_in_sandbox,
+    validate_sandbox_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +35,11 @@ def create_nef_pipelines_app():
     failure_message = load_nef_modules_and_build_failure()
     if failure_message:
         warn(failure_message)
+
+    # Execute sandbox setups for any command modules just loaded. Runs outside
+    # load_nef_modules' exception handling so a setup failure crashes hard rather
+    # than being downgraded to a warning. No-op when no sandbox instance exists.
+    drain_pending_setups_if_initialized()
 
 
 _RESOURCES = files("nef_pipelines") / "resources" / "mcp_server"
