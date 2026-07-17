@@ -12,6 +12,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_exit_error,
 )
 from nef_pipelines.lib.util import exit_error, parse_comma_separated_options
+from nef_pipelines.tools.ai.sandbox_lib import setup_jax, setup_sandbox
 from nef_pipelines.tools.fit import fit_app
 from nef_pipelines.tools.fit.fit_lib import (
     _exit_if_no_frame_selectors,
@@ -42,6 +43,7 @@ VERBOSE_HELP = """
 
 
 @fit_app.command()
+@setup_sandbox(setup_jax)
 def mean(
     input: Path = typer.Option(
         None,
