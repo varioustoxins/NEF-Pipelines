@@ -39,7 +39,7 @@ jobs:
 
       - name: Install NEF-Pipelines from source
         run: |
-          uv pip install --system -e ".[testing]"
+          uv pip install --system -e ".[testing,mcp]"
           uv pip install --system streamfitter
 
       - name: run verbose nef test
