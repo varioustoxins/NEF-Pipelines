@@ -378,13 +378,9 @@ def _format_caller_frames() -> str:
         )
         stack_lines = []
         for fs in summary:
-            try:
-                filename = os.path.normcase(os.path.abspath(fs.filename))
-                if filename != _THIS_FILE:
-                    stack_lines.append(f"  {fs.filename}:{fs.lineno} in {fs.name}")
-            except (AttributeError, KeyError):
-                # Lazy-imported modules may not have __file__ until fully loaded
-                stack_lines.append(f"  <lazy module>:{fs.lineno} in {fs.name}")
+            filename = os.path.normcase(os.path.abspath(fs.filename))
+            if filename != _THIS_FILE:
+                stack_lines.append(f"  {fs.filename}:{fs.lineno} in {fs.name}")
         parts.append("\n".join(stack_lines) if stack_lines else "  <no frames>")
     except Exception as exc:
         parts.append(f"  <could not capture stack: {exc}>")
