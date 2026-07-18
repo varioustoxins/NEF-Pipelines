@@ -471,7 +471,11 @@ def _sandbox_audit_hook(event: str, args: tuple) -> None:
 
     # Final check: is the path in the user sandbox?
     if not is_path_in_sandbox(path, state.sandbox_path):
-        caller = _format_caller_frames()
+        try:
+            caller = _format_caller_frames()
+        except Exception as e:
+            caller = f"<stack trace formatting failed: {e}>"
+
         state.violation_error = (
             f"Sandbox violation: attempted write outside sandbox: {path}\n"
             f"Sandbox root: {state.sandbox_path}\n"
