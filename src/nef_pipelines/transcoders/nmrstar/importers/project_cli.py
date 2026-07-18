@@ -5,7 +5,6 @@ from textwrap import dedent
 from typing import List
 
 import typer
-from lazy_import import lazy_module
 from pynmrstar.exceptions import ParsingError
 from strenum import LowercaseStrEnum
 
@@ -21,6 +20,9 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.nmrstar import import_app
+from nef_pipelines.transcoders.nmrstar.importers import (
+    project as project_module,  # wants to be lazy
+)
 from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     BMRB_AUTO_MIRROR,
     BMRB_ITALY_URL_TEMPLATE,
@@ -30,8 +32,6 @@ from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     SHORTCUTS,
 )
 from nef_pipelines.transcoders.nmrstar.nmrstar_lib import StereoAssignmentHandling
-
-project_module = lazy_module("nef_pipelines.transcoders.nmrstar.importers.project")
 
 app = typer.Typer()
 
@@ -246,12 +246,21 @@ def _notify_failed_read_and_exit(file_path, e):
                 if not (
                     file_mode & 0o444
                 ):  # No read permission for owner, group, or other
-                    msg = f"couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path}"
+                    msg = f"""
+                            couldn't read from {file_path} because you don't have read permission.
+                            Try: chmod +r {file_path}
+                        """
                 elif not (file_mode & 0o400):  # Owner doesn't have read permission
-                    msg = f"couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path}"
+                    msg = f"""
+                            couldn't read from {file_path} because the owner doesn't have read permission.
+                            Try: chmod u+r {file_path}
+                        """
                 else:
                     # File has read permissions but still can't read - likely ownership or other restrictions
-                    msg = f"couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions."
+                    msg = f"""
+                            couldn't read from {file_path} due to permission restrictions.
+                            Check file ownership and permissions.
+                        """
             except OSError:
                 msg = f"couldn't read from {file_path} due to permission error. Check file permissions and ownership."
         else:
