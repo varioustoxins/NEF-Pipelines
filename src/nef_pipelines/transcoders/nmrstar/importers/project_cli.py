@@ -261,10 +261,12 @@ def _notify_failed_read_and_exit(file_path, e):
                             couldn't read from {file_path} due to permission restrictions.
                             Check file ownership and permissions.
                         """
+
             except OSError:
                 msg = f"couldn't read from {file_path} due to permission error. Check file permissions and ownership."
         else:
             msg = f"couldn't read from {file_path} even though it exists, do you have permission to read it?"
+        msg = dedent(msg).strip()
         exit_error(msg, e)
     if file_path.exists() and not file_path.is_file():
         msg = f"couldn't read from {file_path}, it exists but isn't a file"
