@@ -7,19 +7,29 @@ from pathlib import Path
 from unittest.mock import mock_open, patch
 
 import typer
-from typer.testing import CliRunner
 
-from nef_pipelines.lib.test_lib import NOQA_E501, assert_lines_match
+from nef_pipelines.lib.test_lib import NOQA_E501, assert_lines_match, run_and_report
 from nef_pipelines.transcoders.nmrstar.importers.project_cli import project
 
 
 def extract_error_lines(output):
-    """Extract just the ERROR and exiting lines from output, ignoring tracebacks"""
+    """Extract ERROR lines and continuation lines until exiting, ignoring tracebacks and debug hints"""
     lines = output.split("\n")
     error_lines = []
+    capturing = False
     for line in lines:
-        if line.strip().startswith("ERROR [in:") or line.strip() == "exiting...":
+        if line.strip().startswith("ERROR [in:"):
+            capturing = True
             error_lines.append(line.strip())
+        elif capturing:
+            if line.strip() == "exiting...":
+                error_lines.append(line.strip())
+                capturing = False
+            elif line.strip() and not line.strip().startswith(
+                ("Traceback", "... for full debug")
+            ):
+                # Continuation line of the error message (skip tracebacks and debug hints)
+                error_lines.append(line.strip())
     return "\n".join(error_lines)
 
 
@@ -31,25 +41,22 @@ exiting...
 """
 
 EXPECTED_PERMISSION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because you don't have read permission. Try: chmod +r {file_path} # noqa: E501
+ERROR [in: project]: couldn't read from {file_path} because you don't have read permission.
+Try: chmod +r {file_path}
 exiting...
-""".replace(
-    NOQA_E501, ""
-)
+"""
 
 EXPECTED_OWNER_NO_READ_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission. Try: chmod u+r {file_path} # noqa: E501
+ERROR [in: project]: couldn't read from {file_path} because the owner doesn't have read permission.
+Try: chmod u+r {file_path}
 exiting...
-""".replace(
-    NOQA_E501, ""
-)
+"""
 
 EXPECTED_PERMISSION_RESTRICTION_ERROR_PATTERN = """\
-ERROR [in: project]: couldn't read from {file_path} due to permission restrictions. Check file ownership and permissions. # noqa: E501
+ERROR [in: project]: couldn't read from {file_path} due to permission restrictions.
+Check file ownership and permissions.
 exiting...
-""".replace(
-    NOQA_E501, ""
-)
+"""
 
 EXPECTED_GENERIC_PERMISSION_ERROR_PATTERN = """\
 ERROR [in: project]: couldn't read from {file_path} due to permission error. Check file permissions and ownership.
@@ -94,7 +101,6 @@ exiting...
 
 def test_failed_bmrb_web_fetch_fallback_to_nonexistent_file():
     """Test that when BMRB web fetch fails, the error message is informative for bmrb codes"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -108,15 +114,16 @@ def test_failed_bmrb_web_fetch_fallback_to_nonexistent_file():
             mock_web.return_value = None
 
             # This should try to fetch from web, fail, then try file "bmr9999" which doesn't exist
-            result = runner.invoke(app, ["bmr9999", "--source", "auto"])
+            result = run_and_report(
+                app, ["bmr9999", "--source", "auto"], expected_exit_code=1
+            )
 
             assert result.exit_code != 0
-            assert_lines_match(EXPECTED_BMRB_CODE_ERROR, result.output)
+            assert_lines_match(EXPECTED_BMRB_CODE_ERROR, result.stdout)
 
 
 def test_failed_file_read_permission_error_no_read():
     """Test error message when file exists but has no read permissions (000)"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -128,13 +135,15 @@ def test_failed_file_read_permission_error_no_read():
         # Make file completely unreadable (no permissions)
         temp_path.chmod(0o000)
 
-        result = runner.invoke(app, [str(temp_path), "--source", "file"])
+        result = run_and_report(
+            app, [str(temp_path), "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_permission_error = EXPECTED_PERMISSION_ERROR_PATTERN.format(
             file_path=temp_path
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_permission_error, actual_error)
 
     finally:
@@ -145,7 +154,6 @@ def test_failed_file_read_permission_error_no_read():
 
 def test_failed_file_read_permission_error_write_only():
     """Test error message when file is write-only (200) - no read permissions"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -157,13 +165,15 @@ def test_failed_file_read_permission_error_write_only():
         # Make file write-only for owner (no read permissions anywhere)
         temp_path.chmod(0o200)
 
-        result = runner.invoke(app, [str(temp_path), "--source", "file"])
+        result = run_and_report(
+            app, [str(temp_path), "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_permission_error = EXPECTED_PERMISSION_ERROR_PATTERN.format(
             file_path=temp_path
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_permission_error, actual_error)
 
     finally:
@@ -174,7 +184,6 @@ def test_failed_file_read_permission_error_write_only():
 
 def test_failed_file_read_permission_error_execute_only():
     """Test error message when file is execute-only (100) - no read permissions"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -186,13 +195,15 @@ def test_failed_file_read_permission_error_execute_only():
         # Make file execute-only for owner (no read permissions anywhere)
         temp_path.chmod(0o100)
 
-        result = runner.invoke(app, [str(temp_path), "--source", "file"])
+        result = run_and_report(
+            app, [str(temp_path), "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_permission_error = EXPECTED_PERMISSION_ERROR_PATTERN.format(
             file_path=temp_path
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_permission_error, actual_error)
 
     finally:
@@ -203,7 +214,6 @@ def test_failed_file_read_permission_error_execute_only():
 
 def test_failed_file_read_permission_error_owner_no_read():
     """Test error message when file has read permissions for group/others but not owner (044)"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -215,13 +225,15 @@ def test_failed_file_read_permission_error_owner_no_read():
         # Give read permissions to group and others but not owner
         temp_path.chmod(0o044)
 
-        result = runner.invoke(app, [str(temp_path), "--source", "file"])
+        result = run_and_report(
+            app, [str(temp_path), "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_permission_error = EXPECTED_OWNER_NO_READ_ERROR_PATTERN.format(
             file_path=temp_path
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_permission_error, actual_error)
 
     finally:
@@ -232,37 +244,38 @@ def test_failed_file_read_permission_error_owner_no_read():
 
 def test_failed_file_read_directory_instead_of_file():
     """Test error message when path exists but is a directory not a file"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        result = runner.invoke(app, [temp_dir, "--source", "file"])
+        result = run_and_report(
+            app, [temp_dir, "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_directory_error = EXPECTED_DIRECTORY_ERROR_PATTERN.format(
             file_path=temp_dir
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_directory_error, actual_error)
 
 
 def test_failed_file_read_nonexistent_file():
     """Test error message for completely nonexistent file"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
     nonexistent_file = "/path/that/does/not/exist/file.txt"
-    result = runner.invoke(app, [nonexistent_file, "--source", "file"])
+    result = run_and_report(
+        app, [nonexistent_file, "--source", "file"], expected_exit_code=1
+    )
 
     assert result.exit_code != 0
-    assert EXPECTED_NONEXISTENT_FILE_ERROR in result.output
+    assert EXPECTED_NONEXISTENT_FILE_ERROR in result.stdout
 
 
 def test_web_source_only_with_invalid_bmrb_code():
     """Test web-only source with invalid BMRB code"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -271,7 +284,9 @@ def test_web_source_only_with_invalid_bmrb_code():
     ) as mock_web:
         mock_web.return_value = None
 
-        result = runner.invoke(app, ["bmr99999", "--source", "web"])
+        result = run_and_report(
+            app, ["bmr99999", "--source", "web"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         # Should exit immediately for web-only source when web fetch fails
@@ -279,7 +294,6 @@ def test_web_source_only_with_invalid_bmrb_code():
 
 def test_shortcut_ubiquitin_web_failure_fallback():
     """Test that ubiquitin shortcut fails gracefully when web is down and file doesn't exist"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -292,15 +306,16 @@ def test_shortcut_ubiquitin_web_failure_fallback():
         ) as mock_web:
             mock_web.return_value = None
 
-            result = runner.invoke(app, ["ubiquitin", "--source", "auto"])
+            result = run_and_report(
+                app, ["ubiquitin", "--source", "auto"], expected_exit_code=1
+            )
 
             assert result.exit_code != 0
-            assert_lines_match(EXPECTED_UBIQUITIN_BMRB_ERROR, result.output)
+            assert_lines_match(EXPECTED_UBIQUITIN_BMRB_ERROR, result.stdout)
 
 
 def test_numeric_file_path_error_message():
     """Test specific error message for purely numeric file paths (BMRB IDs)"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -312,15 +327,16 @@ def test_numeric_file_path_error_message():
         ) as mock_web:
             mock_web.return_value = None
 
-            result = runner.invoke(app, ["5387", "--source", "auto"])
+            result = run_and_report(
+                app, ["5387", "--source", "auto"], expected_exit_code=1
+            )
 
             assert result.exit_code != 0
-            assert_lines_match(EXPECTED_NUMERIC_BMRB_ERROR, result.output)
+            assert_lines_match(EXPECTED_NUMERIC_BMRB_ERROR, result.stdout)
 
 
 def test_failed_file_read_parsing_error():
     """Test error message when file exists but contains invalid NMRSTAR content"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -331,13 +347,15 @@ def test_failed_file_read_parsing_error():
         temp_path = Path(temp_file.name)
 
     try:
-        result = runner.invoke(app, [str(temp_path), "--source", "file"])
+        result = run_and_report(
+            app, [str(temp_path), "--source", "file"], expected_exit_code=1
+        )
 
         assert result.exit_code != 0
         expected_parsing_error = EXPECTED_PARSING_ERROR_PATTERN.format(
             file_path=temp_path
         )
-        actual_error = extract_error_lines(result.output)
+        actual_error = extract_error_lines(result.stdout)
         assert_lines_match(expected_parsing_error, actual_error)
 
     finally:
@@ -375,7 +393,6 @@ def test_direct_read_entry_from_file_or_exit_error():
 
 def test_valid_local_file_import():
     """Test importing from a valid local NEF file"""
-    runner = CliRunner()
     app = typer.Typer()
     app.command()(project)
 
@@ -383,10 +400,10 @@ def test_valid_local_file_import():
     test_file = Path(__file__).parent / "test_data" / "bmr5387_3.str.txt"
 
     if test_file.exists():
-        result = runner.invoke(app, [str(test_file), "--source", "file"])
+        result = run_and_report(app, [str(test_file), "--source", "file"])
 
         # Should succeed and produce NEF output
         assert result.exit_code == 0
         # NEF files start with data_ block
         expected_nef_output = "data_"
-        assert expected_nef_output in result.output
+        assert expected_nef_output in result.stdout

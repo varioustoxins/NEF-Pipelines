@@ -409,14 +409,14 @@ def run_and_report(
         # the split by tagging every stderr line with _STDERR_MARKER.
         runner = _MarkerCliRunner(mix_stderr=True)
         with _columns_argv_patch(args):
-            result = runner.invoke(typer_app, args, input=input)
+            result = runner.invoke(typer_app, args, input=input)  # allowed
         captured_stdout, captured_stderr = _split_marked_output(result.output)
     else:
         # click 8.3+: mix_stderr removed, streams are separated natively
         # Note: result.output on click 8.3 is combined — use result.stdout.
         runner = CliRunner()
         with _columns_argv_patch(args):
-            result = runner.invoke(typer_app, args, input=input)
+            result = runner.invoke(typer_app, args, input=input)  # allowed
         captured_stdout = result.stdout
         captured_stderr = result.stderr
 

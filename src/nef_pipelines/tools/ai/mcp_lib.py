@@ -539,7 +539,7 @@ def _execute_command_in_process(
 
             result = None
             try:
-                result = runner.invoke(
+                result = runner.invoke(  # allowed
                     nef_pipelines.nef_app.app, list(args), **invoke_kwargs
                 )
                 # Split output based on runner type

@@ -2,9 +2,8 @@ from textwrap import dedent
 
 import typer
 from freezegun import freeze_time
-from typer.testing import CliRunner
 
-from nef_pipelines.lib.test_lib import assert_lines_match
+from nef_pipelines.lib.test_lib import assert_lines_match, run_and_report
 from nef_pipelines.lib.util import get_version
 from nef_pipelines.nef_app_runner import create_nef_app
 from nef_pipelines.tools.header import header
@@ -14,8 +13,6 @@ create_nef_app()
 
 app = typer.Typer()
 app.command()(header)
-
-runner = CliRunner()
 
 EXPECTED_TEMPLATE = f"""
     data_%(name)s
@@ -53,7 +50,7 @@ def get_expected(name):
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_nef_default_header(fixed_seed):
 
-    result = runner.invoke(app, [])
+    result = run_and_report(app, [])
 
     assert result.exit_code == 0
 
@@ -64,7 +61,7 @@ def test_nef_default_header(fixed_seed):
 @freeze_time("2012-01-14 12:00:01.123456")
 def test_nef_named_header(fixed_seed):
 
-    result = runner.invoke(app, ["test"])
+    result = run_and_report(app, ["test"])
     assert result.exit_code == 0
 
     assert_lines_match(get_expected("test"), result.stdout)

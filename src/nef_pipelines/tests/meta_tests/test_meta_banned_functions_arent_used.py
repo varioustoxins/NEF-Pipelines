@@ -17,22 +17,72 @@ BANNED_FUNCTIONS: Dict[Tuple[str, str], str] = {
         "and case-sensitive on Unix, causing platform-specific bugs. "
         "fnmatchcase is always case-sensitive on all platforms."
     ),
+    ("typer.testing.CliRunner", "invoke"): (
+        "Use run_and_report from nef_pipelines.lib.test_lib instead. "
+        "CliRunner.invoke does not provide proper error reporting. "
+        "Add '# allowed' comment to exception this check if absolutely necessary."
+    ),
 }
 
 
 class BannedFunctionChecker(ast.NodeVisitor):
     """AST visitor that detects calls to banned functions."""
 
-    def __init__(self, banned_functions: Dict[Tuple[str, str], str]):
+    def __init__(
+        self, banned_functions: Dict[Tuple[str, str], str], source_lines: List[str]
+    ):
         """Initialise the checker with a dictionary of banned functions.
 
         Args:
             banned_functions: Dictionary mapping (module, function) tuples to reason strings
+            source_lines: List of source code lines for checking '# allowed' comments
         """
         self.banned_functions = banned_functions
         self.violations: List[Tuple[int, str, str, str]] = []
         self.imports: Dict[str, str] = {}  # alias -> module
         self.from_imports: Dict[str, str] = {}  # name -> module
+        self.source_lines = source_lines
+        self.cli_runner_in_current_function = (
+            False  # Track CliRunner() in current function scope
+        )
+
+    def _is_allowed(self, line_no: int) -> bool:
+        """Check if a line has the '# allowed' comment to exempt it from the ban.
+
+        Args:
+            line_no: Line number (1-indexed)
+
+        Returns:
+            True if the line has '# allowed' comment
+        """
+        if 0 < line_no <= len(self.source_lines):
+            line = self.source_lines[line_no - 1]
+            return "# allowed" in line
+        return False
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Track function entry and reset CliRunner tracking."""
+        # Save previous state
+        prev_cli_runner = self.cli_runner_in_current_function
+        self.cli_runner_in_current_function = False
+
+        # Visit function body
+        self.generic_visit(node)
+
+        # Restore previous state
+        self.cli_runner_in_current_function = prev_cli_runner
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Track async function entry and reset CliRunner tracking."""
+        # Save previous state
+        prev_cli_runner = self.cli_runner_in_current_function
+        self.cli_runner_in_current_function = False
+
+        # Visit function body
+        self.generic_visit(node)
+
+        # Restore previous state
+        self.cli_runner_in_current_function = prev_cli_runner
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track import statements like 'import fnmatch'."""
@@ -63,24 +113,46 @@ class BannedFunctionChecker(ast.NodeVisitor):
         module_name = None
         func_name = None
 
+        # Check if this is CliRunner() instantiation
         if isinstance(node.func, ast.Name):
-            # Direct call: fnmatch(...)
+            # Direct call: fnmatch(...) or CliRunner()
             func_name = node.func.id
             if func_name in self.from_imports:
                 module_name = self.from_imports[func_name]
+                # Check if this is CliRunner being instantiated
+                if func_name == "CliRunner" and module_name == "typer.testing":
+                    self.cli_runner_in_current_function = True
 
         elif isinstance(node.func, ast.Attribute):
-            # Attribute call: fnmatch.fnmatch(...)
+            # Attribute call: fnmatch.fnmatch(...) or runner.invoke(...)
             func_name = node.func.attr
             if isinstance(node.func.value, ast.Name):
                 alias = node.func.value.id
                 if alias in self.imports:
                     module_name = self.imports[alias]
 
+            # Special case: ban .invoke() call if CliRunner was instantiated in this function
+            # This catches runner.invoke() where runner is a CliRunner instance
+            if func_name == "invoke" and isinstance(node.func.value, ast.Name):
+                if self.cli_runner_in_current_function and not self._is_allowed(
+                    node.lineno
+                ):
+                    reason = (
+                        "Use run_and_report from nef_pipelines.lib.test_lib instead. "
+                        "CliRunner.invoke does not provide proper error reporting. "
+                        "Add '# allowed' comment to exception this check if absolutely necessary."
+                    )
+                    # Use a generic marker for runner.invoke
+                    self.violations.append((node.lineno, "CliRunner", "invoke", reason))
+
         if module_name and func_name:
             if (module_name, func_name) in self.banned_functions:
-                reason = self.banned_functions[(module_name, func_name)]
-                self.violations.append((node.lineno, module_name, func_name, reason))
+                # Skip if line has '# allowed' comment
+                if not self._is_allowed(node.lineno):
+                    reason = self.banned_functions[(module_name, func_name)]
+                    self.violations.append(
+                        (node.lineno, module_name, func_name, reason)
+                    )
 
         self.generic_visit(node)
 
@@ -112,9 +184,11 @@ def check_file_for_banned_functions(
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            tree = ast.parse(f.read(), filename=str(file_path))
+            source_code = f.read()
+            source_lines = source_code.splitlines()
+            tree = ast.parse(source_code, filename=str(file_path))
 
-        checker = BannedFunctionChecker(banned_functions)
+        checker = BannedFunctionChecker(banned_functions, source_lines)
         checker.visit(tree)
         return checker.violations
     except SyntaxError:
