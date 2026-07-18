@@ -23,10 +23,6 @@ from nef_pipelines.lib.sequence_lib import (
 )
 from nef_pipelines.lib.shift_lib import shifts_to_nef_frame
 from nef_pipelines.lib.structures import AtomLabel, Residue, ShiftData, ShiftList
-from nef_pipelines.lib.translation.chem_comp import (  # wants to be lazy
-    ID,
-    ChemCompLinking,
-)
 from nef_pipelines.lib.util import (
     STDIN,
     chunks,
@@ -37,6 +33,13 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.nmrstar import import_app
+
+
+def _get_chem_comp():
+    """Lazy import of chem_comp module to avoid circular dependencies."""
+    from nef_pipelines.lib.translation import chem_comp
+
+    return chem_comp
 
 
 class StereoAssignmentHandling(Enum):
@@ -218,7 +221,7 @@ def _get_chem_atom_set_atoms(chem_atom_set, chem_comp):
         chem_atom_set.ID: chem_atom_set for chem_atom_set in chem_comp.chemAtomSets
     }
 
-    if isinstance(chem_atom_set, ID):
+    if isinstance(chem_atom_set, _get_chem_comp().ID):
         result = [chem_atom_set]
     else:
         result = list(chem_atom_set.chemAtoms) if chem_atom_set.chemAtoms else []
@@ -422,10 +425,10 @@ def _get_atom_sets_by_residue(residue_names):
 
 
 LINKING_BY_NAME = {
-    "free": ChemCompLinking.free,
-    "start": ChemCompLinking.start,
-    "middle": ChemCompLinking.middle,
-    "end": ChemCompLinking.end,
+    "free": _get_chem_comp().ChemCompLinking.free,
+    "start": _get_chem_comp().ChemCompLinking.start,
+    "middle": _get_chem_comp().ChemCompLinking.middle,
+    "end": _get_chem_comp().ChemCompLinking.end,
 }
 NAME_BY_LINKING = {linking: name for name, linking in LINKING_BY_NAME.items()}
 

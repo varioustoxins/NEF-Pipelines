@@ -20,9 +20,6 @@ from nef_pipelines.lib.util import (
     parse_comma_separated_options,
 )
 from nef_pipelines.transcoders.nmrstar import import_app
-from nef_pipelines.transcoders.nmrstar.importers import (
-    project as project_module,  # wants to be lazy
-)
 from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     BMRB_AUTO_MIRROR,
     BMRB_ITALY_URL_TEMPLATE,
@@ -32,6 +29,14 @@ from nef_pipelines.transcoders.nmrstar.importers.project_shortcuts import (
     SHORTCUTS,
 )
 from nef_pipelines.transcoders.nmrstar.nmrstar_lib import StereoAssignmentHandling
+
+
+def _get_project_module():
+    """Lazy import of project module to avoid circular dependencies."""
+    from nef_pipelines.transcoders.nmrstar.importers import project
+
+    return project
+
 
 app = typer.Typer()
 
@@ -144,7 +149,7 @@ def project(
     """- convert as much as possible from an NMR-STAR file to NEF [shifts & sequences] [alpha]"""
 
     if list_shortcuts:
-        project_module._list_shortcuts_and_exit()
+        _get_project_module()._list_shortcuts_and_exit()
 
     file_paths = parse_comma_separated_options(file_paths)
     file_paths = [
@@ -189,17 +194,19 @@ def project(
 
         is_bmrb = False
         if source in (EntrySource.AUTO, EntrySource.WEB):
-            urls, is_bmrb = project_module._get_path_as_url_or_none(
+            urls, is_bmrb = _get_project_module()._get_path_as_url_or_none(
                 file_path, url_templates
             )
 
             exit_on_error = True if source == EntrySource.WEB else False
 
-            possible_entry = project_module._get_bmrb_entry_from_web_or_none(
+            possible_entry = _get_project_module()._get_bmrb_entry_from_web_or_none(
                 urls, exit_on_error, verbose=verbose, timeout=timeout
             )
 
-            nmrstar_entry = project_module._parse_text_to_star_or_none(possible_entry)
+            nmrstar_entry = _get_project_module()._parse_text_to_star_or_none(
+                possible_entry
+            )
 
         if (
             source == EntrySource.AUTO and not nmrstar_entry
@@ -219,7 +226,7 @@ def project(
             input, entry_name=entry_name
         )
 
-        entry = project_module.pipe(
+        entry = _get_project_module().pipe(
             nef_entry,
             nmrstar_entry,
             chain_codes,
