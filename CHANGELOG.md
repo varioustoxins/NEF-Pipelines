@@ -1,5 +1,43 @@
 # Changelog
 
+## Version 0.1.126 - *For Data of Any Vintage - Just Ad-Hoc*
+
+- **added** new CSV importers
+  - `csv import loop` - general loop importer for tabular data
+  - `csv import shifts` - general chemical shift saveframe importer
+
+
+- **added** new ad hoc frame and loop manipulation toolkit
+  - `frames create` - create new empty NEF frames
+  - `loops create` - create an empty loop with or without new columns
+  - `loops delete` - delete loops from frames
+  - `columns delete` - delete multiple columns from a loop
+  - `columns extract` - extract one or more columns from a loop to a file or output stream
+  - `columns insert` - insert columns into a loop from a file or with fixed/computed values
+  - `columns list` - list all columns in a loop
+  - `columns rename` - rename one or more columns in a loop
+  - `columns reorder` - reorder columns in a loop including typical ordering
+  - `columns replace` - replace one or more columns with values from a file with constants/computed values
+
+
+- **enhanced** `frames rename` - added bulk renaming syntax
+- **added** `shifts offset` - apply offsets to chemical shift data
+
+
+- **improved**  MCP server
+  - `ai sandbox show --verbose` - View detailed status of all sandbox directories
+  - the sandbox is now much better at dealing with libraries that create files outside the sandbox e.g. matplotlib
+
+
+- **improved** Data Fitters [via `streamfitter 0.1.10`]
+  - `fit exponential` can now cope with ragged data and missing data across a series
+  - `fit exponential` has a much improved initial estimator
+  - all fitters can either stop or produce warnings if there is not enough data to complete a fit
+  - *montecarlo* failures are counted and output as part of the error analysis
+  - `streamfitter` and fitting is included as an option install feature `nef-pipelines[fitting]`
+
+- **requirement** Data Fitters require streamfitter >= 0.1.10
+
 ## Version 0.1.125 - 'The AI is a Mirror, but the NEF is the Truth'
 
 - **added**: `nef ai server` - experimental MCP server for AI model interaction
