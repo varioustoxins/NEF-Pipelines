@@ -26,6 +26,7 @@ pytest-mock>=3.14.0; python_version >= "3.14"
 pytest-mock~=3.12.0; python_version < "3.14"
 requests~=2.31.0
 runstats~=2.0.0
+streamfitter>=0.1.10
 StrEnum~=0.4.7
 tabulate~=0.8.7
 tomli ; python_version < "3.11"
