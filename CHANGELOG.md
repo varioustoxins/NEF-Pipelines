@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.1.126 - *For Data of Any Vintage - Just Ad-Hoc*
+## Version 0.1.127 - *For Data of Any Vintage - Just Ad-Hoc*
 
 - **added** new CSV importers
   - `csv import loop` - general loop importer for tabular data
@@ -37,6 +37,10 @@
   - `streamfitter` and fitting is included as an option install feature `nef-pipelines[fitting]`
 
 - **requirement** Data Fitters require streamfitter >= 0.1.10
+
+## Version 0.1.127 - 'A None in the right Place Harms No One'
+
+Never released to pypi
 
 ## Version 0.1.125 - 'The AI is a Mirror, but the NEF is the Truth'
 
