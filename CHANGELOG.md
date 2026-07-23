@@ -38,7 +38,7 @@
 
 - **requirement** Data Fitters require streamfitter >= 0.1.10
 
-## Version 0.1.127 - 'A None in the right Place Harms No One'
+## Version 0.1.127 - 'A None in the Right Place Harms No One'
 
 Never released to pypi
 
