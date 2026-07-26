@@ -5,12 +5,17 @@ import pytest
 from pynmrstar import Entry, Saveframe
 
 from nef_pipelines.lib.sequence_lib import (
+    AMINO_ACIDS_1LET,
+    AMINO_ACIDS_3LET,
+    AMINO_ACIDS_RESIDUES,
     BadResidue,
+    MoleculeType,
     MoleculeTypes,
     chains_from_frames,
-    count_residues,
+    count_residues_in_chain,
     get_chain_code_iter,
     get_chain_starts,
+    guess_molecule_type,
     offset_chain_residues,
     sequence_3let_to_sequence_residues,
     sequences_from_frames,
@@ -20,42 +25,99 @@ from nef_pipelines.lib.sequence_lib import (
 from nef_pipelines.lib.structures import SequenceResidue
 from nef_pipelines.lib.test_lib import path_in_test_data
 
-ABC_SEQUENCE_1LET = "acdefghiklmnpqrstvwy"
-ABC_SEQUENCE_3LET = (
-    "ALA",
-    "CYS",
-    "ASP",
-    "GLU",
-    "PHE",
-    "GLY",
-    "HIS",
-    "ILE",
-    "LYS",
-    "LEU",
-    "MET",
-    "ASN",
-    "PRO",
-    "GLN",
-    "ARG",
-    "SER",
-    "THR",
-    "VAL",
-    "TRP",
-    "TYR",
-)
+# Tests for guess_molecule_type (new function)
 
-ABC_SEQUENCE_RESIDUES = [
-    SequenceResidue("A", i, residue)
-    for (i, residue) in enumerate(ABC_SEQUENCE_3LET, start=1)
-]
+
+def test_guess_molecule_type_protein():
+    """Test that protein-specific codes are correctly identified."""
+
+    EXPECTED = (MoleculeType.PROTEIN, None)
+
+    # Protein-specific residue codes (R, N, E, Q, etc.)
+    protein_codes = ["D", "R", "N", "E", "Q", "H"]
+
+    result = guess_molecule_type(protein_codes)
+
+    assert result == EXPECTED
+
+
+def test_guess_molecule_type_dna():
+    """Test that DNA-specific codes are correctly identified."""
+
+    EXPECTED = (MoleculeType.DNA, None)
+
+    # DNA includes Thymine (T)
+    dna_codes = ["A", "C", "G", "T"]
+
+    result = guess_molecule_type(dna_codes)
+
+    assert result == EXPECTED
+
+
+def test_guess_molecule_type_rna():
+    """Test that RNA-specific codes are correctly identified."""
+
+    EXPECTED = (MoleculeType.RNA, None)
+
+    # RNA includes Uracil (U)
+    rna_codes = ["A", "C", "G", "U"]
+
+    result = guess_molecule_type(rna_codes)
+
+    assert result == EXPECTED
+
+
+def test_guess_molecule_type_ambiguous_returns_none():
+    """Test that ambiguous codes return None with error message listing possible types."""
+
+    # Only A, C, G - could be protein, DNA, or RNA
+    ambiguous_codes = ["A", "C", "G"]
+
+    molecule_type, error_message = guess_molecule_type(ambiguous_codes)
+
+    assert molecule_type is None
+    assert error_message is not None
+    assert (
+        "Cannot determine molecule type from ambiguous residue codes" in error_message
+    )
+    assert all(code in error_message for code in ["A", "C", "G"])
+    assert "Could be: protein, dna, rna" in error_message
+
+
+def test_guess_molecule_type_mixed_protein_dna():
+    """Test that mixed protein/DNA codes return tuple of types with error message."""
+
+    # Mix of protein (D, Q) and DNA (T)
+    mixed_codes = ["D", "T", "Q"]
+
+    molecule_types, error_message = guess_molecule_type(mixed_codes)
+
+    assert isinstance(molecule_types, tuple)
+    assert MoleculeType.PROTEIN in molecule_types
+    assert MoleculeType.DNA in molecule_types
+    assert error_message is not None
+    assert "Mixed molecule types detected" in error_message
+    assert all(code in error_message for code in ["D", "T", "Q"])
+
+
+def test_guess_molecule_type_ambiguous_includes_codes():
+    """Test that ambiguous case includes the problematic residue codes in error message."""
+
+    ambiguous_codes = {"A", "C"}
+
+    molecule_type, error_message = guess_molecule_type(ambiguous_codes)
+
+    assert molecule_type is None
+    assert error_message is not None
+    assert all(code in error_message for code in ["A", "C"])
+
+
+# Tests for translate functions (existing tests)
 
 
 def test_1let_3let():
 
-    assert len(ABC_SEQUENCE_1LET) == 20
-    assert len(ABC_SEQUENCE_3LET) == 20
-
-    assert list(ABC_SEQUENCE_3LET) == translate_1_to_3(ABC_SEQUENCE_1LET)
+    assert list(AMINO_ACIDS_3LET) == translate_1_to_3(AMINO_ACIDS_1LET)
 
 
 def test_bad_1let_3let():
@@ -93,9 +155,34 @@ def test_3let_1let_protein_single():
 
 
 def test_3let_1let_case_insensitive():
-    """Test translate_3_to_1 is case insensitive."""
+    """Test translate_3_to_1 is case-insensitive by default."""
     result = translate_3_to_1(["ala", "Cys", "ASP"])
     assert result == ["A", "C", "D"]
+
+
+def test_3let_1let_case_sensitive():
+    """Test translate_3_to_1 with case_sensitive=True requires exact case."""
+    result = translate_3_to_1(["ALA", "CYS", "ASP"], case_sensitive=False)
+    assert result == ["A", "C", "D"]
+
+    # With case_sensitive=True, lowercase should be unknown
+    result = translate_3_to_1(
+        ["ala", "CYS", "ASP"], case_sensitive=True, allow_unknown=True
+    )
+    assert result == ["X", "C", "D"]
+
+
+def test_1let_3let_case_sensitive():
+    """Test translate_1_to_3 with case_sensitive=True requires exact case."""
+    result = translate_1_to_3("ACD", case_sensitive=False)
+    assert result == ["ALA", "CYS", "ASP"]
+
+    result = translate_1_to_3("acd", case_sensitive=False)
+    assert result == ["ALA", "CYS", "ASP"]
+
+    # With case_sensitive=True, lowercase should fail
+    result = translate_1_to_3("acd", case_sensitive=True, unknown="UNK")
+    assert result == ["UNK", "UNK", "UNK"]
 
 
 def test_3let_1let_dna():
@@ -108,6 +195,7 @@ def test_3let_1let_dna():
 def test_3let_1let_rna():
     """Test translate_3_to_1 with RNA sequence."""
     sequence = ["G", "C", "A", "U"]
+
     result = translate_3_to_1(sequence, molecule_type=MoleculeTypes.RNA)
     assert result == ["G", "C", "A", "U"]
 
@@ -128,6 +216,7 @@ def test_3let_1let_unknown_custom_code():
 
 def test_3let_1let_unknown_not_allowed():
     """Test translate_3_to_1 with unknown residue and allow_unknown=False."""
+    # TODO: translate_3_to_1 and translate_1_to_3 should raise proper exceptions instead of SystemExit
     sequence = ["ALA", "XXX", "CYS"]
     with pytest.raises(SystemExit):
         translate_3_to_1(sequence, allow_unknown=False)
@@ -135,19 +224,19 @@ def test_3let_1let_unknown_not_allowed():
 
 def test_3let_sequence_residue():
 
-    sequence_residues = sequence_3let_to_sequence_residues(ABC_SEQUENCE_3LET)
+    sequence_residues = sequence_3let_to_sequence_residues(AMINO_ACIDS_3LET)
 
-    assert sequence_residues == ABC_SEQUENCE_RESIDUES
+    assert sequence_residues == AMINO_ACIDS_RESIDUES
 
 
-def test_3let_sequence_residue_diff_chain():
+def test_3let_sequence_residue_with_specified_chain():
     sequence_residues = sequence_3let_to_sequence_residues(
-        ABC_SEQUENCE_3LET, chain_code="B"
+        AMINO_ACIDS_3LET, chain_code="B"
     )
 
     expected = [
         SequenceResidue("B", residue.sequence_code, residue.residue_name)
-        for residue in ABC_SEQUENCE_RESIDUES
+        for residue in AMINO_ACIDS_RESIDUES
     ]
 
     assert sequence_residues == expected
@@ -240,7 +329,7 @@ def test_count_chains():
 
     result = {}
     for chain in "ABC":
-        result[chain] = count_residues(test_frame, chain)
+        result[chain] = count_residues_in_chain(test_frame, chain)
 
     EXPECTED = {"A": {"HIS": 1, "MET": 1}, "B": {"ARG": 1, "GLN": 1}, "C": {"PRO": 1}}
     assert result == EXPECTED

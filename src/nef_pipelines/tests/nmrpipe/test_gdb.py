@@ -3,8 +3,8 @@ from textwrap import dedent
 
 import pytest
 
+from nef_pipelines.lib.sequence_lib import AMINO_ACIDS_1LET, AMINO_ACIDS_3LET
 from nef_pipelines.lib.structures import LineInfo
-from nef_pipelines.tests.test_sequence_lib import ABC_SEQUENCE_1LET, ABC_SEQUENCE_3LET
 from nef_pipelines.transcoders.nmrpipe.nmrpipe_lib import (
     VALUES,
     BadFieldFormat,
@@ -456,14 +456,14 @@ def test_column_data():
 
 def test_sequence():
 
-    SEQUENCE = f"DATA SEQUENCE {dedent(ABC_SEQUENCE_1LET)}"
+    SEQUENCE = f"DATA SEQUENCE {dedent(AMINO_ACIDS_1LET)}"
 
     gdb_stream = io.StringIO(SEQUENCE)
 
     records = read_db_file_records(gdb_stream)
     sequence = gdb_to_3let_sequence(records)
 
-    assert sorted(sequence) == sorted(list(ABC_SEQUENCE_3LET))
+    assert sorted(sequence) == sorted(list(AMINO_ACIDS_3LET))
 
 
 if __name__ == "__main__":
