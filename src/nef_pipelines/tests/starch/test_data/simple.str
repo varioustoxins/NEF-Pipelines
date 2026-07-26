@@ -1,0 +1,20 @@
+data_starch_output
+# Simplified test file: 3 residues, 3 shifts each
+loop_
+    _Atom_chem_shift.ID
+    _Atom_chem_shift.Comp_index_ID
+    _Atom_chem_shift.Comp_ID
+    _Atom_chem_shift.Atom_ID
+    _Atom_chem_shift.Val
+
+1              1              D              CA             52.0
+2              1              D              HA             4.22
+3              1              D              CB             38.7
+4              2              V              CA             60.883
+5              2              V              HA             4.249
+6              2              V              CB             30.92
+7              3              Q              CA             53.706
+8              3              Q              HA             4.581
+9              3              Q              CB             29.114
+
+stop_

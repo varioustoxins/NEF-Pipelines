@@ -1,0 +1,20 @@
+data_starch_output
+# Test file with mixed Auth_* and standard columns to test fallback behavior
+loop_
+    _Atom_chem_shift.ID
+    _Atom_chem_shift.Auth_seq_ID
+    _Atom_chem_shift.Comp_index_ID
+    _Atom_chem_shift.Auth_comp_ID
+    _Atom_chem_shift.Comp_ID
+    _Atom_chem_shift.Auth_atom_ID
+    _Atom_chem_shift.Atom_ID
+    _Atom_chem_shift.Val
+
+# First residue: has both Auth and standard, should prefer Auth
+1              100            1              D              ASP            CA             C-ALPHA        52.0
+2              100            1              D              ASP            HA             H-ALPHA        4.22
+# Second residue: has both Auth and standard, should prefer Auth
+3              101            2              V              VAL            CA             C-ALPHA        60.8
+4              101            2              V              VAL            HA             H-ALPHA        4.25
+
+stop_

@@ -57,6 +57,7 @@ _MODULES = [
     "nef_pipelines.transcoders.shifty",
     "nef_pipelines.transcoders.shiftx2",
     "nef_pipelines.transcoders.sparky",
+    "nef_pipelines.transcoders.starch",
     "nef_pipelines.transcoders.talos",
     "nef_pipelines.transcoders.ucbshift",
     "nef_pipelines.transcoders.xcamshift",

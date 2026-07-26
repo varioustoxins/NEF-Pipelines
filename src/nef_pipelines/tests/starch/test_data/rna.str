@@ -1,0 +1,66 @@
+data_starch_output
+###################################################################
+#       Chemical Shift Ambiguity Index Value Definitions          #
+#                                                                 #
+# The values other than 1 are used for those atoms with different #
+# chemical shifts that cannot be assigned to stereospecific atoms #
+# or to specific residues or chains.                              #
+#                                                                 #
+#   Index Value            Definition                             #
+#                                                                 #
+#      1             Unique (including isolated methyl protons,   #
+#                         geminal atoms, and geminal methyl       #
+#                         groups with identical chemical shifts)  #
+#                         (e.g. ILE HD11, HD12, HD13 protons)     #
+#      2             Ambiguity of geminal atoms or geminal methyl #
+#                         proton groups (e.g. ASP HB2 and HB3     #
+#                         protons, LEU CD1 and CD2 carbons, or    #
+#                         LEU HD11, HD12, HD13 and HD21, HD22,    #
+#                         HD23 methyl protons)                    #
+#      3             Aromatic atoms on opposite sides of          #
+#                         symmetrical rings (e.g. TYR HE1 and HE2 #
+#                         protons)                                #
+#      4             Intraresidue ambiguities (e.g. LYS HG and    #
+#                         HD protons or TRP HZ2 and HZ3 protons)  #
+#      5             Interresidue ambiguities (LYS 12 vs. LYS 27) #
+#      6             Intermolecular ambiguities (e.g. ASP 31 CA   #
+#                         in monomer 1 and ASP 31 CA in monomer 2 #
+#                         of an asymmetrical homodimer, duplex    #
+#                         DNA assignments, or other assignments   #
+#                         that may apply to atoms in one or more  #
+#                         molecule in the molecular assembly)     #
+#      9             Ambiguous, specific ambiguity not defined    #
+#                                                                 #
+###################################################################
+loop_
+    _Atom_chem_shift.ID
+    _Atom_chem_shift.Comp_index_ID
+    _Atom_chem_shift.Comp_ID
+    _Atom_chem_shift.Atom_ID
+    _Atom_chem_shift.Atom_type
+    _Atom_chem_shift.Atom_isotope_number
+    _Atom_chem_shift.Val
+    _Atom_chem_shift.Val_err
+
+1              1              G              C1'            C              13             92.200         0.01
+2              1              G              C2'            C              13             64.522         0.01
+3              1              G              C3'            C              13             78.431         0.01
+4              1              G              C4'            C              13             85.649         0.01
+5              1              G              C5'            C              13             73.283         0.01
+6              2              C              C1'            C              13             94.992         0.01
+7              2              C              C2'            C              13             76.343         0.01
+8              2              C              C3'            C              13             73.118         0.01
+9              2              C              C4'            C              13             88.408         0.01
+10             2              C              C5             C              13             100.487        0.01
+11             3              A              C1'            C              13             104.103        0.01
+12             3              A              C2             C              13             155.239        0.01
+13             3              A              C2'            C              13             74.469         0.01
+14             3              A              C3'            C              13             71.858         0.01
+15             3              A              C4'            C              13             76.867         0.01
+16             4              U              C1'            C              13             95.488         0.01
+17             4              U              C2'            C              13             69.942         0.01
+18             4              U              C3'            C              13             91.197         0.01
+19             4              U              C4'            C              13             98.323         0.01
+20             4              U              C5             C              13             122.826        0.01
+
+stop_

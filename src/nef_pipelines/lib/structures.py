@@ -384,6 +384,7 @@ class ShiftData:
     value_uncertainty: Optional[float] = None  # TODO: should be position_uncertainty
     line_width: Optional[float] = None  # line width in Hz
     line_width_uncertainty: Optional[float] = None  # uncertainty of line width in Hz
+    comment: Optional[str] = None  # comment or details from source file
 
     frame_name: Optional[str] = ""
     frame_row: Optional[int] = None

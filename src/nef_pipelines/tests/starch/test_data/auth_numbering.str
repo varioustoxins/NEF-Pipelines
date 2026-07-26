@@ -1,0 +1,17 @@
+data_starch_output
+# Test file with Auth_* columns for author numbering
+loop_
+    _Atom_chem_shift.ID
+    _Atom_chem_shift.Auth_seq_ID
+    _Atom_chem_shift.Auth_comp_ID
+    _Atom_chem_shift.Auth_atom_ID
+    _Atom_chem_shift.Val
+
+1              100            D              CA             52.0
+2              100            D              HA             4.22
+3              101            V              CA             60.8
+4              101            V              HA             4.25
+5              102            Q              CA             53.7
+6              102            Q              HA             4.58
+
+stop_
