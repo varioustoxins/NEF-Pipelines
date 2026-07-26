@@ -15,7 +15,7 @@ from nef_pipelines.lib.nef_lib import (
     read_entry_from_file_or_stdin_or_raise,
     select_frames,
 )
-from nef_pipelines.lib.sequence_lib import chains_from_frames, count_residues
+from nef_pipelines.lib.sequence_lib import chains_from_frames, count_residues_in_chain
 from nef_pipelines.lib.typer_utils import get_args
 from nef_pipelines.lib.util import (
     STDIN,
@@ -189,7 +189,9 @@ def list(
 
                         residue_counts = {}
                         for chain in chains:
-                            residue_counts[chain] = count_residues(frame, chain)
+                            residue_counts[chain] = count_residues_in_chain(
+                                frame, chain
+                            )
 
                         residue_count_per_chain = {}
                         for chain in chains:

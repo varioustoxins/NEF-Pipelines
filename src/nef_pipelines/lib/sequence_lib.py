@@ -465,7 +465,9 @@ def chains_from_frames(
     return chains
 
 
-def count_residues(sequence_frame: Saveframe, chain_code: str) -> Dict[str, int]:
+def count_residues_in_chain(
+    sequence_frame: Saveframe, chain_code: str
+) -> Dict[str, int]:
     """
     given a nef molecular system and a chain list the number of residues of each type in the chain
 
