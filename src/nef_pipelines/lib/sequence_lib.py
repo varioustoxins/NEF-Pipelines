@@ -19,7 +19,6 @@ from strenum import LowercaseStrEnum
 from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
 
-# from nef_pipelines.lib.nef_lib import loop_to_dataframe
 from nef_pipelines.lib.structures import AtomLabel, Linking, SequenceResidue
 from nef_pipelines.lib.util import (
     chunks,
@@ -38,8 +37,131 @@ class MoleculeType(LowercaseStrEnum):
     CARBOHYDRATE = auto()
 
 
+
+class MoleculeTypes(LowercaseStrEnum):
+    PROTEIN = auto()
+    DNA = auto()
+    RNA = auto()
+    CARBOH = auto()
+    LIGAND = auto()
+    OTHER = auto()
+
+
+TRANSLATIONS_3_1_DNA = {"DG": "G", "DC": "C", "DT": "T", "DA": "A"}
+TRANSLATIONS_1_3_DNA = {value: key for (key, value) in TRANSLATIONS_3_1_DNA.items()}
+
+TRANSLATIONS_3_1_RNA = {"G": "G", "C": "C", "A": "A", "U": "U", "I": "I"}
+TRANSLATIONS_1_3_RNA = {value: key for (key, value) in TRANSLATIONS_3_1_RNA.items()}
+
+TRANSLATIONS_3_1_PROTEIN = {
+    "ALA": "A",
+    "ARG": "R",
+    "ASN": "N",
+    "ASP": "D",
+    "CYS": "C",
+    "GLU": "E",
+    "GLN": "Q",
+    "GLY": "G",
+    "HIS": "H",
+    "ILE": "I",
+    "LEU": "L",
+    "LYS": "K",
+    "MET": "M",
+    "PHE": "F",
+    "PRO": "P",
+    "SER": "S",
+    "THR": "T",
+    "TRP": "W",
+    "TYR": "Y",
+    "VAL": "V",
+}
+TRANSLATIONS_1_3_PROTEIN = {
+    value: key for (key, value) in TRANSLATIONS_3_1_PROTEIN.items()
+}
+
+# Standard amino acid sequences (derived from translation dictionaries, sorted by 1-letter code)
+AMINO_ACIDS_1LET = "".join(sorted(TRANSLATIONS_3_1_PROTEIN.values()))
+AMINO_ACIDS_3LET = tuple(TRANSLATIONS_1_3_PROTEIN[code] for code in AMINO_ACIDS_1LET)
+AMINO_ACIDS_RESIDUES = [
+    SequenceResidue("A", i, residue)
+    for (i, residue) in enumerate(AMINO_ACIDS_3LET, start=1)
+]
+
+# Standard DNA bases (derived from translation dictionaries, sorted by 1-letter code)
+DNA_BASES_1LET = "".join(sorted(TRANSLATIONS_3_1_DNA.values()))
+DNA_BASES_3LET = tuple(TRANSLATIONS_1_3_DNA[code] for code in DNA_BASES_1LET)
+DNA_BASES_RESIDUES = [
+    SequenceResidue("A", i, residue)
+    for (i, residue) in enumerate(DNA_BASES_3LET, start=1)
+]
+
+# Standard RNA bases (derived from translation dictionaries, sorted by 1-letter code)
+RNA_BASES_1LET = "".join(sorted(TRANSLATIONS_3_1_RNA.values()))
+RNA_BASES_3LET = tuple(TRANSLATIONS_1_3_RNA[code] for code in RNA_BASES_1LET)
+RNA_BASES_RESIDUES = [
+    SequenceResidue("A", i, residue)
+    for (i, residue) in enumerate(RNA_BASES_3LET, start=1)
+]
+
+TRANSLATIONS_1_3 = {
+    MoleculeTypes.PROTEIN: TRANSLATIONS_1_3_PROTEIN,
+    MoleculeTypes.DNA: TRANSLATIONS_1_3_DNA,
+    MoleculeTypes.RNA: TRANSLATIONS_1_3_RNA,
+    MoleculeTypes.CARBOH: None,
+    MoleculeTypes.OTHER: None,
+    MoleculeTypes.LIGAND: None,
+}
+TRANSLATIONS_3_1 = {
+    MoleculeTypes.PROTEIN: TRANSLATIONS_3_1_PROTEIN,
+    MoleculeTypes.DNA: TRANSLATIONS_3_1_DNA,
+    MoleculeTypes.RNA: TRANSLATIONS_3_1_RNA,
+    MoleculeTypes.CARBOH: None,
+    MoleculeTypes.OTHER: None,
+    MoleculeTypes.LIGAND: None,
+}
+
 NEF_CHAIN_CODE = "chain_code"
 ANY_CHAIN = "_"
+
+
+class BadResidue(Exception):
+    """
+    Bad residue found in a sequence
+    """
+
+    def __init__(self, residue_name, error_pos, sequence_string):
+
+        self.residue_name = residue_name
+        self.sequence_string = sequence_string
+        self.error_pos = error_pos
+
+    def __str__(self):
+        try:
+            terminal_width = os.get_terminal_size().columns
+        except OSError:
+            terminal_width = 80
+
+        error_pos_string = [
+            " ",
+        ] * len(self.sequence_string)
+        error_pos_string[self.error_pos] = "^"
+        error_pos_string = "".join(error_pos_string)
+
+        msg = f"""\
+            unknown residue {self.residue_name}
+            at residue {self.error_pos+1}
+            sequence:
+        """
+        msg = dedent(msg)
+        sequence_string_chunks = list(chunks(self.sequence_string, terminal_width - 10))
+        pos_string_chunks = list(chunks(error_pos_string, terminal_width - 10))
+        for sequence_chunk, pos_chunk in zip(sequence_string_chunks, pos_string_chunks):
+            msg += f"{''.join(sequence_chunk)}\n"
+            msg += f"{''.join(pos_chunk)}\n"
+
+        return msg
+
+
 
 
 class ChainCodeIterable:
@@ -197,117 +319,27 @@ def sequence_to_nef_frame(
     return nef_frame
 
 
-class MoleculeTypes(LowercaseStrEnum):
-    PROTEIN = auto()
-    DNA = auto()
-    RNA = auto()
-    CARBOH = auto()
-    LIGAND = auto()
-    OTHER = auto()
 
-
-TRANSLATIONS_3_1_DNA = {"DG": "G", "DC": "C", "DT": "T", "DA": "A"}
-TRANSLATIONS_1_3_DNA = {value: key for (key, value) in TRANSLATIONS_3_1_DNA.items()}
-
-TRANSLATIONS_3_1_RNA = {"G": "G", "C": "C", "A": "A", "U": "U", "I": "I"}
-TRANSLATIONS_1_3_RNA = {value: key for (key, value) in TRANSLATIONS_3_1_RNA.items()}
-
-TRANSLATIONS_3_1_PROTEIN = {
-    "ALA": "A",
-    "ARG": "R",
-    "ASN": "N",
-    "ASP": "D",
-    "CYS": "C",
-    "GLU": "E",
-    "GLN": "Q",
-    "GLY": "G",
-    "HIS": "H",
-    "ILE": "I",
-    "LEU": "L",
-    "LYS": "K",
-    "MET": "M",
-    "PHE": "F",
-    "PRO": "P",
-    "SER": "S",
-    "THR": "T",
-    "TRP": "W",
-    "TYR": "Y",
-    "VAL": "V",
-}
-TRANSLATIONS_1_3_PROTEIN = {
-    value: key for (key, value) in TRANSLATIONS_3_1_PROTEIN.items()
-}
-
-TRANSLATIONS_1_3 = {
-    MoleculeTypes.PROTEIN: TRANSLATIONS_1_3_PROTEIN,
-    MoleculeTypes.DNA: TRANSLATIONS_1_3_DNA,
-    MoleculeTypes.RNA: TRANSLATIONS_1_3_RNA,
-    MoleculeTypes.CARBOH: None,
-    MoleculeTypes.OTHER: None,
-    MoleculeTypes.LIGAND: None,
-}
-TRANSLATIONS_3_1 = {
-    MoleculeTypes.PROTEIN: TRANSLATIONS_3_1_PROTEIN,
-    MoleculeTypes.DNA: TRANSLATIONS_3_1_DNA,
-    MoleculeTypes.RNA: TRANSLATIONS_3_1_RNA,
-    MoleculeTypes.CARBOH: None,
-    MoleculeTypes.OTHER: None,
-    MoleculeTypes.LIGAND: None,
-}
-
-
-class BadResidue(Exception):
-    """
-    Bad residue found in a sequence
-    """
-
-    def __init__(self, residue_name, error_pos, sequence_string):
-
-        self.residue_name = residue_name
-        self.sequence_string = sequence_string
-        self.error_pos = error_pos
-
-    def __str__(self):
-        try:
-            terminal_width = os.get_terminal_size().columns
-        except OSError:
-            terminal_width = 80
-
-        error_pos_string = [
-            " ",
-        ] * len(self.sequence_string)
-        error_pos_string[self.error_pos] = "^"
-        error_pos_string = "".join(error_pos_string)
-
-        msg = f"""\
-        unknown residue {self.residue_name}
-        at residue {self.error_pos+1}
-        sequence:
-        """
-        msg = dedent(msg)
-        sequence_string_chunks = list(chunks(self.sequence_string, terminal_width - 10))
-        pos_string_chunks = list(chunks(error_pos_string, terminal_width - 10))
-        for sequence_chunk, pos_chunk in zip(sequence_string_chunks, pos_string_chunks):
-            msg += f"{''.join(sequence_chunk)}\n"
-            msg += f"{''.join(pos_chunk)}\n"
-
-        return msg
-
-
+# TODO: unknown residues should either raise an exception or return an Optional style
+#  error but not cause an exit
 def translate_1_to_3(
-    sequence: str, molecule_type=MoleculeTypes.PROTEIN, unknown: Optional[str] = None
+    sequence: str,
+    molecule_type=MoleculeTypes.PROTEIN,
+    unknown: Optional[str] = None,
+    case_sensitive=False,
 ) -> List[str]:
     """
     Translate a 1 letter sequence to a 3 letter sequence
-    Args:
-        sequence (str): 1 letter sequence
-        molecule_type (MoleculeTypes): type of molecule to translate residue types
-        unknown (Optional[str]): optional name for residues if they are unknown, if set no error is raised if a
-                                 1 letter residue name is not recognised
-    Returns List[str]:
-        a list of 3 residue codes
-        :param type:
 
+    Args:
+        sequence: 1 letter sequence
+        molecule_type: type of molecule to translate residue types
+        unknown: optional name for residues if they are unknown, if set no error is raised if a
+                 1 letter residue name is not recognised
+        case_sensitive: if True, require exact case match; if False (default), convert to uppercase
+
+    Returns:
+        a list of 3 residue codes
     """
 
     translations = TRANSLATIONS_1_3[molecule_type]
@@ -317,7 +349,8 @@ def translate_1_to_3(
         if residue_name_1let == " ":
             continue
         original_residue_name_1let = residue_name_1let
-        residue_name_1let = residue_name_1let.upper()
+        if not case_sensitive:
+            residue_name_1let = residue_name_1let.upper()
         if translations is None:
             result.append(residue_name_1let)
         elif residue_name_1let in translations:
@@ -331,26 +364,28 @@ def translate_1_to_3(
     return result
 
 
-# TODO: unknown residues should raise an exception not cause an exit
+# TODO: unknown residues should either raise an exception or return an Optional style
+#  error but not cause an exit
 def translate_3_to_1(
     sequence: Union[str, List[str]],
     molecule_type=MoleculeTypes.PROTEIN,
     allow_unknown=True,
     unknown_code="X",
+    case_sensitive=False,
 ) -> List[str]:
     """
-
     Translate a 3 letter sequence to a 1 letter sequence. If a single string is supplied it
     is translated and returned as a single residue
+
     Args:
-        sequence (str|List[str]): 3 letter sequence code or 3 letter sequence
-        molecule_type (MoleculeTypes): type of molecule to translate residue types
+        sequence: 3 letter sequence code or 3 letter sequence
+        molecule_type: type of molecule to translate residue types
+        allow_unknown: if True, unknown residues are mapped to unknown_code; if False, raise error
+        unknown_code: single character code for unknown residues (default "X")
+        case_sensitive: if True, require exact case match; if False (default), convert to uppercase
 
-    Returns str|List[str]:
+    Returns:
         a list of 1 residue codes or a single 1 letter residue code
-
-    :param sequence:
-    :return:
     """
 
     single_aa = False
@@ -364,7 +399,8 @@ def translate_3_to_1(
 
     result = []
     for i, residue_name in enumerate(sequence, start=1):
-        residue_name = residue_name.upper()
+        if not case_sensitive:
+            residue_name = residue_name.upper()
         if translations is None:
             if len(residue_name) == 1:
                 result.append(residue_name)
