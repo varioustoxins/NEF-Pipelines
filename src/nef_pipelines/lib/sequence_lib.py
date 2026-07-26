@@ -18,7 +18,6 @@ from strenum import LowercaseStrEnum
 
 from nef_pipelines.lib.constants import NEF_UNKNOWN
 from nef_pipelines.lib.nef_lib import UNUSED, loop_row_namespace_iter
-
 from nef_pipelines.lib.structures import AtomLabel, Linking, SequenceResidue
 from nef_pipelines.lib.util import (
     chunks,
@@ -35,7 +34,6 @@ class MoleculeType(LowercaseStrEnum):
     RNA = auto()
     DNA = auto()
     CARBOHYDRATE = auto()
-
 
 
 class MoleculeTypes(LowercaseStrEnum):
@@ -162,6 +160,60 @@ class BadResidue(Exception):
         return msg
 
 
+def guess_molecule_type(residue_codes_1let):
+    """Guess molecule type from 1-letter residue codes.
+
+    Args:
+        residue_codes_1let: Set or list of 1-letter residue codes
+
+    Returns:
+        Tuple[Optional[Union[MoleculeType, Tuple[MoleculeType, ...]]], Optional[str]]:
+            - (MoleculeType, None) when successfully determined
+            - (None, error_message) when cannot determine (ambiguous codes)
+            - ((MoleculeType, ...), error_message) when multiple types detected (mixed)
+    """
+    codes_set = set(residue_codes_1let)
+
+    # Define characteristic codes for each molecule type
+    protein_only = set("RNEQHILKMFPSWY")  # Amino acids unique to protein
+    dna_only = set("T")  # Thymine is DNA-specific
+    rna_only = set("UI")  # Uracil and Inosine are RNA-specific
+
+    # Check for molecule-type-specific codes
+    has_protein_codes = bool(codes_set & protein_only)
+    has_dna_codes = bool(codes_set & dna_only)
+    has_rna_codes = bool(codes_set & rna_only)
+
+    # Determine molecule type
+    if has_protein_codes and not (has_dna_codes or has_rna_codes):
+        return (MoleculeType.PROTEIN, None)
+    elif has_dna_codes and not (has_protein_codes or has_rna_codes):
+        return (MoleculeType.DNA, None)
+    elif has_rna_codes and not (has_protein_codes or has_dna_codes):
+        return (MoleculeType.RNA, None)
+    else:
+        # Determine what types are present
+        detected_types = []
+        if has_protein_codes:
+            detected_types.append(MoleculeType.PROTEIN)
+        if has_dna_codes:
+            detected_types.append(MoleculeType.DNA)
+        if has_rna_codes:
+            detected_types.append(MoleculeType.RNA)
+
+        codes_str = ", ".join(sorted(codes_set))
+
+        if detected_types:
+            # Mixed molecule types detected
+            types_str = ", ".join(t.value for t in detected_types)
+            msg = f"Mixed molecule types detected ({types_str}) in residue codes: {codes_str}"
+            return (tuple(detected_types), msg)
+        else:
+            # Ambiguous codes (A, C, G can be protein, DNA, or RNA)
+            possible_types = [MoleculeType.PROTEIN, MoleculeType.DNA, MoleculeType.RNA]
+            types_str = ", ".join(t.value for t in possible_types)
+            msg = f"Cannot determine molecule type from ambiguous residue codes: {codes_str}. Could be: {types_str}"
+            return (None, msg)
 
 
 class ChainCodeIterable:
@@ -317,7 +369,6 @@ def sequence_to_nef_frame(
         nef_loop.add_data(data)
 
     return nef_frame
-
 
 
 # TODO: unknown residues should either raise an exception or return an Optional style
