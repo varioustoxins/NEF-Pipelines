@@ -7,6 +7,7 @@ import typer
 from ordered_set import OrderedSet
 from pynmrstar import Entry
 
+from nef_pipelines.lib.cli_lib import handle_common_pipe_items
 from nef_pipelines.lib.isotope_lib import ATOM_TO_ISOTOPE
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
@@ -21,12 +22,14 @@ from nef_pipelines.lib.sequence_lib import (
     unknown_residues_to_warning,
 )
 from nef_pipelines.lib.structures import (
+    AdvisoryType,
     AtomLabel,
     LineInfo,
     NewPeak,
-    PipeOutput,
+    PipeItem,
     SequenceResidue,
     ShiftData,
+    StringAdvisory,
 )
 from nef_pipelines.lib.tabular_data_lib import (
     ENCODING,
@@ -41,7 +44,6 @@ from nef_pipelines.lib.util import (
     exit_error,
     flatten,
     parse_comma_separated_options,
-    warn,
 )
 from nef_pipelines.transcoders.csv import import_app
 
@@ -139,7 +141,7 @@ def peaks(
     entry = read_or_create_entry_exit_error_on_bad_file(entry_input)
 
     try:
-        result = pipe(
+        entry, items = pipe(
             entry,
             default_chain_code,
             default_atoms,
@@ -153,10 +155,9 @@ def peaks(
     except (CsvParseError, IncompatibleDimensionTypesException) as e:
         exit_error(str(e))
 
-    for warning in result.warnings:
-        warn(warning)
+    handle_common_pipe_items(items)
 
-    print(result.entry)
+    print(entry)
 
 
 def pipe(
@@ -168,11 +169,11 @@ def pipe(
     csv_format: CsvLikeFormats,
     input_dimensions: List[str],
     spectrometer_frequency,
-) -> PipeOutput:
+) -> tuple[Entry, tuple[PipeItem]]:
     """Import peak lists from CSV into NEF entry.
 
     Returns:
-        PipeOutput with modified entry and any warnings about unknown residues
+        Tuple of (modified entry, tuple of warning strings as PipeItems)
     """
     # Get sequence if available (used to look up missing residue names)
 
@@ -198,7 +199,11 @@ def pipe(
 
     add_frames_to_entry(entry, [frame])
 
-    return PipeOutput(entry=entry, warnings=warnings)
+    advisory_warnings = [
+        StringAdvisory(type_=AdvisoryType.WARNING, text=w) for w in warnings
+    ]
+
+    return entry, tuple(advisory_warnings)
 
 
 def _guess_isotopes_from_peaks(peaks: List[NewPeak]) -> Dict[int, set]:

@@ -9,6 +9,7 @@ from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.cli_lib import (
     BadFrameLoopTagSyntaxException,
+    handle_common_pipe_items,
     parse_frame_loop_and_tags,
 )
 from nef_pipelines.lib.nef_lib import (
@@ -18,8 +19,11 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.structures import (
     Advisory,
+    AdvisoryType,
     FrameLoopAndTagSelectors,
     FrameLoopsAndTags,
+    PipeItem,
+    StringAdvisory,
 )
 from nef_pipelines.lib.tabular_data_lib import CsvLikeFormats, parse_csv_text
 from nef_pipelines.lib.util import (
@@ -1165,64 +1169,32 @@ def _format_exception_with_context(
 
 # advisories are wrapped to sit inside a conventional terminal, with continuation lines
 # aligned under the text rather than under the reporter's "WARNING: " prefix
-_TERMINAL_WIDTH = 120
-_WARNING_PREFIX_WIDTH = len("WARNING: ")
-
-
-def _wrap_for_terminal(message: str) -> str:
-    """Reflow a message to fit a conventional terminal, aligning any continuation lines.
-
-    The first line is left unindented because the reporter prepends "WARNING: " to it; later
-    lines are indented to line up underneath. That also keeps `warn`'s dedent a no-op, since
-    the lines no longer share a common indent.
-
-    Long words are never broken, so file paths and option names such as
-    --use-column-headings stay intact even when they push a line over the width.
-
-    Args:
-        message: The message text, which may be indented and span several source lines
-
-    Returns:
-        The message reflowed to the terminal width
-    """
-    indent = " " * _WARNING_PREFIX_WIDTH
-    wrapped = textwrap.fill(
-        " ".join(message.split()),
-        width=_TERMINAL_WIDTH,
-        initial_indent=indent,
-        subsequent_indent=indent,
-        break_long_words=False,
-        break_on_hyphens=False,
-    )
-    return wrapped[_WARNING_PREFIX_WIDTH:]
-
-
-def build_advisory_message(advisory: Advisory) -> str:
+def build_message_from_advisory(advisory: Advisory) -> str:
     """Build the text shown to a user for an advisory returned by a pipe.
 
     This is where command line option names belong: the pipe reports what it did, and this
     turns that into advice naming the option that would state the intent explicitly.
 
     Args:
-        advisory: A finding returned in PipeOutput.items
+        advisory: A finding returned in pipe items tuple
 
     Returns:
-        The message to show, as a single line and without any WARNING prefix
+        The message to show, without any WARNING prefix
     """
     if isinstance(advisory, HeadingsInferredAdvisory):
         if advisory.is_mixed:
-            message = f"""
+            message = f"""\
                 the column references to {advisory.path} mix position and name, so its
                 first row is being read as column headings; use --use-column-headings
                 on or off to say which it is
             """
         elif advisory.has_header:
-            message = f"""
+            message = f"""\
                 {advisory.path} is being read as having column headings; use
                 --use-column-headings off if its first row is data
             """
         else:
-            message = f"""
+            message = f"""\
                 all column references to {advisory.path} are by number, so it is being
                 read as having no heading row; use --use-column-headings on if the
                 first row is headings
@@ -1230,4 +1202,35 @@ def build_advisory_message(advisory: Advisory) -> str:
     else:
         message = str(advisory)
 
-    return _wrap_for_terminal(message)
+    return textwrap.dedent(message).strip()
+
+
+def handle_pipe_items(items: Tuple[PipeItem], quiet: bool = False) -> None:
+    """Handle column tool pipe items, converting custom Advisories to common types.
+
+    Converts tool-specific Advisory subclasses to StringAdvisory using the tool's
+    message builder, then delegates to the global handler.
+
+    Args:
+        items: Typed findings from pipe return tuple
+        quiet: When True nothing is reported
+    """
+    if quiet:
+        return
+
+    transformed_items = []
+    for item in items:
+        if isinstance(item, StringAdvisory):
+            # Already a common type, pass through
+            transformed_items.append(item)
+        elif isinstance(item, Advisory):
+            # Convert tool-specific Advisory to StringAdvisory
+            msg = build_message_from_advisory(item)
+            transformed_items.append(
+                StringAdvisory(type_=AdvisoryType.WARNING, text=msg)
+            )
+        else:
+            # Other common types (FileOutput, etc.)
+            transformed_items.append(item)
+
+    handle_common_pipe_items(tuple(transformed_items))

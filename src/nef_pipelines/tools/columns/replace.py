@@ -7,9 +7,9 @@ from click import Context
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.columns import columns_app
-from nef_pipelines.tools.columns.columns_cli_lib import track_order
+from nef_pipelines.tools.columns.columns_cli_lib import handle_pipe_items, track_order
 from nef_pipelines.tools.columns.columns_structures import ColumnHeadings, ExtractFormat
-from nef_pipelines.tools.columns.insert import pipe, report_advisories
+from nef_pipelines.tools.columns.insert import pipe
 
 #
 # TODO: Support full insert syntax:
@@ -144,9 +144,8 @@ def replace(
     column_instructions = _parse_replace_arguments_or_exit_error(
         selector, args, entry, input, format
     )
-    result = pipe(entry, column_instructions)
+    entry, items = pipe(entry, column_instructions)
 
-    report_advisories(result.items, quiet)
+    handle_pipe_items(items, quiet)
 
-    entry = result.entry
     print(entry)

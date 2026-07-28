@@ -7,8 +7,9 @@ import typer
 from pynmrstar import Entry, Loop, Saveframe
 from strenum import KebabCaseStrEnum, LowercaseStrEnum
 
+from nef_pipelines.lib.cli_lib import handle_common_pipe_items
 from nef_pipelines.lib.nef_lib import read_or_create_entry_exit_error_on_bad_file
-from nef_pipelines.lib.structures import PipeOutput
+from nef_pipelines.lib.structures import AdvisoryType, PipeItem, StringAdvisory
 from nef_pipelines.lib.tabular_data_lib import (
     ENCODING,
     HELP_FOR_FORMATS,
@@ -18,7 +19,7 @@ from nef_pipelines.lib.tabular_data_lib import (
     _parse_csv_rows_from_text,
     parse_csv_text,
 )
-from nef_pipelines.lib.util import STDIN, chunks, exit_error, warn
+from nef_pipelines.lib.util import STDIN, chunks, exit_error
 from nef_pipelines.transcoders.csv import import_app
 
 
@@ -124,7 +125,7 @@ def loop(
     )
 
     try:
-        result = pipe(
+        entry, items = pipe(
             entry,
             frame_loop_paths,
             csv_format,
@@ -136,10 +137,9 @@ def loop(
     except CsvParseError as e:
         exit_error(str(e))
 
-    for warning in result.warnings:
-        warn(warning)
+    handle_common_pipe_items(items)
 
-    print(result.entry)
+    print(entry)
 
 
 def pipe(
@@ -150,7 +150,7 @@ def pipe(
     header_skip: int = 0,
     skip: int = 0,
     skip_tail: int = 0,
-) -> PipeOutput:
+) -> Tuple[Entry, Tuple[PipeItem]]:
     """Add loops read from CSV files to existing saveframes in entry.
 
     Args:
@@ -163,7 +163,7 @@ def pipe(
         skip_tail: Number of trailing rows to skip from the end
 
     Returns:
-        PipeOutput with modified entry and warnings about normalized headers
+        Tuple of (modified entry, tuple of warning strings as PipeItems)
     """
 
     all_warnings = []
@@ -184,7 +184,9 @@ def pipe(
             skip_tail,
             frame_loop_path.path,
         )
-        all_warnings.extend(warnings)
+        all_warnings.extend(
+            [StringAdvisory(type_=AdvisoryType.WARNING, text=w) for w in warnings]
+        )
 
         nef_loop = Loop.from_scratch()
         nef_loop.set_category(frame_loop_path.loop_category)
@@ -195,7 +197,7 @@ def pipe(
 
         frame_loop_path.frame.add_loop(nef_loop)
 
-    return PipeOutput(entry=entry, warnings=all_warnings)
+    return entry, tuple(all_warnings)
 
 
 def _build_frames_loops_and_paths_or_exit_error(

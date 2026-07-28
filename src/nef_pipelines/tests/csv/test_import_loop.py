@@ -225,3 +225,54 @@ def test_loop_import_comment_policy_requires_comment():
     )
 
     assert_lines_match(EXPECTED_ERROR_COMMENT_WITHOUT_COMMENT, result.stderr)
+
+
+def test_loop_import_with_normalized_headers_warns():
+    """Test that column headers with spaces are normalized with a warning."""
+    csv_path = path_in_test_data(__file__, "shifts_with_spaces.csv")
+
+    result = run_and_report(
+        app,
+        [
+            "--frame-policy",
+            "command-line",
+            "nef_chemical_shift_list_myshifts",
+            "nef_chemical_shift",
+            csv_path,
+        ],
+        input=ENTRY_WITH_SHIFT_FRAME,
+        merge_stderr=False,
+    )
+
+    EXPECTED_WARNINGS = """\
+        WARNING: normalized column header 'chain code' → 'chain_code'
+        WARNING: normalized column header 'sequence code' → 'sequence_code'
+        WARNING: normalized column header 'residue name' → 'residue_name'
+        WARNING: normalized column header 'atom name' → 'atom_name'
+        WARNING: normalized column header 'value uncertainty' → 'value_uncertainty'
+    """
+
+    assert_lines_match(EXPECTED_WARNINGS, result.stderr)
+
+    loop_result = isolate_loop(
+        result.stdout,
+        "nef_chemical_shift_list_myshifts",
+        "nef_chemical_shift",
+    )
+
+    EXPECTED_LOOP = """\
+        loop_
+           _nef_chemical_shift.chain_code
+           _nef_chemical_shift.sequence_code
+           _nef_chemical_shift.residue_name
+           _nef_chemical_shift.atom_name
+           _nef_chemical_shift.value
+           _nef_chemical_shift.value_uncertainty
+
+          A   2   GLN   N   123.22   0.1
+          A   2   GLN   H   8.90     0.05
+
+        stop_
+    """
+
+    assert_lines_match(EXPECTED_LOOP, loop_result)

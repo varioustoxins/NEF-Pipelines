@@ -14,6 +14,7 @@ from nef_pipelines.tools.columns.columns_cli_lib import (
     _group_column_specifications_by_loop_or_raise,
     _parse_ordered_col_instructions,
     _resolve_frame_loop_strings_to_loops_or_raise,
+    handle_pipe_items,
     track_order,
 )
 from nef_pipelines.tools.columns.columns_structures import (
@@ -24,7 +25,6 @@ from nef_pipelines.tools.columns.columns_structures import (
 )
 from nef_pipelines.tools.columns.insert import _exit_error_on_pipe_exception
 from nef_pipelines.tools.columns.insert import pipe as insert_pipe
-from nef_pipelines.tools.columns.insert import report_advisories
 from nef_pipelines.tools.loops import loops_app
 
 PLACEHOLDER_COLUMN = "place_holder"
@@ -159,13 +159,13 @@ def create(
         _clear_existing_loop_tags(column_instructions)
 
     try:
-        result = insert_pipe(entry, column_instructions)
+        entry, items = insert_pipe(entry, column_instructions)
     except NEFPipelinesException as e:
         _exit_error_on_pipe_exception(e, specs)
 
-    report_advisories(result.items, quiet)
+    handle_pipe_items(items, quiet)
 
-    print(result.entry)
+    print(entry)
 
 
 def _resolve_loop_speification_pairs_or_exit_error(

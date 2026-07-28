@@ -6,59 +6,58 @@
 import math
 from dataclasses import dataclass, field
 from enum import Flag, auto
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-from pynmrstar import Entry, Loop, Saveframe
+from pynmrstar import Loop, Saveframe
 from strenum import LowercaseStrEnum, StrEnum
 
 
-# TODO refactor i alread have definitions
 @dataclass
 class PipeItem:
     """Base for the typed things a pipe returns alongside the entry that makes up the pipeline.
-       Typically these are text output streams and warnings, errors.
+    Typically these are text output streams and warnings, errors are carried in exceptions.
 
-    A pipe describes what it found or produced; it does not phrase that for any particular
-    interface. Turning a PipeItem into text is the caller's job, and belongs in a function
-    whose name says it builds a message, because such text may name command line options.
+    This separates concerns, pipes are generally algorithmic and leave the cli or caller to
+    decide what to do with the outputs and how to report warnings.
     """
+
+
+class AdvisoryType(LowercaseStrEnum):
+    """Type of advisory message from a pipe."""
+
+    INFO = auto()
+    WARNING = auto()
 
 
 @dataclass
 class Advisory(PipeItem):
-    """Base for a non-fatal finding a pipe wants its caller to know about.
+    """Base for a non-fatal result a pipe wants its caller to know about.
 
-    Subclasses carry the facts of the finding as fields. They deliberately hold no message
-    text, so that the wording - and any mention of command line options - stays with the
-    caller that decides how to present it.
+    Subclasses carry the data for warning or informational results as fields.
+    They deliberately don't hold verbatim message text, so that the wording - and any mention of
+    the callers concerns such as command line options that could be applied - stays
+    with the caller which decides how to present it. The class should be sub typed
+    with the explicit datafields required. Subclasses may optionally include an info_type field.
     """
 
 
 @dataclass
-class PipeOutput:
-    """Return value for pipe functions that includes entry, warnings, and output.
+class StringAdvisory(Advisory):
+    type_: AdvisoryType
+    text: str
 
-    This structure allows pipe functions to return:
-    - The modified NEF entry
-    - A list of non-fatal warnings to be displayed
-    - Optional text output keyed by destination
+
+@dataclass
+class FileOutput(PipeItem):
+    """Output data destined for files or streams.
 
     Attributes:
-        entry: The modified NEF entry, or None for terminating export/display pipes
-        warnings: Non-fatal warnings collected during processing, as ready-made text
-        output: Text output keyed by destination ('-'/@stdout for stdout,
-                @stderr for stderr, filename for file output)
-        items: Typed findings the pipe wants reported, described rather than phrased; the
-               caller renders them with a message building function. Preferred over
-               `warnings` for new work, because the kind of finding survives the boundary
-               and the caller can give specific advice
+        output_data: Mapping of destination to content. Destinations can be:
+                     '-' for stdout, '@stderr' for stderr, or Path/str for file paths
     """
 
-    entry: Optional[Entry]
-    # TODO: Warnings and Outputs should be PipeOutput types
-    warnings: List[str] = field(default_factory=list)
-    output: Dict[str, str] = field(default_factory=dict)
-    items: List[PipeItem] = field(default_factory=list)
+    output_data: Dict[Union[Path, str], str]
 
 
 class EntryPart(Flag):

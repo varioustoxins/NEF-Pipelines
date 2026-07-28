@@ -74,25 +74,31 @@ from nef_pipelines.lib.nef_lib import (
 )
 from nef_pipelines.lib.sequence_lib import sequence_from_entry
 from nef_pipelines.lib.structures import (
+    AdvisoryType,
     ChainOffsetSyntaxParsingError,
     EntryPart,
+    FileOutput,
     FrameLoopAndTagSelectors,
     FrameLoopsAndTags,
     NEFBadLoopSelectionException,
     NEFPipelinesException,
+    PipeItem,
     RangeOffset,
     ResiduePair,
     ResidueRange,
     ResidueRangeParsingException,
+    StringAdvisory,
 )
 from nef_pipelines.lib.util import (
     NEWLINE,
     STDIN,
     exit_error,
+    info,
     is_int,
     is_stdout_tty,
     parse_comma_separated_options,
     to_ordinal,
+    warn,
 )
 
 # Four canonical selectors covering all scope combinations (design doc §2, §6.1):
@@ -204,6 +210,29 @@ class DetectedSeparatorConflicts(Flag):
     RANGE_SEPARATOR_IN_CHAIN_CODES = auto()
     CHAIN_SEPARATOR_IN_SEQUENCE_CODES = auto()
     RANGE_SEPARATOR_IN_SEQUENCE_CODES = auto()
+
+
+def handle_common_pipe_items(items: Tuple[PipeItem]) -> None:
+    """Handle common PipeItem types that all tools can emit.
+
+    Processes StringAdvisory (warnings/info) and FileOutput items. Tools should convert
+    their custom Advisory subclasses to StringAdvisory before calling this.
+
+    Args:
+        items: Tuple of PipeItem objects returned by a pipe function
+    """
+    for item in items:
+        if isinstance(item, StringAdvisory):
+            if item.type_ == AdvisoryType.WARNING:
+                warn(item.text)
+            elif item.type_ == AdvisoryType.INFO:
+                # TODO: Add info() function to util.py when needed
+                info(item.text)
+        elif isinstance(item, FileOutput):
+            # TODO: Implement FileOutput handling when needed
+            raise NotImplementedError(
+                "FileOutput handling is not currently implimented"
+            )
 
 
 # TODO i would like single returns

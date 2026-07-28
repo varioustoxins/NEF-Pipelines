@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from pynmrstar import Entry, Loop
 
 from nef_pipelines.lib.nef_lib import UNUSED, loop_reorder_columns, loop_row_dict_iter
-from nef_pipelines.lib.structures import PipeOutput
+from nef_pipelines.lib.structures import PipeItem
 from nef_pipelines.lib.tabular_data_lib import (
     ColumnNotFoundError,
     CsvLikeFormats,
@@ -702,7 +702,7 @@ def _resolve_file_backed_instruction(
 def apply_column_instructions(
     entry: Entry,
     instructions: List[Instruction],
-) -> PipeOutput:
+) -> Tuple[Entry, Tuple[PipeItem]]:
     """Apply a mixed list of Comment/Skip/Insert instructions to an entry.
 
     Comment and Skip instructions update the running file-reading state; Insert
@@ -723,7 +723,7 @@ def apply_column_instructions(
         instructions: Mixed list of CommentInstruction, SkipInstruction and InsertInstruction
 
     Returns:
-        PipeOutput carrying the modified entry and any advisories raised while reading files
+        Tuple of (modified entry, tuple of PipeItem advisories)
     """
     comment: List[str] = []
     skip = 0
@@ -782,4 +782,4 @@ def apply_column_instructions(
 
     _apply_instructions_by_loop(_group_instructions_by_loop(resolved))
 
-    return PipeOutput(entry=entry, items=advisories)
+    return entry, tuple(advisories)

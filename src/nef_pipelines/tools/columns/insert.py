@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import typer
 from click import Context
@@ -8,8 +8,8 @@ from pynmrstar import Entry
 
 from nef_pipelines.lib.cli_lib import BadFrameLoopTagSyntaxException
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
-from nef_pipelines.lib.structures import Advisory, NEFPipelinesException, PipeOutput
-from nef_pipelines.lib.util import STDIN, exit_error, oxford_join, warn
+from nef_pipelines.lib.structures import NEFPipelinesException, PipeItem
+from nef_pipelines.lib.util import STDIN, exit_error, oxford_join
 from nef_pipelines.tools.columns import columns_app
 from nef_pipelines.tools.columns.columns_cli_lib import (
     _build_column_instructions,
@@ -19,7 +19,7 @@ from nef_pipelines.tools.columns.columns_cli_lib import (
     _parse_ordered_col_instructions,
     _resolve_frame_loop_strings_to_loops_or_raise,
     _ResolvedLoopColumnSpecificationPairs,
-    build_advisory_message,
+    handle_pipe_items,
     track_order,
 )
 from nef_pipelines.tools.columns.columns_lib import (
@@ -226,13 +226,13 @@ def insert(
     _validate_anchors_or_exit_error(column_instructions, ctx, specs)
 
     try:
-        result = pipe(entry, column_instructions)
+        entry, items = pipe(entry, column_instructions)
     except NEFPipelinesException as e:
         _exit_error_on_pipe_exception(e, specs)
 
-    report_advisories(result.items, quiet)
+    handle_pipe_items(items, quiet)
 
-    print(result.entry)
+    print(entry)
 
 
 def _exit_error_if_no_column_specifications(specs: Optional[List[str]]):
@@ -474,24 +474,9 @@ def _exit_error_on_column_clashes_if_no_force(
             exit_error("\n".join(clashes))
 
 
-def report_advisories(items, quiet: bool) -> None:
-    """Report the advisories a pipe returned, rendering each through its message builder.
-
-    Args:
-        items: Typed findings from PipeOutput.items
-        quiet: When True nothing is reported
-    """
-    if quiet:
-        return
-
-    for item in items:
-        if isinstance(item, Advisory):
-            warn(build_advisory_message(item))
-
-
-# TODO: this should be
-# def pipe(entry, column_instructions) -> Tuple[Entry, Tuple[PipeOutput]]:
-def pipe(entry, column_instructions) -> PipeOutput:
+def pipe(
+    entry: Entry, column_instructions: List[InsertInstruction]
+) -> Tuple[Entry, Tuple[PipeItem]]:
     """Insert columns described by column_instructions into their target loops.
 
     Never prints; advisory warnings are returned for the caller to report or discard.
@@ -501,6 +486,6 @@ def pipe(entry, column_instructions) -> PipeOutput:
         column_instructions: Mixed stream of Comment/Skip/Insert instructions
 
     Returns:
-        PipeOutput carrying the modified entry and any advisory warnings
+        Tuple of (modified entry, tuple of PipeItem advisories)
     """
     return apply_column_instructions(entry, column_instructions)

@@ -5,6 +5,7 @@ from typing import List, Tuple
 import typer
 from pynmrstar import Entry, Loop, Saveframe
 
+from nef_pipelines.lib.cli_lib import handle_common_pipe_items
 from nef_pipelines.lib.nef_lib import (
     UNUSED,
     add_frames_to_entry,
@@ -17,10 +18,12 @@ from nef_pipelines.lib.sequence_lib import (
     unknown_residues_to_warning,
 )
 from nef_pipelines.lib.structures import (
+    AdvisoryType,
     AtomLabel,
-    PipeOutput,
+    PipeItem,
     RdcRestraint,
     SequenceResidue,
+    StringAdvisory,
 )
 from nef_pipelines.lib.tabular_data_lib import (
     COLUMN_SEPARATORS_MAY_HAVE_CHANGED,
@@ -36,7 +39,6 @@ from nef_pipelines.lib.util import (
     is_float,
     is_int,
     parse_comma_separated_options,
-    warn,
 )
 from nef_pipelines.transcoders.csv import import_app
 
@@ -125,7 +127,7 @@ def rdcs(
     entry = read_entry_from_file_or_stdin_or_exit_error(entry_input)
 
     try:
-        result = pipe(
+        entry, items = pipe(
             entry,
             default_chain_code,
             default_atoms,
@@ -137,10 +139,9 @@ def rdcs(
     except CsvParseError as e:
         exit_error(str(e))
 
-    for warning in result.warnings:
-        warn(warning)
+    handle_common_pipe_items(items)
 
-    print(result.entry)
+    print(entry)
 
 
 def pipe(
@@ -150,7 +151,7 @@ def pipe(
     csv_file: Path,
     csv_file_encoding: str,
     csv_format: CsvLikeFormats,
-) -> PipeOutput:
+) -> tuple[Entry, tuple[PipeItem]]:
     """Import RDC restraints from CSV file into NEF entry.
 
     Args:
@@ -162,7 +163,7 @@ def pipe(
         csv_format: CSV format (CSV, TSV, SSV, or AUTO)
 
     Returns:
-        PipeOutput with modified entry and any warnings about unknown residues
+        Tuple of (modified entry, tuple of warning strings as PipeItems)
     """
     sequence = sequence_from_entry_or_exit(entry)
 
@@ -177,7 +178,11 @@ def pipe(
 
     add_frames_to_entry(entry, [frame])
 
-    return PipeOutput(entry=entry, warnings=warnings)
+    advisory_warnings = [
+        StringAdvisory(type_=AdvisoryType.WARNING, text=w) for w in warnings
+    ]
+
+    return entry, tuple(advisory_warnings)
 
 
 def _rdcs_to_frame(rdcs: List[RdcRestraint], frame_code="rdcs"):

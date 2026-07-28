@@ -1196,14 +1196,14 @@ def test_pipe_returns_warnings_and_prints_nothing(tmp_path, capsys):
         loop,
     )
 
-    result = pipe(entry, [instruction])
+    result_entry, items = pipe(entry, [instruction])
 
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err == ""
 
-    EXPECTED = [HeadingsInferredAdvisory(Path(data), has_header=False, is_mixed=False)]
-    assert result.items == EXPECTED
+    EXPECTED = (HeadingsInferredAdvisory(Path(data), has_header=False, is_mixed=False),)
+    assert items == EXPECTED
 
 
 # --- positional file settings: comment prefixes, skipping and bare file references ---
