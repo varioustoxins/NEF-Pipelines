@@ -531,12 +531,12 @@ CRITICAL: When writing ANY test code, automatically apply MANDATORY Testing Guid
 
 - ALWAYS ALWAYS ALWAYS ALWAYS ALWAYS  if you see /md! In the input from the command line reread this file and take note of the comments especially the reminders!, acknowledging that you have done this
 
-## graphify
+## PyCharm MCP Server
 
-This project has a graphify knowledge graph at graphify-out/.
+This project utilizes a PyCharm MCP server for codebase analysis and semantic navigation.
 
 Rules:
-- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
-- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
-- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+- Before answering architecture or codebase questions, use the PyCharm MCP tools to query the project structure and analyze dependencies rather than just scanning file paths.
+- If project documentation exists (e.g., an `index.md` or `docs/` directory), prioritize reading those files for context.
+- For cross-module "how does X relate to Y" questions, prefer the MCP server's semantic tools (such as finding usages, resolving declarations, or searching project symbols) over raw text search or `grep`. These tools traverse PyCharm's semantic index instead of just matching strings.
+- After you modify code files during a session, PyCharm's automatic background indexing will keep the codebase map current. You do not need to invoke manual update commands to refresh the semantic index.
