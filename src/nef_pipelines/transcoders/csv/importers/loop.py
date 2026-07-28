@@ -74,8 +74,10 @@ def loop(
     csv_format: CsvLikeFormats = typer.Option(
         CsvLikeFormats.AUTO, "-f", "--format", help=HELP_FOR_FORMATS
     ),
-    header_skip: int = typer.Option(
-        0, "--skip", help="extra header rows to skip after the column header row"
+    skip: int = typer.Option(
+        0,
+        "--skip",
+        help="number of rows to skip after comment removal, before the column header row",
     ),
     comment: List[str] = typer.Option(
         [],
@@ -105,18 +107,13 @@ def loop(
         exit_error(msg)
 
     framecode_loop_category_paths = _load_frames_loops_and_paths_or_exit_error(
-        file_args, csv_format, frame_policy, comment, header_skip
+        file_args, csv_format, frame_policy, comment, skip
     )
 
-    # HEADER policy: skip is already applied when parsing framecode/loop_category,
-    # and we need to skip 1 more row (the framecode line itself) before reading column headers
+    # HEADER policy reads the framecode,loop_category line itself before the column
+    # header row, so it needs one further row skipped than the user asked for
     if frame_policy == FrameNamePolicy.HEADER:
-        header_skip = 1 + header_skip  # Skip initial rows + framecode line
-        data_skip = 0  # Don't skip again when reading data
-    else:
-        header_skip = 0  # No rows to skip before headers
-        # TODO this makes no sense
-        data_skip = header_skip  # Skip rows after headers
+        skip = 1 + skip
 
     # Look up frames and build FrameLoopPath objects
     frame_loop_paths = []
@@ -130,8 +127,7 @@ def loop(
             frame_loop_paths,
             csv_format,
             comment,
-            header_skip,
-            data_skip,
+            skip,
             tail_skip,
         )
     except CsvParseError as e:
@@ -147,7 +143,6 @@ def pipe(
     frame_loop_paths: List[FrameLoopPath],
     csv_format: CsvLikeFormats,
     comment: Union[str, List[str]] = "",
-    header_skip: int = 0,
     skip: int = 0,
     skip_tail: int = 0,
 ) -> Tuple[Entry, Tuple[PipeItem]]:
@@ -157,9 +152,8 @@ def pipe(
         entry: NEF entry containing the target saveframes
         frame_loop_paths: List of pre-looked-up frames with loop categories and CSV paths
         csv_format: Format of CSV files (CSV, TSV, SSV, or AUTO)
-        skip: Number of extra header rows to skip after column headers
         comment: Prefix(es) for comment lines to ignore (string or list of strings)
-        header_skip: Number of rows to skip before reading column headers
+        skip: Number of rows to skip after comment removal, before the column header row
         skip_tail: Number of trailing rows to skip from the end
 
     Returns:
@@ -180,7 +174,6 @@ def pipe(
             csv_format,
             skip,
             comment,
-            header_skip,
             skip_tail,
             frame_loop_path.path,
         )

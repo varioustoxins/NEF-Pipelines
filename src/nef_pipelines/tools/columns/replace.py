@@ -5,11 +5,12 @@ import typer
 from click import Context
 
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.columns import columns_app
 from nef_pipelines.tools.columns.columns_cli_lib import handle_pipe_items, track_order
 from nef_pipelines.tools.columns.columns_structures import ColumnHeadings, ExtractFormat
-from nef_pipelines.tools.columns.insert import pipe
+from nef_pipelines.tools.columns.insert import _exit_error_on_pipe_exception, pipe
 
 #
 # TODO: Support full insert syntax:
@@ -27,7 +28,7 @@ def replace(
         metavar="|PIPE|",
         help="read NEF data from a file or stdin",
     ),
-    header_skip: int = typer.Option(
+    skip: int = typer.Option(
         0,
         "--skip",
         callback=track_order,
@@ -142,9 +143,12 @@ def replace(
 
     entry = read_entry_from_file_or_stdin_or_exit_error(input)
     column_instructions = _parse_replace_arguments_or_exit_error(
-        selector, args, entry, input, format
+        ctx, selector, args, entry, input, format
     )
-    entry, items = pipe(entry, column_instructions)
+    try:
+        entry, items = pipe(entry, column_instructions)
+    except NEFPipelinesException as e:
+        _exit_error_on_pipe_exception(e, args)
 
     handle_pipe_items(items, quiet)
 

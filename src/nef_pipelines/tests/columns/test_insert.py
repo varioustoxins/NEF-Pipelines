@@ -1194,6 +1194,8 @@ def test_pipe_returns_warnings_and_prints_nothing(tmp_path, capsys):
         InsertPlacement.APPEND,
         None,
         loop,
+        spec_arg_index=0,
+        spec_sub_index=0,
     )
 
     result_entry, items = pipe(entry, [instruction])

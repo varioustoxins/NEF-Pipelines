@@ -51,6 +51,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     RepeatValueSpec,
     ResolvedFileValueSpecification,
     SkipInstruction,
+    UseColumnHeadingsInstruction,
     ValueSpec,
 )
 
@@ -467,45 +468,58 @@ def _apply_instructions(
     Existing columns are silently overwritten; name-clash preflight is the caller's responsibility.
     """
     for instr in instructions:
-        col_name = instr.column_spec.col_name
-        value_spec = instr.column_spec.value_spec
+        try:
+            col_name = instr.column_spec.col_name
+            value_spec = instr.column_spec.value_spec
 
-        if (
-            isinstance(
-                value_spec, (FileValueSpecification, ResolvedFileValueSpecification)
-            )
-            and "," in col_name
-        ):
-            raise NEFColumnsException(
-                f"insert takes one column per file reference, "
-                f"got multiple columns '{col_name}'"
-            )
-
-        if col_name in loop.tags:
-            _force_replace_column(
-                loop, col_name, value_spec, default, instr.file_settings
-            )
-        else:
-            values = _resolve_values(
-                value_spec, len(loop.data), default, instr.file_settings
-            )
-            index = _resolve_insert_index(loop, instr.keyword, instr.position_anchor)
-            if instr.keyword == InsertPlacement.AT:
-                loop.tags.pop(index)
-                for row in loop.data:
-                    row.pop(index)
-
-            if len(values) < len(loop.data):
-                values = values + [default] * (len(loop.data) - len(values))
-            elif len(values) > len(loop.data) and loop.data:
-                # each padded row must be its own list; multiplying a list of lists would
-                # alias one row into every position and corrupt the loop on insertion
-                loop.data.extend(
-                    [default] * len(loop.tags)
-                    for _ in range(len(values) - len(loop.data))
+            if (
+                isinstance(
+                    value_spec, (FileValueSpecification, ResolvedFileValueSpecification)
+                )
+                and "," in col_name
+            ):
+                raise NEFColumnsException(
+                    f"insert takes one column per file reference, "
+                    f"got multiple columns '{col_name}'"
                 )
 
-            _insert_column_into_loop(loop, index, col_name, [str(v) for v in values])
+            # file-backed value specs are already resolved to ResolvedFileValueSpecification by
+            # apply_column_instructions before instructions reach here, so the FileSettings
+            # default below (rather than settings carried on instr) is never actually exercised
+            if col_name in loop.tags:
+                _force_replace_column(loop, col_name, value_spec, default)
+            else:
+                values = _resolve_values(value_spec, len(loop.data), default)
+                index = _resolve_insert_index(
+                    loop, instr.keyword, instr.position_anchor
+                )
+                if instr.keyword == InsertPlacement.AT:
+                    loop.tags.pop(index)
+                    for row in loop.data:
+                        row.pop(index)
+
+                if len(values) < len(loop.data):
+                    values = values + [default] * (len(loop.data) - len(values))
+                elif len(values) > len(loop.data) and loop.data:
+                    # each padded row must be its own list; multiplying a list of lists would
+                    # alias one row into every position and corrupt the loop on insertion
+                    loop.data.extend(
+                        [default] * len(loop.tags)
+                        for _ in range(len(values) - len(loop.data))
+                    )
+
+                _insert_column_into_loop(
+                    loop, index, col_name, [str(v) for v in values]
+                )
+        except (
+            NEFColumnsFileNotFoundException,
+            NEFColumnsFileIOException,
+            NEFColumnsColumnNotFoundInFileException,
+            NEFColumnsColumnNotFoundInLoopException,
+        ) as e:
+            if e.instruction is None:
+                e.instruction = instr
+            raise
 
 
 def _apply_instructions_by_loop(
@@ -647,19 +661,22 @@ def _first_row_looks_like_headings(text: str) -> bool:
 
 def _resolve_file_backed_instruction(
     instruction: InsertInstruction,
+    settings: FileSettings,
     raw_files: Dict[Path, str],
     filtered_files: Dict[Tuple[Path, FileSettings], str],
     has_header: bool = True,
 ) -> InsertInstruction:
     """Resolve a file-backed instruction's column into literal values.
 
-    Reads the file through the two-level cache using the file settings carried on the
-    instruction, then returns an equivalent instruction whose value specification is a
-    LiteralsValueSpecification. This keeps all placement, padding and clash handling in
-    the single application path in :func:`_apply_instructions`.
+    Reads the file through the two-level cache using the file settings in force for this
+    instruction (derived by the caller from the instruction stream), then returns an
+    equivalent instruction whose value specification is a LiteralsValueSpecification. This
+    keeps all placement, padding and clash handling in the single application path in
+    :func:`_apply_instructions`.
 
     Args:
         instruction: The instruction to resolve
+        settings: The comment/skip/heading settings in force for this instruction
         raw_files: Cache of path → raw file text, read from disk at most once per path
         filtered_files: Cache of (path, settings) → text after comment removal and skipping
         has_header: Whether this instruction's batch treats the first row as column headings
@@ -669,7 +686,6 @@ def _resolve_file_backed_instruction(
     """
     value_spec = instruction.column_spec.value_spec
     path = value_spec.path
-    settings = instruction.file_settings
 
     if path not in raw_files:
         raw_files[path] = _read_file_or_raise(path)
@@ -703,13 +719,14 @@ def apply_column_instructions(
     entry: Entry,
     instructions: List[Instruction],
 ) -> Tuple[Entry, Tuple[PipeItem]]:
-    """Apply a mixed list of Comment/Skip/Insert instructions to an entry.
+    """Apply an interleaved stream of Comment/Skip/UseColumnHeadings/Insert instructions.
 
-    Comment and Skip instructions update the running file-reading state; Insert
-    instructions are resolved against that state. File-backed columns are read through a
-    two-level cache — raw text is read from disk once per path, and parsed results are
-    cached per (path, settings) so re-reading a file under changed settings never returns
-    to disk.
+    Walks the stream in order, maintaining the comment/skip/heading state currently in
+    force. Each InsertInstruction is resolved against whatever state is in force at its
+    position in the stream - no settings are carried on the instructions themselves.
+    File-backed columns are read through a two-level cache — raw text is read from disk
+    once per path, and parsed results are cached per (path, settings) so re-reading a file
+    under changed settings never returns to disk.
 
     Resolved instructions are then applied by the shared placement machinery, so file
     columns, literals and ranges all follow the same insertion, padding and column-clash
@@ -720,38 +737,45 @@ def apply_column_instructions(
 
     Args:
         entry: NEF entry to modify in place
-        instructions: Mixed list of CommentInstruction, SkipInstruction and InsertInstruction
+        instructions: Interleaved stream of CommentInstruction, SkipInstruction,
+            UseColumnHeadingsInstruction and InsertInstruction, in command-line order
 
     Returns:
         Tuple of (modified entry, tuple of PipeItem advisories)
     """
-    comment: List[str] = []
-    skip = 0
-    skip_tail = 0
+    current_comment: List[str] = []
+    current_skip = 0
+    current_skip_tail = 0
+    current_use_column_headings = ColumnHeadings.AUTO
 
     raw_files: Dict[Path, str] = {}
     filtered_files: Dict[Tuple[Path, FileSettings], str] = {}
 
-    # First pass: settle the file settings in force for each instruction
-    settled: List[InsertInstruction] = []
+    # First pass: walk the stream, deriving the settings in force for each InsertInstruction
+    # from the Comment/Skip/UseColumnHeadings instructions that preceded it
+    insert_instructions: List[InsertInstruction] = []
+    settings_by_id: Dict[int, FileSettings] = {}
     for instruction in instructions:
         if isinstance(instruction, CommentInstruction):
-            comment = list(instruction.prefixes)
+            current_comment = list(instruction.prefixes)
         elif isinstance(instruction, SkipInstruction):
-            skip = instruction.skip
-            skip_tail = instruction.skip_tail
+            current_skip = instruction.skip
+            current_skip_tail = instruction.skip_tail
+        elif isinstance(instruction, UseColumnHeadingsInstruction):
+            current_use_column_headings = instruction.mode
         elif isinstance(instruction, InsertInstruction):
-            if instruction.file_settings == FileSettings():
-                instruction = replace(
-                    instruction,
-                    file_settings=FileSettings(tuple(comment), skip, skip_tail),
-                )
-            settled.append(instruction)
+            settings_by_id[id(instruction)] = FileSettings(
+                tuple(current_comment),
+                current_skip,
+                current_skip_tail,
+                current_use_column_headings,
+            )
+            insert_instructions.append(instruction)
 
     # Second pass: decide header handling for each batch of consecutive file references
     file_backed = [
-        (instruction, instruction.file_settings)
-        for instruction in settled
+        (instruction, settings_by_id[id(instruction)])
+        for instruction in insert_instructions
         if isinstance(instruction.column_spec.value_spec, FileValueSpecification)
     ]
     (
@@ -762,14 +786,24 @@ def apply_column_instructions(
 
     # Third pass: read the file columns and apply everything through the shared machinery
     resolved: List[InsertInstruction] = []
-    for instruction in settled:
+    for instruction in insert_instructions:
         if isinstance(instruction.column_spec.value_spec, FileValueSpecification):
-            instruction = _resolve_file_backed_instruction(
-                instruction,
-                raw_files,
-                filtered_files,
-                has_header_by_instruction_id[id(instruction)],
-            )
+            try:
+                instruction = _resolve_file_backed_instruction(
+                    instruction,
+                    settings_by_id[id(instruction)],
+                    raw_files,
+                    filtered_files,
+                    has_header_by_instruction_id[id(instruction)],
+                )
+            except (
+                NEFColumnsFileNotFoundException,
+                NEFColumnsFileIOException,
+                NEFColumnsColumnNotFoundInFileException,
+            ) as e:
+                if e.instruction is None:
+                    e.instruction = instruction
+                raise
         resolved.append(instruction)
 
     # a positional inference is only reported once the file shows it may have been wrong

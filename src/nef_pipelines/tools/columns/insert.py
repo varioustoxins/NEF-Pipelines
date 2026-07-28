@@ -16,6 +16,7 @@ from nef_pipelines.tools.columns.columns_cli_lib import (
     _build_missing_loop_error_message,
     _FrameLoopGroups,
     _group_column_specifications_by_loop_or_raise,
+    _insert_instructions_only,
     _parse_ordered_col_instructions,
     _resolve_frame_loop_strings_to_loops_or_raise,
     _ResolvedLoopColumnSpecificationPairs,
@@ -31,6 +32,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     ColumnPlacement,
     InsertInstruction,
     InsertPlacement,
+    Instruction,
     NEFColumnsColumnNotFoundInFileException,
     NEFColumnsColumnNotFoundInLoopException,
     NEFColumnsDuplicateLoopException,
@@ -218,15 +220,16 @@ def insert(
         )
     )
 
-    column_instructions = _build_column_instructions(
+    instruction_stream = _build_column_instructions(
         resolved_loop_column_specification_pairs
     )
+    column_instructions = _insert_instructions_only(instruction_stream)
 
     _exit_error_on_column_clashes_if_no_force(column_instructions, force)
     _validate_anchors_or_exit_error(column_instructions, ctx, specs)
 
     try:
-        entry, items = pipe(entry, column_instructions)
+        entry, items = pipe(entry, instruction_stream)
     except NEFPipelinesException as e:
         _exit_error_on_pipe_exception(e, specs)
 
@@ -235,164 +238,81 @@ def insert(
     print(entry)
 
 
+def pipe(
+    entry: Entry, column_instructions: List[Instruction]
+) -> Tuple[Entry, Tuple[PipeItem]]:
+    """Insert columns described by column_instructions into their target loops.
+
+    Never prints; advisory warnings are returned for the caller to report or discard.
+
+    Args:
+        entry: NEF entry to modify
+        column_instructions: Interleaved stream of Comment/Skip/UseColumnHeadings/Insert
+            instructions, in command-line order
+
+    Returns:
+        Tuple of (modified entry, tuple of PipeItem advisories)
+    """
+    return apply_column_instructions(entry, column_instructions)
+
+
 def _exit_error_if_no_column_specifications(specs: Optional[List[str]]):
     if not specs:
         exit_error("no column specifications provided")
 
 
-# TODO this is _WAY_ too long divide into a set of high level child functions
-# ALSO this _STUPID_ its is reparsing the specs which is dumb, can't we use the instructions and just rebuild the spec
-# furthemore the pipe will die on a specific instrcution so it can give us that back, we could add a spec index
-# and sub index to the istruction so its easy to find! no scanning!
 def _exit_error_on_pipe_exception(e, specs):
-    # Format specs list with each on its own line for readability
-    def format_specs(relevant_spec=None):
-        lines = ["column specifications:"]
-        if relevant_spec:
-            lines.append(f"  (referenced by: {relevant_spec})")
-        for s in specs:
-            lines.append(f"  {s}")
-        return "\n".join(lines)
+    """Format a columns exception with the failing spec identified via instruction source tracking."""
+
+    def get_spec_text():
+        """Get the original spec text that caused the error, or None if unavailable."""
+        if hasattr(e, "instruction") and e.instruction is not None:
+            idx = e.instruction.spec_arg_index
+            if 0 <= idx < len(specs):
+                return specs[idx]
+        return None
+
+    spec_text = get_spec_text()
 
     if isinstance(e, NEFColumnsFileNotFoundException):
-        relevant_spec = next((s for s in specs if e.path in s), None)
-        msg = f"""
-                file not found: {e.path}
-                {format_specs(relevant_spec)}
-            """
-        msg = textwrap.dedent(msg).strip()
+        msg = f"file not found: {e.path}"
+        if spec_text:
+            msg += f"\n  from: {spec_text}"
     elif isinstance(e, NEFColumnsFileIOException):
-        relevant_spec = next((s for s in specs if e.path in s), None)
-        msg = f"""
-                failed to {e.operation} file {e.path} because {e.cause}
-                {format_specs(relevant_spec)}
-            """
-        msg = textwrap.dedent(msg).strip()
+        msg = f"failed to {e.operation} file {e.path} because {e.cause}"
+        if spec_text:
+            msg += f"\n  from: {spec_text}"
     elif isinstance(e, NEFColumnsColumnNotFoundInLoopException):
         if isinstance(e.ref, int):
-            detail = f"column index {e.ref} out of range (loop has {e.n_columns} columns, indices are 1-based)"
+            msg = f"column index {e.ref} out of range (loop has {e.n_columns} columns, indices are 1-based)"
         else:
-            detail = f"column '{e.ref}' not found in loop {e.loop_category}"
-        msg = f"""
-                {detail}
-                {format_specs()}
-            """
-        msg = textwrap.dedent(msg).strip()
+            msg = f"column '{e.ref}' not found in loop {e.loop_category}"
+        if spec_text:
+            msg += f"\n  from: {spec_text}"
     elif isinstance(e, NEFColumnsColumnNotFoundInFileException):
         available_str = oxford_join(e.available, "&") if e.available else "(no columns)"
-
-        # Find the spec that actually failed by checking which one references this source column
-        relevant_spec = None
-        target_col = None
-
-        for s in specs:
-            if e.path not in s or "=" not in s:
-                continue
-
-            # Parse the spec: "target=@file:source" or "frame.loop:target=@file:source"
-            before_eq, _, after_eq = s.partition("=")
-            spec_target = before_eq.split(":")[-1]
-
-            # Extract source column from @file:source part
-            if "@" in after_eq:
-                file_part = after_eq.split("@")[1]  # Get part after @
-                if ":" in file_part:
-                    source_col = file_part.split(":")[-1]  # Part after last :
-                else:
-                    source_col = None  # No : means no column specified
-
-                # Match if:
-                # 1. Explicit source matches: source_col == e.ref
-                # 2. Implicit match: an empty source defaults to the target, so check
-                #    whether spec_target == e.ref and the source is empty
-                if source_col == e.ref or (not source_col and spec_target == e.ref):
-                    relevant_spec = s
-                    target_col = spec_target
-                    break
-
-        # Fallback: just find any spec with this file
-        if not relevant_spec:
-            relevant_spec = next((s for s in specs if e.path in s), None)
-            if relevant_spec and "=" in relevant_spec:
-                before_eq = relevant_spec.split("=")[0]
-                target_col = before_eq.split(":")[-1]
-
-        # Check if source column was implicitly chosen (matches target)
-        implicit = target_col and target_col == e.ref
-
-        # Format line number if available
         line_info = f" at line {e.line_number}" if e.line_number else ""
 
         if isinstance(e.ref, int):
-            detail = f"""
-                    column index {e.ref} out of range in {e.path}{line_info} (file has {len(e.available)}
-                    columns, indices are 1-based)
-                """
+            msg = textwrap.dedent(
+                f"""\
+                column index {e.ref} out of range in {e.path}{line_info} (file has {len(e.available)}
+                columns, indices are 1-based)"""
+            ).strip()
         else:
             ref_desc = f"'{e.ref}'" if e.ref else "''"
-            not_found = f"couldn't find source column {ref_desc} in {e.path}{line_info}"
-            if target_col and implicit:
-                # Source column was implicitly chosen to match target
-                if relevant_spec:
-                    detail = textwrap.dedent(
-                        f"""\
-                        When using the column specification:
-                        {relevant_spec}
+            msg = f"source column {ref_desc} not found in {e.path}{line_info}"
+            msg += f"\navailable columns are: {available_str}"
 
-                        to try to create column '{target_col}', I {not_found}
-                        (source column was implicitly set to match target column name)
-
-                        Available columns are: {available_str}
-                    """
-                    ).strip()
-                else:
-                    detail = textwrap.dedent(
-                        f"""\
-                        When trying to create column '{target_col}', {not_found}
-                        (source column was implicitly set to match target column name)
-                        Available columns are: {available_str}
-                    """
-                    ).strip()
-            elif target_col:
-                # Source column was explicitly specified
-                if relevant_spec:
-                    detail = textwrap.dedent(
-                        f"""\
-                        When using the column specification:
-                        {relevant_spec}
-
-                        to try to create column '{target_col}', I {not_found}
-
-                        Available columns are: {available_str}
-                    """
-                    ).strip()
-                else:
-                    detail = textwrap.dedent(
-                        f"""\
-                        When trying to create column '{target_col}', {not_found}
-                        Available columns are: {available_str}
-                    """
-                    ).strip()
-            else:
-                # Fallback if we can't extract target
-                detail = f"source column {ref_desc} not found in {e.path}{line_info}; "
-                detail += f"available columns are: {available_str}"
-
-        msg = detail
+        if spec_text:
+            msg += f"\n  from: {spec_text}"
     elif isinstance(e, NEFColumnsDuplicateLoopException):
-        msg = f"""
-                cannot create loop '{e.loop_category}' in frame '{e.frame_name}'
-                a loop with that category already exists:
-
-                {format_specs()}
-            """
-        msg = textwrap.dedent(msg).strip()
+        msg = (
+            f"cannot create loop '{e.loop_category}' in frame '{e.frame_name}'"
+            + " - a loop with that category already exists"
+        )
     elif isinstance(e, NEFColumnsTagCategoryMismatchException):
-        msg = f"""
-                column '{e.tag_name}' has category '{e.tag_category}' but the loop has category '{e.loop_category}'
-                {format_specs()}
-            """
-        msg = textwrap.dedent(msg).strip()
+        msg = f"column '{e.tag_name}' has category '{e.tag_category}' but the loop has category '{e.loop_category}'"
     else:
         msg = str(e)
 
@@ -472,20 +392,3 @@ def _exit_error_on_column_clashes_if_no_force(
         ]
         if clashes:
             exit_error("\n".join(clashes))
-
-
-def pipe(
-    entry: Entry, column_instructions: List[InsertInstruction]
-) -> Tuple[Entry, Tuple[PipeItem]]:
-    """Insert columns described by column_instructions into their target loops.
-
-    Never prints; advisory warnings are returned for the caller to report or discard.
-
-    Args:
-        entry: NEF entry to modify
-        column_instructions: Mixed stream of Comment/Skip/Insert instructions
-
-    Returns:
-        Tuple of (modified entry, tuple of PipeItem advisories)
-    """
-    return apply_column_instructions(entry, column_instructions)

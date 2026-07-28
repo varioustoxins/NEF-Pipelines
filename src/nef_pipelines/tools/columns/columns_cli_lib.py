@@ -37,6 +37,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     ColumnHeadings,
     ColumnPlacement,
     ColumnSpecification,
+    CommentInstruction,
     DefaultValueSpecification,
     ExtractFormat,
     FileSettings,
@@ -44,6 +45,7 @@ from nef_pipelines.tools.columns.columns_structures import (
     HeadingsInferredAdvisory,
     InsertInstruction,
     InsertPlacement,
+    Instruction,
     LiteralsValueSpecification,
     NEFColumnsDuplicateLoopException,
     NEFColumnsRenameParseException,
@@ -53,6 +55,8 @@ from nef_pipelines.tools.columns.columns_structures import (
     RangeFromValueSpec,
     RangeValueSpec,
     RepeatValueSpec,
+    SkipInstruction,
+    UseColumnHeadingsInstruction,
     ValueSpec,
 )
 
@@ -193,8 +197,10 @@ def column_spec_from_str(
 ) -> ColumnSpecification:
     """Parse 'col_name' or 'col_name=value_spec' into a ColumnSpec.
 
-    Note: skip/comment/skip_tail are now handled via separate CommentInstruction
-    and SkipInstruction objects, not embedded in FileValueSpecification.
+    Comment/skip/heading state is not embedded in the resulting FileValueSpecification -
+    see CommentInstruction, SkipInstruction and UseColumnHeadingsInstruction in
+    columns_structures.py, which apply_column_instructions applies as it walks the
+    instruction stream.
     """
     parts = token.split("=", 1)
     col_name = parts[0]
@@ -600,9 +606,8 @@ def _expand_bare_file_refs(
             headers, _, _ = parse_csv_text(
                 text,
                 CsvLikeFormats.AUTO,
-                skip=0,
+                skip=settings.skip,
                 comment=list(settings.comment),
-                header_skip=settings.skip,
                 skip_tail=settings.skip_tail,
                 source_path=path,
             )
@@ -618,6 +623,7 @@ def _expand_bare_file_refs(
                         f"{nef_col}=@{file_part}:{c}",
                         instruction.placement,
                         instruction.anchor,
+                        instruction.spec_arg_index,
                         settings,
                     )
                 )
@@ -649,7 +655,7 @@ def _parse_ordered_col_instructions(
             OrderedArguments(i, "col", None, arg) for i, arg in enumerate(ctx_args)
         ]
 
-    pending: List[Tuple[str, FileSettings]] = []
+    pending: List[Tuple[str, FileSettings, int]] = []
     instructions: List[ColumnPlacement] = []
     comment: List[str] = []
     skip = 0
@@ -666,16 +672,20 @@ def _parse_ordered_col_instructions(
             )
             if split_specs:
                 for col_spec in split_specs:
-                    pending.append((prefix + col_spec, settings))
+                    pending.append((prefix + col_spec, settings, arg.offset))
             elif prefix:
                 # Has frame.loop: prefix but no column specs (empty remainder after colon)
                 # Keep the colon to maintain frame.loop: format for empty loops
-                pending.append((prefix, settings))
+                pending.append((prefix, settings, arg.offset))
         elif arg.name in _FLAG_NAME_TO_PLACEMENT:
-            for col, settings in pending:
+            for col, settings, spec_idx in pending:
                 instructions.append(
                     ColumnPlacement(
-                        col, _FLAG_NAME_TO_PLACEMENT[arg.name], arg.value, settings
+                        col,
+                        _FLAG_NAME_TO_PLACEMENT[arg.name],
+                        arg.value,
+                        spec_idx,
+                        settings,
                     )
                 )
             pending = []
@@ -689,9 +699,9 @@ def _parse_ordered_col_instructions(
             skip_tail = int(arg.value)
         elif arg.name == "use_column_headings":
             use_column_headings = ColumnHeadings(arg.value)
-    for col, settings in pending:
+    for col, settings, spec_idx in pending:
         instructions.append(
-            ColumnPlacement(col, InsertPlacement.APPEND, None, settings)
+            ColumnPlacement(col, InsertPlacement.APPEND, None, spec_idx, settings)
         )
     return instructions
 
@@ -710,6 +720,7 @@ def _group_column_specifications_by_loop_or_raise(
                 bare_column,
                 instruction.placement,
                 instruction.anchor,
+                instruction.spec_arg_index,
                 instruction.file_settings,
             )
         )
@@ -748,28 +759,68 @@ def _resolve_frame_loop_strings_to_loops_or_raise(
 def _build_column_instructions(
     resolved_loop_column_specification_pairs: _ResolvedLoopColumnSpecificationPairs,
     format: Optional["ExtractFormat"] = None,
-) -> List[InsertInstruction]:
-    """Build InsertInstruction objects from resolved loop-column pairs.
+) -> List[Instruction]:
+    """Build the interleaved instruction stream applied by apply_column_instructions.
 
-    Note: skip/comment/skip_tail are now handled via separate CommentInstruction
-    and SkipInstruction objects, not passed as parameters here.
+    Each resolved (loop, group) pair is walked in the command-line order its column
+    specifications appeared in. Whenever the file-reading state stamped on a
+    ColumnPlacement differs from the state last emitted, a CommentInstruction,
+    SkipInstruction and/or UseColumnHeadingsInstruction is emitted first, immediately
+    followed by the InsertInstruction(s) that state applies to. InsertInstruction carries
+    no settings of its own - the executor derives them by walking the stream.
+
+    Scoping note: state is reset to defaults at the start of each (loop, group) pair, so a
+    setting already in force for one loop's specifications may be harmlessly re-emitted at
+    the start of the next loop's. Only file-reading state, not loop targeting, depends on
+    this ordering, so the redundancy has no effect on the entry produced.
+
+    Source tracking: each InsertInstruction carries spec_arg_index (which argv spec) and
+    spec_sub_index (which expansion of that spec, 0-based). These enable precise error
+    reporting without rescanning/reparsing the original spec strings.
     """
-    column_instructions: List[InsertInstruction] = []
+    instructions: List[Instruction] = []
+    sub_index_by_spec: Dict[int, int] = {}
     for loop, group in resolved_loop_column_specification_pairs:
-        for instruction in _expand_bare_file_refs(group):
-            column_instructions.append(
+        current = FileSettings()
+        for placement in _expand_bare_file_refs(group):
+            settings = placement.file_settings
+            if settings.comment != current.comment:
+                instructions.append(CommentInstruction(list(settings.comment)))
+            if (settings.skip, settings.skip_tail) != (current.skip, current.skip_tail):
+                instructions.append(SkipInstruction(settings.skip, settings.skip_tail))
+            if settings.use_column_headings != current.use_column_headings:
+                instructions.append(
+                    UseColumnHeadingsInstruction(settings.use_column_headings)
+                )
+            current = settings
+
+            spec_idx = placement.spec_arg_index
+            sub_idx = sub_index_by_spec.get(spec_idx, 0)
+            sub_index_by_spec[spec_idx] = sub_idx + 1
+
+            instructions.append(
                 InsertInstruction(
-                    column_spec_from_str(
-                        instruction.col_spec,
-                        format=format,
-                    ),
-                    instruction.placement,
-                    _parse_position_anchor(instruction.anchor),
+                    column_spec_from_str(placement.col_spec, format=format),
+                    placement.placement,
+                    _parse_position_anchor(placement.anchor),
                     loop,
-                    instruction.file_settings,
+                    spec_idx,
+                    sub_idx,
                 )
             )
-    return column_instructions
+    return instructions
+
+
+def _insert_instructions_only(
+    instructions: List[Instruction],
+) -> List[InsertInstruction]:
+    """Filter an instruction stream down to its InsertInstruction items.
+
+    Used by callers that validate targets (column clashes, anchors, existing loops)
+    before execution, where CommentInstruction/SkipInstruction/UseColumnHeadingsInstruction
+    are not relevant.
+    """
+    return [i for i in instructions if isinstance(i, InsertInstruction)]
 
 
 def _build_missing_loop_error_message(e: NEFInsertCLILoopNotDefinedException):
@@ -1040,34 +1091,71 @@ def _parse_reorder_arguments_or_exit_error(
 
 
 def _parse_replace_arguments_or_raise(
+    ctx,
     selector: Optional[str],
     replacements: List[str],
     entry: Entry,
     format: "ExtractFormat",
-) -> List[InsertInstruction]:
-    """Parse replace arguments into InsertInstructions.
+) -> List[Instruction]:
+    """Parse replace arguments into an interleaved instruction stream.
 
-    Replace is just insert with @file:col specifications and --at placement.
-    Directly builds InsertInstructions without roundtrip string parsing.
+    Replace is just insert with @file:col specifications and --at placement. Directly
+    builds InsertInstructions without roundtrip string parsing.
+
+    Walks ctx.obj["sequence"] (built by track_order) so --comment/--skip/--skip-tail/
+    --clear-comments/--use-column-headings are positional here exactly as they are for
+    `columns insert` and `loops create`: the settings in force when each @file argument
+    appears are what apply to reading it. A CommentInstruction/SkipInstruction/
+    UseColumnHeadingsInstruction is emitted whenever those settings change.
 
     TODO: Currently only supports paired format (frame.loop:col @file) and @file value specs.
           Should support insert syntax: frame.loop:col=@file, frame.loop:col=1..10, etc.
           Imbalanced argument sets (odd number of args) are not allowed in paired format.
 
+    TODO: TOO LONG!
     Raises:
         NEFColumnsReplaceInvalidFormatException: invalid argument format
     """
+    sequence = (ctx.obj or {}).get("sequence", []) if ctx else []
+    if not sequence and replacements:
+        sequence = [
+            OrderedArguments(i, "col", None, arg) for i, arg in enumerate(replacements)
+        ]
 
-    if len(replacements) % 2 != 0:
+    comment: List[str] = []
+    skip = 0
+    skip_tail = 0
+    use_column_headings = ColumnHeadings.AUTO
+    col_tokens: List[Tuple[str, FileSettings, int]] = []
+    for arg in sequence:
+        if arg.kind == "col":
+            settings = FileSettings(
+                tuple(comment), skip, skip_tail, use_column_headings
+            )
+            col_tokens.append((arg.value, settings, arg.offset))
+        elif arg.name == "comment":
+            comment.append(arg.value)
+        elif arg.name == "clear_comments":
+            comment = []
+        elif arg.name == "skip":
+            skip = int(arg.value)
+        elif arg.name == "skip_tail":
+            skip_tail = int(arg.value)
+        elif arg.name == "use_column_headings":
+            use_column_headings = ColumnHeadings(arg.value)
+
+    if len(col_tokens) % 2 != 0:
         raise NEFColumnsReplaceInvalidFormatException(
-            f"{len(replacements)} arguments",
+            f"{len(col_tokens)} arguments",
             "selector @file:col or col @file:col (must be pairs)",
         )
 
-    instructions = []
-    for i in range(0, len(replacements), 2):
-        selector_arg = replacements[i]
-        file_arg = replacements[i + 1]
+    instructions: List[Instruction] = []
+    current = FileSettings()
+    sub_index_by_spec: Dict[int, int] = {}
+    for i in range(0, len(col_tokens), 2):
+        selector_arg, _, selector_offset = col_tokens[i]
+        file_arg, settings, file_offset = col_tokens[i + 1]
 
         if not file_arg.startswith("@"):
             raise NEFColumnsReplaceInvalidFormatException(
@@ -1090,6 +1178,16 @@ def _parse_replace_arguments_or_raise(
         file_path = Path(file_part)
         file_col = file_col_part if file_col_part else col_name
 
+        if settings.comment != current.comment:
+            instructions.append(CommentInstruction(list(settings.comment)))
+        if (settings.skip, settings.skip_tail) != (current.skip, current.skip_tail):
+            instructions.append(SkipInstruction(settings.skip, settings.skip_tail))
+        if settings.use_column_headings != current.use_column_headings:
+            instructions.append(
+                UseColumnHeadingsInstruction(settings.use_column_headings)
+            )
+        current = settings
+
         # Find the target loop
         frames = select_frames(entry, [parsed_selector.frame_name], SelectionType.ANY)
         for frame in frames:
@@ -1108,12 +1206,19 @@ def _parse_replace_arguments_or_raise(
                     col_name=col_name,
                     value_spec=value_spec,
                 )
+
+                spec_idx = selector_offset
+                sub_idx = sub_index_by_spec.get(spec_idx, 0)
+                sub_index_by_spec[spec_idx] = sub_idx + 1
+
                 instructions.append(
                     InsertInstruction(
                         column_spec=col_spec,
                         keyword=InsertPlacement.AT,
                         position_anchor=col_name,
                         loop=loop,
+                        spec_arg_index=spec_idx,
+                        spec_sub_index=sub_idx,
                     )
                 )
 
@@ -1121,18 +1226,21 @@ def _parse_replace_arguments_or_raise(
 
 
 def _parse_replace_arguments_or_exit_error(
+    ctx,
     selector: Optional[str],
     replacements: List[str],
     entry: Entry,
     input_file: Path,
     format: "ExtractFormat",
-) -> List[InsertInstruction]:
+) -> List[Instruction]:
     """Wrapper that formats exceptions and exits."""
     from nef_pipelines.lib.structures import NEFPipelinesException
     from nef_pipelines.lib.util import exit_error
 
     try:
-        return _parse_replace_arguments_or_raise(selector, replacements, entry, format)
+        return _parse_replace_arguments_or_raise(
+            ctx, selector, replacements, entry, format
+        )
     except NEFPipelinesException as e:
         msg = _format_exception_with_context(e, entry, input_file)
         exit_error(msg)

@@ -41,7 +41,9 @@ def shifts(
         CsvLikeFormats.AUTO, "-f", "--format", help=HELP_FOR_FORMATS
     ),
     skip: int = typer.Option(
-        0, "--skip", help="extra header rows to skip after the column header row"
+        0,
+        "--skip",
+        help="number of rows to skip after comment removal, before the column header row",
     ),
     comment: str = typer.Option(
         "", "--comment", help="ignore lines that start with this prefix before parsing"

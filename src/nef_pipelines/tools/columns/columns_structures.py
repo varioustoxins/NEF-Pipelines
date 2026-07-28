@@ -198,6 +198,25 @@ class SkipInstruction:
         return f"Set {', '.join(parts)}" if parts else "Reset skip"
 
 
+@dataclass
+class UseColumnHeadingsInstruction:
+    """Set the column-heading mode for subsequent file reads.
+
+    Interspersed with InsertInstruction in command-line order, exactly like
+    CommentInstruction and SkipInstruction. When encountered during execution it
+    replaces the global heading mode for all subsequent file reads until the next
+    UseColumnHeadingsInstruction.
+
+    Args:
+        mode: ON, OFF or AUTO - see ColumnHeadings
+    """
+
+    mode: ColumnHeadings
+
+    def __str__(self) -> str:
+        return f"Set column headings: {self.mode}"
+
+
 # Column Specification Structures
 
 
@@ -211,13 +230,25 @@ class ColumnSpecification:
 
 @dataclass
 class InsertInstruction:
-    """A fully-resolved column-insertion instruction carrying its target loop."""
+    """A fully-resolved column-insertion instruction carrying its target loop.
+
+    Carries no file-reading state of its own. apply_column_instructions() derives the
+    comment/skip/heading state in force for this instruction by walking the instruction
+    stream up to this point - see CommentInstruction, SkipInstruction and
+    UseColumnHeadingsInstruction.
+
+    Source tracking fields allow precise error reporting without rescanning/reparsing the
+    original spec strings. spec_arg_index is the 0-based position in the argv specs list;
+    spec_sub_index handles cases where a single spec (e.g., wildcard) expands to multiple
+    instructions (0 for first match, 1 for second, etc.).
+    """
 
     column_spec: ColumnSpecification
     keyword: InsertPlacement
     position_anchor: Optional[Union[int, str]]
     loop: Loop
-    file_settings: FileSettings = field(default_factory=FileSettings)
+    spec_arg_index: int
+    spec_sub_index: int
 
     def __str__(self) -> str:
         loop_name = self.loop.category.lstrip("_")
@@ -233,7 +264,9 @@ class InsertInstruction:
 
 
 # The instruction stream applied by apply_column_instructions, in command-line order.
-Instruction = Union[CommentInstruction, SkipInstruction, InsertInstruction]
+Instruction = Union[
+    CommentInstruction, SkipInstruction, UseColumnHeadingsInstruction, InsertInstruction
+]
 
 
 @dataclass
@@ -272,11 +305,16 @@ class HeadingsInferredAdvisory(Advisory):
 class ColumnPlacement:
     """A column specification with its requested placement, before file expansion and loop
     resolution into an InsertInstruction. col_spec may still carry a 'frame.loop:' prefix
-    until the specs are grouped by loop."""
+    until the specs are grouped by loop.
+
+    spec_arg_index tracks the 0-based position in the original argv specs list for error
+    reporting.
+    """
 
     col_spec: str
     placement: InsertPlacement
     anchor: Optional[str]
+    spec_arg_index: int
     file_settings: FileSettings = field(default_factory=FileSettings)
 
 
@@ -288,6 +326,7 @@ class NEFColumnsFileNotFoundException(NEFPipelinesException):
     """A file reference in a column specification could not be found."""
 
     path: str  # Path as string for easier serialization
+    instruction: Optional["InsertInstruction"] = None
 
 
 @dataclass
@@ -297,6 +336,7 @@ class NEFColumnsFileIOException(NEFPipelinesException):
     path: str
     operation: str  # e.g., "read"
     cause: Exception
+    instruction: Optional["InsertInstruction"] = None
 
 
 @dataclass
@@ -306,6 +346,7 @@ class NEFColumnsColumnNotFoundInLoopException(NEFPipelinesException):
     ref: Union[int, str]  # column name or 1-based index
     loop_category: str
     n_columns: int
+    instruction: Optional["InsertInstruction"] = None
 
 
 @dataclass
@@ -318,6 +359,7 @@ class NEFColumnsColumnNotFoundInFileException(NEFPipelinesException):
     line_number: Optional[int] = (
         None  # Line number in original file where header was expected
     )
+    instruction: Optional["InsertInstruction"] = None
 
 
 @dataclass

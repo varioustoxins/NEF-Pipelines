@@ -12,6 +12,7 @@ from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.tools.columns.columns_cli_lib import (
     _build_column_instructions,
     _group_column_specifications_by_loop_or_raise,
+    _insert_instructions_only,
     _parse_ordered_col_instructions,
     _resolve_frame_loop_strings_to_loops_or_raise,
     handle_pipe_items,
@@ -146,9 +147,10 @@ def create(
         )
     )
 
-    column_instructions = _build_column_instructions(
+    instruction_stream = _build_column_instructions(
         resolved_loop_column_specification_pairs
     )
+    column_instructions = _insert_instructions_only(instruction_stream)
 
     # Check for existing loops and handle based on --force
     _exit_error_on_existing_loops_if_no_force(column_instructions, force)
@@ -159,7 +161,7 @@ def create(
         _clear_existing_loop_tags(column_instructions)
 
     try:
-        entry, items = insert_pipe(entry, column_instructions)
+        entry, items = insert_pipe(entry, instruction_stream)
     except NEFPipelinesException as e:
         _exit_error_on_pipe_exception(e, specs)
 
@@ -222,7 +224,7 @@ def _add_placeholder_to_empty_loops(grouped_specifications):
             )
             # Create a placeholder column specification (no frame.loop prefix - already grouped)
             result[frame_loop] = [
-                ColumnPlacement(PLACEHOLDER_COLUMN, InsertPlacement.APPEND, None)
+                ColumnPlacement(PLACEHOLDER_COLUMN, InsertPlacement.APPEND, None, 0)
             ]
         else:
             result[frame_loop] = col_specs

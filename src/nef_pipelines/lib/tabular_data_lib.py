@@ -130,7 +130,6 @@ def read_csv(
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
     comment: Union[str, List[str]] = "",
-    header_skip: int = 0,
     tail_skip: int = 0,
 ) -> Tuple[List[str], List[List[str]], List[str]]:
     """Read CSV file and return (tags, data_rows, warnings).
@@ -138,9 +137,8 @@ def read_csv(
     Args:
         csv_file: Path to CSV file
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
-        skip: Number of header rows to skip after column headers
+        skip: Number of rows to skip after comment removal, before the column header row
         comment: Prefix(es) for comment lines to ignore (string or list)
-        header_skip: Number of rows to skip before reading column headers
         tail_skip: Number of trailing rows to skip from the end
 
     Returns:
@@ -158,7 +156,7 @@ def read_csv(
         raise CsvParseError(f"failed to read {csv_file}: {e}") from e
 
     return parse_csv_text(
-        text, csv_format, skip, comment, header_skip, tail_skip, source_path=csv_file
+        text, csv_format, skip, comment, tail_skip, source_path=csv_file
     )
 
 
@@ -167,7 +165,6 @@ def parse_csv_text(
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
     comment: Union[str, List[str]] = "",
-    header_skip: int = 0,
     skip_tail: int = 0,
     source_path: Optional[Path] = None,
     has_header: bool = True,
@@ -177,9 +174,8 @@ def parse_csv_text(
     Args:
         text: CSV text content
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
-        skip: Number of header rows to skip after column headers
+        skip: Number of rows to skip after comment removal, before the column header row
         comment: Prefix(es) for comment lines to ignore (string or list)
-        header_skip: Number of rows to skip before reading column headers
         skip_tail: Number of trailing rows to skip from the end
         source_path: Optional path for error messages
         has_header: If True the first remaining row names the columns; if False the columns are
@@ -194,9 +190,9 @@ def parse_csv_text(
     Raises:
         CsvParseError: If CSV text is empty after filtering
     """
-    # Apply header_skip first (skip rows BEFORE reading headers)
+    # Skip rows and strip comments BEFORE reading headers
     filtered_text, _, _ = _apply_skip_and_comment(
-        text, skip=header_skip, comment=comment, skip_tail=0
+        text, skip=skip, comment=comment, skip_tail=0
     )
 
     # Parse CSV rows from filtered text
@@ -218,12 +214,12 @@ def parse_csv_text(
             if orig != norm:
                 warnings.append(f"normalized column header '{orig}' → '{norm}'")
 
-        # Extract data rows (skip header + additional skip rows)
-        data_start = 1 + skip
+        # Data starts immediately after the header row
+        data_start = 1
     else:
         # No header row: synthesise 1-based positional names and treat every row as data
         normalized_tags = [str(i + 1) for i in range(len(rows[0]))]
-        data_start = skip
+        data_start = 0
 
     data_rows = rows[data_start:]
 
@@ -239,7 +235,6 @@ def parse_csv_as_dicts(
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
     comment: Union[str, List[str]] = "",
-    header_skip: int = 0,
     skip_tail: int = 0,
     source_path: Optional[Path] = None,
     has_header: bool = True,
@@ -249,9 +244,8 @@ def parse_csv_as_dicts(
     Args:
         text: CSV text content
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
-        skip: Number of header rows to skip after column headers
+        skip: Number of rows to skip after comment removal, before the column header row
         comment: Prefix(es) for comment lines to ignore (string or list)
-        header_skip: Number of rows to skip before reading column headers
         skip_tail: Number of trailing rows to skip from the end
         source_path: Optional path for error messages
         has_header: If True the first remaining row names the columns; if False the columns are
@@ -267,7 +261,7 @@ def parse_csv_as_dicts(
         CsvParseError: If CSV text is empty after filtering
     """
     tags, list_rows, warnings = parse_csv_text(
-        text, csv_format, skip, comment, header_skip, skip_tail, source_path, has_header
+        text, csv_format, skip, comment, skip_tail, source_path, has_header
     )
 
     # Convert list rows to dicts

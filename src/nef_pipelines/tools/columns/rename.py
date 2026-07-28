@@ -20,6 +20,7 @@ from nef_pipelines.tools.columns.columns_cli_lib import (
 )
 from nef_pipelines.tools.columns.columns_lib import _rebuild_loop, _resolve_tag
 from nef_pipelines.tools.columns.columns_structures import (
+    NEFColumnsRenameColumnNotFoundException,
     NEFColumnsRenameParseException,
 )
 
@@ -51,9 +52,12 @@ def rename(
     )
 
     _warn_if_duplicate_targets(rename_pairs)
-    _validate_columns_exist(entry, rename_pairs)
 
-    entry = pipe(entry, rename_pairs)
+    try:
+        entry = pipe(entry, rename_pairs)
+    except NEFColumnsRenameColumnNotFoundException as e:
+        exit_error(str(e))
+
     print(entry)
 
 
@@ -77,6 +81,10 @@ def pipe(
 ) -> Entry:
     """Rename columns using FrameLoopAndTagSelectors.
 
+    Validates that every source column exists before renaming anything, so a caller
+    that skips CLI preflight (calling pipe() directly) still gets a clear error rather
+    than a silent no-op for the missing column.
+
     Args:
         entry: NEF entry to modify
         rename_pairs: List of (FrameLoopAndTagSelectors, new_name) where each selector
@@ -84,11 +92,11 @@ def pipe(
 
     Raises:
         ValueError: if selector doesn't specify exactly one tag
-
-    Note: Assumes columns exist (CLI should validate before calling).
+        NEFColumnsRenameColumnNotFoundException: if a source column does not exist
     """
     _raise_if_selectors_dont_have_single_tag(rename_pairs)
     renames_by_loop = _group_renames_by_loop(rename_pairs)
+    _raise_if_columns_dont_exist(entry, renames_by_loop)
     _apply_renames_to_entry(entry, renames_by_loop)
     return entry
 
@@ -149,7 +157,8 @@ def _rename_loop_columns(frame, loop, pairs: List[Tuple[str, str]]) -> None:
 def _build_loop_rename_map(loop, pairs: List[Tuple[str, str]]) -> Dict[str, str]:
     """Build {old_tag: new_tag} map for a single loop.
 
-    Note: Assumes all columns exist (validated by CLI preflight).
+    Note: Assumes all columns exist - pipe() validates this via
+    _raise_if_columns_dont_exist() before this is called.
     """
     loop_rename_map = {}
     for old_name, new_name in pairs:
@@ -171,15 +180,11 @@ def _warn_if_duplicate_targets(
         warn(f"multiple tags being renamed to same target: {list(set(duplicates))}")
 
 
-def _validate_columns_exist(
-    entry: Entry, rename_pairs: List[Tuple[FrameLoopAndTagSelectors, str]]
+def _raise_if_columns_dont_exist(
+    entry: Entry,
+    renames_by_loop: Dict[Tuple[str, str], List[Tuple[str, str]]],
 ) -> None:
-    """Validate that all source columns exist in their respective loops.
-
-    Exits with error if any column is not found.
-    """
-    renames_by_loop = _group_renames_by_loop(rename_pairs)
-
+    """Raise NEFColumnsRenameColumnNotFoundException if a source column is missing."""
     for (frame_pattern, loop_pattern), tag_pairs in renames_by_loop.items():
         frames = select_frames(entry, [frame_pattern], SelectionType.ANY)
 
@@ -189,8 +194,8 @@ def _validate_columns_exist(
             )
             for loop in loops:
                 for old_name, _ in tag_pairs:
-                    old_name = _resolve_tag(old_name, loop.tags)
-                    if old_name not in loop.tags:
-                        exit_error(
-                            f"column '{old_name}' not found in loop {loop.category.lstrip('_')}"
+                    resolved = _resolve_tag(old_name, loop.tags)
+                    if resolved not in loop.tags:
+                        raise NEFColumnsRenameColumnNotFoundException(
+                            resolved, loop.category.lstrip("_")
                         )
