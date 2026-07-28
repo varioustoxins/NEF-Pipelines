@@ -3,23 +3,28 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import typer
+from click import Context
 
 from nef_pipelines.lib.cli_lib import BadFrameLoopTagSyntaxException
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
+from nef_pipelines.lib.structures import NEFPipelinesException
 from nef_pipelines.lib.util import STDIN, exit_error
 from nef_pipelines.tools.columns.columns_cli_lib import (
     _build_column_instructions,
     _group_column_specifications_by_loop_or_raise,
     _parse_ordered_col_instructions,
     _resolve_frame_loop_strings_to_loops_or_raise,
+    track_order,
 )
 from nef_pipelines.tools.columns.columns_structures import (
+    ColumnHeadings,
     ColumnPlacement,
     InsertPlacement,
-    NEFColumnsException,
     NEFInsertCLILoopNotDefinedException,
 )
+from nef_pipelines.tools.columns.insert import _exit_error_on_pipe_exception
 from nef_pipelines.tools.columns.insert import pipe as insert_pipe
+from nef_pipelines.tools.columns.insert import report_advisories
 from nef_pipelines.tools.loops import loops_app
 
 PLACEHOLDER_COLUMN = "place_holder"
@@ -27,6 +32,7 @@ PLACEHOLDER_COLUMN = "place_holder"
 
 @loops_app.command()
 def create(
+    ctx: Context,
     input: Path = typer.Option(
         STDIN, "--in", metavar="|PIPE|", help="read NEF data from a file or stdin"
     ),
@@ -38,12 +44,50 @@ def create(
     skip: int = typer.Option(
         0,
         "--skip",
-        help="pre-header rows to skip before the column header row (for @file value specs)",
+        callback=track_order,
+        help="""\
+            number of rows to skip after comment removal; applies to subsequent
+            @file references until next --skip""",
     ),
-    comment: str = typer.Option(
-        "",
+    comment: List[str] = typer.Option(
+        [],
         "--comment",
-        help="ignore lines starting with this prefix before parsing (for @file value specs)",
+        callback=track_order,
+        help="""\
+            add comment prefix for subsequent @file references; no comments are set to
+            begin with; can be given multiple times to add several prefixes; use
+            --clear-comments to remove them all""",
+    ),
+    skip_tail: int = typer.Option(
+        0,
+        "--skip-tail",
+        callback=track_order,
+        help="""\
+            number of trailing rows to skip; applies to subsequent @file references
+            until next --skip-tail""",
+    ),
+    clear_comments: bool = typer.Option(
+        False,
+        "--clear-comments",
+        callback=track_order,
+        help="""\
+            remove ALL comment prefixes for subsequent @file references; the initial state
+            is no comments set, so for example use --comment '#' to add '#' as a
+            comment prefix""",
+    ),
+    use_column_headings: ColumnHeadings = typer.Option(
+        ColumnHeadings.AUTO,
+        "--use-column-headings",
+        callback=track_order,
+        help="""\
+            whether the first row of subsequent @file references names the columns: on (a
+            reference is a name), off (a reference is a 1-based position), or auto (infer,
+            and warn when inferred)""",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        help="suppress advisory warnings about how files were read",
     ),
     specs: List[str] = typer.Argument(
         ...,
@@ -81,7 +125,7 @@ def create(
     # TODO: loop definitions us an extended Frame.Loop:Tags syntax which needs to be merged into the
     #       syntax already defined as an extension for consistency
     column_specifications_grouped_by_frame_loop = (
-        _parse_colum_specifications_or_exit_error(specs)
+        _parse_colum_specifications_or_exit_error(ctx, specs)
     )
 
     # Filter out empty column specs (from frame.loop: specs with no columns)
@@ -103,7 +147,7 @@ def create(
     )
 
     column_instructions = _build_column_instructions(
-        resolved_loop_column_specification_pairs, skip=skip, comment=comment
+        resolved_loop_column_specification_pairs
     )
 
     # Check for existing loops and handle based on --force
@@ -115,11 +159,13 @@ def create(
         _clear_existing_loop_tags(column_instructions)
 
     try:
-        entry = insert_pipe(entry, column_instructions)
-    except NEFColumnsException as e:
-        exit_error(str(e))
+        result = insert_pipe(entry, column_instructions)
+    except NEFPipelinesException as e:
+        _exit_error_on_pipe_exception(e, specs)
 
-    print(entry)
+    report_advisories(result.items, quiet)
+
+    print(result.entry)
 
 
 def _resolve_loop_speification_pairs_or_exit_error(
@@ -134,7 +180,7 @@ def _resolve_loop_speification_pairs_or_exit_error(
             )
         )
     except BadFrameLoopTagSyntaxException as e:
-        exit_error(f"invalid selector syntax in '{e.original_spec}'")
+        exit_error(f"invalid selector syntax in '{e.original_spec}': {e.reason}")
 
     if not resolved_loop_column_specification_pairs:
         selector_list = ", ".join(specs)
@@ -143,9 +189,12 @@ def _resolve_loop_speification_pairs_or_exit_error(
 
 
 def _parse_colum_specifications_or_exit_error(
+    ctx,
     specs: list[str],
 ) -> dict[str, list[ColumnPlacement]]:
-    column_placements = _parse_ordered_col_instructions(None, specs)
+
+    # TODO suggest we do this outside the function so we don't have pass the context around that feels like a smell!
+    column_placements = _parse_ordered_col_instructions(ctx, specs)
 
     try:
         column_specifications_grouped_by_frame_loop = (
@@ -157,7 +206,7 @@ def _parse_colum_specifications_or_exit_error(
     except NEFInsertCLILoopNotDefinedException as e:
         exit_error(f"frame and loop name must be separated by '.' in '{e.col_spec}'")
     except BadFrameLoopTagSyntaxException as e:
-        exit_error(f"invalid selector syntax in '{e.original_spec}'")
+        exit_error(f"invalid selector syntax in '{e.original_spec}': {e.reason}")
     return column_specifications_grouped_by_frame_loop
 
 

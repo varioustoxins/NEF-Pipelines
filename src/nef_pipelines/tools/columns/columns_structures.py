@@ -1,14 +1,14 @@
 """Column-specific exceptions and data structures for the NEF columns tools."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import auto
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from pynmrstar import Loop
 from strenum import LowercaseStrEnum
 
-from nef_pipelines.lib.structures import NEFPipelinesException
+from nef_pipelines.lib.structures import Advisory, NEFPipelinesException
 
 # Enums
 
@@ -32,14 +32,36 @@ class ExtractFormat(LowercaseStrEnum):
 class DefaultValueSpecification:
     pass
 
+    def __str__(self) -> str:
+        return "."
+
 
 @dataclass
 class FileValueSpecification:
     path: Path
     col: Optional[str]
-    skip: int = 0
-    comment: str = ""
     format: ExtractFormat = ExtractFormat.CSV
+
+    def __str__(self) -> str:
+        base = f"@{self.path}:{self.col}" if self.col else f"@{self.path}"
+        if self.format != ExtractFormat.CSV:
+            return f"{base} (format={self.format})"
+        return base
+
+
+@dataclass
+class ResolvedFileValueSpecification:
+    """A file reference whose column has already been read into literal values.
+
+    Carries the originating path so row-count diagnostics can still name the file after
+    the value has been resolved out of the file system.
+    """
+
+    path: Path
+    values: List[str]
+
+    def __str__(self) -> str:
+        return f"@{self.path} ({len(self.values)} values)"
 
 
 @dataclass
@@ -47,31 +69,133 @@ class RepeatValueSpec:
     value: str
     count: Optional[int]  # None = fill to row count
 
+    def __str__(self) -> str:
+        if self.count is None:
+            return f"{self.value}*"
+        return f"{self.value}*{self.count}"
+
 
 @dataclass
 class RangeValueSpec:
     start: int
     end: int
 
+    def __str__(self) -> str:
+        return f"{self.start}..{self.end}"
+
 
 @dataclass
 class RangeFromValueSpec:
     start: int
+
+    def __str__(self) -> str:
+        return f"{self.start}.."
 
 
 @dataclass
 class LiteralsValueSpecification:
     values: List[str]
 
+    def __str__(self) -> str:
+        if len(self.values) <= 3:
+            return ",".join(self.values)
+        return f"{','.join(self.values[:3])}... ({len(self.values)} values)"
+
 
 ValueSpec = Union[
     DefaultValueSpecification,
     FileValueSpecification,
+    ResolvedFileValueSpecification,
     RepeatValueSpec,
     RangeValueSpec,
     RangeFromValueSpec,
     LiteralsValueSpecification,
 ]
+
+
+# File Reading Control Instructions
+
+
+class ColumnHeadings(LowercaseStrEnum):
+    """Whether a file's first row names its columns.
+
+    ON and OFF are disjoint: with ON every column reference is a name, so ':1' means the column
+    headed '1'; with OFF every reference is a 1-based position. AUTO leaves the decision to the
+    detection rules, which warn when they had to infer it.
+    """
+
+    ON = auto()
+    OFF = auto()
+    AUTO = auto()
+
+
+@dataclass(frozen=True)
+class FileSettings:
+    """The file reading state in force for a column specification, captured from the positional
+    --comment/--skip/--skip-tail/--clear-comments/--use-column-headings flags at the point the
+    specification appeared on the command line."""
+
+    comment: Tuple[str, ...] = ()
+    skip: int = 0
+    skip_tail: int = 0
+    use_column_headings: ColumnHeadings = ColumnHeadings.AUTO
+
+    def __str__(self) -> str:
+        parts = []
+        if self.comment:
+            parts.append(f"comment={', '.join(repr(p) for p in self.comment)}")
+        if self.skip:
+            parts.append(f"skip={self.skip}")
+        if self.skip_tail:
+            parts.append(f"skip_tail={self.skip_tail}")
+        if self.use_column_headings != ColumnHeadings.AUTO:
+            parts.append(f"use_column_headings={self.use_column_headings}")
+        return ", ".join(parts) if parts else "defaults"
+
+
+@dataclass
+class CommentInstruction:
+    """Set comment prefixes for subsequent file reads.
+
+    These instructions are interspersed with InsertInstruction in the command-line order.
+    When encountered during execution, they update the global comment state for all
+    subsequent file reads until the next CommentInstruction.
+
+    Args:
+        prefixes: List of comment prefixes (empty list = no comment filtering)
+    """
+
+    prefixes: List[str]  # Empty list = no comments
+
+    def __str__(self) -> str:
+        if not self.prefixes:
+            return "Clear comments"
+        return f"Set comments: {', '.join(repr(p) for p in self.prefixes)}"
+
+
+@dataclass
+class SkipInstruction:
+    """Set skip values for subsequent file reads.
+
+    These instructions are interspersed with InsertInstruction in the command-line order.
+    When encountered during execution, they update the global skip state for all
+    subsequent file reads until the next SkipInstruction.
+
+    Args:
+        skip: Number of rows to skip after comment removal (default 0)
+        skip_tail: Number of trailing rows to skip (default 0)
+    """
+
+    skip: int = 0
+    skip_tail: int = 0
+
+    def __str__(self) -> str:
+        parts = []
+        if self.skip:
+            parts.append(f"skip={self.skip}")
+        if self.skip_tail:
+            parts.append(f"skip_tail={self.skip_tail}")
+        return f"Set {', '.join(parts)}" if parts else "Reset skip"
 
 
 # Column Specification Structures
@@ -93,6 +217,23 @@ class InsertInstruction:
     keyword: InsertPlacement
     position_anchor: Optional[Union[int, str]]
     loop: Loop
+    file_settings: FileSettings = field(default_factory=FileSettings)
+
+    def __str__(self) -> str:
+        loop_name = self.loop.category.lstrip("_")
+        col_name = self.column_spec.col_name
+        value_spec_str = str(self.column_spec.value_spec)
+
+        if self.keyword == InsertPlacement.APPEND:
+            placement = "append"
+        else:
+            placement = f"{self.keyword.value} {self.position_anchor}"
+
+        return f"Insert '{col_name}' = {value_spec_str} into {loop_name} ({placement})"
+
+
+# The instruction stream applied by apply_column_instructions, in command-line order.
+Instruction = Union[CommentInstruction, SkipInstruction, InsertInstruction]
 
 
 @dataclass
@@ -109,6 +250,25 @@ class OrderedArguments:
 
 
 @dataclass
+class HeadingsInferredAdvisory(Advisory):
+    """The heading mode for a file was inferred from how its columns were referenced.
+
+    Carries only the facts of the inference. The wording, and any mention of the option that
+    would state the mode explicitly, belongs to whatever renders this.
+
+    Args:
+        path: The file that was read
+        has_header: The mode that was inferred - True if its first row was read as headings
+        is_mixed: Whether the references mixed position and name, which is what made the
+            inference ambiguous rather than merely implicit
+    """
+
+    path: Path
+    has_header: bool
+    is_mixed: bool = False
+
+
+@dataclass
 class ColumnPlacement:
     """A column specification with its requested placement, before file expansion and loop
     resolution into an InsertInstruction. col_spec may still carry a 'frame.loop:' prefix
@@ -117,6 +277,7 @@ class ColumnPlacement:
     col_spec: str
     placement: InsertPlacement
     anchor: Optional[str]
+    file_settings: FileSettings = field(default_factory=FileSettings)
 
 
 # Exceptions
@@ -154,6 +315,9 @@ class NEFColumnsColumnNotFoundInFileException(NEFPipelinesException):
     ref: Union[int, str]  # column name or 1-based index
     path: str
     available: List[str]
+    line_number: Optional[int] = (
+        None  # Line number in original file where header was expected
+    )
 
 
 @dataclass

@@ -129,8 +129,9 @@ def read_csv(
     csv_file: Path,
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
-    comment: str = "",
+    comment: Union[str, List[str]] = "",
     header_skip: int = 0,
+    tail_skip: int = 0,
 ) -> Tuple[List[str], List[List[str]], List[str]]:
     """Read CSV file and return (tags, data_rows, warnings).
 
@@ -138,8 +139,9 @@ def read_csv(
         csv_file: Path to CSV file
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
         skip: Number of header rows to skip after column headers
-        comment: Prefix for comment lines to ignore
+        comment: Prefix(es) for comment lines to ignore (string or list)
         header_skip: Number of rows to skip before reading column headers
+        tail_skip: Number of trailing rows to skip from the end
 
     Returns:
         (column_tags, data_rows, warnings)
@@ -156,7 +158,7 @@ def read_csv(
         raise CsvParseError(f"failed to read {csv_file}: {e}") from e
 
     return parse_csv_text(
-        text, csv_format, skip, comment, header_skip, source_path=csv_file
+        text, csv_format, skip, comment, header_skip, tail_skip, source_path=csv_file
     )
 
 
@@ -164,9 +166,11 @@ def parse_csv_text(
     text: str,
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
-    comment: str = "",
+    comment: Union[str, List[str]] = "",
     header_skip: int = 0,
+    skip_tail: int = 0,
     source_path: Optional[Path] = None,
+    has_header: bool = True,
 ) -> Tuple[List[str], List[List[str]], List[str]]:
     """Parse CSV text and return (tags, data_rows, warnings).
 
@@ -174,9 +178,12 @@ def parse_csv_text(
         text: CSV text content
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
         skip: Number of header rows to skip after column headers
-        comment: Prefix for comment lines to ignore
+        comment: Prefix(es) for comment lines to ignore (string or list)
         header_skip: Number of rows to skip before reading column headers
+        skip_tail: Number of trailing rows to skip from the end
         source_path: Optional path for error messages
+        has_header: If True the first remaining row names the columns; if False the columns are
+            named '1', '2', ... by position and every row is treated as data
 
     Returns:
         (column_tags, data_rows, warnings)
@@ -188,7 +195,9 @@ def parse_csv_text(
         CsvParseError: If CSV text is empty after filtering
     """
     # Apply header_skip first (skip rows BEFORE reading headers)
-    filtered_text = _apply_skip_and_comment(text, skip=header_skip, comment=comment)
+    filtered_text, _, _ = _apply_skip_and_comment(
+        text, skip=header_skip, comment=comment, skip_tail=0
+    )
 
     # Parse CSV rows from filtered text
     rows = _parse_csv_rows_from_text(filtered_text, csv_format)
@@ -197,20 +206,30 @@ def parse_csv_text(
         source = f" in {source_path}" if source_path else ""
         raise CsvParseError(f"CSV is empty after filtering{source}")
 
-    # Extract header row
-    header_row = rows[0]
-    original_tags = [tag.strip() for tag in header_row]
-
-    # Normalize tags (spaces → underscores) and collect warnings
-    normalized_tags = [escape_spaces_with_underscore(tag) for tag in original_tags]
     warnings = []
-    for orig, norm in zip(original_tags, normalized_tags):
-        if orig != norm:
-            warnings.append(f"normalized column header '{orig}' → '{norm}'")
+    if has_header:
+        # Extract header row
+        header_row = rows[0]
+        original_tags = [tag.strip() for tag in header_row]
 
-    # Extract data rows (skip header + additional skip rows)
-    data_start = 1 + skip
+        # Normalize tags (spaces → underscores) and collect warnings
+        normalized_tags = [escape_spaces_with_underscore(tag) for tag in original_tags]
+        for orig, norm in zip(original_tags, normalized_tags):
+            if orig != norm:
+                warnings.append(f"normalized column header '{orig}' → '{norm}'")
+
+        # Extract data rows (skip header + additional skip rows)
+        data_start = 1 + skip
+    else:
+        # No header row: synthesise 1-based positional names and treat every row as data
+        normalized_tags = [str(i + 1) for i in range(len(rows[0]))]
+        data_start = skip
+
     data_rows = rows[data_start:]
+
+    # Apply skip_tail to remove trailing rows
+    if skip_tail > 0 and len(data_rows) > skip_tail:
+        data_rows = data_rows[:-skip_tail]
 
     return normalized_tags, data_rows, warnings
 
@@ -219,9 +238,11 @@ def parse_csv_as_dicts(
     text: str,
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
-    comment: str = "",
+    comment: Union[str, List[str]] = "",
     header_skip: int = 0,
+    skip_tail: int = 0,
     source_path: Optional[Path] = None,
+    has_header: bool = True,
 ) -> Tuple[List[Dict[str, str]], List[str], List[str]]:
     """Parse CSV text and return list of dicts (one per row).
 
@@ -229,9 +250,12 @@ def parse_csv_as_dicts(
         text: CSV text content
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
         skip: Number of header rows to skip after column headers
-        comment: Prefix for comment lines to ignore
+        comment: Prefix(es) for comment lines to ignore (string or list)
         header_skip: Number of rows to skip before reading column headers
+        skip_tail: Number of trailing rows to skip from the end
         source_path: Optional path for error messages
+        has_header: If True the first remaining row names the columns; if False the columns are
+            named '1', '2', ... by position and every row is treated as data
 
     Returns:
         (dict_rows, tags, warnings)
@@ -243,7 +267,7 @@ def parse_csv_as_dicts(
         CsvParseError: If CSV text is empty after filtering
     """
     tags, list_rows, warnings = parse_csv_text(
-        text, csv_format, skip, comment, header_skip, source_path
+        text, csv_format, skip, comment, header_skip, skip_tail, source_path, has_header
     )
 
     # Convert list rows to dicts
@@ -331,8 +355,14 @@ def _parse_csv_rows_from_text(text: str, csv_format: CsvLikeFormats) -> List[Lis
         lines = text.splitlines()
         format_result = detect_tabular_format(lines)
 
-        if format_result == TabularFormatResult.RAGGED_WHITESPACE:
+        # Check if detected dialect is space-based (needs normalization like RAGGED_WHITESPACE)
+        is_space_dialect = (
+            hasattr(format_result, "delimiter") and format_result.delimiter == " "
+        )
+
+        if format_result == TabularFormatResult.RAGGED_WHITESPACE or is_space_dialect:
             # Split each line on whitespace, join with tabs
+            # This collapses multiple spaces and handles space-based dialects correctly
             normalized_lines = [
                 "\t".join(line.split()) for line in lines if line.strip()
             ]
@@ -356,30 +386,77 @@ def _parse_csv_rows_from_text(text: str, csv_format: CsvLikeFormats) -> List[Lis
     return list(reader)
 
 
-def _apply_skip_and_comment(raw_text: str, skip: int, comment: str) -> str:
-    """Strip comment lines and skip leading non-empty rows; return remaining text."""
-    if comment:
-        raw_text = "\n".join(
-            line
-            for line in raw_text.splitlines()
-            if not line.strip().startswith(comment)
-        )
-    non_empty = [line.rstrip() for line in raw_text.splitlines() if line.strip()]
-    return "\n".join(non_empty[skip:])
+def _apply_skip_and_comment(
+    raw_text: str,
+    skip: int,
+    comment: Union[str, List[str]],
+    skip_tail: int = 0,
+) -> Tuple[str, int, int]:
+    """Strip comment lines, skip leading/trailing rows, and return filtered text with line counts.
+
+    Args:
+        raw_text: Input text
+        skip: Number of leading non-empty rows to skip
+        comment: Comment prefix(es) to filter (string or list)
+        skip_tail: Number of trailing non-empty rows to skip
+
+    Returns:
+        Tuple of (filtered_text, num_comment_lines_removed, num_blank_lines_removed)
+    """
+    original_lines = raw_text.splitlines()
+    num_blank = sum(1 for line in original_lines if not line.strip())
+
+    # Normalize comment to list
+    if isinstance(comment, str):
+        comment_prefixes = [comment] if comment else []
+    else:
+        comment_prefixes = comment if comment else []
+
+    if comment_prefixes:
+        filtered_lines = []
+        num_comment = 0
+        for line in original_lines:
+            stripped = line.strip()
+            if any(stripped.startswith(prefix) for prefix in comment_prefixes):
+                num_comment += 1
+            else:
+                filtered_lines.append(line)
+    else:
+        filtered_lines = original_lines
+        num_comment = 0
+
+    # Get non-empty lines
+    non_empty = [line.rstrip() for line in filtered_lines if line.strip()]
+
+    # Apply skip and skip_tail
+    if skip_tail > 0:
+        result_lines = non_empty[skip:-skip_tail]
+    else:
+        result_lines = non_empty[skip:]
+
+    return "\n".join(result_lines), num_comment, num_blank
 
 
 def _resolve_file_col_name(
-    col_name: str, headers: List[str], path: Optional[Path] = None
+    col_name: str,
+    headers: List[str],
+    path: Optional[Path] = None,
+    allow_positional: bool = True,
 ) -> str:
     """Resolve a file-column reference to a normalised header name.
 
-    Integer tokens use 1-based indexing (1 = first column).
+    Integer tokens use 1-based indexing (1 = first column) when positional references are
+    allowed. When they are not - because the file's first row names its columns - an integer
+    token is a name like any other, so ':1' means the column headed '1'.
+
     Non-integer tokens are normalised via escape_spaces_with_underscore and returned as-is.
 
     Args:
         col_name: Column name or 1-based index
         headers: List of header names
         path: Optional path for error messages
+        allow_positional: Whether an integer token selects by position; False when the file is
+            being read with column headings, where every reference is a name
 
     Returns:
         Normalized header name
@@ -387,6 +464,9 @@ def _resolve_file_col_name(
     Raises:
         ColumnNotFoundError: If column index is out of range
     """
+    if not allow_positional:
+        return escape_spaces_with_underscore(col_name)
+
     try:
         idx = int(col_name)
         if 1 <= idx <= len(headers):
@@ -409,8 +489,11 @@ def extract_column_from_text(
     col_name: Optional[str],
     csv_format: CsvLikeFormats = CsvLikeFormats.AUTO,
     skip: int = 0,
-    comment: str = "",
+    comment: Union[str, List[str]] = "",
+    skip_tail: int = 0,
     source_path: Optional[Path] = None,
+    has_header: bool = True,
+    headings_note: Optional[str] = None,
 ) -> List[str]:
     """Extract a single column from CSV or whitespace-aligned text.
 
@@ -419,8 +502,13 @@ def extract_column_from_text(
         col_name: Column name or index to extract (None = all lines after header)
         csv_format: Format type (CSV, TSV, SSV, or AUTO for detection)
         skip: Rows to skip after header
-        comment: Comment prefix to filter
+        comment: Prefix(es) for comment lines to ignore (string or list)
+        skip_tail: Number of trailing rows to skip from the end
         source_path: Optional path for error messages
+        has_header: If True the first remaining row names the columns; if False the columns are
+            named '1', '2', ... by position and every row is treated as data
+        headings_note: Optional caller-supplied note appended in brackets to a column-not-found
+            message, used to explain how the heading mode was arrived at
 
     Returns:
         List of values from the specified column
@@ -429,17 +517,22 @@ def extract_column_from_text(
         TabularDataError: If column not found or parsing fails
         ColumnNotFoundError: If specified column not found
     """
-    remaining = _apply_skip_and_comment(text, skip, comment)
+    remaining, _, _ = _apply_skip_and_comment(text, skip, comment, skip_tail)
 
     # Special case: col_name=None means return all non-header lines
     if col_name is None:
         lines = [line.rstrip() for line in io.StringIO(remaining) if line.strip()]
-        result = lines[1:]  # Skip header line
+        result = lines if not has_header else lines[1:]
     else:
         # Parse using specified format (or AUTO-detect)
         try:
             dict_rows, tags, _ = parse_csv_as_dicts(
-                remaining, csv_format, skip=0, comment="", source_path=source_path
+                remaining,
+                csv_format,
+                skip=0,
+                comment="",
+                source_path=source_path,
+                has_header=has_header,
             )
         except CsvParseError as e:
             # Re-raise parse errors as TabularDataError for consistency
@@ -450,16 +543,23 @@ def extract_column_from_text(
         if not dict_rows:
             result = []
         else:
-            # Resolve column name (handles 1-based indices)
-            resolved_col = _resolve_file_col_name(col_name, tags, source_path)
+            # Resolve column name; with headings in force every reference is a name
+            resolved_col = _resolve_file_col_name(
+                col_name, tags, source_path, allow_positional=not has_header
+            )
 
             # Extract column values
             normalised_column = escape_spaces_with_underscore(resolved_col)
             if normalised_column not in dict_rows[0]:
                 available = list(dict_rows[0].keys())
                 source = str(source_path) if source_path else "<unknown>"
+                if has_header:
+                    detail = f"available columns are: {', '.join(available)}"
+                else:
+                    detail = f"available columns are indexed as 1..{len(available)}"
+                note = f" [{headings_note}]" if headings_note else ""
                 raise ColumnNotFoundError(
-                    f"column '{col_name}' not found in {source}; available: {', '.join(available)}"
+                    f"column '{col_name}' not found in {source}; {detail}{note}"
                 )
 
             result = [row.get(normalised_column, UNUSED) for row in dict_rows]

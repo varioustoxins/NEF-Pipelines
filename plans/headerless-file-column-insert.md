@@ -1,3 +1,6 @@
+> **SUPERSEDED — see [`file-instructions-refactor.md`](file-instructions-refactor.md), Part 2.**
+> That plan replaces the automatic detection below with `--use-column-headings on|off|auto`.
+
 # Plan: Support headerless files in `columns insert` with automatic detection
 
 **STATUS: NOT IMPLEMENTED**

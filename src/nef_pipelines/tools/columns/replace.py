@@ -2,12 +2,14 @@ from pathlib import Path
 from typing import List, Optional
 
 import typer
+from click import Context
 
 from nef_pipelines.lib.nef_lib import read_entry_from_file_or_stdin_or_exit_error
 from nef_pipelines.lib.util import STDIN
 from nef_pipelines.tools.columns import columns_app
-from nef_pipelines.tools.columns.columns_structures import ExtractFormat
-from nef_pipelines.tools.columns.insert import pipe
+from nef_pipelines.tools.columns.columns_cli_lib import track_order
+from nef_pipelines.tools.columns.columns_structures import ColumnHeadings, ExtractFormat
+from nef_pipelines.tools.columns.insert import pipe, report_advisories
 
 #
 # TODO: Support full insert syntax:
@@ -18,11 +20,56 @@ from nef_pipelines.tools.columns.insert import pipe
 
 @columns_app.command()
 def replace(
+    ctx: Context,
     input: Path = typer.Option(
         STDIN,
         "--in",
         metavar="|PIPE|",
         help="read NEF data from a file or stdin",
+    ),
+    header_skip: int = typer.Option(
+        0,
+        "--skip",
+        callback=track_order,
+        help="number of rows to skip after comment removal; applies to subsequent @file references",
+    ),
+    comment: List[str] = typer.Option(
+        [],
+        "--comment",
+        callback=track_order,
+        help="""\
+            add comment prefix for subsequent @file references; no comments are set to
+            begin with; can be given multiple times to add several prefixes; use
+            --clear-comments to remove them all""",
+    ),
+    tail_skip: int = typer.Option(
+        0,
+        "--skip-tail",
+        callback=track_order,
+        help="number of trailing rows to skip; applies to subsequent @file references",
+    ),
+    clear_comments: bool = typer.Option(
+        False,
+        "--clear-comments",
+        callback=track_order,
+        help="""\
+            remove ALL comment prefixes for subsequent @file references; the initial state
+            is no comments set, so for example use --comment '#' to add '#' as a
+            comment prefix""",
+    ),
+    use_column_headings: ColumnHeadings = typer.Option(
+        ColumnHeadings.AUTO,
+        "--use-column-headings",
+        callback=track_order,
+        help="""\
+            whether the first row of subsequent @file references names the columns: on (a
+            reference is a name), off (a reference is a 1-based position), or auto (infer,
+            and warn when inferred)""",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        help="suppress advisory warnings about how files were read",
     ),
     # TODO remove simple format?
     #   ⏺ Agree - SIMPLE format is problematic:
@@ -97,5 +144,9 @@ def replace(
     column_instructions = _parse_replace_arguments_or_exit_error(
         selector, args, entry, input, format
     )
-    entry = pipe(entry, column_instructions)
+    result = pipe(entry, column_instructions)
+
+    report_advisories(result.items, quiet)
+
+    entry = result.entry
     print(entry)

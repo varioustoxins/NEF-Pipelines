@@ -16,7 +16,11 @@ from nef_pipelines.lib.nef_lib import (
     select_frames,
     select_loops_by_category,
 )
-from nef_pipelines.lib.structures import FrameLoopAndTagSelectors, FrameLoopsAndTags
+from nef_pipelines.lib.structures import (
+    Advisory,
+    FrameLoopAndTagSelectors,
+    FrameLoopsAndTags,
+)
 from nef_pipelines.lib.tabular_data_lib import CsvLikeFormats, parse_csv_text
 from nef_pipelines.lib.util import (
     escape_spaces_with_underscore,
@@ -26,11 +30,14 @@ from nef_pipelines.lib.util import (
 )
 from nef_pipelines.tools.columns.columns_lib import _resolve_file_col_name
 from nef_pipelines.tools.columns.columns_structures import (
+    ColumnHeadings,
     ColumnPlacement,
     ColumnSpecification,
     DefaultValueSpecification,
     ExtractFormat,
+    FileSettings,
     FileValueSpecification,
+    HeadingsInferredAdvisory,
     InsertInstruction,
     InsertPlacement,
     LiteralsValueSpecification,
@@ -44,6 +51,27 @@ from nef_pipelines.tools.columns.columns_structures import (
     RepeatValueSpec,
     ValueSpec,
 )
+
+# TODO: should flags be  a set of constants which are then used in _FLAG_NAME_TO_PLACEMENT and _FILE_SETTING_FLAG_NAMES
+# and _FILE_SETTING_FLAG_NAMES be more generic and include before at and after?
+_FLAG_NAME_TO_PLACEMENT: Dict[str, InsertPlacement] = {
+    "before": InsertPlacement.BEFORE,
+    "after": InsertPlacement.AFTER,
+    "at": InsertPlacement.AT,
+}
+
+# Positional flags that set the file-reading state for the col specs that follow them.
+# Unlike the placement flags they do not bind pending col specs, they update running state.
+_FILE_SETTING_FLAG_NAMES = {
+    "comment",
+    "clear_comments",
+    "skip",
+    "skip_tail",
+    "use_column_headings",
+}
+
+_FrameLoopGroups = Dict[str, List[ColumnPlacement]]
+_ResolvedLoopColumnSpecificationPairs = List[Tuple[Loop, List[ColumnPlacement]]]
 
 # Selector Parsing Functions
 
@@ -157,12 +185,13 @@ def parse_value_spec(spec: Optional[str]) -> ValueSpec:
 
 def column_spec_from_str(
     token: str,
-    skip: int = 0,
-    comment: str = "",
     format: Optional["ExtractFormat"] = None,
 ) -> ColumnSpecification:
-    """Parse 'col_name' or 'col_name=value_spec' into a ColumnSpec."""
+    """Parse 'col_name' or 'col_name=value_spec' into a ColumnSpec.
 
+    Note: skip/comment/skip_tail are now handled via separate CommentInstruction
+    and SkipInstruction objects, not embedded in FileValueSpecification.
+    """
     parts = token.split("=", 1)
     col_name = parts[0]
     value_spec = parse_value_spec(parts[1] if len(parts) == 2 else None)
@@ -171,8 +200,6 @@ def column_spec_from_str(
         value_spec = FileValueSpecification(
             path=value_spec.path,
             col=col,
-            skip=skip,
-            comment=comment,
             format=format if format is not None else ExtractFormat.CSV,
         )
     return ColumnSpecification(col_name=col_name, value_spec=value_spec)
@@ -335,13 +362,6 @@ def _peel_selector_prefix(token: str) -> Tuple[str, str]:
     return "", token
 
 
-_FLAG_NAME_TO_PLACEMENT: Dict[str, InsertPlacement] = {
-    "before": InsertPlacement.BEFORE,
-    "after": InsertPlacement.AFTER,
-    "at": InsertPlacement.AT,
-}
-
-
 def _get_argv() -> List[str]:
     return sys.argv[1:]
 
@@ -379,19 +399,20 @@ def _build_getopt_strings(ctx) -> Tuple[str, List[str]]:
     return short_opts, long_opts
 
 
-def _placement_token_map(ctx) -> Dict[str, str]:
-    """Map every spelling of the placement flags to the param's variable name, derived
-    from the live context. Placement params are identified by name membership in
-    _FLAG_NAME_TO_PLACEMENT (the one semantic table); their spellings (--before, -b, ...)
-    come from param.opts so they are never hardcoded.
+def _tracked_token_map(ctx) -> Dict[str, Tuple[str, bool]]:
+    """Map every spelling of the order-sensitive flags to (param variable name, takes_value),
+    derived from the live context. Tracked params are identified by name membership in
+    _FLAG_NAME_TO_PLACEMENT and _FILE_SETTING_FLAG_NAMES (the semantic tables); their
+    spellings (--before, -b, --skip, ...) come from param.opts so they are never hardcoded.
 
     (Identifying by `param.callback is track_order` is avoided: Typer may wrap the callback,
     so callback identity is not reliable; param.name is stable.)
     """
+    tracked = set(_FLAG_NAME_TO_PLACEMENT) | _FILE_SETTING_FLAG_NAMES
     return {
-        opt: param.name
+        opt: (param.name, not param.is_flag)
         for param in ctx.command.params
-        if isinstance(param, click.Option) and param.name in _FLAG_NAME_TO_PLACEMENT
+        if isinstance(param, click.Option) and param.name in tracked
         for opt in param.opts
     }
 
@@ -407,9 +428,7 @@ def track_order(ctx, param, value):
     if "sequence" not in ctx.obj:
         argv = _trim_command_prefix(_get_argv(), ctx)
         short_opts, long_opts = _build_getopt_strings(ctx)
-        placement_tokens = _placement_token_map(
-            ctx
-        )  # token -> param.name (e.g. "before")
+        tracked_tokens = _tracked_token_map(ctx)  # token -> (param.name, takes_value)
         try:
             opts, positionals = getopt.gnu_getopt(argv, short_opts, long_opts)
         except getopt.GetoptError:
@@ -419,22 +438,29 @@ def track_order(ctx, param, value):
         items: List[OrderedArguments] = []
         used = set()
         for flag, val in opts:
-            if flag in placement_tokens:
+            if flag in tracked_tokens:
+                name, takes_value = tracked_tokens[flag]
                 for i, tok in enumerate(argv):
-                    # match every form getopt accepts: '--before x', '--before=x', '-b x', '-bx'
-                    space_form = (
-                        tok == flag and i + 1 < len(argv) and argv[i + 1] == val
-                    )
-                    long_equals_form = flag.startswith("--") and tok == f"{flag}={val}"
-                    short_attached_form = (
-                        not flag.startswith("--") and tok == f"{flag}{val}"
-                    )
-                    if i not in used and (
-                        space_form or long_equals_form or short_attached_form
-                    ):
-                        items.append(
-                            OrderedArguments(i, "flag", placement_tokens[flag], val)
+                    if i in used:
+                        continue
+                    if not takes_value:
+                        # boolean flag, e.g. '--clear-comments', carries no value token
+                        matched = tok == flag
+                        space_form = False
+                    else:
+                        # match every form getopt accepts: '--before x', '--before=x', '-b x', '-bx'
+                        space_form = (
+                            tok == flag and i + 1 < len(argv) and argv[i + 1] == val
                         )
+                        long_equals_form = (
+                            flag.startswith("--") and tok == f"{flag}={val}"
+                        )
+                        short_attached_form = (
+                            not flag.startswith("--") and tok == f"{flag}{val}"
+                        )
+                        matched = space_form or long_equals_form or short_attached_form
+                    if matched:
+                        items.append(OrderedArguments(i, "flag", name, val))
                         used.add(i)
                         if space_form:
                             used.add(i + 1)  # also reserve the separate anchor token
@@ -450,10 +476,6 @@ def track_order(ctx, param, value):
         ctx.obj["sequence"] = sorted(items, key=lambda e: e.offset)
 
     return value
-
-
-_FrameLoopGroups = Dict[str, List[ColumnPlacement]]
-_ResolvedLoopColumnSpecificationPairs = List[Tuple[Loop, List[ColumnPlacement]]]
 
 
 def _split_col_spec(token: str) -> Tuple[str, Optional[str]]:
@@ -547,8 +569,6 @@ def _parse_position_anchor(anchor_str: Optional[str]) -> Optional[Union[int, str
 
 def _expand_bare_file_refs(
     instructions: List[ColumnPlacement],
-    skip: int = 0,
-    comment: str = "",
 ) -> List[ColumnPlacement]:
     """Expand bare file-reference col specs into named col=@file:col instructions.
 
@@ -558,6 +578,9 @@ def _expand_bare_file_refs(
     @path:col          → auto-names the NEF column from the normalised CSV column name
     @path:col1,col2    → multiple specific columns, each separately auto-named
 
+    Headers are read using the file settings in force for the specification, so a bare ref
+    preceded by --comment/--skip sees the same rows the later column read will see.
+
     Raises NEFColumnsException (from columns_lib) if the file is not found or a column name/index is invalid.
     """
     result = []
@@ -566,22 +589,24 @@ def _expand_bare_file_refs(
         if not col_name.startswith("@"):
             result.append(instruction)
         else:
+            settings = instruction.file_settings
             file_part, _, csv_cols = col_name[1:].partition(":")
             path = Path(file_part)
+            text = read_utf8_sig_file(path)
+            headers, _, _ = parse_csv_text(
+                text,
+                CsvLikeFormats.AUTO,
+                skip=0,
+                comment=list(settings.comment),
+                header_skip=settings.skip,
+                skip_tail=settings.skip_tail,
+                source_path=path,
+            )
             if csv_cols:
                 raw_cols = [c.strip() for c in csv_cols.split(",") if c.strip()]
-                # Get column names from CSV file using csv_lib
-                text = read_utf8_sig_file(path)
-                headers, _, _ = parse_csv_text(
-                    text, CsvLikeFormats.AUTO, skip, comment, source_path=path
-                )
                 cols = [_resolve_file_col_name(c, headers, path) for c in raw_cols]
             else:
-                # Get all column names from CSV file
-                text = read_utf8_sig_file(path)
-                cols, _, _ = parse_csv_text(
-                    text, CsvLikeFormats.AUTO, skip, comment, source_path=path
-                )
+                cols = headers
             for c in cols:
                 nef_col = escape_spaces_with_underscore(c)
                 result.append(
@@ -589,6 +614,7 @@ def _expand_bare_file_refs(
                         f"{nef_col}=@{file_part}:{c}",
                         instruction.placement,
                         instruction.anchor,
+                        settings,
                     )
                 )
     return result
@@ -619,29 +645,50 @@ def _parse_ordered_col_instructions(
             OrderedArguments(i, "col", None, arg) for i, arg in enumerate(ctx_args)
         ]
 
-    pending: List[str] = []
+    pending: List[Tuple[str, FileSettings]] = []
     instructions: List[ColumnPlacement] = []
+    comment: List[str] = []
+    skip = 0
+    skip_tail = 0
+    use_column_headings = ColumnHeadings.AUTO
     for arg in sequence:
         if arg.kind == "col":
+            settings = FileSettings(
+                tuple(comment), skip, skip_tail, use_column_headings
+            )
             prefix, col_specs = _peel_selector_prefix(arg.value)
             split_specs = _split_on_column_specification_on_assignment_boundaries(
                 col_specs
             )
             if split_specs:
                 for col_spec in split_specs:
-                    pending.append(prefix + col_spec)
+                    pending.append((prefix + col_spec, settings))
             elif prefix:
                 # Has frame.loop: prefix but no column specs (empty remainder after colon)
                 # Keep the colon to maintain frame.loop: format for empty loops
-                pending.append(prefix)
-        else:  # flag
-            for col in pending:
+                pending.append((prefix, settings))
+        elif arg.name in _FLAG_NAME_TO_PLACEMENT:
+            for col, settings in pending:
                 instructions.append(
-                    ColumnPlacement(col, _FLAG_NAME_TO_PLACEMENT[arg.name], arg.value)
+                    ColumnPlacement(
+                        col, _FLAG_NAME_TO_PLACEMENT[arg.name], arg.value, settings
+                    )
                 )
             pending = []
-    for col in pending:
-        instructions.append(ColumnPlacement(col, InsertPlacement.APPEND, None))
+        elif arg.name == "comment":
+            comment.append(arg.value)
+        elif arg.name == "clear_comments":
+            comment = []
+        elif arg.name == "skip":
+            skip = int(arg.value)
+        elif arg.name == "skip_tail":
+            skip_tail = int(arg.value)
+        elif arg.name == "use_column_headings":
+            use_column_headings = ColumnHeadings(arg.value)
+    for col, settings in pending:
+        instructions.append(
+            ColumnPlacement(col, InsertPlacement.APPEND, None, settings)
+        )
     return instructions
 
 
@@ -655,7 +702,12 @@ def _group_column_specifications_by_loop_or_raise(
             selector, instruction.col_spec
         )
         column_specifications_grouped_by_frame_loop.setdefault(frame_loop, []).append(
-            ColumnPlacement(bare_column, instruction.placement, instruction.anchor)
+            ColumnPlacement(
+                bare_column,
+                instruction.placement,
+                instruction.anchor,
+                instruction.file_settings,
+            )
         )
     return column_specifications_grouped_by_frame_loop
 
@@ -691,21 +743,26 @@ def _resolve_frame_loop_strings_to_loops_or_raise(
 
 def _build_column_instructions(
     resolved_loop_column_specification_pairs: _ResolvedLoopColumnSpecificationPairs,
-    skip: int = 0,
-    comment: str = "",
     format: Optional["ExtractFormat"] = None,
 ) -> List[InsertInstruction]:
+    """Build InsertInstruction objects from resolved loop-column pairs.
+
+    Note: skip/comment/skip_tail are now handled via separate CommentInstruction
+    and SkipInstruction objects, not passed as parameters here.
+    """
     column_instructions: List[InsertInstruction] = []
     for loop, group in resolved_loop_column_specification_pairs:
-        for instruction in _expand_bare_file_refs(group, skip=skip, comment=comment):
+        for instruction in _expand_bare_file_refs(group):
             column_instructions.append(
                 InsertInstruction(
                     column_spec_from_str(
-                        instruction.col_spec, skip=skip, comment=comment, format=format
+                        instruction.col_spec,
+                        format=format,
                     ),
                     instruction.placement,
                     _parse_position_anchor(instruction.anchor),
                     loop,
+                    instruction.file_settings,
                 )
             )
     return column_instructions
@@ -1104,3 +1161,73 @@ def _format_exception_with_context(
         msg = f"{msg} [{', '.join(context_parts)}]"
 
     return msg
+
+
+# advisories are wrapped to sit inside a conventional terminal, with continuation lines
+# aligned under the text rather than under the reporter's "WARNING: " prefix
+_TERMINAL_WIDTH = 120
+_WARNING_PREFIX_WIDTH = len("WARNING: ")
+
+
+def _wrap_for_terminal(message: str) -> str:
+    """Reflow a message to fit a conventional terminal, aligning any continuation lines.
+
+    The first line is left unindented because the reporter prepends "WARNING: " to it; later
+    lines are indented to line up underneath. That also keeps `warn`'s dedent a no-op, since
+    the lines no longer share a common indent.
+
+    Long words are never broken, so file paths and option names such as
+    --use-column-headings stay intact even when they push a line over the width.
+
+    Args:
+        message: The message text, which may be indented and span several source lines
+
+    Returns:
+        The message reflowed to the terminal width
+    """
+    indent = " " * _WARNING_PREFIX_WIDTH
+    wrapped = textwrap.fill(
+        " ".join(message.split()),
+        width=_TERMINAL_WIDTH,
+        initial_indent=indent,
+        subsequent_indent=indent,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    return wrapped[_WARNING_PREFIX_WIDTH:]
+
+
+def build_advisory_message(advisory: Advisory) -> str:
+    """Build the text shown to a user for an advisory returned by a pipe.
+
+    This is where command line option names belong: the pipe reports what it did, and this
+    turns that into advice naming the option that would state the intent explicitly.
+
+    Args:
+        advisory: A finding returned in PipeOutput.items
+
+    Returns:
+        The message to show, as a single line and without any WARNING prefix
+    """
+    if isinstance(advisory, HeadingsInferredAdvisory):
+        if advisory.is_mixed:
+            message = f"""
+                the column references to {advisory.path} mix position and name, so its
+                first row is being read as column headings; use --use-column-headings
+                on or off to say which it is
+            """
+        elif advisory.has_header:
+            message = f"""
+                {advisory.path} is being read as having column headings; use
+                --use-column-headings off if its first row is data
+            """
+        else:
+            message = f"""
+                all column references to {advisory.path} are by number, so it is being
+                read as having no heading row; use --use-column-headings on if the
+                first row is headings
+            """
+    else:
+        message = str(advisory)
+
+    return _wrap_for_terminal(message)

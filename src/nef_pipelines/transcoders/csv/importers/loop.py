@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import auto
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 
 import typer
 from pynmrstar import Entry, Loop, Saveframe
@@ -73,11 +73,16 @@ def loop(
     csv_format: CsvLikeFormats = typer.Option(
         CsvLikeFormats.AUTO, "-f", "--format", help=HELP_FOR_FORMATS
     ),
-    skip: int = typer.Option(
+    header_skip: int = typer.Option(
         0, "--skip", help="extra header rows to skip after the column header row"
     ),
-    comment: str = typer.Option(
-        "", "--comment", help="ignore lines that start with this prefix before parsing"
+    comment: List[str] = typer.Option(
+        [],
+        "--comment",
+        help="ignore lines starting with this prefix (can specify multiple times for multiple prefixes)",
+    ),
+    tail_skip: int = typer.Option(
+        0, "--skip-tail", help="number of trailing rows to skip from the end"
     ),
     frame_policy: FrameNamePolicy = typer.Option(
         FrameNamePolicy.COMMAND_LINE, "--frame-policy", help=HELP_FRAME_POLICY
@@ -99,17 +104,18 @@ def loop(
         exit_error(msg)
 
     framecode_loop_category_paths = _load_frames_loops_and_paths_or_exit_error(
-        file_args, csv_format, frame_policy, comment, skip
+        file_args, csv_format, frame_policy, comment, header_skip
     )
 
     # HEADER policy: skip is already applied when parsing framecode/loop_category,
     # and we need to skip 1 more row (the framecode line itself) before reading column headers
     if frame_policy == FrameNamePolicy.HEADER:
-        header_skip = 1 + skip  # Skip initial rows + framecode line
+        header_skip = 1 + header_skip  # Skip initial rows + framecode line
         data_skip = 0  # Don't skip again when reading data
     else:
         header_skip = 0  # No rows to skip before headers
-        data_skip = skip  # Skip rows after headers
+        # TODO this makes no sense
+        data_skip = header_skip  # Skip rows after headers
 
     # Look up frames and build FrameLoopPath objects
     frame_loop_paths = []
@@ -119,7 +125,13 @@ def loop(
 
     try:
         result = pipe(
-            entry, frame_loop_paths, csv_format, data_skip, comment, header_skip
+            entry,
+            frame_loop_paths,
+            csv_format,
+            comment,
+            header_skip,
+            data_skip,
+            tail_skip,
         )
     except CsvParseError as e:
         exit_error(str(e))
@@ -134,9 +146,10 @@ def pipe(
     entry: Entry,
     frame_loop_paths: List[FrameLoopPath],
     csv_format: CsvLikeFormats,
-    skip: int = 0,
-    comment: str = "",
+    comment: Union[str, List[str]] = "",
     header_skip: int = 0,
+    skip: int = 0,
+    skip_tail: int = 0,
 ) -> PipeOutput:
     """Add loops read from CSV files to existing saveframes in entry.
 
@@ -145,8 +158,9 @@ def pipe(
         frame_loop_paths: List of pre-looked-up frames with loop categories and CSV paths
         csv_format: Format of CSV files (CSV, TSV, SSV, or AUTO)
         skip: Number of extra header rows to skip after column headers
-        comment: Prefix for comment lines to ignore
+        comment: Prefix(es) for comment lines to ignore (string or list of strings)
         header_skip: Number of rows to skip before reading column headers
+        skip_tail: Number of trailing rows to skip from the end
 
     Returns:
         PipeOutput with modified entry and warnings about normalized headers
@@ -162,7 +176,13 @@ def pipe(
             exit_error(f"failed to read {frame_loop_path.path}: {e}")
 
         tags, data_rows, warnings = parse_csv_text(
-            text, csv_format, skip, comment, header_skip, frame_loop_path.path
+            text,
+            csv_format,
+            skip,
+            comment,
+            header_skip,
+            skip_tail,
+            frame_loop_path.path,
         )
         all_warnings.extend(warnings)
 
@@ -246,14 +266,19 @@ def _parse_file_name_policy(file_args: List[str]) -> List[Tuple[str, str, Path]]
 
 
 def _parse_frame_and_loop_from_file_header(
-    file_args: List[str], csv_format: CsvLikeFormats, skip: int, comment: str = ""
+    file_args: List[str],
+    csv_format: CsvLikeFormats,
+    skip: int,
+    comment: Union[str, List[str]] = "",
 ) -> List[Tuple[str, str, Path]]:
     """Parse HEADER policy: first line after comments and skip rows contains framecode,loop_category."""
     result = []
     for path_str in file_args:
         path = Path(path_str)
         raw_text = path.read_text(encoding=ENCODING)
-        filtered_text = _apply_skip_and_comment(raw_text, skip=skip, comment=comment)
+        filtered_text, _, _ = _apply_skip_and_comment(
+            raw_text, skip=skip, comment=comment, skip_tail=0
+        )
 
         # Parse CSV rows from text (no file pointer needed)
         rows = _parse_csv_rows_from_text(filtered_text, csv_format)
@@ -276,10 +301,15 @@ def _parse_frame_and_loop_from_file_header(
 
 
 def _parse_frame_and_loop_from_comment(
-    file_args: List[str], comment: str = ""
+    file_args: List[str], comment: Union[str, List[str]] = ""
 ) -> List[Tuple[str, str, Path]]:
     """Parse COMMENT policy: find framename: and loop: in comment lines (can be separate lines)."""
     result = []
+
+    if isinstance(comment, str):
+        comment_prefixes = (comment,) if comment else ("#",)
+    else:
+        comment_prefixes = tuple(comment) if comment else ("#",)
 
     for path_str in file_args:
         path = Path(path_str)
@@ -287,16 +317,15 @@ def _parse_frame_and_loop_from_comment(
 
         framecode = None
         loop_category = None
-        comment_prefix = comment if comment else "#"
 
         for line in raw_text.splitlines():
             stripped = line.strip()
             # Skip if not a comment line
-            if not stripped.startswith(comment_prefix):
+            if not stripped.startswith(comment_prefixes):
                 continue
 
             # Remove comment prefix
-            content = stripped.lstrip(comment_prefix).strip().lower()
+            content = stripped.lstrip("".join(comment_prefixes)).strip().lower()
 
             # Look for framename: <value>
             if framecode is None and "framename:" in content:

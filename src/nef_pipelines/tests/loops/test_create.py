@@ -164,9 +164,12 @@ def test_create_with_force_replaces_existing_loop():
 
 
 def test_create_invalid_selector_errors():
-    """Invalid selector syntax should produce clear error."""
+    """Invalid selector syntax should produce clear error with reason."""
     EXPECTED_ERROR_INVALID_SELECTOR = """\
-        ERROR [in: create]: invalid selector syntax in 'invalid:::selector:chain_code'
+        ERROR [in: create]: invalid selector syntax in 'invalid:::selector:chain_code': \
+        you have too many : separators [4], you should have 1.
+        Did you forget --use-escapes?
+        (I found :: which looks like an escape sequence for : when --use-escapes is active)
 
         exiting..."""
 
@@ -180,3 +183,89 @@ def test_create_invalid_selector_errors():
     )
 
     assert_lines_match(EXPECTED_ERROR_INVALID_SELECTOR, result.stdout)
+
+
+# --- positional file settings reach loops create through its own ctx path ---
+
+# TODO: why aren't these just in test files? why are we doing the whole tmp_path thing again?
+HEADERLESS_SHIFTS = """\
+1   G   C1'   91.38
+2   G   C2'   75.10
+3   G   C3'   74.98
+"""
+
+COMMENTED_SHIFTS = """\
+# leading comment
+shift
+91.38
+75.10
+"""
+
+
+def test_create_applies_positional_comment_settings(tmp_path):
+    """loops create parses its own argument order, so file settings must reach it too."""
+    EXPECTED = """\
+        loop_
+           _nef_chemical_shift.shift
+
+           91.38
+           75.10
+
+        stop_
+    """
+    data = tmp_path / "commented.csv"
+    data.write_text(COMMENTED_SHIFTS)
+    entry = _make_entry_with_frame("nef_chemical_shift_list", "test")
+
+    result = run_and_report(
+        app,
+        [
+            "--in",
+            "-",
+            "--comment",
+            "#",
+            f"test.nef_chemical_shift:shift=@{data}:shift",
+        ],
+        input=entry,
+    )
+
+    loop_text = isolate_loop(
+        result.stdout, "nef_chemical_shift_list_test", "nef_chemical_shift"
+    )
+    assert_lines_match(EXPECTED, loop_text)
+
+
+def test_create_honours_use_column_headings_off(tmp_path):
+    """A headerless file read by loops create keeps every row, including the first."""
+    EXPECTED = """\
+        loop_
+           _nef_chemical_shift.shift
+
+           91.38
+           75.10
+           74.98
+
+        stop_
+    """
+    data = tmp_path / "headerless.txt"
+    data.write_text(HEADERLESS_SHIFTS)
+    entry = _make_entry_with_frame("nef_chemical_shift_list", "test")
+
+    result = run_and_report(
+        app,
+        [
+            "--in",
+            "-",
+            "--use-column-headings",
+            "off",
+            f"test.nef_chemical_shift:shift=@{data}:4",
+        ],
+        input=entry,
+        merge_stderr=False,
+    )
+
+    loop_text = isolate_loop(
+        result.stdout, "nef_chemical_shift_list_test", "nef_chemical_shift"
+    )
+    assert_lines_match(EXPECTED, loop_text)
+    assert result.stderr == ""
