@@ -1,6 +1,22 @@
 # Changelog
 
 
+## Version 0.1.129 - *Columns - Holding Up The World Since The Odyssey*
+
+Affects .
+
+- **changed** for `columns insert`, `loops create` and `columns replace`
+    1. `--comment`, `--skip` and `--skip-tail` are now positional.
+    2. `--clear-comments` removes *all* comment prefixes and is positional.
+    3. for comments the default is that no comments are present.
+    4. multiple comment strings can be specified
+    5. `--use-column-headings on|off|auto` (default `auto`) controls
+       whether headers are used and is also postitional
+    6. it is now possible to have column headings which are numeric values
+    7. `--skip-tail` along with `--skip allows `
+    8. ciles with no column headers are supported
+    9. error reporting is more precise
+
 ## Version 0.1.128 - *Whiter than White Washes and Rigidly Correct Chemical Shifts*
 - added `starch import shifts` to import BMRB Starch files
 
